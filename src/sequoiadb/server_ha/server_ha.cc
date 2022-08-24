@@ -110,6 +110,7 @@ static struct st_mysql_show_var ha_status[] = {
     SDB_ST_SHOW_VAR(0, 0, SHOW_UNDEF, SHOW_SCOPE_UNDEF)};
 
 static bool check_if_table_exists(THD *thd, TABLE_LIST *table);
+static bool is_pending_log_ignorable_error(THD *thd);
 
 bool ha_is_open() {
   return (ha_inst_group_name && 0 != strlen(ha_inst_group_name));
@@ -1167,14 +1168,11 @@ static bool build_full_table_name(THD *thd, String &full_name,
 // warnings
 inline static bool have_exist_warning(THD *thd) {
   bool have_warning = false;
-  ulong warn_count = 0;
-#ifdef IS_MYSQL
-  warn_count = thd->get_stmt_da()->current_statement_cond_count();
-#else
-  warn_count = thd->get_stmt_da()->current_statement_warn_count();
-#endif
+  ulong warn_count = sdb_thd_da_warn_count(thd);
   if (warn_count) {
     have_warning = sdb_has_sql_condition(thd, ER_DB_CREATE_EXISTS) ||
+                   sdb_has_sql_condition(thd, ER_TABLE_EXISTS_ERROR) ||
+                   sdb_has_sql_condition(thd, ER_BAD_TABLE_ERROR) ||
                    sdb_has_sql_condition(thd, ER_DB_DROP_EXISTS) ||
                    sdb_has_sql_condition(thd, ER_SP_ALREADY_EXISTS) ||
                    sdb_has_sql_condition(thd, ER_SP_DOES_NOT_EXIST) ||
@@ -3026,11 +3024,13 @@ error:
 #endif
 }
 
-// check if current SQL statement can be written into sequoiadb
-bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
+// check if current SQL statement from user can be written into sequoiadb
+bool can_write_user_ddl_sql_log(THD *thd, ha_sql_stmt_info *sql_info,
+                                int error_code) {
   int sql_command = thd_sql_command(thd);
   bool can_write_log = true;
 
+  // single temporary table operation should not be persisted to SequoiaDB
   if (SQLCOM_ALTER_TABLE == sql_command || SQLCOM_CREATE_INDEX == sql_command ||
       SQLCOM_DROP_INDEX == sql_command
 #ifdef IS_MARIADB
@@ -3058,7 +3058,8 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
     // if drop tables/views partial success
   } else if (can_write_log && ER_CANNOT_USER == error_code &&
              (SQLCOM_CREATE_USER == sql_command ||
-              SQLCOM_DROP_USER == sql_command
+              SQLCOM_DROP_USER == sql_command ||
+              SQLCOM_RENAME_USER == sql_command
 #ifdef IS_MARIADB
               || SQLCOM_CREATE_ROLE == sql_command ||
               SQLCOM_DROP_ROLE == sql_command
@@ -3066,33 +3067,12 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
               )) {
     // if create/drop user/role partial success
     LEX_USER *lex_user = NULL;
-    String all_users;
-    all_users.length(0);
+    String all_users(0);
     List_iterator<LEX_USER> users_list(thd->lex->users_list);
     while ((lex_user = users_list++)) {
-#ifdef IS_MYSQL
-      append_user(thd, &all_users, lex_user, all_users.length() > 0, false);
-#else
-      if (all_users.length())
-        all_users.append(',');
-      append_query_string(system_charset_info, &all_users, lex_user->user.str,
-                          lex_user->user.length,
-                          thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES);
-      /* hostname part is not relevant for roles, it is always empty */
-      if (lex_user->user.length == 0 || lex_user->host.length != 0) {
-        all_users.append('@');
-        append_query_string(
-            system_charset_info, &all_users, lex_user->host.str,
-            lex_user->host.length,
-            thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES);
-      }
-#endif
+      sdb_append_user(thd, all_users, *lex_user, all_users.length() > 0);
     }
-#ifdef IS_MYSQL
-    const char *err_msg = thd->get_stmt_da()->message_text();
-#else
-    const char *err_msg = thd->get_stmt_da()->message();
-#endif
+    const char *err_msg = sdb_thd_da_message(thd);
     if (strstr(err_msg, all_users.c_ptr_safe())) {
       can_write_log = false;
     }
@@ -3104,6 +3084,44 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
   } else if (error_code) {
     can_write_log = false;
   }
+  return can_write_log;
+}
+
+// check if metadata can be recovered by executing pending log again
+bool is_stmt_reentrant(THD *thd, int error_code) {
+  bool reentrant = true;
+  int sql_command = thd_sql_command(thd);
+  if (SQLCOM_RENAME_TABLE == sql_command) {
+    if (ER_TABLE_EXISTS_ERROR == error_code ||
+        ER_FILE_NOT_FOUND == error_code || ER_NO_SUCH_TABLE == error_code) {
+      // if rename table fails, MySQL/MariaDB will rollback the whole operation
+      // we cann't recover metadata by executing pending log again
+      reentrant = false;
+    }
+  }
+  return reentrant;
+}
+
+// Check if current SQL statement can persisted to HASQLLog.
+bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
+  bool can_write_log = true;
+  if (0 == error_code && 0 == sdb_thd_da_warn_count(thd)) {
+    // no warnings and errors in thd
+  } else if (!ha_is_executing_pending_log(thd)) {  // handle DDL from user
+    can_write_log = can_write_user_ddl_sql_log(thd, sql_info, error_code);
+  } else {  // handler DDL from pending log replayer
+    // if 'XXX not exists' or 'XXX already exists' warning are found for
+    // pending log replayer, need to write SQL log
+    can_write_log =
+        is_pending_log_ignorable_error(thd) || have_exist_warning(thd);
+  }
+
+  // In some situations, MySQL/MariaDB will rollback the whole operation if it
+  // fails. For those situations, we cann't persist releated DDL to HASQLLog
+  if (error_code && !is_stmt_reentrant(thd, error_code)) {
+    can_write_log = false;
+  }
+
   return can_write_log;
 }
 
@@ -4331,7 +4349,7 @@ static bool is_pending_log_ignorable_error(THD *thd) {
   if (!ha_is_executing_pending_log(thd)) {
     return false;
   }
-  return ha_is_ddl_ignorable_error(sdb_sql_errno(thd));
+  return thd->is_error() && ha_is_ddl_ignorable_error(sdb_sql_errno(thd));
 }
 
 // saved cached state before 'write_sql_log_and_states'
@@ -4764,8 +4782,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       goto error;
     }
     try {
-      if (can_write_sql_log(thd, sql_info, event.general_error_code) ||
-          is_pending_log_ignorable_error(thd)) {
+      if (can_write_sql_log(thd, sql_info, event.general_error_code)) {
         // rebuild create table SQL statement if necessary
         if (SQLCOM_CREATE_TABLE == sql_command) {
           rc = fix_create_table_stmt(thd, event_class, event, create_query);
@@ -4858,7 +4875,11 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         sql_info->tables = NULL;
 
         // if execution of pending log fails, pending log should not be cleared
-        if (!ha_is_executing_pending_log(thd)) {
+        // pending log need to be deleted if metadata cann't be recover by
+        // executing pending log again
+        if (!ha_is_executing_pending_log(thd) ||
+            (event.general_error_code &&
+             !is_stmt_reentrant(thd, event.general_error_code))) {
           rc = clear_pending_log(thd, sql_info);
         }
         if (rc) {
