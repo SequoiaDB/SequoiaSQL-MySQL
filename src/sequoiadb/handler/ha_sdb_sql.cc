@@ -828,6 +828,18 @@ TABLE_REF *get_table_ref(TABLE *table) {
   return NULL;
 }
 
+const char *sdb_thd_da_message(THD *thd) {
+  return thd->get_stmt_da()->message_text();
+}
+
+void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
+                     bool comma) {
+  append_user(thd, &all_users, &lex_user, comma, false);
+}
+
+ulong sdb_thd_da_warn_count(THD *thd) {
+  return thd->get_stmt_da()->current_statement_cond_count();
+}
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1549,4 +1561,27 @@ TABLE_REF *get_table_ref(TABLE *table) {
   return NULL;
 }
 
+const char *sdb_thd_da_message(THD *thd) {
+  return thd->get_stmt_da()->message();
+}
+
+void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
+                     bool comma) {
+  if (comma)
+    all_users.append(',');
+  append_query_string(system_charset_info, &all_users, lex_user.user.str,
+                      lex_user.user.length,
+                      thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES);
+  /* hostname part is not relevant for roles, it is always empty */
+  if (lex_user.user.length == 0 || lex_user.host.length != 0) {
+    all_users.append('@');
+    append_query_string(system_charset_info, &all_users, lex_user.host.str,
+                        lex_user.host.length,
+                        thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES);
+  }
+}
+
+ulong sdb_thd_da_warn_count(THD *thd) {
+  return thd->get_stmt_da()->current_statement_warn_count();
+}
 #endif

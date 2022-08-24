@@ -44,6 +44,7 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #include <my_aes.h>
 #include <item_cmpfunc.h>
 #include <sql_optimizer.h>
+#include <auth/auth_common.h>
 #elif defined IS_MARIADB
 #include <mysql/service_my_crypt.h>
 #include <sql_select.h>
@@ -504,4 +505,10 @@ ulonglong sdb_thd_os_id(THD *thd);
 
 TABLE_REF *get_table_ref(TABLE *table);
 
+const char *sdb_thd_da_message(THD *thd);
+
+void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
+                     bool comma);
+
+ulong sdb_thd_da_warn_count(THD *thd);
 #endif
