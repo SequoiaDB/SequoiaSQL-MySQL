@@ -1736,7 +1736,7 @@ GRANT CREATE ROUTINE ON dbbug33464.* TO 'userbug33464'@'localhost';
 
 --replace_result $MASTER_MYPORT MYSQL_PORT $MASTER_MYSOCK MYSQL_SOCK
 connect (connbug33464, localhost, userbug33464, , dbbug33464);
---source suite/funcs_1/include/show_connection.inc
+--source include/show_connection.inc
 
 delimiter //;
 CREATE PROCEDURE sp3(v1 char(20))
@@ -1764,7 +1764,7 @@ disconnect connbug33464;
 # cleanup
 connection default;
 USE dbbug33464;
---source suite/funcs_1/include/show_connection.inc
+--source include/show_connection.inc
 
 SELECT fn1();
 SELECT fn2();
