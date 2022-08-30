@@ -8,10 +8,10 @@ Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be r
 set SESSION sql_mode= (select replace(@@SESSION.sql_mode,'NO_AUTO_CREATE_USER',''));
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-drop table if exists t1;
 drop database if exists mysqltest;
-drop database if exists test;
-create database test;
+drop database if exists grant_db;
+create database grant_db;
+use grant_db;
 SET NAMES binary;
 delete from mysql.user where user='mysqltest_1';
 delete from mysql.db where user='mysqltest_1';
@@ -242,14 +242,14 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, CREATE TE
 revoke all privileges on mysqltest.* from mysqltest_1@localhost;
 delete from mysql.user where user='mysqltest_1';
 flush privileges;
-grant usage on test.* to mysqltest_1@localhost with grant option;
+grant usage on grant_db.* to mysqltest_1@localhost with grant option;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
 show grants for mysqltest_1@localhost;
 Grants for mysqltest_1@localhost
 GRANT USAGE ON *.* TO 'mysqltest_1'@'localhost'
 GRANT USAGE ON `mysqltest`.* TO 'mysqltest_1'@'localhost' WITH GRANT OPTION
-GRANT USAGE ON `test`.* TO 'mysqltest_1'@'localhost' WITH GRANT OPTION
+GRANT USAGE ON `grant_db`.* TO 'mysqltest_1'@'localhost' WITH GRANT OPTION
 delete from mysql.user where user='mysqltest_1';
 delete from mysql.db where user='mysqltest_1';
 delete from mysql.tables_priv where user='mysqltest_1';
@@ -257,7 +257,7 @@ delete from mysql.columns_priv where user='mysqltest_1';
 flush privileges;
 show grants for mysqltest_1@localhost;
 ERROR 42000: There is no such grant defined for user 'mysqltest_1' on host 'localhost'
-use test;
+use grant_db;
 create table t1 (a int);
 GRANT select,update,insert on t1 to mysqltest_1@localhost;
 Warnings:
@@ -266,7 +266,7 @@ GRANT select (a), update (a),insert(a), references(a) on t1 to mysqltest_1@local
 show grants for mysqltest_1@localhost;
 Grants for mysqltest_1@localhost
 GRANT USAGE ON *.* TO 'mysqltest_1'@'localhost'
-GRANT SELECT, SELECT (a), INSERT, INSERT (a), UPDATE, UPDATE (a), REFERENCES (a) ON `test`.`t1` TO 'mysqltest_1'@'localhost'
+GRANT SELECT, SELECT (a), INSERT, INSERT (a), UPDATE, UPDATE (a), REFERENCES (a) ON `grant_db`.`t1` TO 'mysqltest_1'@'localhost'
 select table_priv,column_priv from mysql.tables_priv where user="mysqltest_1";
 table_priv	column_priv
 Select,Insert,Update	Select,Insert,Update,References
@@ -274,37 +274,37 @@ REVOKE select (a), update on t1 from mysqltest_1@localhost;
 show grants for mysqltest_1@localhost;
 Grants for mysqltest_1@localhost
 GRANT USAGE ON *.* TO 'mysqltest_1'@'localhost'
-GRANT SELECT, INSERT, INSERT (a), REFERENCES (a) ON `test`.`t1` TO 'mysqltest_1'@'localhost'
+GRANT SELECT, INSERT, INSERT (a), REFERENCES (a) ON `grant_db`.`t1` TO 'mysqltest_1'@'localhost'
 REVOKE select,update,insert,insert (a) on t1 from mysqltest_1@localhost;
 show grants for mysqltest_1@localhost;
 Grants for mysqltest_1@localhost
 GRANT USAGE ON *.* TO 'mysqltest_1'@'localhost'
-GRANT REFERENCES (a) ON `test`.`t1` TO 'mysqltest_1'@'localhost'
+GRANT REFERENCES (a) ON `grant_db`.`t1` TO 'mysqltest_1'@'localhost'
 GRANT select,references on t1 to mysqltest_1@localhost;
 select table_priv,column_priv from mysql.tables_priv where user="mysqltest_1";
 table_priv	column_priv
 Select,References	References
-grant all on test.* to mysqltest_3@localhost with grant option;
+grant all on grant_db.* to mysqltest_3@localhost with grant option;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
-revoke all on test.* from mysqltest_3@localhost;
+revoke all on grant_db.* from mysqltest_3@localhost;
 show grants for mysqltest_3@localhost;
 Grants for mysqltest_3@localhost
 GRANT USAGE ON *.* TO 'mysqltest_3'@'localhost'
-GRANT USAGE ON `test`.* TO 'mysqltest_3'@'localhost' WITH GRANT OPTION
-revoke grant option on test.* from mysqltest_3@localhost;
+GRANT USAGE ON `grant_db`.* TO 'mysqltest_3'@'localhost' WITH GRANT OPTION
+revoke grant option on grant_db.* from mysqltest_3@localhost;
 show grants for mysqltest_3@localhost;
 Grants for mysqltest_3@localhost
 GRANT USAGE ON *.* TO 'mysqltest_3'@'localhost'
-grant all on test.t1 to mysqltest_2@localhost with grant option;
+grant all on grant_db.t1 to mysqltest_2@localhost with grant option;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
-revoke all on test.t1 from mysqltest_2@localhost;
+revoke all on grant_db.t1 from mysqltest_2@localhost;
 show grants for mysqltest_2@localhost;
 Grants for mysqltest_2@localhost
 GRANT USAGE ON *.* TO 'mysqltest_2'@'localhost'
-GRANT USAGE ON `test`.`t1` TO 'mysqltest_2'@'localhost' WITH GRANT OPTION
-revoke grant option on test.t1 from mysqltest_2@localhost;
+GRANT USAGE ON `grant_db`.`t1` TO 'mysqltest_2'@'localhost' WITH GRANT OPTION
+revoke grant option on grant_db.t1 from mysqltest_2@localhost;
 show grants for mysqltest_2@localhost;
 Grants for mysqltest_2@localhost
 GRANT USAGE ON *.* TO 'mysqltest_2'@'localhost'
@@ -350,7 +350,7 @@ select host,db,user,select_priv,insert_priv from mysql.db where db="mysqltest1";
 host	db	user	select_priv	insert_priv
 delete from mysql.user where user='test6123';
 drop database mysqltest1;
-use test;
+use grant_db;
 create table t1 (a int);
 grant ALL PRIVILEGES on *.* to drop_user2@localhost with GRANT OPTION;
 Warnings:
@@ -363,44 +363,44 @@ drop user drop_user2@localhost;
 grant ALL PRIVILEGES on *.* to drop_user@localhost with GRANT OPTION;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
-grant ALL PRIVILEGES on test.* to drop_user@localhost with GRANT OPTION;
-grant select(a) on test.t1 to drop_user@localhost;
+grant ALL PRIVILEGES on grant_db.* to drop_user@localhost with GRANT OPTION;
+grant select(a) on grant_db.t1 to drop_user@localhost;
 show grants for drop_user@localhost;
 Grants for drop_user@localhost
 GRANT ALL PRIVILEGES ON *.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT ALL PRIVILEGES ON `test`.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT SELECT (a) ON `test`.`t1` TO 'drop_user'@'localhost'
+GRANT ALL PRIVILEGES ON `grant_db`.* TO 'drop_user'@'localhost' WITH GRANT OPTION
+GRANT SELECT (a) ON `grant_db`.`t1` TO 'drop_user'@'localhost'
 set sql_mode=ansi_quotes;
 show grants for drop_user@localhost;
 Grants for drop_user@localhost
 GRANT ALL PRIVILEGES ON *.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT ALL PRIVILEGES ON "test".* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT SELECT (a) ON "test"."t1" TO 'drop_user'@'localhost'
+GRANT ALL PRIVILEGES ON "grant_db".* TO 'drop_user'@'localhost' WITH GRANT OPTION
+GRANT SELECT (a) ON "grant_db"."t1" TO 'drop_user'@'localhost'
 set sql_mode=default;
 set sql_quote_show_create=0;
 show grants for drop_user@localhost;
 Grants for drop_user@localhost
 GRANT ALL PRIVILEGES ON *.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT ALL PRIVILEGES ON test.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT SELECT (a) ON test.t1 TO 'drop_user'@'localhost'
+GRANT ALL PRIVILEGES ON grant_db.* TO 'drop_user'@'localhost' WITH GRANT OPTION
+GRANT SELECT (a) ON grant_db.t1 TO 'drop_user'@'localhost'
 set sql_mode="ansi_quotes";
 show grants for drop_user@localhost;
 Grants for drop_user@localhost
 GRANT ALL PRIVILEGES ON *.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT ALL PRIVILEGES ON test.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT SELECT (a) ON test.t1 TO 'drop_user'@'localhost'
+GRANT ALL PRIVILEGES ON grant_db.* TO 'drop_user'@'localhost' WITH GRANT OPTION
+GRANT SELECT (a) ON grant_db.t1 TO 'drop_user'@'localhost'
 set sql_quote_show_create=1;
 show grants for drop_user@localhost;
 Grants for drop_user@localhost
 GRANT ALL PRIVILEGES ON *.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT ALL PRIVILEGES ON "test".* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT SELECT (a) ON "test"."t1" TO 'drop_user'@'localhost'
+GRANT ALL PRIVILEGES ON "grant_db".* TO 'drop_user'@'localhost' WITH GRANT OPTION
+GRANT SELECT (a) ON "grant_db"."t1" TO 'drop_user'@'localhost'
 set sql_mode="";
 show grants for drop_user@localhost;
 Grants for drop_user@localhost
 GRANT ALL PRIVILEGES ON *.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT ALL PRIVILEGES ON `test`.* TO 'drop_user'@'localhost' WITH GRANT OPTION
-GRANT SELECT (a) ON `test`.`t1` TO 'drop_user'@'localhost'
+GRANT ALL PRIVILEGES ON `grant_db`.* TO 'drop_user'@'localhost' WITH GRANT OPTION
+GRANT SELECT (a) ON `grant_db`.`t1` TO 'drop_user'@'localhost'
 revoke all privileges, grant option from drop_user@localhost;
 show grants for drop_user@localhost;
 Grants for drop_user@localhost
@@ -408,13 +408,13 @@ GRANT USAGE ON *.* TO 'drop_user'@'localhost'
 drop user drop_user@localhost;
 revoke all privileges, grant option from drop_user@localhost;
 ERROR HY000: Can't revoke all privileges for one or more of the requested users
-grant select(a) on test.t1 to drop_user1@localhost;
+grant select(a) on grant_db.t1 to drop_user1@localhost;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
-grant select on test.t1 to drop_user2@localhost;
+grant select on grant_db.t1 to drop_user2@localhost;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
-grant select on test.* to drop_user3@localhost;
+grant select on grant_db.* to drop_user3@localhost;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
 grant select on *.* to drop_user4@localhost;
@@ -432,11 +432,11 @@ drop table t1;
 grant usage on *.* to mysqltest_1@localhost identified by "password";
 Warnings:
 Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
-grant select, update, insert on test.* to mysqltest_1@localhost;
+grant select, update, insert on grant_db.* to mysqltest_1@localhost;
 show grants for mysqltest_1@localhost;
 Grants for mysqltest_1@localhost
 GRANT USAGE ON *.* TO 'mysqltest_1'@'localhost'
-GRANT SELECT, INSERT, UPDATE ON `test`.* TO 'mysqltest_1'@'localhost'
+GRANT SELECT, INSERT, UPDATE ON `grant_db`.* TO 'mysqltest_1'@'localhost'
 drop user mysqltest_1@localhost;
 SET NAMES koi8r;
 CREATE DATABASE ��;
@@ -465,7 +465,7 @@ REVOKE SELECT (���) ON ��.��� FROM ����@localhost;
 DROP USER ����@localhost;
 DROP DATABASE ��;
 SET NAMES latin1;
-USE test;
+USE grant_db;
 CREATE TABLE t1 (a int );
 CREATE TABLE t2 LIKE t1;
 CREATE TABLE t3 LIKE t1;
@@ -498,26 +498,26 @@ GRANT ALL ON testdb7.* TO testuser@localhost;
 GRANT ALL ON testdb8.* TO testuser@localhost;
 GRANT ALL ON testdb9.* TO testuser@localhost;
 GRANT ALL ON testdb10.* TO testuser@localhost;
-GRANT SELECT ON test.t1 TO testuser@localhost;
-GRANT SELECT ON test.t2 TO testuser@localhost;
-GRANT SELECT ON test.t3 TO testuser@localhost;
-GRANT SELECT ON test.t4 TO testuser@localhost;
-GRANT SELECT ON test.t5 TO testuser@localhost;
-GRANT SELECT ON test.t6 TO testuser@localhost;
-GRANT SELECT ON test.t7 TO testuser@localhost;
-GRANT SELECT ON test.t8 TO testuser@localhost;
-GRANT SELECT ON test.t9 TO testuser@localhost;
-GRANT SELECT ON test.t10 TO testuser@localhost;
-GRANT SELECT (a) ON test.t1 TO testuser@localhost;
-GRANT SELECT (a) ON test.t2 TO testuser@localhost;
-GRANT SELECT (a) ON test.t3 TO testuser@localhost;
-GRANT SELECT (a) ON test.t4 TO testuser@localhost;
-GRANT SELECT (a) ON test.t5 TO testuser@localhost;
-GRANT SELECT (a) ON test.t6 TO testuser@localhost;
-GRANT SELECT (a) ON test.t7 TO testuser@localhost;
-GRANT SELECT (a) ON test.t8 TO testuser@localhost;
-GRANT SELECT (a) ON test.t9 TO testuser@localhost;
-GRANT SELECT (a) ON test.t10 TO testuser@localhost;
+GRANT SELECT ON grant_db.t1 TO testuser@localhost;
+GRANT SELECT ON grant_db.t2 TO testuser@localhost;
+GRANT SELECT ON grant_db.t3 TO testuser@localhost;
+GRANT SELECT ON grant_db.t4 TO testuser@localhost;
+GRANT SELECT ON grant_db.t5 TO testuser@localhost;
+GRANT SELECT ON grant_db.t6 TO testuser@localhost;
+GRANT SELECT ON grant_db.t7 TO testuser@localhost;
+GRANT SELECT ON grant_db.t8 TO testuser@localhost;
+GRANT SELECT ON grant_db.t9 TO testuser@localhost;
+GRANT SELECT ON grant_db.t10 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t1 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t2 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t3 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t4 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t5 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t6 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t7 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t8 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t9 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t10 TO testuser@localhost;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM testuser@localhost;
 SHOW GRANTS FOR testuser@localhost;
 Grants for testuser@localhost
@@ -534,7 +534,6 @@ DROP DATABASE testdb7;
 DROP DATABASE testdb8;
 DROP DATABASE testdb9;
 DROP DATABASE testdb10;
-use test;
 create table t1(a int, b int, c int, d int);
 grant insert(b), insert(c), insert(d), insert(a) on t1 to grant_user@localhost;
 Warnings:
@@ -542,13 +541,13 @@ Warning	1287	Using GRANT for creating new user is deprecated and will be removed
 show grants for grant_user@localhost;
 Grants for grant_user@localhost
 GRANT USAGE ON *.* TO 'grant_user'@'localhost'
-GRANT INSERT (a, d, c, b) ON `test`.`t1` TO 'grant_user'@'localhost'
+GRANT INSERT (a, d, c, b) ON `grant_db`.`t1` TO 'grant_user'@'localhost'
 select Host,Db,User,Table_name,Column_name,Column_priv from mysql.columns_priv order by Column_name;
 Host	Db	User	Table_name	Column_name	Column_priv
-localhost	test	grant_user	t1	a	Insert
-localhost	test	grant_user	t1	b	Insert
-localhost	test	grant_user	t1	c	Insert
-localhost	test	grant_user	t1	d	Insert
+localhost	grant_db	grant_user	t1	a	Insert
+localhost	grant_db	grant_user	t1	b	Insert
+localhost	grant_db	grant_user	t1	c	Insert
+localhost	grant_db	grant_user	t1	d	Insert
 revoke ALL PRIVILEGES on t1 from grant_user@localhost;
 show grants for grant_user@localhost;
 Grants for grant_user@localhost
@@ -723,7 +722,7 @@ Grantor	char(93)	NO	MUL
 Timestamp	timestamp	NO		CURRENT_TIMESTAMP	on update CURRENT_TIMESTAMP
 Table_priv	set('Select','Insert','Update','Delete','Create','Drop','Grant','References','Index','Alter','Create View','Show view','Trigger')	NO			
 Column_priv	set('Select','Insert','Update','References')	NO			
-use test;
+use grant_db;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM dummy@localhost;
 DROP USER dummy@localhost;
 DROP DATABASE mysqltest;
@@ -757,7 +756,7 @@ PRIVILEGE_TYPE SEPARATOR ', ') AS PRIVILEGES FROM TABLE_PRIVILEGES WHERE GRANTEE
 TABLE_SCHEMA	TABLE_NAME	PRIVILEGES
 mysqltest	dummytable	CREATE VIEW
 mysqltest	dummyview	CREATE VIEW
-use test;
+use grant_db;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM dummy@localhost;
 DROP USER dummy@localhost;
 DROP DATABASE mysqltest;
@@ -791,7 +790,7 @@ PRIVILEGE_TYPE SEPARATOR ', ') AS PRIVILEGES FROM TABLE_PRIVILEGES WHERE GRANTEE
 TABLE_SCHEMA	TABLE_NAME	PRIVILEGES
 mysqltest	dummytable	SHOW VIEW
 mysqltest	dummyview	SHOW VIEW
-use test;
+use grant_db;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM dummy@localhost;
 DROP USER dummy@localhost;
 DROP DATABASE mysqltest;
@@ -800,7 +799,7 @@ insert into tables_priv values ('','test_db','mysqltest_1','test_table','test_gr
 flush privileges;
 delete from tables_priv where host = '' and user = 'mysqltest_1';
 flush privileges;
-use test;
+use grant_db;
 set @user123="non-existent";
 select * from mysql.db where user=@user123;
 Host	Db	User	Select_priv	Insert_priv	Update_priv	Delete_priv	Create_priv	Drop_priv	Grant_priv	References_priv	Index_priv	Alter_priv	Create_tmp_table_priv	Lock_tables_priv	Create_view_priv	Show_view_priv	Create_routine_priv	Alter_routine_priv	Execute_priv	Event_priv	Trigger_priv
@@ -871,7 +870,7 @@ revoke all privileges, grant option from user27515@localhost;
 drop user user27515@localhost;
 drop database db27515;
 End of 4.1 tests
-use test;
+use grant_db;
 create table t1 (a int);
 create table t2 as select * from mysql.user where user='';
 delete from mysql.user where user='';
@@ -892,49 +891,66 @@ mysqltest_8	'%'
 mysqltest_8	'host8'
 Schema privileges
 grant select on mysqltest.* to mysqltest_8@'';
+grant select on grant_db.* to mysqltest_8@'';
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
 GRANT SELECT ON `mysqltest`.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 grant select on mysqltest.* to mysqltest_8@;
+grant select on grant_db.* to mysqltest_8@;
 show grants for mysqltest_8@;
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
 GRANT SELECT ON `mysqltest`.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 grant select on mysqltest.* to mysqltest_8;
+grant select on grant_db.* to mysqltest_8;
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
 GRANT SELECT ON `mysqltest`.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 select * from  information_schema.schema_privileges
 where grantee like "'mysqltest_8'%";
 GRANTEE	TABLE_CATALOG	TABLE_SCHEMA	PRIVILEGE_TYPE	IS_GRANTABLE
+'mysqltest_8'@'%'	def	grant_db	SELECT	NO
 'mysqltest_8'@'%'	def	mysqltest	SELECT	NO
+'mysqltest_8'@''	def	grant_db	SELECT	NO
 'mysqltest_8'@''	def	mysqltest	SELECT	NO
+select * from t1;
+a
 revoke select on mysqltest.* from mysqltest_8@'';
 revoke select on mysqltest.* from mysqltest_8;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 select * from  information_schema.schema_privileges
 where grantee like "'mysqltest_8'%";
 GRANTEE	TABLE_CATALOG	TABLE_SCHEMA	PRIVILEGE_TYPE	IS_GRANTABLE
+'mysqltest_8'@'%'	def	grant_db	SELECT	NO
+'mysqltest_8'@''	def	grant_db	SELECT	NO
 flush privileges;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 show grants for mysqltest_8@;
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 grant select on mysqltest.* to mysqltest_8@'';
 flush privileges;
 show grants for mysqltest_8@;
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
 GRANT SELECT ON `mysqltest`.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 revoke select on mysqltest.* from mysqltest_8@'';
 flush privileges;
 Column privileges
@@ -943,82 +959,102 @@ grant update (a) on t1 to mysqltest_8;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
-GRANT UPDATE (a) ON `test`.`t1` TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
+GRANT UPDATE (a) ON `grant_db`.`t1` TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
-GRANT UPDATE (a) ON `test`.`t1` TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
+GRANT UPDATE (a) ON `grant_db`.`t1` TO 'mysqltest_8'@'%'
 flush privileges;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
-GRANT UPDATE (a) ON `test`.`t1` TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
+GRANT UPDATE (a) ON `grant_db`.`t1` TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
-GRANT UPDATE (a) ON `test`.`t1` TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
+GRANT UPDATE (a) ON `grant_db`.`t1` TO 'mysqltest_8'@'%'
 select * from  information_schema.column_privileges;
 GRANTEE	TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	COLUMN_NAME	PRIVILEGE_TYPE	IS_GRANTABLE
-'mysqltest_8'@'%'	def	test	t1	a	UPDATE	NO
-'mysqltest_8'@''	def	test	t1	a	UPDATE	NO
+'mysqltest_8'@'%'	def	grant_db	t1	a	UPDATE	NO
+'mysqltest_8'@''	def	grant_db	t1	a	UPDATE	NO
+select * from t1;
+a
 revoke update (a) on t1 from mysqltest_8@'';
 revoke update (a) on t1 from mysqltest_8;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 select * from  information_schema.column_privileges;
 GRANTEE	TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	COLUMN_NAME	PRIVILEGE_TYPE	IS_GRANTABLE
 flush privileges;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 Table privileges
 grant update on t1 to mysqltest_8@'';
 grant update on t1 to mysqltest_8;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
-GRANT UPDATE ON `test`.`t1` TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
+GRANT UPDATE ON `grant_db`.`t1` TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
-GRANT UPDATE ON `test`.`t1` TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
+GRANT UPDATE ON `grant_db`.`t1` TO 'mysqltest_8'@'%'
 flush privileges;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
-GRANT UPDATE ON `test`.`t1` TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
+GRANT UPDATE ON `grant_db`.`t1` TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
-GRANT UPDATE ON `test`.`t1` TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
+GRANT UPDATE ON `grant_db`.`t1` TO 'mysqltest_8'@'%'
 select * from  information_schema.table_privileges where table_schema NOT IN ('sys','mysql');
 GRANTEE	TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	PRIVILEGE_TYPE	IS_GRANTABLE
-'mysqltest_8'@'%'	def	test	t1	UPDATE	NO
-'mysqltest_8'@''	def	test	t1	UPDATE	NO
+'mysqltest_8'@'%'	def	grant_db	t1	UPDATE	NO
+'mysqltest_8'@''	def	grant_db	t1	UPDATE	NO
+select * from t1;
+a
 revoke update on t1 from mysqltest_8@'';
 revoke update on t1 from mysqltest_8;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 select * from  information_schema.table_privileges where table_schema NOT IN ('sys','mysql');
 GRANTEE	TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	PRIVILEGE_TYPE	IS_GRANTABLE
 flush privileges;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 "DROP USER" should clear privileges
 grant all privileges on mysqltest.* to mysqltest_8@'';
 grant select on mysqltest.* to mysqltest_8@'';
@@ -1029,27 +1065,33 @@ show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
 GRANT ALL PRIVILEGES ON `mysqltest`.* TO 'mysqltest_8'@''
-GRANT UPDATE, UPDATE (a) ON `test`.`t1` TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
+GRANT UPDATE, UPDATE (a) ON `grant_db`.`t1` TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
 GRANT ALL PRIVILEGES ON `mysqltest`.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 select * from  information_schema.user_privileges
 where grantee like "'mysqltest_8'%";
 GRANTEE	TABLE_CATALOG	PRIVILEGE_TYPE	IS_GRANTABLE
 'mysqltest_8'@'%'	def	USAGE	NO
 'mysqltest_8'@''	def	USAGE	NO
 'mysqltest_8'@'host8'	def	USAGE	NO
+select * from t1;
+a
 flush privileges;
 show grants for mysqltest_8@'';
 Grants for mysqltest_8@
 GRANT USAGE ON *.* TO 'mysqltest_8'@''
 GRANT ALL PRIVILEGES ON `mysqltest`.* TO 'mysqltest_8'@''
-GRANT UPDATE, UPDATE (a) ON `test`.`t1` TO 'mysqltest_8'@''
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@''
+GRANT UPDATE, UPDATE (a) ON `grant_db`.`t1` TO 'mysqltest_8'@''
 show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
 GRANT ALL PRIVILEGES ON `mysqltest`.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 drop user mysqltest_8@'';
 show grants for mysqltest_8@'';
 ERROR 42000: There is no such grant defined for user 'mysqltest_8' on host ''
@@ -1057,13 +1099,14 @@ show grants for mysqltest_8;
 Grants for mysqltest_8@%
 GRANT USAGE ON *.* TO 'mysqltest_8'@'%'
 GRANT ALL PRIVILEGES ON `mysqltest`.* TO 'mysqltest_8'@'%'
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_8'@'%'
 select * from  information_schema.user_privileges
 where grantee like "'mysqltest_8'%";
 GRANTEE	TABLE_CATALOG	PRIVILEGE_TYPE	IS_GRANTABLE
 'mysqltest_8'@'%'	def	USAGE	NO
 'mysqltest_8'@'host8'	def	USAGE	NO
 drop user mysqltest_8;
-connect(localhost,mysqltest_8,,test_parallel_1,MASTER_PORT,MASTER_SOCKET);
+connect(localhost,mysqltest_8,,grant_db,MASTER_PORT,MASTER_SOCKET);
 ERROR 28000: Access denied for user 'mysqltest_8'@'localhost' (using password: NO)
 show grants for mysqltest_8;
 ERROR 42000: There is no such grant defined for user 'mysqltest_8' on host '%'
@@ -1157,7 +1200,7 @@ DROP TABLE mysqltest3.t_nn;
 DROP DATABASE mysqltest3;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'mysqltest_1'@'localhost';
 DROP USER 'mysqltest_1'@'localhost';
-USE test;
+USE grant_db;
 create user mysqltest1_thisisreallyreallyreallyreallyreallyireallyreallytoolong;
 ERROR HY000: String 'mysqltest1_thisisreallyreallyreallyreallyreallyireallyreallytoolong' is too long for user name (should be no longer than 32)
 CREATE DATABASE mysqltest1;
@@ -1225,7 +1268,7 @@ ALTER TABLE t1 RENAME TO t2;
 ERROR 42000: DROP command denied to user 'mysqltest_1'@'localhost' for table 't1'
 DROP USER mysqltest_1@localhost;
 DROP DATABASE mysqltest1;
-USE test;
+USE grant_db;
 GRANT CREATE ON mysqltest.* TO 1234567890abcdefGHIKL1234567890abcdefGHIKL@localhost;
 ERROR HY000: String '1234567890abcdefGHIKL1234567890abcdefGHIKL' is too long for user name (should be no longer than 32)
 GRANT CREATE ON mysqltest.* TO some_user_name@1234567890abcdefghij1234567890abcdefghij1234567890abcdefghijQWERTY;
@@ -1267,7 +1310,7 @@ USE bug23556;
 TRUNCATE t1;
 USE bug23556;
 DROP TABLE t1;
-USE test;
+USE grant_db;
 DROP DATABASE bug23556;
 DROP USER bug23556@localhost;
 GRANT PROCESS ON * TO user@localhost;
@@ -1294,14 +1337,14 @@ Warning	1287	Using GRANT for creating new user is deprecated and will be removed
 GRANT EXECUTE ON PROCEDURE mysqltest2.p_inv TO mysqltest_1@localhost;
 GRANT EXECUTE ON FUNCTION mysqltest3.f_def TO mysqltest_1@localhost;
 GRANT EXECUTE ON FUNCTION mysqltest4.f_inv TO mysqltest_1@localhost;
-GRANT ALL PRIVILEGES ON test.* TO mysqltest_1@localhost;
+GRANT ALL PRIVILEGES ON grant_db.* TO mysqltest_1@localhost;
 
 ---> connection: bug9504_con1
 use mysqltest1;
 use mysqltest2;
 use mysqltest3;
 use mysqltest4;
-use test;
+use grant_db;
 CALL mysqltest1.p_def();
 1
 1
@@ -1403,32 +1446,32 @@ DROP DATABASE mysqltest1;
 DROP DATABASE mysqltest2;
 DROP USER mysqltest_1@localhost;
 DROP USER mysqltest_2@localhost;
-USE test;
+USE grant_db;
 CREATE TABLE t1 (f1 int, f2 int);
 INSERT INTO t1 VALUES(1,1), (2,2);
 CREATE DATABASE db27878;
 GRANT UPDATE(f1) ON t1 TO 'mysqltest_1'@'localhost';
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
-GRANT SELECT ON `test`.* TO 'mysqltest_1'@'localhost';
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_1'@'localhost';
 GRANT ALL ON db27878.* TO 'mysqltest_1'@'localhost';
 USE db27878;
-CREATE SQL SECURITY INVOKER VIEW db27878.v1 AS SELECT * FROM test.t1;
+CREATE SQL SECURITY INVOKER VIEW db27878.v1 AS SELECT * FROM grant_db.t1;
 USE db27878;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 UPDATE v1 SET f2 = 4;
 ERROR HY000: View 'db27878.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 SET sql_mode = default;
-SELECT * FROM test.t1;
+SELECT * FROM grant_db.t1;
 f1	f2
 1	1
 2	2
-REVOKE UPDATE (f1) ON `test`.`t1` FROM 'mysqltest_1'@'localhost';
-REVOKE SELECT ON `test`.* FROM 'mysqltest_1'@'localhost';
+REVOKE UPDATE (f1) ON `grant_db`.`t1` FROM 'mysqltest_1'@'localhost';
+REVOKE SELECT ON `grant_db`.* FROM 'mysqltest_1'@'localhost';
 REVOKE ALL ON db27878.* FROM 'mysqltest_1'@'localhost';
 DROP USER mysqltest_1@localhost;
 DROP DATABASE db27878;
-USE test;
+USE grant_db;
 DROP TABLE t1;
 #
 #  Bug#33275 Server crash when creating temporary table mysql.user
@@ -1436,29 +1479,29 @@ DROP TABLE t1;
 CREATE TEMPORARY TABLE mysql.user (id INT);
 FLUSH PRIVILEGES;
 DROP TABLE mysql.user;
-drop table if exists test;
+drop table if exists grant_db;
 Warnings:
-Note	1051	Unknown table 'test.test'
+Note	1051	Unknown table 'grant_db.grant_db'
 drop function if exists test_function;
 Warnings:
-Note	1305	FUNCTION test.test_function does not exist
+Note	1305	FUNCTION grant_db.test_function does not exist
 drop view if exists v1;
 Warnings:
-Note	1051	Unknown table 'test.v1'
-create table test (col1 varchar(30));
+Note	1051	Unknown table 'grant_db.v1'
+create table grant_db (col1 varchar(30));
 create function test_function() returns varchar(30)
 begin
 declare tmp varchar(30);
-select col1 from test limit 1 into tmp;
+select col1 from grant_db limit 1 into tmp;
 return '1';
 end|
-create view v1 as select test.* from test where test.col1=test_function();
+create view v1 as select grant_db.* from grant_db where grant_db.col1=test_function();
 grant update (col1) on v1 to 'greg'@'localhost';
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
 drop user 'greg'@'localhost';
 drop view v1;
-drop table test;
+drop table grant_db;
 drop function test_function;
 SELECT CURRENT_USER();
 CURRENT_USER()
@@ -1537,7 +1580,7 @@ ERROR 42000: Access denied for user 'testuser'@'localhost' to database 'mysqltes
 DROP DATABASE mysqltest1;
 DROP DATABASE mysqltest2;
 DROP USER testuser@localhost;
-use test;
+use grant_db;
 
 #
 # Test for bug #36544 "DROP USER does not remove stored function
@@ -1734,14 +1777,14 @@ drop user mysqluser11@localhost;
 drop database mysqltest1;
 End of 5.0 tests
 set names utf8;
-grant select on test.* to юзер_юзер@localhost;
+grant select on grant_db.* to юзер_юзер@localhost;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
 user()
 юзер_юзер@localhost
-revoke all on test.* from юзер_юзер@localhost;
+revoke all on grant_db.* from юзер_юзер@localhost;
 drop user юзер_юзер@localhost;
-grant select on test.* to очень_длинный_юзер_very_long_user@localhost;
+grant select on grant_db.* to очень_длинный_юзер_very_long_user@localhost;
 ERROR HY000: String 'очень_длинный_юзер_very_long_user' is too long for user name (should be no longer than 32)
 set names default;
 create database mysqltest;
@@ -1783,7 +1826,7 @@ revoke create, insert on mysqltest.t5 from mysqltest@localhost;
 revoke create, insert on mysqltest.t6 from mysqltest@localhost;
 drop user mysqltest@localhost;
 drop database mysqltest;
-use test;
+use grant_db;
 call mtr.add_suppression("Can't open and lock privilege tables");
 FLUSH PRIVILEGES without procs_priv table.
 RENAME TABLE mysql.procs_priv TO mysql.procs_gone;
@@ -1791,15 +1834,15 @@ FLUSH PRIVILEGES;
 ERROR 42S02: Table 'mysql.procs_priv' doesn't exist
 Assigning privileges without procs_priv table.
 CREATE DATABASE mysqltest1;
-CREATE PROCEDURE mysqltest1.test() SQL SECURITY DEFINER
+CREATE PROCEDURE mysqltest1.grant_db() SQL SECURITY DEFINER
 SELECT 1;
-CREATE FUNCTION mysqltest1.test() RETURNS INT RETURN 1;
-GRANT EXECUTE ON FUNCTION mysqltest1.test TO mysqltest_1@localhost;
+CREATE FUNCTION mysqltest1.grant_db() RETURNS INT RETURN 1;
+GRANT EXECUTE ON FUNCTION mysqltest1.grant_db TO mysqltest_1@localhost;
 ERROR 42S02: Table 'mysql.procs_priv' doesn't exist
-GRANT ALL PRIVILEGES ON test.* TO mysqltest_1@localhost;
+GRANT ALL PRIVILEGES ON grant_db.* TO mysqltest_1@localhost;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
-CALL mysqltest1.test();
+CALL mysqltest1.grant_db();
 1
 1
 DROP DATABASE mysqltest1;
@@ -1837,7 +1880,7 @@ DROP FUNCTION fn1;
 DROP FUNCTION fn2;
 DROP PROCEDURE sp3;
 DROP USER 'userbug33464'@'localhost';
-USE test;
+USE grant_db;
 DROP DATABASE dbbug33464;
 SET @@global.log_bin_trust_function_creators= @old_log_bin_trust_function_creators;
 CREATE USER user1;
@@ -1909,14 +1952,14 @@ SHOW GRANTS FOR mysqltest_1;
 Grants for mysqltest_1@%
 GRANT ALL PRIVILEGES ON *.* TO 'mysqltest_1'@'%'
 DROP USER mysqltest_1;
-USE test;
+USE grant_db;
 GRANT ALL ON * TO mysqltest_1;
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
 SHOW GRANTS FOR mysqltest_1;
 Grants for mysqltest_1@%
 GRANT USAGE ON *.* TO 'mysqltest_1'@'%'
-GRANT ALL PRIVILEGES ON `test`.* TO 'mysqltest_1'@'%'
+GRANT ALL PRIVILEGES ON `grant_db`.* TO 'mysqltest_1'@'%'
 DROP USER mysqltest_1;
 GRANT ALL ON *.* TO mysqltest_1;
 Warnings:
@@ -1932,7 +1975,7 @@ Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
 USE db2;
 CREATE TABLE t1 (a INT);
-USE test;
+USE grant_db;
 SELECT * FROM `../db2/tb2`;
 ERROR 42S02: Table 'db1.../db2/tb2' doesn't exist
 SELECT * FROM `../db2`.tb2;
@@ -2681,11 +2724,8 @@ Warning	1287	Using GRANT for creating new user is deprecated and will be removed
 SHOW GRANTS;
 Grants for untrusted@localhost
 GRANT USAGE ON *.* TO 'untrusted'@'localhost'
-SHOW DATABASES;
-Database
-information_schema
-test
-test_parallel_1
+SHOW DATABASES LIKE 'secret';
+Database (secret)
 # Both statements below should fail with the same error.
 # They used to give different errors, thereby
 # hinting that the secret database exists.
@@ -3026,3 +3066,4 @@ CREATE USER bug33578113;
 GRANT DROP ON performance_schema.* TO bug33578113;
 REVOKE DROP ON performance_schema.* FROM bug33578113;
 DROP USER bug33578113;
+DROP DATABASE grant_db;

@@ -30,17 +30,18 @@ set SESSION sql_mode= (select replace(@@SESSION.sql_mode,'NO_AUTO_CREATE_USER','
 
 # Cleanup
 --disable_warnings
-drop table if exists t1;
 drop database if exists mysqltest;
-drop database if exists test;
+drop database if exists grant_db;
 --enable_warnings
-create database test;
+
+create database grant_db;
+use grant_db;
 
 connect (master,localhost,root,,);
 connection master;
 SET NAMES binary;
 #
-# Test that SSL options works properly
+#Test that SSL options works properly
 #
 
 delete from mysql.user where user='mysqltest_1';
@@ -100,7 +101,7 @@ show grants for mysqltest_1@localhost;
 revoke all privileges on mysqltest.* from mysqltest_1@localhost;
 delete from mysql.user where user='mysqltest_1';
 flush privileges;
-grant usage on test.* to mysqltest_1@localhost with grant option;
+grant usage on grant_db.* to mysqltest_1@localhost with grant option;
 show grants for mysqltest_1@localhost;
 delete from mysql.user where user='mysqltest_1';
 delete from mysql.db where user='mysqltest_1';
@@ -113,8 +114,7 @@ show grants for mysqltest_1@localhost;
 #
 # Test what happens when you have same table and colum level grants
 #
-
-use test;
+use grant_db;
 create table t1 (a int);
 GRANT select,update,insert on t1 to mysqltest_1@localhost;
 GRANT select (a), update (a),insert(a), references(a) on t1 to mysqltest_1@localhost;
@@ -126,15 +126,15 @@ REVOKE select,update,insert,insert (a) on t1 from mysqltest_1@localhost;
 show grants for mysqltest_1@localhost;
 GRANT select,references on t1 to mysqltest_1@localhost;
 select table_priv,column_priv from mysql.tables_priv where user="mysqltest_1";
-grant all on test.* to mysqltest_3@localhost with grant option;
-revoke all on test.* from mysqltest_3@localhost;
+grant all on grant_db.* to mysqltest_3@localhost with grant option;
+revoke all on grant_db.* from mysqltest_3@localhost;
 show grants for mysqltest_3@localhost;
-revoke grant option on test.* from mysqltest_3@localhost;
+revoke grant option on grant_db.* from mysqltest_3@localhost;
 show grants for mysqltest_3@localhost;
-grant all on test.t1 to mysqltest_2@localhost with grant option;
-revoke all on test.t1 from mysqltest_2@localhost;
+grant all on grant_db.t1 to mysqltest_2@localhost with grant option;
+revoke all on grant_db.t1 from mysqltest_2@localhost;
 show grants for mysqltest_2@localhost;
-revoke grant option on test.t1 from mysqltest_2@localhost;
+revoke grant option on grant_db.t1 from mysqltest_2@localhost;
 show grants for mysqltest_2@localhost;
 delete from mysql.user where user='mysqltest_1' or user="mysqltest_2" or user="mysqltest_3";
 delete from mysql.db where user='mysqltest_1' or user="mysqltest_2" or user="mysqltest_3";
@@ -177,7 +177,7 @@ drop database mysqltest1;
 #
 # Test for 'drop user', 'revoke privileges, grant'
 #
-use test;
+use grant_db;
 create table t1 (a int);
 grant ALL PRIVILEGES on *.* to drop_user2@localhost with GRANT OPTION;
 show grants for drop_user2@localhost;
@@ -185,8 +185,8 @@ revoke all privileges, grant option from drop_user2@localhost;
 drop user drop_user2@localhost;
 
 grant ALL PRIVILEGES on *.* to drop_user@localhost with GRANT OPTION;
-grant ALL PRIVILEGES on test.* to drop_user@localhost with GRANT OPTION;
-grant select(a) on test.t1 to drop_user@localhost;
+grant ALL PRIVILEGES on grant_db.* to drop_user@localhost with GRANT OPTION;
+grant select(a) on grant_db.t1 to drop_user@localhost;
 show grants for drop_user@localhost;
 
 #
@@ -211,9 +211,9 @@ drop user drop_user@localhost;
 --error ER_REVOKE_GRANTS
 revoke all privileges, grant option from drop_user@localhost;
 
-grant select(a) on test.t1 to drop_user1@localhost;
-grant select on test.t1 to drop_user2@localhost;
-grant select on test.* to drop_user3@localhost;
+grant select(a) on grant_db.t1 to drop_user1@localhost;
+grant select on grant_db.t1 to drop_user2@localhost;
+grant select on grant_db.* to drop_user3@localhost;
 grant select on *.* to drop_user4@localhost;
 # Drop user now implicitly revokes all privileges.
 drop user drop_user1@localhost, drop_user2@localhost, drop_user3@localhost,
@@ -226,7 +226,7 @@ drop user drop_user1@localhost, drop_user2@localhost, drop_user3@localhost,
 drop_user4@localhost;
 drop table t1;
 grant usage on *.* to mysqltest_1@localhost identified by "password";
-grant select, update, insert on test.* to mysqltest_1@localhost;
+grant select, update, insert on grant_db.* to mysqltest_1@localhost;
 show grants for mysqltest_1@localhost;
 drop user mysqltest_1@localhost;
 
@@ -259,7 +259,7 @@ SET NAMES latin1;
 #
 # Bug#5831 REVOKE ALL PRIVILEGES, GRANT OPTION does not revoke everything
 #
-USE test;
+USE grant_db;
 CREATE TABLE t1 (a int );
 CREATE TABLE t2 LIKE t1;
 CREATE TABLE t3 LIKE t1;
@@ -290,26 +290,26 @@ GRANT ALL ON testdb7.* TO testuser@localhost;
 GRANT ALL ON testdb8.* TO testuser@localhost;
 GRANT ALL ON testdb9.* TO testuser@localhost;
 GRANT ALL ON testdb10.* TO testuser@localhost;
-GRANT SELECT ON test.t1 TO testuser@localhost;
-GRANT SELECT ON test.t2 TO testuser@localhost;
-GRANT SELECT ON test.t3 TO testuser@localhost;
-GRANT SELECT ON test.t4 TO testuser@localhost;
-GRANT SELECT ON test.t5 TO testuser@localhost;
-GRANT SELECT ON test.t6 TO testuser@localhost;
-GRANT SELECT ON test.t7 TO testuser@localhost;
-GRANT SELECT ON test.t8 TO testuser@localhost;
-GRANT SELECT ON test.t9 TO testuser@localhost;
-GRANT SELECT ON test.t10 TO testuser@localhost;
-GRANT SELECT (a) ON test.t1 TO testuser@localhost;
-GRANT SELECT (a) ON test.t2 TO testuser@localhost;
-GRANT SELECT (a) ON test.t3 TO testuser@localhost;
-GRANT SELECT (a) ON test.t4 TO testuser@localhost;
-GRANT SELECT (a) ON test.t5 TO testuser@localhost;
-GRANT SELECT (a) ON test.t6 TO testuser@localhost;
-GRANT SELECT (a) ON test.t7 TO testuser@localhost;
-GRANT SELECT (a) ON test.t8 TO testuser@localhost;
-GRANT SELECT (a) ON test.t9 TO testuser@localhost;
-GRANT SELECT (a) ON test.t10 TO testuser@localhost;
+GRANT SELECT ON grant_db.t1 TO testuser@localhost;
+GRANT SELECT ON grant_db.t2 TO testuser@localhost;
+GRANT SELECT ON grant_db.t3 TO testuser@localhost;
+GRANT SELECT ON grant_db.t4 TO testuser@localhost;
+GRANT SELECT ON grant_db.t5 TO testuser@localhost;
+GRANT SELECT ON grant_db.t6 TO testuser@localhost;
+GRANT SELECT ON grant_db.t7 TO testuser@localhost;
+GRANT SELECT ON grant_db.t8 TO testuser@localhost;
+GRANT SELECT ON grant_db.t9 TO testuser@localhost;
+GRANT SELECT ON grant_db.t10 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t1 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t2 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t3 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t4 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t5 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t6 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t7 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t8 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t9 TO testuser@localhost;
+GRANT SELECT (a) ON grant_db.t10 TO testuser@localhost;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM testuser@localhost;
 SHOW GRANTS FOR testuser@localhost;
 DROP USER testuser@localhost;
@@ -328,7 +328,7 @@ DROP DATABASE testdb10;
 #
 # Bug#6932 a problem with 'revoke ALL PRIVILEGES'
 #
-use test;
+
 create table t1(a int, b int, c int, d int);
 grant insert(b), insert(c), insert(d), insert(a) on t1 to grant_user@localhost;
 show grants for grant_user@localhost;
@@ -433,7 +433,7 @@ SHOW PRIVILEGES;
 #
 # Rights for renaming test (Bug#3270)
 #
-connect (root,localhost,root,,test,$MASTER_MYPORT,$MASTER_MYSOCK);
+connect (root,localhost,root,,grant_db,$MASTER_MYPORT,$MASTER_MYSOCK);
 connection root;
 --disable_warnings
 create database mysqltest;
@@ -474,7 +474,7 @@ SELECT TABLE_SCHEMA, TABLE_NAME, GROUP_CONCAT(PRIVILEGE_TYPE ORDER BY
 PRIVILEGE_TYPE SEPARATOR ', ') AS PRIVILEGES FROM TABLE_PRIVILEGES WHERE GRANTEE
 = '\'dummy\'@\'localhost\'' GROUP BY TABLE_SCHEMA, TABLE_NAME;
 SHOW FIELDS FROM mysql.tables_priv;
-use test;
+use grant_db;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM dummy@localhost;
 DROP USER dummy@localhost;
 DROP DATABASE mysqltest;
@@ -497,7 +497,7 @@ SHOW GRANTS FOR dummy@localhost;
 SELECT TABLE_SCHEMA, TABLE_NAME, GROUP_CONCAT(PRIVILEGE_TYPE ORDER BY
 PRIVILEGE_TYPE SEPARATOR ', ') AS PRIVILEGES FROM TABLE_PRIVILEGES WHERE GRANTEE
 = '\'dummy\'@\'localhost\'' GROUP BY TABLE_SCHEMA, TABLE_NAME;
-use test;
+use grant_db;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM dummy@localhost;
 DROP USER dummy@localhost;
 DROP DATABASE mysqltest;
@@ -519,7 +519,7 @@ SHOW GRANTS FOR dummy@localhost;
 SELECT TABLE_SCHEMA, TABLE_NAME, GROUP_CONCAT(PRIVILEGE_TYPE ORDER BY
 PRIVILEGE_TYPE SEPARATOR ', ') AS PRIVILEGES FROM TABLE_PRIVILEGES WHERE GRANTEE
 = '\'dummy\'@\'localhost\'' GROUP BY TABLE_SCHEMA, TABLE_NAME;
-use test;
+use grant_db;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM dummy@localhost;
 DROP USER dummy@localhost;
 DROP DATABASE mysqltest;
@@ -532,7 +532,7 @@ insert into tables_priv values ('','test_db','mysqltest_1','test_table','test_gr
 flush privileges;
 delete from tables_priv where host = '' and user = 'mysqltest_1';
 flush privileges;
-use test;
+use grant_db;
 
 #
 # Bug#10892 user variables not auto cast for comparisons
@@ -606,7 +606,7 @@ drop database db27515;
 #
 # Bug#16297 In memory grant tables not flushed when users's hostname is ""
 #
-use test;
+use grant_db;
 create table t1 (a int);
 
 # Backup anonymous users and remove them. (They get in the way of
@@ -632,15 +632,19 @@ select user, QUOTE(host) from mysql.user where user="mysqltest_8";
 
 --echo Schema privileges
 grant select on mysqltest.* to mysqltest_8@'';
+grant select on grant_db.* to mysqltest_8@'';
 show grants for mysqltest_8@'';
 grant select on mysqltest.* to mysqltest_8@;
+grant select on grant_db.* to mysqltest_8@;
 show grants for mysqltest_8@;
 grant select on mysqltest.* to mysqltest_8;
+grant select on grant_db.* to mysqltest_8;
 show grants for mysqltest_8;
 --sorted_result
 select * from  information_schema.schema_privileges
 where grantee like "'mysqltest_8'%";
-connect (conn3,localhost,mysqltest_8,,);
+connect (conn3,localhost,mysqltest_8,,grant_db);
+select * from t1;
 disconnect conn3;
 connection master;
 revoke select on mysqltest.* from mysqltest_8@'';
@@ -669,7 +673,8 @@ show grants for mysqltest_8@'';
 show grants for mysqltest_8;
 --sorted_result
 select * from  information_schema.column_privileges;
-connect (conn4,localhost,mysqltest_8,,);
+connect (conn4,localhost,mysqltest_8,,grant_db);
+select * from t1;
 disconnect conn4;
 connection master;
 revoke update (a) on t1 from mysqltest_8@'';
@@ -692,7 +697,8 @@ show grants for mysqltest_8@'';
 show grants for mysqltest_8;
 --sorted_result
 select * from  information_schema.table_privileges where table_schema NOT IN ('sys','mysql');
-connect (conn5,localhost,mysqltest_8,,);
+connect (conn5,localhost,mysqltest_8,,grant_db);
+select * from t1;
 disconnect conn5;
 connection master;
 revoke update on t1 from mysqltest_8@'';
@@ -716,7 +722,8 @@ show grants for mysqltest_8;
 --sorted_result
 select * from  information_schema.user_privileges
 where grantee like "'mysqltest_8'%";
-connect (conn5,localhost,mysqltest_8,,);
+connect (conn5,localhost,mysqltest_8,,grant_db);
+select * from t1;
 disconnect conn5;
 connection master;
 flush privileges;
@@ -732,7 +739,7 @@ where grantee like "'mysqltest_8'%";
 drop user mysqltest_8;
 --replace_result $MASTER_MYSOCK MASTER_SOCKET $MASTER_MYPORT MASTER_PORT
 --error ER_ACCESS_DENIED_ERROR
-connect (conn6,localhost,mysqltest_8,,);
+connect (conn6,localhost,mysqltest_8,,grant_db);
 connection master;
 --error ER_NONEXISTING_GRANT
 show grants for mysqltest_8;
@@ -848,7 +855,7 @@ REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'mysqltest_1'@'localhost';
 DROP USER 'mysqltest_1'@'localhost';
 
 # restore the original database
-USE test;
+USE grant_db;
 connection default;
 disconnect master;
 
@@ -942,7 +949,7 @@ ALTER TABLE t1 RENAME TO t2;
 
 DROP USER mysqltest_1@localhost;
 DROP DATABASE mysqltest1;
-USE test;
+USE grant_db;
 
 # Working with database-level privileges.
 
@@ -1017,7 +1024,7 @@ TRUNCATE t1;
 connection default;
 USE bug23556;
 DROP TABLE t1;
-USE test;
+USE grant_db;
 DROP DATABASE bug23556;
 DROP USER bug23556@localhost;
 connection default;
@@ -1072,7 +1079,7 @@ GRANT EXECUTE ON PROCEDURE mysqltest2.p_inv TO mysqltest_1@localhost;
 GRANT EXECUTE ON FUNCTION mysqltest3.f_def TO mysqltest_1@localhost;
 GRANT EXECUTE ON FUNCTION mysqltest4.f_inv TO mysqltest_1@localhost;
 
-GRANT ALL PRIVILEGES ON test.* TO mysqltest_1@localhost;
+GRANT ALL PRIVILEGES ON grant_db.* TO mysqltest_1@localhost;
 
 # Test.
 
@@ -1092,7 +1099,7 @@ use mysqltest4;
 
 # - Check that we can call stored routines;
 
-use test;
+use grant_db;
 
 CALL mysqltest1.p_def();
 
@@ -1121,7 +1128,7 @@ DROP USER mysqltest_1@localhost;
 #
 # Bug#27337 Privileges are not restored properly.
 #
-# Actually, the patch for this bugs fixes two problems. So, here are two test
+# Actually, the patch for this bugs fixes two problems. So, here are two tests
 # cases.
 
 # Test case 1: privileges are not restored properly after calling a stored
@@ -1267,31 +1274,31 @@ DROP USER mysqltest_2@localhost;
 # Bug#27878 Unchecked privileges on a view referring to a table from another
 #           database.
 #
-USE test;
+USE grant_db;
 CREATE TABLE t1 (f1 int, f2 int);
 INSERT INTO t1 VALUES(1,1), (2,2);
 CREATE DATABASE db27878;
 GRANT UPDATE(f1) ON t1 TO 'mysqltest_1'@'localhost';
-GRANT SELECT ON `test`.* TO 'mysqltest_1'@'localhost';
+GRANT SELECT ON `grant_db`.* TO 'mysqltest_1'@'localhost';
 GRANT ALL ON db27878.* TO 'mysqltest_1'@'localhost';
 USE db27878;
-CREATE SQL SECURITY INVOKER VIEW db27878.v1 AS SELECT * FROM test.t1;
-connect (user1,localhost,mysqltest_1,,test);
+CREATE SQL SECURITY INVOKER VIEW db27878.v1 AS SELECT * FROM grant_db.t1;
+connect (user1,localhost,mysqltest_1,,grant_db);
 connection user1;
 USE db27878;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 --error 1356
 UPDATE v1 SET f2 = 4;
 SET sql_mode = default;
-SELECT * FROM test.t1;
+SELECT * FROM grant_db.t1;
 disconnect user1;
 connection default;
-REVOKE UPDATE (f1) ON `test`.`t1` FROM 'mysqltest_1'@'localhost';
-REVOKE SELECT ON `test`.* FROM 'mysqltest_1'@'localhost';
+REVOKE UPDATE (f1) ON `grant_db`.`t1` FROM 'mysqltest_1'@'localhost';
+REVOKE SELECT ON `grant_db`.* FROM 'mysqltest_1'@'localhost';
 REVOKE ALL ON db27878.* FROM 'mysqltest_1'@'localhost';
 DROP USER mysqltest_1@localhost;
 DROP DATABASE db27878;
-USE test;
+USE grant_db;
 DROP TABLE t1;
 
 --echo #
@@ -1305,23 +1312,23 @@ DROP TABLE mysql.user;
 #
 # Bug#33201 Crash occurs when granting update privilege on one column of a view
 #
-drop table if exists test;
+drop table if exists grant_db;
 drop function if exists test_function;
 drop view if exists v1;
-create table test (col1 varchar(30));
+create table grant_db (col1 varchar(30));
 delimiter |;
 create function test_function() returns varchar(30)
 begin
         declare tmp varchar(30);
-        select col1 from test limit 1 into tmp;
+        select col1 from grant_db limit 1 into tmp;
         return '1';
 end|
 delimiter ;|
-create view v1 as select test.* from test where test.col1=test_function();
+create view v1 as select grant_db.* from grant_db where grant_db.col1=test_function();
 grant update (col1) on v1 to 'greg'@'localhost';
 drop user 'greg'@'localhost';
 drop view v1;
-drop table test;
+drop table grant_db;
 drop function test_function;
 
 #
@@ -1429,7 +1436,7 @@ CALL p3;
 DROP DATABASE mysqltest1;
 DROP DATABASE mysqltest2;
 DROP USER testuser@localhost;
-use test;
+use grant_db;
 --echo
 
 
@@ -1616,12 +1623,12 @@ drop database mysqltest1;
 #
 --character_set utf8
 set names utf8;
-grant select on test.* to юзер_юзер@localhost;
+grant select on grant_db.* to юзер_юзер@localhost;
 --execw $MYSQL --default-character-set=utf8 --user=юзер_юзер -e "select user()"
-revoke all on test.* from юзер_юзер@localhost;
+revoke all on grant_db.* from юзер_юзер@localhost;
 drop user юзер_юзер@localhost;
 --error ER_WRONG_STRING_LENGTH
-grant select on test.* to очень_длинный_юзер_very_long_user@localhost;
+grant select on grant_db.* to очень_длинный_юзер_very_long_user@localhost;
 set names default;
 
 #
@@ -1698,7 +1705,7 @@ drop user mysqltest@localhost;
 
 disconnect user1;
 drop database mysqltest;
-use test;
+use grant_db;
 
 
 #
@@ -1713,13 +1720,13 @@ RENAME TABLE mysql.procs_priv TO mysql.procs_gone;
 FLUSH PRIVILEGES;
 --echo Assigning privileges without procs_priv table.
 CREATE DATABASE mysqltest1;
-CREATE PROCEDURE mysqltest1.test() SQL SECURITY DEFINER
+CREATE PROCEDURE mysqltest1.grant_db() SQL SECURITY DEFINER
   SELECT 1;
-CREATE FUNCTION mysqltest1.test() RETURNS INT RETURN 1;
+CREATE FUNCTION mysqltest1.grant_db() RETURNS INT RETURN 1;
 --error ER_NO_SUCH_TABLE
-GRANT EXECUTE ON FUNCTION mysqltest1.test TO mysqltest_1@localhost;
-GRANT ALL PRIVILEGES ON test.* TO mysqltest_1@localhost;
-CALL mysqltest1.test();
+GRANT EXECUTE ON FUNCTION mysqltest1.grant_db TO mysqltest_1@localhost;
+GRANT ALL PRIVILEGES ON grant_db.* TO mysqltest_1@localhost;
+CALL mysqltest1.grant_db();
 DROP DATABASE mysqltest1;
 RENAME TABLE mysql.procs_gone TO mysql.procs_priv;
 DROP USER mysqltest_1@localhost;
@@ -1779,7 +1786,7 @@ DROP PROCEDURE sp3;
 --error 0, ER_CANNOT_USER
 DROP USER 'userbug33464'@'localhost';
 
-USE test;
+USE grant_db;
 DROP DATABASE dbbug33464;
 
 
@@ -1854,7 +1861,7 @@ GRANT ALL ON *.* TO mysqltest_1;
 SHOW GRANTS FOR mysqltest_1;
 DROP USER mysqltest_1;
 
-USE test;
+USE grant_db;
 
 GRANT ALL ON * TO mysqltest_1;
 SHOW GRANTS FOR mysqltest_1;
@@ -1877,7 +1884,7 @@ CREATE DATABASE db2;
 GRANT SELECT ON db1.* to 'testbug'@localhost;
 USE db2;
 CREATE TABLE t1 (a INT);
-USE test;
+USE grant_db;
 connect (con1,localhost,testbug,,db1);
 --error ER_NO_SUCH_TABLE
 SELECT * FROM `../db2/tb2`;
@@ -2266,7 +2273,7 @@ GRANT USAGE ON *.* TO 'untrusted'@localhost;
 --echo # Connection con1
 connect (con1, localhost, untrusted);
 SHOW GRANTS;
-SHOW DATABASES;
+SHOW DATABASES LIKE 'secret';
 
 --echo # Both statements below should fail with the same error.
 --echo # They used to give different errors, thereby
@@ -2291,7 +2298,7 @@ CREATE USER foo@'127.0.0.1';
 GRANT ALL ON *.* TO foo@'127.0.0.1';
 
 --echo # First attempt, should connect successfully 
-connect (conn1, '127.0.0.1', foo,,test); 
+connect (conn1, '127.0.0.1', foo,,grant_db); 
 SELECT user(), current_user(); 
 
 --echo # Rename the user
@@ -2299,14 +2306,14 @@ RENAME USER foo@'127.0.0.1' to foo@'127.0.0.0/255.0.0.0';
 
 --echo # Second attempt, should connect successfully as its valid mask
 --echo # This was failing without fix 
-connect (conn2, '127.0.0.1', foo,,test); 
+connect (conn2, '127.0.0.1', foo,,grant_db); 
 SELECT user(), current_user(); 
 
 --echo # Rename the user back to original
 RENAME USER foo@'127.0.0.0/255.0.0.0' to foo@'127.0.0.1';
 
 --echo # Third attempt, should connect successfully 
-connect (conn3, '127.0.0.1', foo,,test); 
+connect (conn3, '127.0.0.1', foo,,grant_db); 
 SELECT user(), current_user(); 
 
 --echo # Clean-up
@@ -2755,6 +2762,7 @@ REVOKE DROP ON performance_schema.* FROM bug33578113;
 
 DROP USER bug33578113;
 
+DROP DATABASE grant_db;
 # Wait till we reached the initial number of concurrent sessions
 --source include/wait_until_count_sessions.inc
 --source include/uninstall_sequoiadb.inc
