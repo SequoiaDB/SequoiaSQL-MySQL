@@ -4995,9 +4995,14 @@ static int write_sync_log(const char *db_name, const char *table_name,
       // in 'HAObjectState' write an empty SQL log, and set 'CataVersion'
       // to driver cata version
       int object_cata_version = obj.getIntField(HA_FIELD_CAT_VERSION);
-      need_write_sync_log = (driver_cata_version >= object_cata_version);
+      need_write_sync_log = (driver_cata_version > object_cata_version);
+
+      // write SQL log for 'FLUSH TABLE' even if table version is not changed
+      if (0 != strlen(query) && driver_cata_version == object_cata_version) {
+        need_write_sync_log = true;
+      }
       if (need_write_sync_log) {
-        SDB_LOG_DEBUG(
+        SDB_LOG_INFO(
             "HA: Write a sync log for '%s.%s' with query '%s', new cata "
             "version is %d",
             db_name, table_name, query, driver_cata_version);
