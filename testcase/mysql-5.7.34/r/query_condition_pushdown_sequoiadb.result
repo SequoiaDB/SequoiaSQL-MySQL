@@ -15292,7 +15292,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 FORCE INDEX(ka) WHERE a = 1 AND b = 1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	ka	ka	5	const	2	10.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`b` = 1)
+1	SIMPLE	t1	NULL	ref	ka	ka	5	const	3	10.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`b` = 1)
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` FORCE INDEX (`ka`) where ((`query_pushdown_test_sequoiadb`.`t1`.`b` = 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` = 1))
 EXPLAIN SELECT * FROM t1 FORCE INDEX(kb) WHERE a = 1 AND b = 1;
@@ -15302,13 +15302,13 @@ Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` FORCE INDEX (`kb`) where ((`query_pushdown_test_sequoiadb`.`t1`.`b` = 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` = 1))
 EXPLAIN SELECT * FROM t1 WHERE a = 1 AND b = 1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index_merge	ka,kb	ka,kb	5,5	NULL	1	100.00	Using intersect(ka,kb); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` = 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` = 1)); Using index
+1	SIMPLE	t1	NULL	index_merge	ka,kb	kb,ka	5,5	NULL	1	100.00	Using intersect(kb,ka); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` = 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` = 1)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` = 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` = 1))
 SELECT * FROM t1 WHERE a = 1 AND b = 1;
 a	b
 1	1
-[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{}], order_by[{ "b": 1, "_id": 1 }], hint[{ "": "kb" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 } }], selector[{}], order_by[{ "a": 1, "_id": 1 }], hint[{ "": "ka" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 ( 
 a tinyint NOT NULL, 
@@ -15376,7 +15376,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	1	NULL	9	95.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	1	NULL	9	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10))
 SELECT * FROM t1 WHERE b>1 AND a<10;
@@ -15397,7 +15397,7 @@ Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)
 EXPLAIN SELECT * from t1 WHERE a>10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,ab	ab	1	NULL	10	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`a` > 10); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,ab	ab	1	NULL	11	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`a` > 10); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`a` > 10)
 SELECT * FROM t1 WHERE a<10;
@@ -15457,7 +15457,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	2	NULL	9	95.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	2	NULL	9	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10))
 SELECT * FROM t1 WHERE b>1 AND a<10;
@@ -15503,7 +15503,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	3	NULL	9	95.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	3	NULL	9	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10))
 SELECT * FROM t1 WHERE b>1 AND a<10;
@@ -15549,7 +15549,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	4	NULL	9	95.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	4	NULL	9	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10))
 SELECT * FROM t1 WHERE b>1 AND a<10;
@@ -15595,7 +15595,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	8	NULL	9	95.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	8	NULL	9	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10))
 SELECT * FROM t1 WHERE b>1 AND a<10;
@@ -15659,24 +15659,24 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	ab,ba,a,b,c	c	5	NULL	2	5.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3) and (`query_pushdown_test_sequoiadb`.`t1`.`a` <= 3) and (`query_pushdown_test_sequoiadb`.`t1`.`c` < 3))
+1	SIMPLE	t1	NULL	range	ab,ba,a,b,c	ab	10	NULL	2	5.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3) and (`query_pushdown_test_sequoiadb`.`t1`.`a` <= 3) and (`query_pushdown_test_sequoiadb`.`t1`.`c` < 3))
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b`,`query_pushdown_test_sequoiadb`.`t1`.`c` AS `c` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3) and (`query_pushdown_test_sequoiadb`.`t1`.`a` <= 3) and (`query_pushdown_test_sequoiadb`.`t1`.`c` < 3))
 EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	ab,ba,a,b,c	ba	5	NULL	3	55.55	Using where with pushed condition (((`query_pushdown_test_sequoiadb`.`t1`.`a` <= 3) or (`query_pushdown_test_sequoiadb`.`t1`.`c` <= 4)) and (`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3))
+1	SIMPLE	t1	NULL	range	ab,ba,a,b,c	ba	5	NULL	2	55.55	Using where with pushed condition (((`query_pushdown_test_sequoiadb`.`t1`.`a` <= 3) or (`query_pushdown_test_sequoiadb`.`t1`.`c` <= 4)) and (`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3))
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b`,`query_pushdown_test_sequoiadb`.`t1`.`c` AS `c` from `query_pushdown_test_sequoiadb`.`t1` where (((`query_pushdown_test_sequoiadb`.`t1`.`a` <= 3) or (`query_pushdown_test_sequoiadb`.`t1`.`c` <= 4)) and (`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3))
 EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index_merge	ab,ba,a,b	b,a	5,5	NULL	5	100.00	Using sort_union(b,a); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3) or (`query_pushdown_test_sequoiadb`.`t1`.`a` < 3))
+1	SIMPLE	t1	NULL	index_merge	ab,ba,a,b	b,a	5,5	NULL	4	100.00	Using sort_union(b,a); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3) or (`query_pushdown_test_sequoiadb`.`t1`.`a` < 3))
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b`,`query_pushdown_test_sequoiadb`.`t1`.`c` AS `c` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` <= 3) or (`query_pushdown_test_sequoiadb`.`t1`.`a` < 3))
 SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 a	b	c
 1	1	1
 2	2	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 a	b	c
 1	1	1
@@ -15721,7 +15721,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	4	NULL	10	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1)); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	4	NULL	9	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1))
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
@@ -15766,7 +15766,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	8	NULL	9	95.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1)); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	8	NULL	9	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1))
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
@@ -15833,7 +15833,7 @@ Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	5	NULL	10	95.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1)); Using index
+1	SIMPLE	t1	NULL	range	PRIMARY,b,ab,ba	ab	5	NULL	9	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`b` > 1.1) and (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10.1))
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
