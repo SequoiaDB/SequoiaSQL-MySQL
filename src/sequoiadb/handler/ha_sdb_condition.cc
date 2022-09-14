@@ -405,20 +405,21 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
         break;
       case Item::FUNC_ITEM:
         type = ((Item_func *)cond_item)->functype();
-        if (Item_func::UNKNOWN_FUNC != type && Item_func::EQ_FUNC != type &&
-            Item_func::EQUAL_FUNC != type && Item_func::NE_FUNC != type &&
-            Item_func::LT_FUNC != type && Item_func::LE_FUNC != type &&
-            Item_func::GE_FUNC != type && Item_func::GT_FUNC != type &&
-            Item_func::FT_FUNC != type && Item_func::LIKE_FUNC != type &&
-            Item_func::ISNULL_FUNC != type &&
-            Item_func::ISNOTNULL_FUNC != type &&
-            Item_func::COND_AND_FUNC != type &&
-            Item_func::COND_OR_FUNC != type && Item_func::XOR_FUNC != type &&
-            Item_func::BETWEEN != type && Item_func::IN_FUNC != type &&
-            Item_func::MULT_EQUAL_FUNC != type &&
-            Item_func::INTERVAL_FUNC != type &&
-            Item_func::ISNOTNULLTEST_FUNC != type &&
-            Item_func::NEG_FUNC != type) {
+        if ((Item_func::UNKNOWN_FUNC != type && Item_func::EQ_FUNC != type &&
+             Item_func::EQUAL_FUNC != type && Item_func::NE_FUNC != type &&
+             Item_func::LT_FUNC != type && Item_func::LE_FUNC != type &&
+             Item_func::GE_FUNC != type && Item_func::GT_FUNC != type &&
+             Item_func::FT_FUNC != type && Item_func::LIKE_FUNC != type &&
+             Item_func::ISNULL_FUNC != type &&
+             Item_func::ISNOTNULL_FUNC != type &&
+             Item_func::COND_AND_FUNC != type &&
+             Item_func::COND_OR_FUNC != type && Item_func::XOR_FUNC != type &&
+             Item_func::BETWEEN != type && Item_func::IN_FUNC != type &&
+             Item_func::MULT_EQUAL_FUNC != type &&
+             Item_func::INTERVAL_FUNC != type &&
+             Item_func::ISNOTNULLTEST_FUNC != type &&
+             Item_func::NEG_FUNC != type) ||
+            (sdb_get_used_tables((Item_func *)cond_item) & RAND_TABLE_BIT)) {
           sdb_ctx->status = SDB_COND_UNSUPPORTED;
         }
         break;
