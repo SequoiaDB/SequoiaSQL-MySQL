@@ -1677,8 +1677,6 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
        HA_CAN_TABLE_CONDITION_PUSHDOWN | HA_CAN_REPAIR | HA_GENERATED_COLUMNS |
        HA_CAN_GEOMETRY);
 
-  m_table_flags |= (sdb_use_transaction(current_thd) ? 0 : HA_NO_TRANSACTIONS);
-
 #ifdef IS_MARIADB
   m_table_flags |= HA_CAN_TABLES_WITHOUT_ROLLBACK;
 #endif
@@ -1727,12 +1725,14 @@ const char **ha_sdb::bas_ext() const {
 }
 
 ulonglong ha_sdb::table_flags() const {
+  ulonglong use_trans =
+      (sdb_use_transaction(current_thd) ? 0 : HA_NO_TRANSACTIONS);
 #ifdef IS_MARIADB
   if (table && table->versioned()) {
-    return m_table_flags & ~HA_DUPLICATE_POS;
+    return ((m_table_flags | use_trans) & ~HA_DUPLICATE_POS);
   }
 #endif
-  return m_table_flags;
+  return m_table_flags | use_trans;
 }
 
 ulong ha_sdb::index_flags(uint inx, uint part, bool all_parts) const {
@@ -4037,7 +4037,6 @@ ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
   } else {
     DBUG_PRINT("info", ("Sdb Batched Keys access implementation choosen"));
   }
-done:
   return 0;
 }
 
