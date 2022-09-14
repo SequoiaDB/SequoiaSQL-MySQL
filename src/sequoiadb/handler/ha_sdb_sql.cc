@@ -633,6 +633,10 @@ bool sdb_is_string_item(Item *item) {
   return item->type() == Item::STRING_ITEM;
 }
 
+table_map sdb_get_used_tables(Item_func *item) {
+  return item->used_tables();
+}
+
 my_bool sdb_hash_init(HASH *hash, CHARSET_INFO *charset,
                       ulong default_array_elements, size_t key_offset,
                       size_t key_length, my_hash_get_key get_key,
@@ -1351,6 +1355,10 @@ bool sdb_is_string_item(Item *item) {
          (MYSQL_TYPE_STRING == item->field_type() ||
           MYSQL_TYPE_VARCHAR == item->field_type() ||
           MYSQL_TYPE_VAR_STRING == item->field_type());
+}
+
+table_map sdb_get_used_tables(Item_func *item) {
+  return item->used_tables_cache;
 }
 
 my_bool sdb_hash_init(HASH *hash, CHARSET_INFO *charset,

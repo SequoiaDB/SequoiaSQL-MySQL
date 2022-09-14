@@ -401,6 +401,8 @@ bool sdb_item_like_escape_is_evaluated(Item *item);
 
 bool sdb_is_string_item(Item *item);
 
+table_map sdb_get_used_tables(Item_func *item);
+
 // Others
 my_bool sdb_hash_init(HASH *hash, CHARSET_INFO *charset,
                       ulong default_array_elements, size_t key_offset,
