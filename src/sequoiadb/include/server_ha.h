@@ -146,7 +146,8 @@ typedef struct st_sql_stmt_info {
   HASH dml_checked_objects;
   int pending_sql_id;
   char *single_query;
-  bool with_admin;
+  // indicate if definer is set before execution
+  bool with_definer;
   bool has_handle_error;
 } ha_sql_stmt_info;
 

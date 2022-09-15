@@ -4002,16 +4002,20 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   char session_attrs[HA_MAX_SESSION_ATTRS_LEN] = {0};
   bson::BSONObjBuilder bson_builder;
 
+  // indicate if definer is set before execution. we cann't use
+  // thd->lex->definer to test if definer is set before writing
+  // HASQLLog, because thd->lex->definer maybe be modified during
+  // execution of current statement
+  sql_info->with_definer = (NULL != thd->lex->definer);
+
   if (ha_is_executing_pending_log(thd)) {
     goto done;
   }
 
-#ifdef IS_MYSQL
-  db = thd->db().str;
-#else
-  db = thd->get_db();
-#endif
-  db = (NULL == db) ? "" : db;
+  db = sdb_thd_db(thd);
+  if (NULL == db) {  // set default database if it's not set
+    db = HA_MYSQL_DB;
+  }
 
   switch (sql_command) {
     case SQLCOM_CREATE_SPFUNCTION:
@@ -4056,11 +4060,9 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
       break;
 #ifdef IS_MARIADB
     case SQLCOM_CREATE_ROLE:
-      sql_info->with_admin = true;
       if (NULL == thd->lex->definer) {
         rc = rebuild_create_role_stmt(thd, rewritten_query, event.general_query,
                                       event.general_query_length);
-        sql_info->with_admin = false;
       }
       if (0 == rc && rewritten_query.length()) {
         event.general_query = rewritten_query.c_ptr_safe();
@@ -4755,8 +4757,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
             event.general_query = create_query.c_ptr();
             event.general_query_length = create_query.length();
           }
-        } else if (SQLCOM_CREATE_ROLE == sql_command && !sql_info->with_admin) {
-          sql_info->with_admin = true;
+        } else if (SQLCOM_CREATE_ROLE == sql_command &&
+                   !sql_info->with_definer) {
           rc = rebuild_create_role_stmt(thd, create_query, event.general_query,
                                         event.general_query_length);
           if (0 == rc && create_query.length()) {
