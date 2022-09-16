@@ -6711,7 +6711,12 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
                  ("share total records: %lld", share->stat.total_records));
     }
 
-    if (!--thd_sdb->lock_count) {
+    // Fix bug SEQUOIASQLMAINSTREAM-1411. Rollback transaction in advance
+    // if "CREATE TABLE YYY AS SELECT XXX" fails. so YYY can be dropped later
+    bool rollback_trans_in_advance =
+        (SQLCOM_CREATE_TABLE == thd_sql_command(thd) &&
+         sdb_lex_first_select(thd)->item_list.elements && thd->is_error());
+    if (!--thd_sdb->lock_count || rollback_trans_in_advance) {
       if (!(thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) &&
           thd_sdb->get_conn()->is_transaction_on()) {
         /*
@@ -6728,7 +6733,9 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
           goto error;
         }
       }
-      sdb_set_affected_rows(thd);
+      if (!thd_sdb->lock_count) {
+        sdb_set_affected_rows(thd);
+      }
     }
   }
 
