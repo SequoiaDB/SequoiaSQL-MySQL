@@ -23,6 +23,8 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
   add_definitions(-DDEBUG)  
 elseif("X${MYSQL}" STREQUAL "X5.7.34")
     add_definitions(-DDBUG_OFF)
+elseif("X${MYSQL}" STREQUAL "X5.7.39")
+    add_definitions(-DDBUG_OFF)
 endif()
 
 #if(${MYSQL} STREQUAL 5.7.34)
