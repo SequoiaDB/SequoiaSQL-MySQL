@@ -701,7 +701,7 @@ select * from t5 where a like md5('abc');
 #random_bytes
 select * from t1 where a like random_bytes(1);
 --replace_regex /^([^s]*)\[Note\]/[Note]/
---exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/: ".*",/: "",/'
+--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/\<condition.*, selector/condition\[{""}\], selector/'
 
 #sha
 select sha('abc'),sha(123);
