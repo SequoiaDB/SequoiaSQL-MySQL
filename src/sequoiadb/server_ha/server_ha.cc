@@ -3918,6 +3918,8 @@ static int rebuild_create_role_stmt(THD *thd, String &rewritten_query,
 static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
   int rc = 0;
   Sdb_conn *sdb_conn = NULL;
+  Sdb_pool_conn pool_conn(0, true);
+  Sdb_conn &tmp_conn = pool_conn;
   Sdb_cl pending_object_cl;
   bson::BSONObj cond, result;
   sql_info->pending_sql_id = 0;
@@ -3932,6 +3934,25 @@ static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
   } else if (0 != rc) {
     snprintf(sql_info->err_message, HA_BUF_LEN,
              "Failed to connect sequoiadb, error code %d", rc);
+    goto error;
+  }
+
+  // build a new Sdb_conn if 'sequoiadb_use_transaction' is 'OFF'
+  // or Sdb_conn in THD is already in transaction
+  // HA must read data from master node
+  if (sdb_conn->is_transaction_on() || !sdb_use_transaction(thd)) {
+    rc = tmp_conn.connect();
+    if (rc) {
+      ha_error_string(*sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
+    sdb_conn = &tmp_conn;
+  }
+
+  // start a new transaction, make sure HA read data from master
+  rc = sdb_conn->begin_transaction(SDB_TRANS_ISO_RC);
+  if (rc) {
+    ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
   }
 
@@ -3976,9 +3997,17 @@ static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
     rc = SDB_HA_PENDING_LOG_ALREADY_EXECUTED;
     goto error;
   }
+  sdb_conn->commit_transaction();
 done:
   return rc;
 error:
+  if (sdb_conn) {
+    sdb_conn->rollback_transaction();
+  }
+  SDB_LOG_ERROR(
+      "HA: Failed to check if pending log exists, "
+      "error message %s, error code %d",
+      sql_info->err_message, rc);
   goto done;
 }
 
@@ -3987,7 +4016,7 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   int rc = 0;
 
   Sdb_conn *sdb_conn = NULL;
-  Sdb_pool_conn pool_conn(0, false);
+  Sdb_pool_conn pool_conn(0, true);
   Sdb_conn &tmp_conn = pool_conn;
   Sdb_cl pending_log_cl, pending_object_cl;
   bson::BSONObj obj, hints, result, cond;
