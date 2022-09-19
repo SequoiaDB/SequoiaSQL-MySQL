@@ -99,7 +99,7 @@ class BuildThirdParty(optparse.OptionParser):
         st = os.stat("./configure")
         os.chmod("./configure", st.st_mode | stat.S_IEXEC)
         config_cmd = "./configure --prefix=" + curl_abs_dir + "/install_path" + \
-                     " --with-pic" + debug_option
+                     " --with-pic" + debug_option + " --without-ssl"
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
