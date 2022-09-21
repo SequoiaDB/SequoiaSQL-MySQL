@@ -114,8 +114,6 @@ bool sdb_is_geom_type_diff(Field *old_field, Field *new_field);
 
 bool sdb_is_type_diff(Field *old_field, Field *new_field);
 
-bool sdb_is_single_table(THD *thd);
-
 bool str_end_with(const char *str, const char *sub_str);
 
 int sdb_convert_sub2main_partition_name(char *part_tb_name, char *table_name);
