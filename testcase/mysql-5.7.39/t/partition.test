@@ -8,6 +8,7 @@
 #                      new tests. Reason: All these might be not available.
 #                    - Minor cleanup
 #
+--source include/have_sequoiadb.inc
 --source include/have_partition.inc
 --source include/no_valgrind_without_big.inc
 
@@ -292,8 +293,6 @@ drop table t1;
 #
 create table t1 (a int)
 partition by hash (a);
-# SEQUOIASQLMAINSTREAM-1089
-# # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
 create index i on t1 (a);
 insert into t1 values (1);
 insert into t1 select * from t1;
@@ -468,8 +467,6 @@ SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 ALTER TABLE t1 ENGINE = SequoiaDB;
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
-# SEQUOIASQLMAINSTREAM-1089
-# failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
 ALTER TABLE t1 ADD INDEX b USING HASH (b);
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
@@ -1724,8 +1721,6 @@ PARTITION BY RANGE(a)
 create table t1 (a int) engine=sequoiadb
 partition by key(a);
 insert into t1 values (1);
-# SEQUOIASQLMAINSTREAM-1089
-# failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
 create index inx1 on t1(a);
 drop table t1;
 
@@ -2247,8 +2242,6 @@ SET SQL_MODE= @orig_sql_mode;
 #
 
 create table t1 (s1 int) partition by hash(s1) partitions 2;
-# SEQUOIASQLMAINSTREAM-1089
-# failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
 create index i on t1 (s1);
 insert into t1 values (1);
 insert into t1 select s1 from t1;
@@ -2629,4 +2622,20 @@ INSERT INTO t VALUES (6, 'ab'), (4, 'ab'), (5, 'ab'), (16, 'ab'), (14, 'ab'), (1
 SELECT id FROM t WHERE data = 'ab' ORDER BY id ASC;
 DROP TABLE t;
 
+--echo #
+--echo # Bug#29268656: BOGUS CONSTANT, RANDOM OR TIMEZONE-DEPENDENT
+--echo #               EXPRESSIONS IN (SUB)PARTITIONING FU
+--echo #
+
+# Create table with generated column containing non-deterministic expression
+CREATE TABLE t1 (c1 INT, c2 CHAR(32) GENERATED ALWAYS AS (RANDOM_BYTES(32))) ENGINE=SEQUOIADB PARTITION BY HASH(c1);
+CREATE TABLE t2 (c1 INT, c2 CHAR(32) GENERATED ALWAYS AS (RANDOM_BYTES(32))) ENGINE=SEQUOIADB PARTITION BY RANGE(c1) (PARTITION p1 VALUES LESS THAN(100));
+
+# Alter table with generated column containing non-deterministic expression
+CREATE TABLE t (c1 INT, c2 INT) ENGINE=SEQUOIADB PARTITION BY RANGE(c1) (PARTITION p1 VALUES LESS THAN(100));
+ALTER TABLE t MODIFY COLUMN c2 CHAR(32) GENERATED ALWAYS AS (RANDOM_BYTES(32)) STORED;
+ALTER TABLE t ADD COLUMN c3 CHAR(32) GENERATED ALWAYS AS (RANDOM_BYTES(32));
+
+DROP TABLE t, t1, t2;
 DROP DATABASE test_partition;
+--source include/uninstall_sequoiadb.inc
