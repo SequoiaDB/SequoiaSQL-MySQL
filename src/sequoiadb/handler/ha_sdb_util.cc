@@ -908,10 +908,6 @@ done:
   return rs;
 }
 
-bool sdb_is_single_table(THD *thd) {
-  return thd->lex->query_tables && !thd->lex->query_tables->next_global;
-}
-
 bool str_end_with(const char *str, const char *sub_str) {
   const char *p = str + strlen(str) - strlen(sub_str);
   return (0 == strcmp(p, sub_str));

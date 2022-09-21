@@ -119,6 +119,21 @@ bool sdb_check_condition_pushdown_switch(THD *thd) {
       thd->optimizer_switch_flag(OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN));
 }
 
+bool sdb_is_single_table(THD *thd) {
+  SELECT_LEX_UNIT *unit = NULL;
+  SELECT_LEX *select_lex = sdb_lex_first_select(thd);
+
+  if (SQLCOM_SELECT == thd_sql_command(thd) && select_lex &&
+      (unit = select_lex->master_unit())) {
+    return !unit->next_unit() && unit->is_simple() &&
+           !select_lex->first_inner_unit() &&
+           1 == select_lex->join_list->elements &&
+           !((TABLE_LIST *)select_lex->join_list->head())->nested_join;
+  } else {
+    return thd->lex->query_tables && !thd->lex->query_tables->next_global;
+  }
+}
+
 my_thread_id sdb_thd_id(THD *thd) {
   return thd->thread_id();
 }
@@ -850,6 +865,21 @@ void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
 
 bool sdb_check_condition_pushdown_switch(THD *thd) {
   return optimizer_flag(thd, OPTIMIZER_SWITCH_INDEX_COND_PUSHDOWN);
+}
+
+bool sdb_is_single_table(THD *thd) {
+  SELECT_LEX_UNIT *unit = NULL;
+  SELECT_LEX *select_lex = sdb_lex_first_select(thd);
+
+  if (SQLCOM_SELECT == thd_sql_command(thd) && select_lex &&
+      (unit = select_lex->master_unit())) {
+    return !unit->next_unit() && !unit->is_unit_op() &&
+           !unit->fake_select_lex && !select_lex->first_inner_unit() &&
+           1 == select_lex->join_list->elements &&
+           !((TABLE_LIST *)select_lex->join_list->head())->nested_join;
+  } else {
+    return thd->lex->query_tables && !thd->lex->query_tables->next_global;
+  }
 }
 
 my_thread_id sdb_thd_id(THD *thd) {

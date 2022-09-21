@@ -922,7 +922,11 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
   try {
     if (order) {
       while (order) {
-        if (Item::FIELD_ITEM != order->item[0]->type()) {
+        if (Item::FIELD_ITEM != order->item[0]->type() &&
+            !(Item::REF_ITEM == order->item[0]->type() &&
+              Item_ref::VIEW_REF == ((Item_ref *)order->item[0])->ref_type() &&
+              Item::FIELD_ITEM ==
+                  ((Item_direct_view_ref *)order->item[0])->ref[0]->type())) {
           goto error;
         }
         field = order->item[0]->field_for_view_update()->field;
@@ -948,7 +952,13 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
         goto error;
       }
       while (group_list) {
-        if (Item::FIELD_ITEM != group_list->item[0]->type()) {
+        if (Item::FIELD_ITEM != group_list->item[0]->type() &&
+            !(Item::REF_ITEM == group_list->item[0]->type() &&
+              Item_ref::VIEW_REF ==
+                  ((Item_ref *)group_list->item[0])->ref_type() &&
+              Item::FIELD_ITEM == ((Item_direct_view_ref *)group_list->item[0])
+                                      ->ref[0]
+                                      ->type())) {
           goto error;
         }
         field = group_list->item[0]->field_for_view_update()->field;
@@ -5152,8 +5162,8 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   bson::BSONObjBuilder count_cond_blder;
   SELECT_LEX *const select = sdb_lex_first_select(ha_thd());
   JOIN *join = select->join;
-  ORDER *order = select->order_list.first;
-  ORDER *group = select->group_list.first;
+  ORDER *order = sdb_get_join_order(ha_thd());
+  ORDER *group = sdb_get_join_group_list(ha_thd());
   bool only_one_func = join && (join->tmp_table_param.sum_func_count == 1);
   bool optimize_with_materialization =
       sdb_optimizer_switch_flag(ha_thd(), OPTIMIZER_SWITCH_MATERIALIZATION);
