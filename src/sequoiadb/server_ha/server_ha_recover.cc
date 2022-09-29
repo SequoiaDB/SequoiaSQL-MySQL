@@ -53,6 +53,8 @@ static char ha_inst_group_passwd[HA_MAX_PASSWD_LEN + 1] = {0};
 // mysql connection used to replay SQL log
 static MYSQL *ha_mysql = NULL;
 
+static int ha_curr_instance_id = 0;
+
 const char *ha_inst_group_user_name() {
   return ha_inst_group_user;
 }
@@ -1021,7 +1023,7 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
                 HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
   }
   DBUG_ASSERT(instance_id > 0);
-  ha_thread->instance_id = instance_id;
+  ha_thread->instance_id = ha_curr_instance_id = instance_id;
   sql_print_information("HA: Register instance ID complete, instance ID: %d",
                         instance_id);
 done:
@@ -2260,6 +2262,13 @@ void *ha_replay_pending_logs(void *arg) {
       longlong now = time(NULL);
       const char *query = result.getStringField(HA_FIELD_SQL);
       int instance_id = result.getIntField(HA_FIELD_OWNER);
+
+      // Inject condition to let other instances perform recovery operations
+      if (SDB_COND_INJECT("recover_by_other_instances") &&
+          instance_id == ha_curr_instance_id) {
+        SDB_LOG_DEBUG("Execute pending log through other instances");
+        continue;
+      }
 
       if (now < start_time) {
         // if the time of two instances is not synchronized, sleep 30s

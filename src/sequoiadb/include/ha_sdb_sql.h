@@ -100,6 +100,7 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define ALTER_COLUMN_STORAGE_TYPE Alter_inplace_info::ALTER_COLUMN_STORAGE_TYPE
 #define ALTER_COLUMN_COLUMN_FORMAT \
   Alter_inplace_info::ALTER_COLUMN_COLUMN_FORMAT
+#define ALTER_CHANGE_COLUMN Alter_info::ALTER_CHANGE_COLUMN
 
 // Partition flags
 #define ALTER_PARTITION_ADD Alter_info::ALTER_ADD_PARTITION

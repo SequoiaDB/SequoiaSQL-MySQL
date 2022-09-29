@@ -1813,12 +1813,34 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   KEY_PART_INFO *key_part = NULL;
   List<Create_field> &create_list = ha_alter_info->alter_info->create_list;
   List_iterator_fast<Create_field> iter(create_list);
+  THD *thd = ha_thd();
+  DBUG_ASSERT(NULL != thd);
 
   DBUG_ASSERT(!ha_alter_info->handler_ctx);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rs = HA_ALTER_INPLACE_NOCOPY_NO_LOCK;
     goto done;
+  }
+
+  // Report error for "ALTER TABLE CHANGE | MODIFY COLUMN" command
+  // if statement is executed by pending log replayer, because it may
+  // cause data loss, use to fix bug SEQUOIASQLMAINSTREAM-1499
+  if (ha_is_open() && ha_is_executing_pending_log(thd) &&
+      (thd->lex->alter_info.flags & ALTER_CHANGE_COLUMN)) {
+    my_printf_error(
+        ER_INTERNAL_ERROR,
+        "'%s' is not allowed to be executed by pending log replayer.", MYF(0),
+        sdb_thd_query(thd));
+    SDB_LOG_ERROR(
+        "'%s' is not allowed to be executed by pending log replayer, because "
+        "it may cause data loss.",
+        sdb_thd_query(thd));
+    SDB_LOG_ERROR(
+        "Please recover data maunally according to the table structure on the "
+        "source instance(owner of pending log).");
+    rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+    goto error;
   }
 
   if (ha_alter_info->handler_flags & ~INPLACE_ONLINE_OPERATIONS) {

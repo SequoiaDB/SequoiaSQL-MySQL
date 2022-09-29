@@ -2476,6 +2476,25 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   thd_sdb->records = rows;
   m_bulk_insert_predicted_rows = thd_sdb->records;
+
+  // execute "alter table" command with copy algorithm
+  if (thd_sql_command(thd) == SQLCOM_ALTER_TABLE && ha_is_open() &&
+      ha_is_executing_pending_log(thd) &&
+      (thd->lex->alter_info.flags & ALTER_CHANGE_COLUMN)) {
+    my_printf_error(
+        ER_INTERNAL_ERROR,
+        "'%s' is not allowed to be executed by pending log replayer.", MYF(0),
+        sdb_thd_query(thd));
+    SDB_LOG_ERROR(
+        "'%s' is not allowed to be executed by pending log replayer, because "
+        "it may cause data loss.",
+        sdb_thd_query(thd));
+    SDB_LOG_ERROR(
+        "Please recover data maunally according to the table structure on the "
+        "source instance(owner of pending log).");
+    return;
+  }
+
   if (!sdb_use_bulk_insert) {
     m_use_bulk_insert = false;
     return;
