@@ -70,14 +70,17 @@ SELECT * FROM information_schema.statistics WHERE table_name='t1';
 ANALYZE TABLE t1;
 --replace_column 9 #
 EXPLAIN SELECT * FROM t1 WHERE a=1 and b='e';
+--replace_column 10 #
 --sorted_result
 SELECT * FROM information_schema.statistics WHERE table_name='t1';
 LOAD DATA INFILE '../../std_data/loaddata_5w_sequoiadb.dat' INTO TABLE t1(a,b);
+--replace_column 10 #
 --sorted_result
 SELECT * FROM information_schema.statistics WHERE table_name='t1';
 ANALYZE TABLE t1;
 --replace_column 9 #
 EXPLAIN SELECT * FROM t1 WHERE a=1 and b='e';
+--replace_column 10 #
 --sorted_result
 SELECT * FROM information_schema.statistics WHERE table_name='t1';
 DROP TABLE t1;
