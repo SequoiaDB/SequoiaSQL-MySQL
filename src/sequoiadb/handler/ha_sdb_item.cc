@@ -601,7 +601,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
       MYSQL_TIME ltime;
       if (STRING_RESULT == item_val->result_type() &&
           !get_datetime(thd, item_val, &ltime)) {
-        struct tm tm_val;
+        struct tm tm_val, tmp_tm;
         tm_val.tm_sec = ltime.second;
         tm_val.tm_min = ltime.minute;
         tm_val.tm_hour = ltime.hour;
@@ -611,8 +611,18 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
         tm_val.tm_wday = 0;
         tm_val.tm_yday = 0;
         tm_val.tm_isdst = 0;
+        tmp_tm = tm_val;
         time_t time_tmp = mktime(&tm_val);
-        bson::Date_t dt((longlong)(time_tmp * 1000));
+        time_t true_time_val = time_tmp;
+        if (tm_val.tm_isdst != tmp_tm.tm_isdst) {  // maybe dst
+          tmp_tm.tm_isdst = tm_val.tm_isdst;
+          time_tmp = mktime(&tmp_tm);
+          if (tmp_tm.tm_isdst ==
+              tm_val.tm_isdst) {  // can not correct,use first val
+            true_time_val = time_tmp;
+          }
+        }
+        bson::Date_t dt((longlong)(true_time_val * 1000));
         BSON_APPEND(field_name, dt, obj, arr_builder);
       } else {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;
