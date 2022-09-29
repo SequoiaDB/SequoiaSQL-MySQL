@@ -2414,8 +2414,8 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
         //old date to recount the seconds in dst
         if (tm_val.tm_isdst != tmp_tm.tm_isdst) {  // maybe dst
           tmp_tm.tm_isdst = tm_val.tm_isdst;
-          true_time_val = mktime(&tmp_tm);
-          if (tmp_tm.tm_isdst !=
+          time_tmp = mktime(&tmp_tm);
+          if (tmp_tm.tm_isdst ==
               tm_val.tm_isdst) {  // can not correct,use first val
             true_time_val = time_tmp;
           }
