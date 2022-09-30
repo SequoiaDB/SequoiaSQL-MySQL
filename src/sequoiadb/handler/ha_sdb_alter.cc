@@ -2536,15 +2536,576 @@ error:
   goto done;
 }
 
+enum SDB_CL_SHARING_TYPE {
+  CL_SHARING_TYPE_NONE = 0,
+  CL_SHARING_TYPE_HASH = 1,
+  CL_SHARING_TYPE_RANGE = 2
+};
+
+enum SDB_FIELD_CHECK_RULES { NEEDED = 1, IGNORE = 2, UNEXPECTED = 3 };
+
+/*
+ * SequoiaDB index has Fields:
+ * - IndexDef:
+ * - IndexFlag:
+ * - Type: can included by key field in IndexDef
+ * IndexFlag and Type and ignore to check if two indexes are same or not.
+ * So care about IndexDef field here.
+ */
+static const char *SDB_IDX_DEF_FIELDS[] = {
+    SDB_FIELD_ENFORCED2,     //"enforced",
+    SDB_FIELD_KEY_DROPDUPS,  //"dropDups", ignore, not used on sdb currently.
+    SDB_FIELD_KEY_GLOBAL,    //"Global",
+    // "_id", always ignore check
+    SDB_FIELD_KEY,        //"key"
+    SDB_FIELD_NOT_ARRAY,  //"NotArray",
+    SDB_FIELD_NOT_NULL,   //"NotNull",
+    // SDB_FIELD_NAME2,           //"name", check specially.
+    SDB_FIELD_KEY_STANDALONE,  //"Standalone",
+    SDB_FIELD_UNIQUE2,         //"unique",
+    SDB_FIELD_KEY_VERSION,     //"v",
+    // SDB_FIELD_UNIQUEID           //"UniqueID", always ignore check
+};
+
+static const int SDB_IDX_DEF_FIELDS_COUNT =
+    sizeof(SDB_IDX_DEF_FIELDS) / sizeof(const char *);
+
+static const enum SDB_FIELD_CHECK_RULES
+    SDB_IDX_DEF_FIELDS_RULES[1][SDB_IDX_DEF_FIELDS_COUNT] = {
+        /*enforced, dropDups, Global, NotArray, NotNull*/
+        {NEEDED, IGNORE, NEEDED, NEEDED, NEEDED,
+         /*name, Standalone, unique, v*/
+         NEEDED, NEEDED, NEEDED, IGNORE}};
+
+class Sdb_index_info : public Sql_alloc {
+ public:
+  Sdb_index_info();
+  Sdb_index_info(const char *index_name, bson::BSONObj idx_def,
+                 bson::BSONObj key_fields);
+  bool operator==(Sdb_index_info &right);
+
+ public:
+  const char *index_name;
+  /* index definition obj. */
+  /* include:
+     - is_unique;                    // whether it is unique or not.
+     - is_enforced;                  // whether enforced or not.
+     - is_not_null;                  // whether not null or not.
+     - is_not_array;                 // whether is not array or not.
+     - is_standalone;                // low bound of sub cl if it is.
+   */
+  bson::BSONObj index_def;
+  bson::BSONObj key_fields;  // key fields, eg: {a:1, b:1}, Type field in index
+                             // included by this.
+};
+
+Sdb_index_info::Sdb_index_info() {
+  index_name = NULL;
+  index_def = SDB_EMPTY_BSON;
+  key_fields = SDB_EMPTY_BSON;
+}
+
+Sdb_index_info::Sdb_index_info(const char *idx_name, bson::BSONObj idx_def,
+                               bson::BSONObj key) {
+  index_name = idx_name;
+  index_def = idx_def;
+  key_fields = key;
+}
+
+bool Sdb_index_info::operator==(Sdb_index_info &right) {
+  bool is_same = true;
+  int len1 = strlen(index_name);
+  int len2 = strlen(right.index_name);
+  is_same = (len1 == len2) ? true : false;
+  if (!is_same) {
+    goto done;
+  }
+  is_same &= (0 == strncmp(index_name, right.index_name, len1)) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Index name[%s] on source table, different with index name[%s] on "
+        "target table.",
+        index_name, right.index_name);
+    goto done;
+  }
+  is_same = (0 == key_fields.woCompare(right.key_fields)) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Fields[%s] of index[%s], different with fields[%s] of index[%s].",
+        key_fields.toString().c_str(), index_name,
+        right.key_fields.toString().c_str(), right.index_name);
+    goto done;
+  }
+
+  is_same = (0 == index_def.woCompare(right.index_def)) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Definition[%s] of index[%s], different with definition[%s] of "
+        "index[%s].",
+        index_def.toString().c_str(), index_name,
+        right.index_def.toString().c_str(), right.index_name);
+    goto done;
+  }
+done:
+  return is_same;
+}
+
+/**
+  Compare index name in the index list.
+
+  @param idx1          first index to compare
+  @param idx2          second index to compare
+  @param arg                null
+
+  @retval
+    1  idx1 index name > idx2 index name
+  @retval
+    -1  idx1 index name > idx2 index name
+  @retval
+    0  idx1 index name = idx2 index name
+*/
+static int compare_index_name(Sdb_index_info *idx1, Sdb_index_info *idx2,
+                              void *arg) {
+  DBUG_ASSERT(idx1);
+  DBUG_ASSERT(idx2);
+  const char *idx_name1 = idx1->index_name;
+  const char *idx_name2 = idx2->index_name;
+  return strcmp(idx_name1, idx_name2);
+}
+
+static const char *SDB_CL_OPTION_FIELDS[] = {
+    //"_id", always ignore check
+    SDB_FIELD_ATTRIBUTE,            //"Attribute",
+    SDB_FIELD_ATTRIBUTE_DESC,       //"AttributeDesc",
+    SDB_FIELD_AUTOINCREMENT,        //"AutoIncrement",
+    SDB_FIELD_AUTO_SPLIT,           //"AutoSplit",
+    SDB_FIELD_CATAINFO,             //"CataInfo",
+    SDB_FIELD_COMPRESSED,           //"CompressionType",
+    SDB_FIELD_COMPRESSION_TYPE,     //"CompressionTypeDesc",
+    SDB_FIELD_DATASOURCE_ID,        //"DataSourceID",
+    SDB_FIELD_ENSURE_SHARDING_IDX,  //"EnsureShardingIndex",
+                                    //"InternalV", always ignore check
+    SDB_FIELD_ISMAINCL,             //"IsMainCL",
+    SDB_FIELD_LOB_SHD_KEY_FMT,      //"LobShardingKeyFormat",
+    SDB_FIELD_MAPPING,              //"Mapping",
+    SDB_FIELD_NAME,                 //"Name",
+    SDB_FIELD_PARTITION,            //"Partition",
+    SDB_FIELD_REPLSIZE,             //"ReplSize",
+    SDB_FIELD_SHARDING_KEY,         //"ShardingKey",
+    SDB_FIELD_SHARDING_TYPE,        //"ShardingType",
+    SDB_FIELD_STRICT_DATA_MODE,     //"StrictDataMode"
+    // SDB_FIELD_UNIQUEID            //"UniqueID", always ignore check
+    // SDB_FIELD_VERSION             //"Version", always ignore check
+};
+
+static const int COMPARE_FIELDS_COUNT =
+    sizeof(SDB_CL_OPTION_FIELDS) / sizeof(const char *);
+
+static const enum SDB_FIELD_CHECK_RULES
+    CL_COMPARE_RULES[3][COMPARE_FIELDS_COUNT] = {
+        /*[0]: simple collection*/
+        /*Attribute, AttributeDesc, AutoIncrement, AutoSplit, CataInfo,
+           CompressionType*/
+        {NEEDED, NEEDED, NEEDED, UNEXPECTED, NEEDED, NEEDED,
+         /*CompressionTypeDesc, DataSourceID, EnsureShardingIndex, IsMainCL,
+            LobShardingKeyFormat*/
+         NEEDED, UNEXPECTED, UNEXPECTED, UNEXPECTED, UNEXPECTED,
+         /*Mapping, Name, Partition, ReplSize, ShardingKey*/
+         UNEXPECTED, IGNORE, UNEXPECTED, NEEDED, NEEDED,
+         /*ShardingType, StrictDataMode*/
+         UNEXPECTED, NEEDED},
+        /*[1]: hash partition collection*/
+        /*Attribute, AttributeDesc, AutoIncrement, AutoSplit, CataInfo,
+           CompressionType*/
+        {NEEDED, NEEDED, NEEDED, NEEDED, NEEDED, NEEDED,
+         /*CompressionTypeDesc, DataSourceID, EnsureShardingIndex, IsMainCL,
+            LobShardingKeyFormat*/
+         NEEDED, UNEXPECTED, NEEDED, UNEXPECTED, UNEXPECTED,
+         /*Mapping, Name, Partition, ReplSize, ShardingKey*/
+         NEEDED, IGNORE, NEEDED, NEEDED, NEEDED,
+         /*ShardingType, StrictDataMode*/
+         NEEDED, NEEDED},  // hash partition collection
+        /*[2]: range partition collection.*/
+        /*Attribute, AttributeDesc, AutoIncrement, AutoSplit, CataInfo,
+           CompressionType*/
+        {NEEDED, NEEDED, NEEDED, UNEXPECTED, NEEDED, NEEDED,
+         /*CompressionTypeDesc, DataSourceID, EnsureShardingIndex, IsMainCL,
+            LobShardingKeyFormat*/
+         NEEDED, UNEXPECTED, NEEDED, NEEDED, UNEXPECTED,
+         /*Mapping, Name, Partition, ReplSize, ShardingKey*/
+         NEEDED, IGNORE, UNEXPECTED, NEEDED, NEEDED,
+         /*ShardingType, StrictDataMode*/
+         NEEDED, NEEDED}};
+class Sdb_index_info;
+class Sdb_collection_info : public Sql_alloc {
+ public:
+  Sdb_collection_info();
+  Sdb_collection_info(const char *db, const char *table, const bool is_main_cl,
+                      const bool has_autoinc);
+  bool compare_cl(Sdb_collection_info &right, enum SDB_CL_SHARING_TYPE type);
+  bool compare_sub_cl_list(List<Sdb_collection_info> &sub_cl_list1,
+                           List<Sdb_collection_info> &sub_cl_list2);
+  bool compare_index_list(List<Sdb_index_info> &index_list1,
+                          List<Sdb_index_info> &index_list2);
+  bool compare_sub_cl_names(List<char> *names);
+  bool operator==(Sdb_collection_info &right);
+
+ public:
+  const char *db_name;
+  const char *table_name;
+  bool is_main_cl;                   /* whether it is main cl or not.*/
+  bool with_autoinc;                 /* whether with autoincrement or not */
+  bool with_datasource;              /* whether with datasorce or not. */
+  SDB_CL_SHARING_TYPE sharding_type; /* whether cl is sharding or not. */
+  bson::BSONObj low_bound;           /* low bound of sub cl if it is. */
+  bson::BSONObj up_bound;            /* up bound of sub cl if it is. */
+  bson::BSONObj options;             /* options for the cl creating. */
+  bson::BSONObj
+      autoinc_options; /* autoincrement options when the cl has autoinc. */
+  List<Sdb_collection_info>
+      sub_cls_list; /* sub cls's table info when the is_main_cl is true. */
+  List<Sdb_index_info> index_list; /* indexes list on cl. */
+};
+
+/**
+  Compare up_bound in the sub_cls_list.
+
+  @param up_bound1          first up_bound to compare
+  @param up_bound2          second up_bound to compare
+  @param arg                null
+
+  @retval
+    1  up_bound1 > up_bound2
+  @retval
+    -1  up_bound1 < up_bound2
+  @retval
+    0  up_bound1 = up_bound2
+*/
+static int compare_up_bound(Sdb_collection_info *cl1, Sdb_collection_info *cl2,
+                            void *arg) {
+  DBUG_ASSERT(cl1);
+  DBUG_ASSERT(cl2);
+  bson::BSONObj up1 = cl1->up_bound;
+  bson::BSONObj up2 = cl2->up_bound;
+  return up1.woCompare(up2);
+}
+
+Sdb_collection_info::Sdb_collection_info() {
+  db_name = NULL;
+  table_name = NULL;
+  is_main_cl = false;
+  with_autoinc = false;
+  with_datasource = false;
+  options = SDB_EMPTY_BSON;
+  low_bound = SDB_EMPTY_BSON;
+  up_bound = SDB_EMPTY_BSON;
+  autoinc_options = SDB_EMPTY_BSON;
+}
+
+Sdb_collection_info::Sdb_collection_info(const char *db, const char *table,
+                                         const bool main_cl,
+                                         const bool has_autoinc) {
+  DBUG_ASSERT(db);
+  DBUG_ASSERT(table);
+  db_name = db;
+  table_name = table;
+  is_main_cl = main_cl;
+  with_autoinc = has_autoinc;
+  with_datasource = false;
+}
+
+/**
+  Compare two simple collection is same or not
+
+  @param right  target collection info to compare.
+  @param type   type of collection, simple cl, range partition cl, hash
+  partition cl.
+
+  @retval
+    true: is same.
+    others: not same.
+
+  Exception catcher need to be added when call this function.
+*/
+bool Sdb_collection_info::compare_cl(Sdb_collection_info &right,
+                                     enum SDB_CL_SHARING_TYPE type) {
+  bool is_same = false;
+  bson::BSONObj obj1;
+  bson::BSONObj obj2;
+  bson::BSONObjBuilder compare_options_blder1;
+  bson::BSONObjBuilder compare_options_blder2;
+  DBUG_ASSERT((type >= CL_SHARING_TYPE_NONE) &&
+              (type <= CL_SHARING_TYPE_RANGE));
+  const enum SDB_CL_SHARING_TYPE idx = type;  // idx of simple collection.
+
+  for (int i = 0; i < COMPARE_FIELDS_COUNT; i++) {
+    if (IGNORE == CL_COMPARE_RULES[idx][i]) {
+      continue;
+    } else if (UNEXPECTED == CL_COMPARE_RULES[idx][i]) {
+      if (options.hasField(SDB_CL_OPTION_FIELDS[i])) {
+        is_same = false;
+        SDB_LOG_ERROR("Unexpected option[%s] in simple collection.",
+                      SDB_CL_OPTION_FIELDS[i]);
+        goto error;
+      }
+      continue;
+    }
+    DBUG_ASSERT(NEEDED == CL_COMPARE_RULES[idx][i]);
+    bson::BSONElement ele1 = options.getField(SDB_CL_OPTION_FIELDS[i]);
+    if (!ele1.eoo()) {
+      compare_options_blder1.append(ele1);
+    }
+    bson::BSONElement ele2 = right.options.getField(SDB_CL_OPTION_FIELDS[i]);
+    if (!ele2.eoo()) {
+      compare_options_blder2.append(ele2);
+    }
+  }
+  obj1 = compare_options_blder1.obj();
+  obj2 = compare_options_blder2.obj();
+  is_same = (0 == obj1.woCompare(obj2)) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Source table[%s.%s] options[%s]. Different with "
+        "target table[%s.%s] options[%s].",
+        db_name, table_name, obj1.toString().c_str(), right.db_name,
+        right.table_name, obj2.toString().c_str());
+  }
+done:
+  return is_same;
+error:
+  goto done;
+}
+
+/**
+  Compare two simple sub cl list is same or not
+
+  @param sub_cl_list1  source sub cl list
+  @param sub_cl_list2  dest sub cl list
+
+  @retval
+    true: is same.
+    false: not same.
+
+  Exception catcher need to be added when call this function.
+*/
+bool Sdb_collection_info::compare_sub_cl_list(
+    List<Sdb_collection_info> &sub_cl_list1,
+    List<Sdb_collection_info> &sub_cl_list2) {
+  bool is_same = true;
+  /*compare count of sub_cls_list */
+  is_same = (sub_cl_list2.elements == sub_cl_list1.elements) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Source table[%s.%s] sub cl count[%d]. Different with "
+        "target table sub cl count[%d].",
+        db_name, table_name, sub_cl_list1.elements, sub_cl_list2.elements);
+    goto done;
+  }
+
+  /*same count and equal 0*/
+  if (0 == sub_cl_list1.elements) {
+    goto done;
+  }
+
+  {
+#ifdef IS_MYSQL
+    /*sort the sub_cls_list by up_bound*/
+    sub_cl_list1.sort((Node_cmp_func)compare_up_bound, 0);
+    /*sort the sub_cls_list by up_bound*/
+    sub_cl_list2.sort((Node_cmp_func)compare_up_bound, 0);
+#elif defined IS_MARIADB
+    bubble_sort<Sdb_collection_info>(&sub_cl_list1, compare_up_bound, NULL);
+    bubble_sort<Sdb_collection_info>(&sub_cl_list2, compare_up_bound, NULL);
+#endif
+
+    List_iterator<Sdb_collection_info> sub_cl_it1(sub_cl_list1);
+    List_iterator<Sdb_collection_info> sub_cl_it2(sub_cl_list2);
+    Sdb_collection_info *sub_cl_info1 = NULL;
+    Sdb_collection_info *sub_cl_info2 = NULL;
+    while ((sub_cl_info1 = sub_cl_it1++)) {
+      sub_cl_info2 = sub_cl_it2++;
+      DBUG_ASSERT(sub_cl_info2);
+      is_same = (*sub_cl_info1 == *sub_cl_info2) ? true : false;
+      if (!is_same) {
+        goto done;
+      }
+    }
+  }
+done:
+  return is_same;
+}
+
+/*
+ * Exception catcher need to be added when call this function.
+ */
+bool Sdb_collection_info::compare_index_list(
+    List<Sdb_index_info> &index_list1, List<Sdb_index_info> &index_list2) {
+  bool is_same = true;
+  /*compare count of index_list */
+  is_same = (index_list1.elements == index_list2.elements) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Source table[%s.%s] index count[%d]. Different with "
+        "target table index count[%d].",
+        db_name, table_name, index_list1.elements, index_list2.elements);
+    goto done;
+  }
+
+  /*same count and equal 0*/
+  if (0 == index_list1.elements) {
+    goto done;
+  }
+
+  {
+#ifdef IS_MYSQL
+    /*sort the index_list by index_name*/
+    index_list1.sort((Node_cmp_func)compare_index_name, NULL);
+    index_list2.sort((Node_cmp_func)compare_index_name, NULL);
+#elif defined IS_MARIADB
+    bubble_sort<Sdb_index_info>(&index_list1, compare_index_name, NULL);
+    bubble_sort<Sdb_index_info>(&index_list2, compare_index_name, NULL);
+#endif
+    List_iterator<Sdb_index_info> idx_it1(index_list1);
+    List_iterator<Sdb_index_info> idx_it2(index_list2);
+    Sdb_index_info *idx_info1 = NULL;
+    Sdb_index_info *idx_info2 = NULL;
+    while ((idx_info1 = idx_it1++)) {
+      idx_info2 = idx_it2++;
+      DBUG_ASSERT(idx_info2);
+      is_same = (*idx_info1 == *idx_info2) ? true : false;
+      if (!is_same) {
+        goto done;
+      }
+    }
+  }
+done:
+  return is_same;
+}
+
+/*
+ * Exception catcher need to be added when call this function.
+ */
+bool Sdb_collection_info::compare_sub_cl_names(List<char> *names) {
+  bool is_same = true;
+  /*Compare count of names.*/
+  is_same = (sub_cls_list.elements == names->elements) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Taget table[%s.%s] sub table count[%d]. Different with "
+        "target table sub cl count[%d].",
+        db_name, table_name, names->elements, sub_cls_list.elements);
+    goto done;
+  }
+  /*same count and equal 0*/
+  if (0 == sub_cls_list.elements) {
+    goto done;
+  }
+  {
+    List_iterator<char> name_it(*names);
+    List_iterator<Sdb_collection_info> sub_cl_it(sub_cls_list);
+    char *name = NULL;
+    Sdb_collection_info *cl_info = NULL;
+    while ((name = name_it++)) {
+      cl_info = sub_cl_it++;
+      DBUG_ASSERT(cl_info);
+      is_same = (0 == strcmp(name, cl_info->table_name)) ? true : false;
+      if (!is_same) {
+        SDB_LOG_ERROR(
+            "Taget table[%s.%s] sub table name[%s]. Different with "
+            "target table sub cl name[%s].",
+            db_name, table_name, name, cl_info->table_name);
+        goto done;
+      }
+    }
+  }
+done:
+  return is_same;
+}
+
+/*
+ * Exception catcher need to be added when call this function.
+ */
+bool Sdb_collection_info::operator==(Sdb_collection_info &right) {
+  bool is_same = true;
+  /*Compare IsMainCL.*/
+  is_same = (is_main_cl == right.is_main_cl) ? true : false;
+  /*Compare with autoincrement field.*/
+  is_same &= (with_autoinc == right.with_autoinc) ? true : false;
+  is_same &= (with_datasource == right.with_datasource) ? true : false;
+  is_same &= (sharding_type == right.sharding_type) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Source table[%s.%s] main_cl[%d], with autoincrement[%d],"
+        "with datasource[%d], sharding type[%d]. Different with "
+        "target table[%s.%s] main_cl[%d], with autoincrement[%d],"
+        "with datasource[%d], sharding type[%d].",
+        db_name, table_name, is_main_cl, with_autoinc, with_datasource,
+        sharding_type, right.db_name, right.table_name, right.is_main_cl,
+        right.with_autoinc, right.with_datasource, right.sharding_type);
+    goto done;
+  }
+
+  /*Only care equal or not, so ignore ordering.
+    - If it is a specified group created collection, it won't have
+    low_bound/up_bound in CataInfo.
+    - If it is a simple hash partition with specified Partition, we only care
+      and compare its Partition option and ignore the low_bound/up_bound, they
+    will be empty.
+   */
+  is_same &= (0 == low_bound.woCompare(right.low_bound)) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Source table[%s.%s] low_bound[%s]. Different with "
+        "target table[%s.%s] low_bound[%s].",
+        db_name, table_name, low_bound.toString().c_str(), right.db_name,
+        right.table_name, right.low_bound.toString().c_str());
+    goto done;
+  }
+  /*Only care equal or not, so ignore ordering*/
+  is_same &= (0 == up_bound.woCompare(right.up_bound)) ? true : false;
+  if (!is_same) {
+    SDB_LOG_ERROR(
+        "Source table[%s.%s] low_bound[%s]. Different with "
+        "target table[%s.%s] low_bound[%s].",
+        db_name, table_name, up_bound.toString().c_str(), right.db_name,
+        right.table_name, right.up_bound.toString().c_str());
+    goto done;
+  }
+
+  /*Compare options*/
+  DBUG_ASSERT((CL_SHARING_TYPE_NONE == sharding_type) ||
+              (CL_SHARING_TYPE_HASH == sharding_type) ||
+              (CL_SHARING_TYPE_RANGE == sharding_type));
+  is_same = compare_cl(right, sharding_type);
+  if (!is_same) {
+    goto done;
+  }
+
+  /*Compare sub cl list of main cl.*/
+  if (is_main_cl) {
+    is_same = compare_sub_cl_list(sub_cls_list, right.sub_cls_list);
+    if (!is_same) {
+      goto done;
+    }
+  }
+
+  /*Compare index list.*/
+  is_same = compare_index_list(index_list, right.index_list);
+  if (!is_same) {
+    goto done;
+  }
+done:
+  return is_same;
+}
+
 /*
  *Exception catcher need to be added when call this function.
  */
 int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *db_name,
                                   const char *table_name,
                                   bson::BSONObj &options,
-                                  bson::BSONObj &cata_info,
-                                  bool with_autoinc = true,
-                                  bool use_mapping = true) {
+                                  bson::BSONObj &cata_info, bool with_autoinc,
+                                  bool use_mapping) {
   static const char *OPT_SAME_FIELDS[] = {SDB_FIELD_SHARDING_KEY,
                                           SDB_FIELD_SHARDING_TYPE,
                                           SDB_FIELD_REPLSIZE,
@@ -2679,6 +3240,367 @@ error:
                   result.toString().c_str());
     rc = HA_ERR_INTERNAL_ERROR;
   }
+  goto done;
+}
+
+/*
+ * Exception catcher need to be added when call this function.
+ */
+int sdb_extra_cl_indexes(Sdb_conn *conn, Sdb_collection_info *cl_info,
+                         Sdb_cl &src_cl) {
+  int rc = 0;
+  uint i = 0;
+  DBUG_ASSERT(conn);
+  DBUG_ASSERT(cl_info);
+  std::vector<bson::BSONObj> index_infos;
+
+  rc = src_cl.get_indexes(index_infos);
+  if (rc != 0) {
+    goto error;
+  }
+
+  for (i = 0; i < index_infos.size(); ++i) {
+    bson::BSONObj index_def;
+    bson::BSONElement index_def_ele;
+    bson::BSONElement name_ele;
+    const char *name = NULL;
+    bson::BSONObj key;
+    bson::BSONObjBuilder builder;
+    bson::BSONObjBuilder index_def_bld(
+        builder.subobjStart("SDB_FIELD_IDX_DEF"));
+
+    index_def_ele = index_infos[i].getField(SDB_FIELD_IDX_DEF);
+    if (index_def_ele.type() != bson::Object) {
+      SDB_LOG_ERROR(
+          "Unexcepted type of IndexDef[%d] in cl[%s.%s] on SequoiaDB.",
+          index_def_ele.type(), cl_info->db_name, cl_info->table_name);
+      rc = HA_ERR_INTERNAL_ERROR;
+      goto error;
+    }
+    index_def = index_def_ele.embeddedObject().getOwned();
+
+    name_ele = index_def.getField(SDB_FIELD_NAME2);
+    if (name_ele.type() != bson::String) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    name = name_ele.valuestr();
+
+    if ('$' == name[0]) {  // Skip system index
+      continue;
+    }
+
+    int len = strlen(name);
+    char *index_name = (char *)thd_alloc(current_thd, len + 1);
+    if (!index_name) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+    strncpy(index_name, name, len);
+    index_name[len] = '\0';
+
+    index_def_bld.append(name_ele);
+
+    for (int i = 0; i < SDB_IDX_DEF_FIELDS_COUNT; i++) {
+      if (IGNORE == SDB_IDX_DEF_FIELDS_RULES[0][i]) {
+        continue;
+      } else if (UNEXPECTED == SDB_IDX_DEF_FIELDS_RULES[0][i]) {
+        if (index_def.hasField(SDB_IDX_DEF_FIELDS[i])) {
+          SDB_LOG_ERROR("Unexpected option[%s] in simple collection.",
+                        SDB_IDX_DEF_FIELDS[i]);
+          goto error;
+        }
+        continue;
+      }
+      DBUG_ASSERT(NEEDED == SDB_IDX_DEF_FIELDS_RULES[0][i]);
+      bson::BSONElement ele = index_def.getField(SDB_IDX_DEF_FIELDS[i]);
+      if (0 == strcmp(SDB_FIELD_KEY, SDB_IDX_DEF_FIELDS[i])) {
+        if (ele.type() != bson::Object) {
+          SDB_LOG_ERROR("Unexcepted type of Key[%d] in cl[%s.%s] on SequoiaDB.",
+                        ele.type(), cl_info->db_name, cl_info->table_name);
+          rc = HA_ERR_INTERNAL_ERROR;
+          goto error;
+        }
+        key = ele.embeddedObject().getOwned();
+      }
+
+      if (!ele.eoo()) {
+        index_def_bld.append(ele);
+      }
+    }
+
+    index_def_bld.done();
+    index_def = builder.obj();
+    Sdb_index_info *cl_index_info =
+        new Sdb_index_info(index_name, index_def, key);
+    if (!cl_index_info) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+    if (cl_info->index_list.push_back(cl_index_info)) {
+      rc = HA_ERR_OUT_OF_MEM;
+      my_error(rc, MYF(0));
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+/*
+ * Exception catcher need to be added when call this function.
+ */
+int sdb_extra_cl_options(Sdb_conn *conn, Sdb_collection_info *cl_info,
+                         bool *table_exists = NULL) {
+  Sdb_cl cl;
+  int rc = SDB_OK;
+  using namespace bson;
+  BSONObj cata_info = SDB_EMPTY_BSON;
+  BSONObj options = SDB_EMPTY_BSON;
+  bool is_main_cl = false;
+  bool with_autoinc = false;
+  const char *db_name = cl_info->db_name;
+  const char *table_name = cl_info->table_name;
+  DBUG_ASSERT(db_name);
+  DBUG_ASSERT(table_name);
+
+  rc = sdb_extra_cl_option_from_snap(conn, db_name, table_name,
+                                     cl_info->options, cata_info, true, true);
+  if (SDB_OK != rc) {
+    /* table not exists. */
+    if (SDB_DMS_EOC == get_sdb_code(rc) && table_exists) {
+      *table_exists = false;
+    }
+    goto error;
+  }
+
+  if (table_exists) {
+    *table_exists = true;
+  }
+  options = cl_info->options;
+  is_main_cl = options.getField(SDB_FIELD_ISMAINCL).booleanSafe();
+  with_autoinc = options.getField(SDB_FIELD_AUTOINCREMENT).booleanSafe();
+
+  cl_info->is_main_cl = is_main_cl;
+  cl_info->with_autoinc = with_autoinc;
+  {
+    BSONElement key_ele = options.getField(SDB_FIELD_SHARDING_KEY);
+    if (key_ele.eoo()) {
+      cl_info->sharding_type = CL_SHARING_TYPE_NONE;
+    } else if (key_ele.type() != bson::Object) {
+      SDB_LOG_ERROR(
+          "Unexcepted sharding key type[%d] of sub cl in main cl on "
+          "table[%s.%s]",
+          key_ele.type(), db_name, table_name);
+      rc = HA_ERR_INTERNAL_ERROR;
+      goto error;
+    } else {
+      BSONElement ele = options.getField(SDB_FIELD_SHARDING_TYPE);
+      if (ele.eoo()) {
+        cl_info->sharding_type = CL_SHARING_TYPE_RANGE;
+      } else if (bson::String != ele.type()) {
+        SDB_LOG_ERROR(
+            "Unexcepted sharding type[%d] of sub cl in main cl on "
+            "table[%s.%s]",
+            ele.type(), db_name, table_name);
+        rc = HA_ERR_INTERNAL_ERROR;
+        goto error;
+      } else if (0 ==
+                 strcmp(SDB_FIELD_NAME_SHARDINGTYPE_HASH, ele.valuestrsafe())) {
+        cl_info->sharding_type = CL_SHARING_TYPE_HASH;
+      } else if (0 == strcmp(SDB_FIELD_NAME_SHARDINGTYPE_RANGE,
+                             ele.valuestrsafe())) {
+        cl_info->sharding_type = CL_SHARING_TYPE_RANGE;
+      } else {
+        SDB_LOG_ERROR(
+            "Unexcepted sharding type[%s] of sub cl in main cl on "
+            "table[%s.%s]",
+            ele.valuestrsafe(), db_name, table_name);
+        rc = HA_ERR_INTERNAL_ERROR;
+        goto error;
+      }
+    }
+  }
+  if (with_autoinc) {
+    BSONElement ele = options.getField(SDB_FIELD_AUTOINCREMENT);
+    if (ele.eoo()) {
+      cl_info->with_autoinc = false;
+      cl_info->autoinc_options = SDB_EMPTY_BSON;
+    } else if (bson::Object != ele.type()) {
+      SDB_LOG_ERROR(
+          "Unexcepted autoincrement field of sub cl in main cl on "
+          "table[%s.%s]",
+          db_name, table_name);
+      rc = HA_ERR_INTERNAL_ERROR;
+      goto error;
+    } else {
+      cl_info->autoinc_options = ele.embeddedObject().getOwned();
+      ;
+    }
+  }
+
+  /* Not support mapping, so not use mapping_ctx to get cl */
+  rc = conn->get_cl(db_name, table_name, cl, false, NULL);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = sdb_extra_cl_indexes(conn, cl_info, cl);
+  if (SDB_OK != rc) {
+    goto error;
+  }
+
+  if (is_main_cl) {
+    BSONObjIterator sub_cl_it = BSONObjIterator(cata_info);
+    while (sub_cl_it.more()) {
+      BSONElement ele = sub_cl_it.next();
+      BSONObj cata_info_ele_obj;
+      if (ele.type() != bson::Object) {
+        SDB_LOG_ERROR(
+            "Unexcepted cata info type[%d] of sub cl in main cl on "
+            "table[%s.%s]",
+            ele.type(), db_name, table_name);
+        rc = HA_ERR_INTERNAL_ERROR;
+        goto error;
+      }
+      cata_info_ele_obj = ele.embeddedObject();
+      ;
+      BSONElement sub_cl_name_ele =
+          cata_info_ele_obj.getField(SDB_FIELD_SUBCL_NAME);
+      const char *sub_cl_name = sub_cl_name_ele.valuestrsafe();
+      if (0 == strlen(sub_cl_name)) {
+        SDB_LOG_ERROR(
+            "Unexcepted name info of sub cl in main cl on "
+            "table[%s.%s]",
+            db_name, table_name);
+        rc = HA_ERR_INTERNAL_ERROR;
+        goto error;
+      }
+
+      BSONElement ele_low_bound =
+          cata_info_ele_obj.getField(SDB_FIELD_LOW_BOUND);
+      if (Object != ele_low_bound.type()) {
+        SDB_LOG_ERROR(
+            "Unexcepted cata info type[%d] of sub cl on "
+            "table[%s.%s]",
+            ele_low_bound.type(), db_name, table_name);
+        rc = HA_ERR_INTERNAL_ERROR;
+        goto error;
+      }
+      BSONObj low_bound = ele_low_bound.embeddedObject().getOwned();
+      ;
+      BSONElement ele_up_bound = cata_info_ele_obj.getField(SDB_FIELD_UP_BOUND);
+      if (Object != ele_up_bound.type()) {
+        SDB_LOG_ERROR(
+            "Unexcepted cata info type[%d] of sub cl on "
+            "table[%s.%s]",
+            ele_up_bound.type(), db_name, table_name);
+        rc = HA_ERR_INTERNAL_ERROR;
+        goto error;
+      }
+      BSONObj up_bound = ele_up_bound.embeddedObject().getOwned();
+      ;
+
+      int cl_len = strlen(sub_cl_name);
+      if (cl_len > SDB_CL_FULL_NAME_MAX_SIZE) {
+        SDB_LOG_ERROR(
+            "Unexcepted name length[%d] of sub cl in main cl on "
+            "table[%s.%s]",
+            cl_len, db_name, table_name);
+        rc = HA_ERR_INTERNAL_ERROR;
+        goto error;
+      }
+      char *fullname_buf =
+          (char *)thd_alloc(current_thd, SDB_CL_FULL_NAME_MAX_SIZE + 1);
+      if (!fullname_buf) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
+      strncpy(fullname_buf, sub_cl_name, SDB_CL_FULL_NAME_MAX_SIZE);
+      fullname_buf[SDB_CL_FULL_NAME_MAX_SIZE] = '\0';
+      char *db = NULL;
+      char *tbl = NULL;
+      BSONObj sub_cl_options = SDB_EMPTY_BSON;
+      BSONObj sub_cl_cata_info = SDB_EMPTY_BSON;
+      sdb_tmp_split_cl_fullname(fullname_buf, &db, &tbl);
+      Sdb_collection_info *src_sub_cl_info = new Sdb_collection_info(
+          (const char *)db, (const char *)tbl, false, false);
+      if (!src_sub_cl_info) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
+
+      rc = sdb_extra_cl_options(conn, src_sub_cl_info);
+      if (SDB_OK != rc) {
+        goto error;
+      }
+      src_sub_cl_info->low_bound = low_bound;
+      src_sub_cl_info->up_bound = up_bound;
+      if (cl_info->sub_cls_list.push_back(src_sub_cl_info)) {
+        rc = HA_ERR_OUT_OF_MEM;
+        my_error(rc, MYF(0));
+      }
+    }
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int sdb_compare_tables(Sdb_conn *conn, const char *src_db_name,
+                       const char *src_table_name, const char *dst_db_name,
+                       const char *dst_table_name, bool &dst_table_exists,
+                       bool &is_same, List<char> *dst_sub_table_names) {
+  int rc = SDB_OK;
+  Sdb_collection_info cl_info1;
+  Sdb_collection_info cl_info2;
+  dst_table_exists = false;
+  is_same = false;
+
+  try {
+    cl_info1.db_name = src_db_name;
+    cl_info1.table_name = src_table_name;
+    rc = sdb_extra_cl_options(conn, &cl_info1);
+    if (SDB_OK != rc) {
+      goto error;
+    }
+
+    cl_info2.db_name = dst_db_name;
+    cl_info2.table_name = dst_table_name;
+    rc = sdb_extra_cl_options(conn, &cl_info2, &dst_table_exists);
+    if (SDB_OK != rc) {
+      /* Dst table not exists. */
+      if (!dst_table_exists) {
+        is_same = false;
+        rc = SDB_OK;
+      }
+      goto error;
+    }
+    is_same = (cl_info1 == cl_info2) ? true : false;
+    if (!is_same) {
+      goto done;
+    }
+
+    /* Range/List partition need to keep all the sub cls' name consistent with
+       the target table. */
+    if (dst_sub_table_names) {
+      is_same = cl_info2.compare_sub_cl_names(dst_sub_table_names);
+      if (!is_same) {
+        goto done;
+      }
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to compare taget table[%.%s] with source "
+                        "tables[%s.%s], exception:%s",
+                        dst_db_name, dst_table_name, src_db_name,
+                        src_table_name, e.what());
+done:
+  return rc;
+error:
   goto done;
 }
 
@@ -2878,9 +3800,9 @@ error:
   auto-increment field and so on.
 */
 int sdb_copy_cl(Sdb_conn *conn, char *src_db_name, char *src_tbl_name,
-                char *dst_db_name, char *dst_tbl_name, int flags = 0,
-                bool *is_main_cl = NULL, bson::BSONObj *scl_info = NULL,
-                bool use_mapping = false) {
+                char *dst_db_name, char *dst_tbl_name, bool &created_dst_tbl,
+                int flags = 0, bool *is_main_cl = NULL,
+                bson::BSONObj *scl_info = NULL, bool use_mapping = false) {
   DBUG_ENTER("sdb_copy_cl");
   DBUG_PRINT("info", ("src: %s.%s, dst: %s.%s", src_db_name, src_tbl_name,
                       dst_db_name, dst_tbl_name));
@@ -2916,7 +3838,6 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_db_name, char *src_tbl_name,
     if (rc != 0) {
       goto error;
     }
-
     if (options.hasField(SDB_FIELD_DATASOURCE_ID)) {
       rc = HA_ERR_NOT_ALLOWED_COMMAND;
       SDB_PRINT_ERROR(rc,
@@ -2947,6 +3868,7 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_db_name, char *src_tbl_name,
       SDB_LOG_WARNING("The cl[%s.%s] to be copied has already existed.",
                       dst_db_name, dst_tbl_name);
     }
+    created_dst_tbl = created_cl;
 
     rc =
         conn->get_cl(dst_db_name, dst_tbl_name, dst_cl, false, dst_mapping_ctx);
@@ -3004,6 +3926,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
   DBUG_ENTER("Sdb_cl_copyer::copy");
   int rc = 0;
   int tmp_rc = 0;
+  bool created_new_cl_tmp = false;
 
   bool is_main_cl = false;
   bson::BSONObj scl_info;
@@ -3035,7 +3958,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
   }
   try {
     rc = sdb_copy_cl(m_conn, m_mcl_cs, m_mcl_name, m_new_cs, m_new_mcl_tmp_name,
-                     flags, &is_main_cl, &scl_info, true);
+                     created_new_cl_tmp, flags, &is_main_cl, &scl_info, true);
     if (rc != 0) {
       goto error;
     }
@@ -3076,8 +3999,9 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
       sdb_tmp_split_cl_fullname(fullname_buf, &db_name, &tbl_name);
       snprintf(tmp_name_buf, sizeof(tmp_name_buf), "%s-%d", m_new_mcl_tmp_name,
                scl_id++);
+      bool not_used = false;
       rc = sdb_copy_cl(m_conn, db_name, tbl_name, db_name, tmp_name_buf,
-                       SDB_COPY_WITHOUT_INDEX);
+                       not_used, SDB_COPY_WITHOUT_INDEX);
       if (rc != 0) {
         goto error;
       }
@@ -3143,10 +4067,12 @@ error:
   if (HA_ERR_OUT_OF_MEM != rc && HA_ERR_INTERNAL_ERROR != rc) {
     ha->handle_sdb_error(rc, MYF(0));
   }
-  tmp_rc = m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name, &new_tbl_mapping);
-  if (tmp_rc != 0) {
-    SDB_LOG_WARNING("Failed to rollback creation of cl[%s.%s], rc: %d",
-                    m_new_cs, m_new_mcl_tmp_name, tmp_rc);
+  if (created_new_cl_tmp) {
+    tmp_rc = m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name, &new_tbl_mapping);
+    if (tmp_rc != 0) {
+      SDB_LOG_WARNING("Failed to rollback creation of cl[%s.%s], rc: %d",
+                      m_new_cs, m_new_mcl_tmp_name, tmp_rc);
+    }
   }
   list_it.init(m_new_scl_tmp_fullnames);
   while ((cl_fullname = list_it++)) {

@@ -129,6 +129,9 @@
 #define SDB_PREFERRED_PERIOD_INVALID (-2)
 #define SDB_DEFAULT_PREFERRED_PERIOD (60)
 
+#define SDB_FIELD_NAME_SHARDINGTYPE_HASH "hash"
+#define SDB_FIELD_NAME_SHARDINGTYPE_RANGE "range"
+
 #define SDB_FIELD_NAME_AUTOINCREMENT "AutoIncrement"
 #define SDB_FIELD_NAME_FIELD "Field"
 #define SDB_FIELD_NAME "Name"
@@ -182,6 +185,7 @@
 #define SDB_FIELD_LOW_BOUND "LowBound"
 #define SDB_FIELD_UP_BOUND "UpBound"
 #define SDB_FIELD_ATTRIBUTE "Attribute"
+#define SDB_FIELD_ATTRIBUTE_DESC "AttributeDesc"
 #define SDB_FIELD_COMPRESSION_TYPE_DESC "CompressionTypeDesc"
 #define SDB_FIELD_GROUP_NAME "GroupName"
 #define SDB_FIELD_DATASOURCE_ID "DataSourceID"
@@ -197,6 +201,12 @@
 #define SDB_FIELD_UNIQUE2 "unique"
 #define SDB_FIELD_ENFORCED2 "enforced"
 #define SDB_FIELD_KEY "key"
+#define SDB_FIELD_KEY_VERSION "v"
+#define SDB_FIELD_IDX_FLAG "IndexFlag"
+#define SDB_FIELD_IDX_TYPE "Type"
+#define SDB_FIELD_KEY_STANDALONE "Standalone"
+#define SDB_FIELD_KEY_GLOBAL "Global"
+#define SDB_FIELD_KEY_DROPDUPS "dropDups"
 
 #define SDB_FIELD_INSERTED_NUM "InsertedNum"
 #define SDB_FIELD_UPDATED_NUM "UpdatedNum"

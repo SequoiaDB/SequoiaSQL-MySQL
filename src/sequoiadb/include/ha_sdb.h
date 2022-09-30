@@ -469,6 +469,8 @@ class ha_sdb : public handler {
 
   int rename_table(const char *from, const char *to);
 
+  int create_table_like(Sdb_conn *conn, TABLE_LIST *src_table);
+
   int create(const char *name, TABLE *form, HA_CREATE_INFO *create_info);
 
   void update_create_info(HA_CREATE_INFO *create_info);
