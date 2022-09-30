@@ -252,4 +252,9 @@ void Sdb_obj_cache<T>::release() {
   }
 }
 
+int sdb_compare_tables(Sdb_conn *conn, const char *src_db_name,
+                       const char *src_table_name, const char *dst_db_name,
+                       const char *dst_table_name, bool &dst_table_exists,
+                       bool &is_same, List<char> *dst_sub_tables = NULL);
+
 #endif

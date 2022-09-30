@@ -2440,6 +2440,12 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       goto error;
     }
 
+    rc = check_sdb_in_thd(ha_thd(), &conn, true);
+    if (rc != 0) {
+      goto error;
+    }
+    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
     rc = get_cl_options(form, create_info, options, partition_options,
                         explicit_not_auto_partition, &mapping_opts);
     if (rc != 0) {
@@ -2451,17 +2457,73 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       goto error;
     }
 
-    if (tbl_ctx_impl.is_specified_mapping() &&
-        sdb_create_table_like(ha_thd())) {
-      rc = HA_ERR_UNSUPPORTED;
+    if (sdb_create_table_like(ha_thd())) {
+      bool is_same = false;
+      bool dst_table_exists = false;
       TABLE_LIST *src_table =
           ha_thd()->lex->create_last_non_select_table->next_global;
       const char *src_db_name = src_table->get_db_name();
       const char *src_table_name = src_table->get_table_name();
-      SDB_PRINT_ERROR(rc,
-                      "Creating table from mapped table %s.%s is not supported",
-                      src_db_name, src_table_name);
-      goto error;
+      if (tbl_ctx_impl.is_specified_mapping()) {
+        rc = HA_ERR_UNSUPPORTED;
+        SDB_PRINT_ERROR(
+            rc, "Creating table from mapped table %s.%s is not supported",
+            src_db_name, src_table_name);
+        goto error;
+      }
+
+      List_iterator_fast<partition_element> part_it(part_info->partitions);
+      partition_element *part_elem;
+      List<char> sub_table_names;
+      List<char> *names_ptr;
+
+      /* Range/List partition need to keep all the sub cls' name consistent with
+         the target table. */
+      if (RANGE_PARTITION == part_info->part_type ||
+          LIST_PARTITION == part_info->part_type) {
+        while ((part_elem = part_it++)) {
+          // build part name in SQL
+          char *part_name =
+              (char *)thd_alloc(ha_thd(), SDB_CL_NAME_MAX_SIZE + 1);
+          if (NULL == part_name) {
+            rc = HA_ERR_OUT_OF_MEM;
+            goto error;
+          }
+          memset(part_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
+          rc = build_scl_name(table_name, part_elem->partition_name, part_name);
+          if (rc != 0) {
+            goto error;
+          }
+          if (sub_table_names.push_back(part_name)) {
+            rc = HA_ERR_OUT_OF_MEM;
+            goto error;
+          }
+        }
+        names_ptr = &sub_table_names;
+      } else {
+        names_ptr = NULL;
+      }
+      rc = sdb_compare_tables(conn, src_db_name, src_table_name, db_name,
+                              table_name, dst_table_exists, is_same, names_ptr);
+      if (SDB_OK != rc) {
+        goto error;
+      }
+      if (dst_table_exists && is_same) {
+        push_warning_printf(
+            ha_thd(), Sql_condition::SL_WARNING, SDB_TABLE_EXISTS,
+            "Taget table[%s.%s] exists on SequoiaDB and exacly same as "
+            "source table[%s.%s].",
+            db_name, table_name, src_db_name, src_table_name);
+      }
+      if (dst_table_exists && !is_same) {
+        rc = SDB_TABLE_EXISTS;
+        SDB_PRINT_ERROR(
+            rc,
+            "Taget table[%s.%s] exists on SequoiaDB but not exacly same as "
+            "source table[%s.%s].",
+            db_name, table_name, src_db_name, src_table_name);
+        goto error;
+      }
     }
 
     // alter table with copy algorithm
@@ -2484,12 +2546,6 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     if (rc) {
       goto error;
     }
-
-    rc = check_sdb_in_thd(ha_thd(), &conn, true);
-    if (rc != 0) {
-      goto error;
-    }
-    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
     rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
                          &created_cl, &tbl_ctx_impl);

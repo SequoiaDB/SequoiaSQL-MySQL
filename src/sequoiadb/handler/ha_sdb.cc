@@ -6521,7 +6521,6 @@ int ha_sdb::rnd_next(uchar *buf) {
       table->status = STATUS_NOT_FOUND;
       goto error;
     }
-
     DBUG_ASSERT(NULL != collection);
     DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
     DBUG_ASSERT(NULL != thd_sdb);
@@ -9330,6 +9329,53 @@ error:
   goto done;
 }
 
+int ha_sdb::create_table_like(Sdb_conn *conn, TABLE_LIST *src_table) {
+  int rc = SDB_OK;
+  bool is_same = false;
+  bool dst_table_exists = false;
+  DBUG_ASSERT(src_table);
+  DBUG_ASSERT(conn);
+  const char *src_db_name = src_table->get_db_name();
+  const char *src_table_name = src_table->get_table_name();
+  Sdb_cl_copyer cl_copyer(conn, src_db_name, src_table_name, db_name,
+                          table_name);
+  rc = sdb_compare_tables(conn, src_db_name, src_table_name, db_name,
+                          table_name, dst_table_exists, is_same);
+  if (SDB_OK != rc) {
+    goto error;
+  }
+  if (dst_table_exists && is_same) {
+    push_warning_printf(
+        ha_thd(), Sql_condition::SL_WARNING, SDB_TABLE_EXISTS,
+        "Taget table[%s.%s] exists on SequoiaDB and exacly same as "
+        "source table[%s.%s].",
+        db_name, table_name, src_db_name, src_table_name);
+    goto done;
+  }
+  if (dst_table_exists && !is_same) {
+    rc = SDB_TABLE_EXISTS;
+    SDB_PRINT_ERROR(
+        rc,
+        "Taget table[%s.%s] exists on SequoiaDB but not exacly same as "
+        "source table[%s.%s].",
+        db_name, table_name, src_db_name, src_table_name);
+    goto error;
+  }
+  if (!dst_table_exists) {
+    rc = cl_copyer.copy(this);
+    if (rc != 0) {
+      if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
+        print_error(rc, 0);
+      }
+      goto error;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   DBUG_ENTER("ha_sdb::create");
 
@@ -9428,11 +9474,9 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
             src_db_name, src_table_name);
         goto error;
       }
-      rc = cl_copyer.copy(this);
-      if (rc != 0) {
-        if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
-          print_error(rc, 0);
-        }
+
+      rc = create_table_like(conn, src_table);
+      if (SDB_OK != rc) {
         goto error;
       }
 
