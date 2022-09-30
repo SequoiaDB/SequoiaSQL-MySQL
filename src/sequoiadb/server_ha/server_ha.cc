@@ -2076,6 +2076,9 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     if (SQLCOM_ALTER_TABLESPACE == sql_command) {
       sql_info->tables->table_name =
           thd->lex->alter_tablespace_info->tablespace_name;
+      if (NULL == sql_info->tables->table_name) {
+        sql_info->tables->table_name = HA_EMPTY_STRING;
+      }
     } else {
 #ifdef IS_MARIADB
       sql_info->tables->table_name = thd->lex->server_options.server_name.str;
@@ -4337,9 +4340,17 @@ bool ha_is_ddl_ignorable_error(uint sql_errno) {
     case ER_UNKNOWN_SEQUENCES:
 #else
     case ER_ROW_IS_REFERENCED:
+    case ER_ILLEGAL_HA_CREATE_OPTION:
 #endif
+    case ER_FOREIGN_SERVER_EXISTS:
+    case ER_FOREIGN_SERVER_DOESNT_EXIST:
       can_ignore = true;
       break;
+  }
+
+  // handle "alter table t6 add unique key(a)" error(40291) for SequoiaDB
+  if (!can_ignore && SDB_IXM_EXIST_COVERD_ONE == get_sdb_code(sql_errno)) {
+    can_ignore = true;
   }
   return can_ignore;
 }
