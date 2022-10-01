@@ -2146,6 +2146,10 @@ static int replay_pending_log(THD *thd, const char *db, const char *query,
   }
   // 4. execute pending log query
   rc = server_ha_query(thd, query, strlen(query));
+  if (0 == strcmp(op_type, HA_OPERATION_TYPE_DCL)) {
+    // hide the original query, or the password will be exposed in the error log
+    query = "GRANT_CREATE_ALTER_USER_OP";
+  }
   // ignore some errors
   if (ha_is_ddl_ignorable_error(rc)) {
     SDB_LOG_WARNING(
