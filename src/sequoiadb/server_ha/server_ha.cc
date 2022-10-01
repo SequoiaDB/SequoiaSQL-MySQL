@@ -1195,6 +1195,22 @@ inline static bool have_exist_warning(THD *thd) {
   return have_warning;
 }
 
+inline static bool have_ignorable_warnings(THD *thd) {
+  bool found_ignorable_warnings = false;
+  ulong warn_count = sdb_thd_da_warn_count(thd);
+  if (warn_count) {
+    found_ignorable_warnings =
+        sdb_has_sql_condition(thd, ER_ILLEGAL_HA) ||
+        sdb_has_sql_condition(thd, ER_WARN_DEPRECATED_SYNTAX);
+#ifdef IS_MARIADB
+    found_ignorable_warnings = found_ignorable_warnings ||
+                               sdb_has_sql_condition(thd, ER_UNKNOWN_VIEW) ||
+                               sdb_has_sql_condition(thd, ER_UNKNOWN_SEQUENCES);
+#endif
+  }
+  return found_ignorable_warnings;
+}
+
 static inline bool is_temporary_table(THD *thd, const char *db_name,
                                       const char *table_name) {
   TABLE *table = NULL;
@@ -3115,8 +3131,8 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
   } else {  // handler DDL from pending log replayer
     // if 'XXX not exists' or 'XXX already exists' warning are found for
     // pending log replayer, need to write SQL log
-    can_write_log =
-        is_pending_log_ignorable_error(thd) || have_exist_warning(thd);
+    can_write_log = is_pending_log_ignorable_error(thd) ||
+                    have_exist_warning(thd) || have_ignorable_warnings(thd);
   }
 
   // In some situations, MySQL/MariaDB will rollback the whole operation if it
