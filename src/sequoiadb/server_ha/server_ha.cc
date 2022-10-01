@@ -4068,6 +4068,14 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   }
 
   switch (sql_command) {
+#ifdef IS_MYSQL
+    case SQLCOM_CREATE_USER:
+    case SQLCOM_GRANT:
+    case SQLCOM_ALTER_USER:
+      event.general_query = sdb_thd_query(thd);
+      event.general_query_length = strlen(event.general_query);
+      break;
+#endif
     case SQLCOM_CREATE_SPFUNCTION:
     case SQLCOM_CREATE_PROCEDURE:
     case SQLCOM_CREATE_EVENT:
