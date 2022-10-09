@@ -14,7 +14,10 @@ CREATE TABLE t1 (a int)
 ENGINE = SequoiaDB
 PARTITION BY HASH (a) PARTITIONS 2;
 INSERT INTO t1 VALUES (0), (1), (2), (3);
+# failed: 131: Cannot specify HASH or KEY partitions
+--error 131
 CREATE VIEW v1 AS SELECT a FROM t1 PARTITION (p0);
+CREATE VIEW v1 AS SELECT a FROM t1;
 SHOW CREATE VIEW v1;
 FLUSH STATUS;
 --sorted_result
@@ -52,7 +55,9 @@ eval $get_handler_status_counts;
 --sorted_result
 SELECT * FROM t1;
 DROP VIEW v1;
+--error 131
 CREATE VIEW v1 AS SELECT a FROM t1 PARTITION (p0) WITH CHECK OPTION;
+CREATE VIEW v1 AS SELECT a FROM t1 WITH CHECK OPTION;
 FLUSH STATUS;
 INSERT INTO v1 VALUES (20);
 eval $get_handler_status_counts;
@@ -68,7 +73,7 @@ SELECT * FROM v1;
 SELECT * FROM t1;
 DROP VIEW v1;
 CREATE VIEW v1 AS
-SELECT a FROM t1 PARTITION (p0) WHERE a = 30 WITH CHECK OPTION;
+SELECT a FROM t1 WHERE a = 30 WITH CHECK OPTION;
 FLUSH STATUS;
 INSERT INTO v1 VALUES (30);
 eval $get_handler_status_counts;
@@ -612,7 +617,10 @@ eval $get_handler_status_counts;
 --echo # 3 read rnd next (3 rnd next in t2, 2 rows + 1 empty) 
 --echo # Multi table delete matching all rows in subp3 (2 rows in per table)
 FLUSH STATUS;
+--error 131
 DELETE FROM t2, t3 USING t2 PARTITION (`p0-9`), t3, t1 PARTITION (subp3)
+WHERE t1.a = t3.a AND t3.b = 'subp3' AND t2.a = t1.a;
+DELETE FROM t2, t3 USING t2, t3, t1 
 WHERE t1.a = t3.a AND t3.b = 'subp3' AND t2.a = t1.a;
 eval $get_handler_status_counts;
 --echo # 4 delete (2 in t2 + 2 in t3)

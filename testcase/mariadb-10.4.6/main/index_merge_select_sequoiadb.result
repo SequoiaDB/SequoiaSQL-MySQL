@@ -15,7 +15,7 @@ a	b	c
 2	2	17
 2	2	20
 2	2	25
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
 EXPLAIN SELECT a,b,c FROM t1 force index(a,b) WHERE (b = 2 or a = 2) order by c;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	a,b	b,a	3,3	NULL	4	Using union(b,a); Using where with pushed condition; Using filesort

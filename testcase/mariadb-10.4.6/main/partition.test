@@ -298,6 +298,7 @@ insert into t1 select * from t1;
 --error ER_DUP_KEYNAME
 create index i on t1 (a);
 # failed: 40291: The scene of index 'i2' is covered by the existing index 'i'
+#BUG:SEQUOIADBMAINSTREAM-7882
 --error 40291
 create index i2 on t1 (a);
 drop table t1;

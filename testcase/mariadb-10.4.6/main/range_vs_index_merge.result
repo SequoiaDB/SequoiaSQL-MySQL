@@ -121,140 +121,163 @@ SELECT  * FROM City USE INDEX ()
 WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
 ID	Name	Country	Population
-65	Abu Dhabi	ARE	398695
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
-750	Paarl	ZAF	105768
 2865	Pak Pattan	PAK	107800
+65	Abu Dhabi	ARE	398695
+750	Paarl	ZAF	105768
 SELECT  * FROM City 
 WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
 ID	Name	Country	Population
-65	Abu Dhabi	ARE	398695
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
-750	Paarl	ZAF	105768
 2865	Pak Pattan	PAK	107800
+65	Abu Dhabi	ARE	398695
+750	Paarl	ZAF	105768
 SELECT  * FROM City USE INDEX ()
 WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'S' AND (Population > 103000 AND Population < 104000));
 ID	Name	Country	Population
-65	Abu Dhabi	ARE	398695
+1003	Pemalang	IDN	103500
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
-1003	Pemalang	IDN	103500
 2663	Río Bravo	MEX	103901
+65	Abu Dhabi	ARE	398695
 SELECT  * FROM City
 WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'S' AND (Population > 103000 AND Population < 104000));
 ID	Name	Country	Population
-65	Abu Dhabi	ARE	398695
+1003	Pemalang	IDN	103500
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
-1003	Pemalang	IDN	103500
 2663	Río Bravo	MEX	103901
+65	Abu Dhabi	ARE	398695
 SELECT  * FROM City USE INDEX ()
 WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
 ID	Name	Country	Population
-55	Andorra la Vella	AND	21189
-65	Abu Dhabi	ARE	398695
-68	Ajman	ARE	114395
-75	Almirante Brown	ARG	538918
-85	Avellaneda	ARG	353046
-96	Bahía Blanca	ARG	239810
 134	Adelaide	AUS	978100
 144	Baku	AZE	1787800
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
-750	Paarl	ZAF	105768
 2865	Pak Pattan	PAK	107800
+55	Andorra la Vella	AND	21189
+65	Abu Dhabi	ARE	398695
+68	Ajman	ARE	114395
+75	Almirante Brown	ARG	538918
+750	Paarl	ZAF	105768
+85	Avellaneda	ARG	353046
+96	Bahía Blanca	ARG	239810
 SELECT  * FROM City
 WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
 ID	Name	Country	Population
-55	Andorra la Vella	AND	21189
-65	Abu Dhabi	ARE	398695
-68	Ajman	ARE	114395
-75	Almirante Brown	ARG	538918
-85	Avellaneda	ARG	353046
-96	Bahía Blanca	ARG	239810
 134	Adelaide	AUS	978100
 144	Baku	AZE	1787800
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
-750	Paarl	ZAF	105768
 2865	Pak Pattan	PAK	107800
+55	Andorra la Vella	AND	21189
+65	Abu Dhabi	ARE	398695
+68	Ajman	ARE	114395
+75	Almirante Brown	ARG	538918
+750	Paarl	ZAF	105768
+85	Avellaneda	ARG	353046
+96	Bahía Blanca	ARG	239810
 SELECT  * FROM City USE INDEX ()
 WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'S' AND (Population > 103000 AND Population < 104000));
 ID	Name	Country	Population
+1003	Pemalang	IDN	103500
+134	Adelaide	AUS	978100
+144	Baku	AZE	1787800
+168	Pabna	BGD	103277
+189	Parakou	BEN	103577
+2663	Río Bravo	MEX	103901
 55	Andorra la Vella	AND	21189
 65	Abu Dhabi	ARE	398695
 68	Ajman	ARE	114395
 75	Almirante Brown	ARG	538918
 85	Avellaneda	ARG	353046
 96	Bahía Blanca	ARG	239810
-134	Adelaide	AUS	978100
-144	Baku	AZE	1787800
-168	Pabna	BGD	103277
-189	Parakou	BEN	103577
-1003	Pemalang	IDN	103500
-2663	Río Bravo	MEX	103901
 SELECT  * FROM City
 WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'S' AND (Population > 103000 AND Population < 104000));
 ID	Name	Country	Population
+1003	Pemalang	IDN	103500
+134	Adelaide	AUS	978100
+144	Baku	AZE	1787800
+168	Pabna	BGD	103277
+189	Parakou	BEN	103577
+2663	Río Bravo	MEX	103901
 55	Andorra la Vella	AND	21189
 65	Abu Dhabi	ARE	398695
 68	Ajman	ARE	114395
 75	Almirante Brown	ARG	538918
 85	Avellaneda	ARG	353046
 96	Bahía Blanca	ARG	239810
-134	Adelaide	AUS	978100
-144	Baku	AZE	1787800
-168	Pabna	BGD	103277
-189	Parakou	BEN	103577
-1003	Pemalang	IDN	103500
-2663	Río Bravo	MEX	103901
 SELECT * FROM City USE INDEX ()
 WHERE ((ID < 10) AND (Name LIKE 'H%' OR (Country > 'A' AND Country < 'ARG')))
 OR ((ID BETWEEN 100 AND 110) AND 
 (Name LIKE 'P%' OR (Population > 103000 AND Population < 104000)));
 ID	Name	Country	Population
 1	Kabul	AFG	1780000
+100	Paraná	ARG	207041
+102	Posadas	ARG	201273
 2	Qandahar	AFG	237500
 3	Herat	AFG	186800
 4	Mazar-e-Sharif	AFG	127800
 7	Haag	NLD	440900
-100	Paraná	ARG	207041
-102	Posadas	ARG	201273
 SELECT * FROM City
 WHERE ((ID < 10) AND (Name LIKE 'H%' OR (Country > 'A' AND Country < 'ARG')))
 OR ((ID BETWEEN 100 AND 110) AND 
 (Name LIKE 'P%' OR (Population > 103000 AND Population < 104000)));
 ID	Name	Country	Population
 1	Kabul	AFG	1780000
+100	Paraná	ARG	207041
+102	Posadas	ARG	201273
 2	Qandahar	AFG	237500
 3	Herat	AFG	186800
 4	Mazar-e-Sharif	AFG	127800
 7	Haag	NLD	440900
-100	Paraná	ARG	207041
-102	Posadas	ARG	201273
 SELECT * FROM City USE INDEX()
 WHERE ((ID < 800) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
 OR ((ID BETWEEN 900 AND 1500) AND 
 (Name LIKE 'Pa%' OR (Population > 103000 AND Population < 104000)));
 ID	Name	Country	Population
 1	Kabul	AFG	1780000
-2	Qandahar	AFG	237500
-3	Herat	AFG	186800
-4	Mazar-e-Sharif	AFG	127800
-7	Haag	NLD	440900
+1003	Pemalang	IDN	103500
+1004	Klaten	IDN	103300
+1007	Palangka Raya	IDN	99693
+1020	Padang Sidempuan	IDN	91200
+1045	Patna	IND	917243
+1114	Panihati	IND	275990
+1129	Patiala	IND	238368
+1142	Panipat	IND	215218
+1159	Parbhani	IND	190255
+1231	Pali	IND	136842
+1263	Pathankot	IND	123930
+1265	Palghat (Palakkad)	IND	123289
+129	Oranjestad	ABW	29034
+1293	Pallavaram	IND	111866
+1319	Tellicherry (Thalassery)	IND	103579
+1339	Palayankottai	IND	97662
+1345	Patan	IND	96109
+1436	Marv Dasht	IRN	103579
+1468	Palermo	ITA	683794
+1478	Padova	ITA	211391
+1484	Parma	ITA	168717
 16	Haarlem	NLD	148772
+191	Hamilton	BMU	1200
+2	Qandahar	AFG	237500
 25	Haarlemmermeer	NLD	110722
+3	Herat	AFG	186800
 33	Willemstad	ANT	2345
 34	Tirana	ALB	270000
+4	Mazar-e-Sharif	AFG	127800
+528	Hartlepool	GBR	92000
+529	Halifax	GBR	91069
 55	Andorra la Vella	AND	21189
 56	Luanda	AGO	2022000
 57	Huambo	AGO	163100
@@ -268,73 +291,19 @@ ID	Name	Country	Population
 66	Sharja	ARE	320095
 67	al-Ayn	ARE	225970
 68	Ajman	ARE	114395
-129	Oranjestad	ABW	29034
-191	Hamilton	BMU	1200
-528	Hartlepool	GBR	92000
-529	Halifax	GBR	91069
+7	Haag	NLD	440900
 914	Sekondi-Takoradi	GHA	103653
 943	Palembang	IDN	1222764
 950	Padang	IDN	534474
 983	Palu	IDN	142800
 984	Pasuruan	IDN	134019
 991	Pangkal Pinang	IDN	124000
-1003	Pemalang	IDN	103500
-1004	Klaten	IDN	103300
-1007	Palangka Raya	IDN	99693
-1020	Padang Sidempuan	IDN	91200
-1045	Patna	IND	917243
-1114	Panihati	IND	275990
-1129	Patiala	IND	238368
-1142	Panipat	IND	215218
-1159	Parbhani	IND	190255
-1231	Pali	IND	136842
-1263	Pathankot	IND	123930
-1265	Palghat (Palakkad)	IND	123289
-1293	Pallavaram	IND	111866
-1319	Tellicherry (Thalassery)	IND	103579
-1339	Palayankottai	IND	97662
-1345	Patan	IND	96109
-1436	Marv Dasht	IRN	103579
-1468	Palermo	ITA	683794
-1478	Padova	ITA	211391
-1484	Parma	ITA	168717
 SELECT * FROM City
 WHERE ((ID < 800) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
 OR ((ID BETWEEN 900 AND 1500) AND 
 (Name LIKE 'Pa%' OR (Population > 103000 AND Population < 104000)));
 ID	Name	Country	Population
 1	Kabul	AFG	1780000
-2	Qandahar	AFG	237500
-3	Herat	AFG	186800
-4	Mazar-e-Sharif	AFG	127800
-7	Haag	NLD	440900
-16	Haarlem	NLD	148772
-25	Haarlemmermeer	NLD	110722
-33	Willemstad	ANT	2345
-34	Tirana	ALB	270000
-55	Andorra la Vella	AND	21189
-56	Luanda	AGO	2022000
-57	Huambo	AGO	163100
-58	Lobito	AGO	130000
-59	Benguela	AGO	128300
-60	Namibe	AGO	118200
-61	South Hill	AIA	961
-62	The Valley	AIA	595
-64	Dubai	ARE	669181
-65	Abu Dhabi	ARE	398695
-66	Sharja	ARE	320095
-67	al-Ayn	ARE	225970
-68	Ajman	ARE	114395
-129	Oranjestad	ABW	29034
-191	Hamilton	BMU	1200
-528	Hartlepool	GBR	92000
-529	Halifax	GBR	91069
-914	Sekondi-Takoradi	GHA	103653
-943	Palembang	IDN	1222764
-950	Padang	IDN	534474
-983	Palu	IDN	142800
-984	Pasuruan	IDN	134019
-991	Pangkal Pinang	IDN	124000
 1003	Pemalang	IDN	103500
 1004	Klaten	IDN	103300
 1007	Palangka Raya	IDN	99693
@@ -347,6 +316,7 @@ ID	Name	Country	Population
 1231	Pali	IND	136842
 1263	Pathankot	IND	123930
 1265	Palghat (Palakkad)	IND	123289
+129	Oranjestad	ABW	29034
 1293	Pallavaram	IND	111866
 1319	Tellicherry (Thalassery)	IND	103579
 1339	Palayankottai	IND	97662
@@ -355,20 +325,16 @@ ID	Name	Country	Population
 1468	Palermo	ITA	683794
 1478	Padova	ITA	211391
 1484	Parma	ITA	168717
-SELECT * FROM City USE INDEX ()
-WHERE ((ID < 200) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
-OR ((ID BETWEEN 100 AND 200) AND 
-(Name LIKE 'Pa%' OR (Population > 103000 AND Population < 104000)));
-ID	Name	Country	Population
-1	Kabul	AFG	1780000
-2	Qandahar	AFG	237500
-3	Herat	AFG	186800
-4	Mazar-e-Sharif	AFG	127800
-7	Haag	NLD	440900
 16	Haarlem	NLD	148772
+191	Hamilton	BMU	1200
+2	Qandahar	AFG	237500
 25	Haarlemmermeer	NLD	110722
+3	Herat	AFG	186800
 33	Willemstad	ANT	2345
 34	Tirana	ALB	270000
+4	Mazar-e-Sharif	AFG	127800
+528	Hartlepool	GBR	92000
+529	Halifax	GBR	91069
 55	Andorra la Vella	AND	21189
 56	Luanda	AGO	2022000
 57	Huambo	AGO	163100
@@ -382,26 +348,32 @@ ID	Name	Country	Population
 66	Sharja	ARE	320095
 67	al-Ayn	ARE	225970
 68	Ajman	ARE	114395
-100	Paraná	ARG	207041
-129	Oranjestad	ABW	29034
-167	Jamalpur	BGD	103556
-168	Pabna	BGD	103277
-189	Parakou	BEN	103577
-191	Hamilton	BMU	1200
-SELECT * FROM City
+7	Haag	NLD	440900
+914	Sekondi-Takoradi	GHA	103653
+943	Palembang	IDN	1222764
+950	Padang	IDN	534474
+983	Palu	IDN	142800
+984	Pasuruan	IDN	134019
+991	Pangkal Pinang	IDN	124000
+SELECT * FROM City USE INDEX ()
 WHERE ((ID < 200) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
 OR ((ID BETWEEN 100 AND 200) AND 
 (Name LIKE 'Pa%' OR (Population > 103000 AND Population < 104000)));
 ID	Name	Country	Population
 1	Kabul	AFG	1780000
-2	Qandahar	AFG	237500
-3	Herat	AFG	186800
-4	Mazar-e-Sharif	AFG	127800
-7	Haag	NLD	440900
+100	Paraná	ARG	207041
+129	Oranjestad	ABW	29034
 16	Haarlem	NLD	148772
+167	Jamalpur	BGD	103556
+168	Pabna	BGD	103277
+189	Parakou	BEN	103577
+191	Hamilton	BMU	1200
+2	Qandahar	AFG	237500
 25	Haarlemmermeer	NLD	110722
+3	Herat	AFG	186800
 33	Willemstad	ANT	2345
 34	Tirana	ALB	270000
+4	Mazar-e-Sharif	AFG	127800
 55	Andorra la Vella	AND	21189
 56	Luanda	AGO	2022000
 57	Huambo	AGO	163100
@@ -415,12 +387,40 @@ ID	Name	Country	Population
 66	Sharja	ARE	320095
 67	al-Ayn	ARE	225970
 68	Ajman	ARE	114395
+7	Haag	NLD	440900
+SELECT * FROM City
+WHERE ((ID < 200) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
+OR ((ID BETWEEN 100 AND 200) AND 
+(Name LIKE 'Pa%' OR (Population > 103000 AND Population < 104000)));
+ID	Name	Country	Population
+1	Kabul	AFG	1780000
 100	Paraná	ARG	207041
 129	Oranjestad	ABW	29034
+16	Haarlem	NLD	148772
 167	Jamalpur	BGD	103556
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
 191	Hamilton	BMU	1200
+2	Qandahar	AFG	237500
+25	Haarlemmermeer	NLD	110722
+3	Herat	AFG	186800
+33	Willemstad	ANT	2345
+34	Tirana	ALB	270000
+4	Mazar-e-Sharif	AFG	127800
+55	Andorra la Vella	AND	21189
+56	Luanda	AGO	2022000
+57	Huambo	AGO	163100
+58	Lobito	AGO	130000
+59	Benguela	AGO	128300
+60	Namibe	AGO	118200
+61	South Hill	AIA	961
+62	The Valley	AIA	595
+64	Dubai	ARE	669181
+65	Abu Dhabi	ARE	398695
+66	Sharja	ARE	320095
+67	al-Ayn	ARE	225970
+68	Ajman	ARE	114395
+7	Haag	NLD	440900
 SELECT * FROM City USE INDEX ()
 WHERE ((Population > 101000 AND Population < 102000) AND
 (Country < 'C' OR Name BETWEEN 'P' AND 'S')) OR
@@ -429,11 +429,11 @@ WHERE ((Population > 101000 AND Population < 102000) AND
 ID	Name	Country	Population
 169	Naogaon	BGD	101266
 205	Francistown	BWA	101805
+2909	Puno	PER	101578
+3463	Pavlograd	UKR	127000
 417	Itaituba	BRA	101320
 418	Araras	BRA	101046
 751	Potchefstroom	ZAF	101817
-2909	Puno	PER	101578
-3463	Pavlograd	UKR	127000
 SELECT * FROM City
 WHERE ((Population > 101000 AND Population < 102000) AND
 (Country < 'C' OR Name BETWEEN 'P' AND 'S')) OR
@@ -442,11 +442,11 @@ WHERE ((Population > 101000 AND Population < 102000) AND
 ID	Name	Country	Population
 169	Naogaon	BGD	101266
 205	Francistown	BWA	101805
+2909	Puno	PER	101578
+3463	Pavlograd	UKR	127000
 417	Itaituba	BRA	101320
 418	Araras	BRA	101046
 751	Potchefstroom	ZAF	101817
-2909	Puno	PER	101578
-3463	Pavlograd	UKR	127000
 SELECT * FROM City USE INDEX ()
 WHERE ((Population > 101000 AND Population < 110000) AND
 (Country < 'AGO' OR Name BETWEEN 'P' AND 'Pb')) OR
@@ -455,10 +455,10 @@ WHERE ((Population > 101000 AND Population < 110000) AND
 ID	Name	Country	Population
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
-750	Paarl	ZAF	105768
 2865	Pak Pattan	PAK	107800
 3797	Philadelphia	USA	1517550
 3798	Phoenix	USA	1321045
+750	Paarl	ZAF	105768
 SELECT * FROM City
 WHERE ((Population > 101000 AND Population < 110000) AND
 (Country < 'AGO' OR Name BETWEEN 'P' AND 'Pb')) OR
@@ -467,10 +467,10 @@ WHERE ((Population > 101000 AND Population < 110000) AND
 ID	Name	Country	Population
 168	Pabna	BGD	103277
 189	Parakou	BEN	103577
-750	Paarl	ZAF	105768
 2865	Pak Pattan	PAK	107800
 3797	Philadelphia	USA	1517550
 3798	Phoenix	USA	1321045
+750	Paarl	ZAF	105768
 CREATE INDEX CountryPopulation ON City(Country,Population);
 SELECT * FROM City 
 WHERE ((Population > 101000 AND Population < 103000) OR Name LIKE 'Pas%')
@@ -578,12 +578,6 @@ ID	Name	Country	Population
 364	Parnaíba	BRA	129756
 372	Paranaguá	BRA	126076
 379	Palmas	BRA	121919
-386	Patos de Minas	BRA	119262
-424	Passos	BRA	98570
-430	Paulo Afonso	BRA	97291
-435	Parnamirim	BRA	96210
-448	Patos	BRA	90519
-451	Palhoça	BRA	89465
 3793	New York	USA	8008278
 3794	Los Angeles	USA	3694820
 3795	Chicago	USA	2896016
@@ -592,9 +586,15 @@ ID	Name	Country	Population
 3798	Phoenix	USA	1321045
 3799	San Diego	USA	1223400
 3800	Dallas	USA	1188580
+386	Patos de Minas	BRA	119262
 4030	Sandy	USA	101853
 4031	Athens-Clarke County	USA	101489
 4032	Cambridge	USA	101355
+424	Passos	BRA	98570
+430	Paulo Afonso	BRA	97291
+435	Parnamirim	BRA	96210
+448	Patos	BRA	90519
+451	Palhoça	BRA	89465
 SELECT * FROM City
 WHERE ((Population > 101000 and Population < 102000) OR
 ID BETWEEN 3790 AND 3800) AND Country='USA'
@@ -616,12 +616,6 @@ ID	Name	Country	Population
 364	Parnaíba	BRA	129756
 372	Paranaguá	BRA	126076
 379	Palmas	BRA	121919
-386	Patos de Minas	BRA	119262
-424	Passos	BRA	98570
-430	Paulo Afonso	BRA	97291
-435	Parnamirim	BRA	96210
-448	Patos	BRA	90519
-451	Palhoça	BRA	89465
 3793	New York	USA	8008278
 3794	Los Angeles	USA	3694820
 3795	Chicago	USA	2896016
@@ -630,9 +624,15 @@ ID	Name	Country	Population
 3798	Phoenix	USA	1321045
 3799	San Diego	USA	1223400
 3800	Dallas	USA	1188580
+386	Patos de Minas	BRA	119262
 4030	Sandy	USA	101853
 4031	Athens-Clarke County	USA	101489
 4032	Cambridge	USA	101355
+424	Passos	BRA	98570
+430	Paulo Afonso	BRA	97291
+435	Parnamirim	BRA	96210
+448	Patos	BRA	90519
+451	Palhoça	BRA	89465
 SELECT * FROM City USE INDEX ()
 WHERE ((Population > 101000 AND Population < 11000) OR
 ID BETWEEN 3500 AND 3800) AND Country='USA'
@@ -742,32 +742,32 @@ SELECT Name, Country, Population FROM City WHERE
 (Name='Seattle' AND Country='USA');
 Name	Country	Population
 Addis Abeba	ETH	2495000
-Manila	PHL	1581082
-Jakarta	IDN	9604900
-Delhi	IND	7206704
+Ankara	TUR	3038159
 Bangalore	IND	2660088
-Teheran	IRN	6758845
+Basel	CHE	166700
+Caracas	VEN	1975294
+Dakar	SEN	785071
+Delhi	IND	7206704
+Dresden	DEU	476668
+Jakarta	IDN	9604900
+Kaunas	LTU	412639
+Lagos	NGA	1518000
+Lugansk	UKR	469000
+Manila	PHL	1581082
+Paris	FRA	2125246
+Peking	CHN	7472000
+Praha	CZE	1181126
+Rabat	MAR	623457
 Roma	ITA	2643581
-Venezia	ITA	277305
+Samara	RUS	1156100
+Seattle	USA	563374
+Seoul	KOR	9981619
+Teheran	IRN	6758845
+Tijuana	MEX	1212232
 Tokyo	JPN	7980230
 Toronto	CAN	688275
 Vancouver	CAN	514008
-Peking	CHN	7472000
-Seoul	KOR	9981619
-Kaunas	LTU	412639
-Rabat	MAR	623457
-Tijuana	MEX	1212232
-Lagos	NGA	1518000
-Paris	FRA	2125246
-Dresden	DEU	476668
-Dakar	SEN	785071
-Basel	CHE	166700
-Praha	CZE	1181126
-Ankara	TUR	3038159
-Lugansk	UKR	469000
-Caracas	VEN	1975294
-Samara	RUS	1156100
-Seattle	USA	563374
+Venezia	ITA	277305
 set optimizer_switch='index_merge=off';
 SELECT Name, Country, Population FROM City WHERE
 (Name='Manila' AND Country='PHL') OR
@@ -798,33 +798,33 @@ SELECT Name, Country, Population FROM City WHERE
 (Name='Samara' AND Country='RUS') OR  
 (Name='Seattle' AND Country='USA');
 Name	Country	Population
-Toronto	CAN	688275
-Vancouver	CAN	514008
+Addis Abeba	ETH	2495000
+Ankara	TUR	3038159
+Bangalore	IND	2660088
 Basel	CHE	166700
+Caracas	VEN	1975294
+Dakar	SEN	785071
+Delhi	IND	7206704
+Dresden	DEU	476668
+Jakarta	IDN	9604900
+Kaunas	LTU	412639
+Lagos	NGA	1518000
+Lugansk	UKR	469000
+Manila	PHL	1581082
+Paris	FRA	2125246
 Peking	CHN	7472000
 Praha	CZE	1181126
-Dresden	DEU	476668
-Addis Abeba	ETH	2495000
-Paris	FRA	2125246
-Jakarta	IDN	9604900
-Bangalore	IND	2660088
-Delhi	IND	7206704
-Teheran	IRN	6758845
-Roma	ITA	2643581
-Venezia	ITA	277305
-Tokyo	JPN	7980230
-Seoul	KOR	9981619
-Kaunas	LTU	412639
 Rabat	MAR	623457
-Tijuana	MEX	1212232
-Lagos	NGA	1518000
-Manila	PHL	1581082
+Roma	ITA	2643581
 Samara	RUS	1156100
-Dakar	SEN	785071
-Ankara	TUR	3038159
-Lugansk	UKR	469000
 Seattle	USA	563374
-Caracas	VEN	1975294
+Seoul	KOR	9981619
+Teheran	IRN	6758845
+Tijuana	MEX	1212232
+Tokyo	JPN	7980230
+Toronto	CAN	688275
+Vancouver	CAN	514008
+Venezia	ITA	277305
 set optimizer_switch=@save_optimizer_switch;
 # 
 # Bug mdev-585: range vs index-merge with ORDER BY ... LIMIT n
@@ -840,76 +840,76 @@ SELECT * FROM City
 WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
 AND (Population >= 100000 AND Population < 120000);
 ID	Name	Country	Population
-519	Worthing	GBR	100000
-638	al-Arish	EGY	100447
-518	Basildon	GBR	100924
-707	Marbella	ESP	101144
-3792	Tartu	EST	101246
-924	Villa Nueva	GTM	101295
-4032	Cambridge	USA	101355
-637	Mit Ghamr	EGY	101801
-4027	Cape Coral	USA	102286
-3411	Ceyhan	TUR	102412
-903	Serekunda	GMB	102600
-706	Algeciras	ESP	103106
-412	Cachoeirinha	BRA	103240
-3009	Nancy	FRA	103605
-914	Sekondi-Takoradi	GHA	103653
-517	Oldham	GBR	103931
-873	Cauayan	PHL	103952
-705	Mataró	ESP	104095
-516	York	GBR	104425
-3008	Perpignan	FRA	105115
-870	Calapan	PHL	105910
-512	Cheltenham	GBR	106000
-515	Sutton Coldfield	GBR	106001
-514	Saint Helens	GBR	106293
-3007	Boulogne-Billancourt	FRA	106367
-3006	Rouen	FRA	106592
-869	Cabuyao	PHL	106630
-513	Gloucester	GBR	107000
-3571	Calabozo	VEN	107146
-403	Catanduva	BRA	107761
-2908	Cajamarca	PER	108009
-704	Ourense (Orense)	ESP	109120
-1847	Cambridge	CAN	109186
-703	Jaén	ESP	109247
-4002	Carrollton	USA	109576
-913	Tema	GHA	109975
-3005	Mulhouse	FRA	110359
-511	Exeter	GBR	111000
-909	Sohumi	GEO	111700
-510	Slough	GBR	112000
-702	Lleida (Lérida)	ESP	112207
-759	Gonder	ETH	112249
-701	Tarragona	ESP	113016
-508	Watford	GBR	113080
-2408	Larisa	GRC	113090
-3004	Orléans	FRA	113126
-636	Bilbays	EGY	113608
-3003	Caen	FRA	113987
-509	Ipswich	GBR	114000
-3786	Cam Ranh	VNM	114041
-2407	Kallithea	GRC	114233
 1844	Cape Breton	CAN	114733
+1847	Cambridge	CAN	109186
 2406	Herakleion	GRC	116178
-3568	Catia La Mar	VEN	117012
+2407	Kallithea	GRC	114233
+2408	Larisa	GRC	113090
+2908	Cajamarca	PER	108009
 3002	Besançon	FRA	117733
-387	Camaragibe	BRA	118968
-635	Mallawi	EGY	119283
-384	Cabo Frio	BRA	119503
+3003	Caen	FRA	113987
+3004	Orléans	FRA	113126
+3005	Mulhouse	FRA	110359
+3006	Rouen	FRA	106592
+3007	Boulogne-Billancourt	FRA	106367
+3008	Perpignan	FRA	105115
+3009	Nancy	FRA	103605
+3411	Ceyhan	TUR	102412
 3567	Carúpano	VEN	119639
+3568	Catia La Mar	VEN	117012
+3571	Calabozo	VEN	107146
+3786	Cam Ranh	VNM	114041
+3792	Tartu	EST	101246
+384	Cabo Frio	BRA	119503
+387	Camaragibe	BRA	118968
+4002	Carrollton	USA	109576
+4027	Cape Coral	USA	102286
+403	Catanduva	BRA	107761
+4032	Cambridge	USA	101355
+412	Cachoeirinha	BRA	103240
+508	Watford	GBR	113080
+509	Ipswich	GBR	114000
+510	Slough	GBR	112000
+511	Exeter	GBR	111000
+512	Cheltenham	GBR	106000
+513	Gloucester	GBR	107000
+514	Saint Helens	GBR	106293
+515	Sutton Coldfield	GBR	106001
+516	York	GBR	104425
+517	Oldham	GBR	103931
+518	Basildon	GBR	100924
+519	Worthing	GBR	100000
+635	Mallawi	EGY	119283
+636	Bilbays	EGY	113608
+637	Mit Ghamr	EGY	101801
+638	al-Arish	EGY	100447
+701	Tarragona	ESP	113016
+702	Lleida (Lérida)	ESP	112207
+703	Jaén	ESP	109247
+704	Ourense (Orense)	ESP	109120
+705	Mataró	ESP	104095
+706	Algeciras	ESP	103106
+707	Marbella	ESP	101144
+759	Gonder	ETH	112249
+869	Cabuyao	PHL	106630
+870	Calapan	PHL	105910
+873	Cauayan	PHL	103952
+903	Serekunda	GMB	102600
+909	Sohumi	GEO	111700
+913	Tema	GHA	109975
+914	Sekondi-Takoradi	GHA	103653
+924	Villa Nueva	GTM	101295
 FLUSH STATUS;
 SELECT * FROM City
 WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
 AND (Population >= 100000 AND Population < 120000)
 ORDER BY Population LIMIT 5;
 ID	Name	Country	Population
+3792	Tartu	EST	101246
+518	Basildon	GBR	100924
 519	Worthing	GBR	100000
 638	al-Arish	EGY	100447
-518	Basildon	GBR	100924
 707	Marbella	ESP	101144
-3792	Tartu	EST	101246
 set @tmp_mdev585=@@optimizer_use_condition_selectivity;
 set optimizer_use_condition_selectivity=1;
 FLUSH STATUS;
@@ -918,11 +918,11 @@ WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
 AND (Population >= 100000 AND Population < 120000)
 ORDER BY Population LIMIT 5;
 ID	Name	Country	Population
+3792	Tartu	EST	101246
+518	Basildon	GBR	100924
 519	Worthing	GBR	100000
 638	al-Arish	EGY	100447
-518	Basildon	GBR	100924
 707	Marbella	ESP	101144
-3792	Tartu	EST	101246
 set optimizer_use_condition_selectivity=@tmp_mdev585;
 set optimizer_switch='index_merge=off';
 FLUSH STATUS;
@@ -931,11 +931,11 @@ WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
 AND (Population >= 100000 AND Population < 120000)
 ORDER BY Population LIMIT 5;
 ID	Name	Country	Population
+3792	Tartu	EST	101246
+518	Basildon	GBR	100924
 519	Worthing	GBR	100000
 638	al-Arish	EGY	100447
-518	Basildon	GBR	100924
 707	Marbella	ESP	101144
-3792	Tartu	EST	101246
 set optimizer_switch=@save_optimizer_switch;
 DROP DATABASE world_range_vs_index_merge;
 use test_range_vs_index_merge;
@@ -1259,9 +1259,9 @@ SELECT * FROM t1 FORCE KEY (state,capital)
 WHERE ( state = 'Alabama' OR state >= 'Colorado' ) AND id != 9 
 OR ( capital >= 'Topeka' OR state = 'Kansas' ) AND state != 'Texas';
 id	state	capital
-4	Florida	Tallahassee
-3	Georgia	Atlanta
 2	Hawaii	Honolulu
+3	Georgia	Atlanta
+4	Florida	Tallahassee
 6	Michigan	Lansing
 7	Pennsylvania	Harrisburg
 8	Virginia	Richmond

@@ -25,8 +25,11 @@ use world_range_vs_index_merge;
 --enable_result_log
 --enable_query_log
 
+--sorted_result
 SELECT COUNT(*) FROM Country;
+--sorted_result
 SELECT COUNT(*) FROM City;
+--sorted_result
 SELECT COUNT(*) FROM CountryLanguage;
 
 CREATE INDEX Name ON City(Name);
@@ -172,34 +175,42 @@ SELECT * FROM City
 # The following 8 queries check that the plans
 # for the previous 4 plans are valid
 
+--sorted_result
 SELECT  * FROM City USE INDEX ()
   WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
   (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
 
+--sorted_result
 SELECT  * FROM City 
   WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
   (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
 
+--sorted_result
 SELECT  * FROM City USE INDEX ()
   WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
   (Name BETWEEN 'P' AND 'S' AND (Population > 103000 AND Population < 104000));
 
+--sorted_result
 SELECT  * FROM City
   WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
   (Name BETWEEN 'P' AND 'S' AND (Population > 103000 AND Population < 104000));
 
+--sorted_result
 SELECT  * FROM City USE INDEX ()
   WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
   (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
 
+--sorted_result
 SELECT  * FROM City
   WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
   (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
 
+--sorted_result
 SELECT  * FROM City USE INDEX ()
   WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
   (Name BETWEEN 'P' AND 'S' AND (Population > 103000 AND Population < 104000));
 
+--sorted_result
 SELECT  * FROM City
   WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
   (Name BETWEEN 'P' AND 'S' AND (Population > 103000 AND Population < 104000));
@@ -251,31 +262,37 @@ SELECT  * FROM City
 # The following 6 queries check that the plans
 # for the previous 3 plans are valid
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((ID < 10) AND (Name LIKE 'H%' OR (Country > 'A' AND Country < 'ARG')))
         OR ((ID BETWEEN 100 AND 110) AND 
             (Name LIKE 'P%' OR (Population > 103000 AND Population < 104000)));
 
+--sorted_result
 SELECT * FROM City
   WHERE ((ID < 10) AND (Name LIKE 'H%' OR (Country > 'A' AND Country < 'ARG')))
         OR ((ID BETWEEN 100 AND 110) AND 
             (Name LIKE 'P%' OR (Population > 103000 AND Population < 104000)));
 
+--sorted_result
 SELECT * FROM City USE INDEX()
   WHERE ((ID < 800) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
         OR ((ID BETWEEN 900 AND 1500) AND 
             (Name LIKE 'Pa%' OR (Population > 103000 AND Population < 104000)));
 
+--sorted_result
 SELECT * FROM City
   WHERE ((ID < 800) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
         OR ((ID BETWEEN 900 AND 1500) AND 
             (Name LIKE 'Pa%' OR (Population > 103000 AND Population < 104000)));
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((ID < 200) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
         OR ((ID BETWEEN 100 AND 200) AND 
             (Name LIKE 'Pa%' OR (Population > 103000 AND Population < 104000)));
 
+--sorted_result
 SELECT * FROM City
   WHERE ((ID < 200) AND (Name LIKE 'Ha%' OR (Country > 'A' AND Country < 'ARG')))
         OR ((ID BETWEEN 100 AND 200) AND 
@@ -330,24 +347,28 @@ SELECT * FROM City
 # The following 4 queries check that the plans
 # for the previous 2 plans are valid
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 102000) AND
          (Country < 'C' OR Name BETWEEN 'P' AND 'S')) OR
         ((ID BETWEEN 3400 AND 3800) AND 
          (Country < 'AGO' OR Name LIKE 'Pa%'));
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Population > 101000 AND Population < 102000) AND
          (Country < 'C' OR Name BETWEEN 'P' AND 'S')) OR
         ((ID BETWEEN 3400 AND 3800) AND 
          (Country < 'AGO' OR Name LIKE 'Pa%'));
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 110000) AND
          (Country < 'AGO' OR Name BETWEEN 'P' AND 'Pb')) OR
         ((ID BETWEEN 3790 AND 3800) AND 
          (Country < 'C' OR Name LIKE 'P%'));
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Population > 101000 AND Population < 110000) AND
          (Country < 'AGO' OR Name BETWEEN 'P' AND 'Pb')) OR
@@ -399,18 +420,22 @@ ANALYZE TABLE City;
 # The following 4 queries check that the plans
 # for the previous 2 plans are valid
 
+--sorted_result
 SELECT * FROM City 
   WHERE ((Population > 101000 AND Population < 103000) OR Name LIKE 'Pas%')
         AND Country='USA';
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 103000) OR Name LIKE 'Pas%')
         AND Country='USA';
 
+--sorted_result
 SELECT * FROM City 
   WHERE ((Population > 101000 AND Population < 103000) OR Name LIKE 'P%')
         AND Country='FIN';
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 103000) OR Name LIKE 'P%')
         AND Country='FIN';
@@ -488,31 +513,37 @@ set optimizer_switch='extended_keys=off';
 # The following 6 queries check that the plans
 # for the previous 3 plans are valid
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 102000) OR
           ID BETWEEN 3790 AND 3800) AND Country='USA'
         AND (Name LIKE 'Pa%' OR ID BETWEEN 4025 AND 4035);
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Population > 101000 AND Population < 102000) OR
           ID BETWEEN 3790 AND 3800) AND Country='USA'
         AND (Name LIKE 'Pa%' OR ID BETWEEN 4025 AND 4035);
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 102000) OR
           ID BETWEEN 3790 AND 3800) AND Country='USA'
         AND (Name LIKE 'Pa%' OR ID BETWEEN 4028 AND 4032);
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Population > 101000 AND Population < 102000) OR
           ID BETWEEN 3790 AND 3800) AND Country='USA'
         AND (Name LIKE 'Pa%' OR ID BETWEEN 4028 AND 4032);
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 102000) OR
           ID BETWEEN 3790 AND 3800) AND Country='FIN'
         AND (Name LIKE 'Pa%' OR ID BETWEEN 4025 AND 4035);
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Population > 101000 AND Population < 102000) OR
           ID BETWEEN 3790 AND 3800) AND Country='FIN'
@@ -533,11 +564,13 @@ SELECT * FROM City
 # The following 2 queries check that the plans
 # for the previous plan is valid
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 and Population < 102000) OR
           ID BETWEEN 3790 AND 3800) AND Country='USA'
         OR (Name LIKE 'Pa%' OR ID BETWEEN 250 AND 260) AND Country='BRA';
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Population > 101000 and Population < 102000) OR
           ID BETWEEN 3790 AND 3800) AND Country='USA'
@@ -567,21 +600,25 @@ SELECT * FROM City
 # The following 4 queries check that the plans
 # for the previous 2 plans are valid
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 11000) OR
           ID BETWEEN 3500 AND 3800) AND Country='USA'
         AND (Name LIKE 'P%' OR ID BETWEEN 4000 AND 4300);
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Population > 101000 AND Population < 11000) OR
           ID BETWEEN 3500 AND 3800) AND Country='USA'
         AND (Name LIKE 'P%' OR ID BETWEEN 4000 AND 4300);
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Population > 101000 AND Population < 11000) OR
           ID BETWEEN 3500 AND 3800) AND Country='USA'
         AND (Name LIKE 'Pho%' OR ID BETWEEN 4000 AND 4300);
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Population > 101000 AND Population < 11000) OR
           ID BETWEEN 3500 AND 3800) AND Country='USA'
@@ -604,10 +641,12 @@ set optimizer_switch=@tmp_range_vs_index_merge;
 # The following 2 queries check that the plans
 # for the previous plan is valid
 
+--sorted_result
 SELECT * FROM City USE INDEX()
   WHERE Country='USA' AND Population BETWEEN 101000 AND 102000 OR
         Country='USA' AND Name LIKE 'Pa%';
 
+--sorted_result
 SELECT * FROM City
   WHERE Country='USA' AND Population BETWEEN 101000 AND 102000 OR
         Country='USA' AND Name LIKE 'Pa%';
@@ -625,10 +664,12 @@ SELECT * FROM City
 # The following 2 queries check that the plans
 # for the previous plan is valid
 
+--sorted_result
 SELECT * FROM City
   WHERE Country='USA' AND 
         (Population BETWEEN 101000 AND 102000 OR Name LIKE 'Pa%');
 
+--sorted_result
 SELECT * FROM City
   WHERE Country='USA' AND 
         (Population BETWEEN 101000 AND 102000 OR Name LIKE 'Pa%');
@@ -674,6 +715,7 @@ let $cond =
 #eval
 #EXPLAIN SELECT Name, Country, Population FROM City WHERE
 #$cond;
+--sorted_result
 eval 
 SELECT Name, Country, Population FROM City WHERE
 $cond;
@@ -708,6 +750,7 @@ CREATE INDEX Population ON City(Population);
 #  WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
 #        AND (Population >= 100000 AND Population < 120000);
 FLUSH STATUS;
+--sorted_result
 SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
         AND (Population >= 100000 AND Population < 120000);
@@ -722,6 +765,7 @@ SELECT * FROM City
 #ORDER BY Population LIMIT 5;
 
 FLUSH STATUS;
+--sorted_result
 SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
         AND (Population >= 100000 AND Population < 120000)
@@ -738,6 +782,7 @@ set optimizer_use_condition_selectivity=1;
 #ORDER BY Population LIMIT 5;
 
 FLUSH STATUS;
+--sorted_result
 SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
         AND (Population >= 100000 AND Population < 120000)
@@ -756,6 +801,7 @@ set optimizer_switch='index_merge=off';
 #ORDER BY Population LIMIT 5;
 
 FLUSH STATUS;
+--sorted_result
 SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
         AND (Population >= 100000 AND Population < 120000)
@@ -1082,9 +1128,11 @@ INSERT INTO t1 VALUES
 --enable_query_log
 --enable_result_log
 
+--sorted_result
 SELECT COUNT(*) FROM t1 IGNORE INDEX (idx2,idx3)
   WHERE c  = 'i'  OR b IN ( 'Arkansas' , 'd' , 'pdib' , 'can' )  OR
   (pk BETWEEN 120 AND 79 + 255 OR a IN ( 4 , 179 , 1 ) ) AND a > 8 ;
+--sorted_result
 SELECT COUNT(*) FROM t1 
   WHERE c  = 'i'  OR b IN ( 'Arkansas' , 'd' , 'pdib' , 'can' )  OR
   (pk BETWEEN 120 AND 79 + 255 OR a IN ( 4 , 179 , 1 ) ) AND a > 8 ;
@@ -1105,6 +1153,7 @@ CREATE TABLE t1 (
 ) ;
 INSERT INTO t1 VALUES (0,0,NULL,9,5), (0,0,1,9425,NULL);
 
+--sorted_result
 SELECT f5 FROM t1
   WHERE f2 != 1 OR f1 IS NULL OR f4 = 4 OR
         f2 AND (f4 BETWEEN 6 AND 255 OR f3 IS NULL);
@@ -1140,6 +1189,7 @@ SET SESSION optimizer_switch='index_merge_union=off';
 #  WHERE ( f3 = 1 OR f1 = 7 ) AND f1 < 10
 #        OR f3 BETWEEN 2 AND 2 AND ( f3 = 1 OR f4 != 1 );
 
+--sorted_result
 SELECT * FROM t1 FORCE KEY (PRIMARY,f3,f4)
   WHERE ( f3 = 1 OR f1 = 7 ) AND f1 < 10
         OR f3 BETWEEN 2 AND 2 AND ( f3 = 1 OR f4 != 1 );
@@ -1151,6 +1201,7 @@ SET SESSION optimizer_switch='index_merge_union=on';
 #  WHERE ( f3 = 1 OR f1 = 7 ) AND f1 < 10
 #        OR f3 BETWEEN 2 AND 2 AND ( f3 = 1 OR f4 != 1 );
 
+--sorted_result
 SELECT * FROM t1 FORCE KEY (PRIMARY,f3,f4)
   WHERE ( f3 = 1 OR f1 = 7 ) AND f1 < 10
         OR f3 BETWEEN 2 AND 2 AND ( f3 = 1 OR f4 != 1 );
@@ -1177,6 +1228,7 @@ SET SESSION optimizer_switch='index_merge_union=off';
 #  WHERE ( f3 = 1 OR f1 = 7 ) AND f1 < 10
 #        OR f3 BETWEEN 2 AND 2 AND ( f3 = 1 OR f4 != 1 );
 
+--sorted_result
 SELECT * FROM t1 FORCE KEY (PRIMARY,f3,f4)
   WHERE ( f3 = 1 OR f1 = 7 ) AND f1 < 10
         OR f3 BETWEEN 2 AND 2 AND ( f3 = 1 OR f4 != 1 );
@@ -1188,6 +1240,7 @@ SET SESSION optimizer_switch='index_merge_union=on';
 #  WHERE ( f3 = 1 OR f1 = 7 ) AND f1 < 10
 #        OR f3 BETWEEN 2 AND 2 AND ( f3 = 1 OR f4 != 1 );
 
+--sorted_result
 SELECT * FROM t1 FORCE KEY (PRIMARY,f3,f4)
   WHERE ( f3 = 1 OR f1 = 7 ) AND f1 < 10
         OR f3 BETWEEN 2 AND 2 AND ( f3 = 1 OR f4 != 1 );
@@ -1210,6 +1263,7 @@ INSERT INTO t2 VALUES (5,6,0,0), (0,4,0,0);
 CREATE TABLE t3 (f1 int, f2 int, INDEX idx1 (f2,f1) , INDEX idx2 (f1)) ;
 INSERT INTO t3 VALUES (6,0),( 4,0);
 
+--sorted_result
 SELECT * FROM t1,t2,t3
   WHERE (t2.f3 = 1 OR t3.f1=t2.f1) AND t3.f1 <> t2.f2 AND t3.f2 = t2.f4; 
 
@@ -1239,12 +1293,14 @@ SET SESSION optimizer_switch='index_merge_sort_union=off';
 #EXPLAIN
 #SELECT * FROM t1 
 #  WHERE t1.b>7 AND t1.d>1 AND t1.d<>8  OR t1.d>=7 AND t1.d<8 OR t1.d>7;
+--sorted_result
 SELECT * FROM t1 
   WHERE t1.b>7 AND t1.d>1 AND t1.d<>8  OR t1.d>=7 AND t1.d<8 OR t1.d>7;
 SET SESSION optimizer_switch='index_merge_sort_union=on';
 #EXPLAIN
 #SELECT * FROM t1 
 #  WHERE t1.b>7 AND t1.d>1 AND t1.d<>8  OR t1.d>=7 AND t1.d<8 OR t1.d>7;
+--sorted_result
 SELECT * FROM t1 
   WHERE t1.b>7 AND t1.d>1 AND t1.d<>8  OR t1.d>=7 AND t1.d<8 OR t1.d>7;
 SET SESSION optimizer_switch=DEFAULT;
@@ -1262,6 +1318,7 @@ INSERT INTO t1 VALUES (19,1,NULL), (20,5,7);
 #SELECT * FROM t1
 #  WHERE t1.a>300 AND t1.c!=0 AND t1.b>=350 AND t1.b<=400 AND
 #       (t1.c=0 OR t1.a=500);
+--sorted_result
 SELECT * FROM t1
   WHERE t1.a>300 AND t1.c!=0 AND t1.b>=350 AND t1.b<=400 AND
        (t1.c=0 OR t1.a=500);
@@ -1278,6 +1335,7 @@ INSERT INTO t1 VALUES (167,9999), (168,10000);
 #EXPLAIN
 #SELECT * FROM t1
 #  WHERE a BETWEEN 4 AND 5 AND b IN (255,4) OR a IN (2,14,25) OR a!=2;
+--sorted_result
 SELECT * FROM t1
   WHERE a BETWEEN 4 AND 5 AND b IN (255,4) OR a IN (2,14,25) OR a!=2;
 
@@ -1320,6 +1378,7 @@ ANALYZE TABLE t1;
 #SELECT * FROM t1 FORCE KEY (state,capital) 
 #WHERE ( state = 'Alabama' OR state >= 'Colorado' ) AND id != 9 
 #   OR ( capital >= 'Topeka' OR state = 'Kansas' ) AND state != 'Texas';
+--sorted_result
 SELECT * FROM t1 FORCE KEY (state,capital) 
 WHERE ( state = 'Alabama' OR state >= 'Colorado' ) AND id != 9 
    OR ( capital >= 'Topeka' OR state = 'Kansas' ) AND state != 'Texas';

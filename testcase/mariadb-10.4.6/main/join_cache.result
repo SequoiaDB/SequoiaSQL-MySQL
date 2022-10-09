@@ -283,41 +283,41 @@ FROM Country LEFT JOIN City
 ON City.Country=Country.Code AND City.Population > 5000000
 WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 Name	Population	Name	Population
-China	1277558000	Shanghai	9696300
-China	1277558000	Peking	7472000
-China	1277558000	Chongqing	6351600
-China	1277558000	Tianjin	5286800
-Colombia	42321000	Santafé de Bogotá	6260862
-Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
-Chile	15211000	NULL	NULL
 Cambodia	11168000	NULL	NULL
 Cameroon	15085000	NULL	NULL
 Canada	31147000	NULL	NULL
+Chile	15211000	NULL	NULL
+China	1277558000	Chongqing	6351600
+China	1277558000	Peking	7472000
+China	1277558000	Shanghai	9696300
+China	1277558000	Tianjin	5286800
+Colombia	42321000	Santafé de Bogotá	6260862
+Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cuba	11201000	NULL	NULL
-Côte d?Ivoire	14786000	NULL	NULL
 Czech Republic	10278100	NULL	NULL
+Côte d?Ivoire	14786000	NULL	NULL
 SELECT Country.Name, Country.Population, City.Name, City.Population
 FROM Country LEFT JOIN City 
 ON City.Country=Country.Code AND
 (City.Population > 5000000 OR City.Name LIKE 'Za%')
 WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 Name	Population	Name	Population
-China	1277558000	Shanghai	9696300
-China	1277558000	Peking	7472000
-China	1277558000	Chongqing	6351600
-China	1277558000	Tianjin	5286800
-China	1277558000	Zaozhuang	380846
-China	1277558000	Zaoyang	162198
-China	1277558000	Zalantun	130031
-Colombia	42321000	Santafé de Bogotá	6260862
-Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
-Chile	15211000	NULL	NULL
 Cambodia	11168000	NULL	NULL
 Cameroon	15085000	NULL	NULL
 Canada	31147000	NULL	NULL
+Chile	15211000	NULL	NULL
+China	1277558000	Chongqing	6351600
+China	1277558000	Peking	7472000
+China	1277558000	Shanghai	9696300
+China	1277558000	Tianjin	5286800
+China	1277558000	Zalantun	130031
+China	1277558000	Zaoyang	162198
+China	1277558000	Zaozhuang	380846
+Colombia	42321000	Santafé de Bogotá	6260862
+Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cuba	11201000	NULL	NULL
-Côte d?Ivoire	14786000	NULL	NULL
 Czech Republic	10278100	NULL	NULL
+Côte d?Ivoire	14786000	NULL	NULL
 CREATE INDEX City_Population ON City(Population);
 CREATE INDEX City_Name ON City(Name);
 ANALYZE TABLE City;
@@ -326,41 +326,41 @@ FROM Country LEFT JOIN City
 ON City.Country=Country.Code AND City.Population > 5000000
 WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 Name	Population	Name	Population
-China	1277558000	Shanghai	9696300
-China	1277558000	Peking	7472000
-China	1277558000	Chongqing	6351600
-China	1277558000	Tianjin	5286800
-Colombia	42321000	Santafé de Bogotá	6260862
-Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
-Chile	15211000	NULL	NULL
 Cambodia	11168000	NULL	NULL
 Cameroon	15085000	NULL	NULL
 Canada	31147000	NULL	NULL
+Chile	15211000	NULL	NULL
+China	1277558000	Chongqing	6351600
+China	1277558000	Peking	7472000
+China	1277558000	Shanghai	9696300
+China	1277558000	Tianjin	5286800
+Colombia	42321000	Santafé de Bogotá	6260862
+Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cuba	11201000	NULL	NULL
-Côte d?Ivoire	14786000	NULL	NULL
 Czech Republic	10278100	NULL	NULL
+Côte d?Ivoire	14786000	NULL	NULL
 SELECT Country.Name, Country.Population, City.Name, City.Population
 FROM Country LEFT JOIN City 
 ON City.Country=Country.Code AND
 (City.Population > 5000000 OR City.Name LIKE 'Za%')
 WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 Name	Population	Name	Population
-China	1277558000	Shanghai	9696300
-China	1277558000	Peking	7472000
-China	1277558000	Chongqing	6351600
-China	1277558000	Tianjin	5286800
-China	1277558000	Zaozhuang	380846
-China	1277558000	Zaoyang	162198
-China	1277558000	Zalantun	130031
-Colombia	42321000	Santafé de Bogotá	6260862
-Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
-Chile	15211000	NULL	NULL
 Cambodia	11168000	NULL	NULL
 Cameroon	15085000	NULL	NULL
 Canada	31147000	NULL	NULL
+Chile	15211000	NULL	NULL
+China	1277558000	Chongqing	6351600
+China	1277558000	Peking	7472000
+China	1277558000	Shanghai	9696300
+China	1277558000	Tianjin	5286800
+China	1277558000	Zalantun	130031
+China	1277558000	Zaoyang	162198
+China	1277558000	Zaozhuang	380846
+Colombia	42321000	Santafé de Bogotá	6260862
+Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cuba	11201000	NULL	NULL
-Côte d?Ivoire	14786000	NULL	NULL
 Czech Republic	10278100	NULL	NULL
+Côte d?Ivoire	14786000	NULL	NULL
 DROP INDEX City_Population ON City;
 DROP INDEX City_Name ON City;
 set join_cache_level=1;
@@ -705,105 +705,106 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
-Maseru
+?iauliai
 Beirut
-Tripoli
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
 WHERE 
-Country.Population > 10000000;
+Country.Population > 10000000
+order by Name desc,2 desc;
 Name	IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
-Australia	81.2
-United Kingdom	97.3
-Canada	60.4
-United States	86.2
 Zimbabwe	2.2
-Japan	0.1
-South Africa	8.5
-Malaysia	1.6
-Afghanistan	NULL
-Netherlands	NULL
-Algeria	NULL
-Angola	NULL
-Argentina	NULL
-Bangladesh	NULL
-Belgium	NULL
-Brazil	NULL
-Burkina Faso	NULL
-Chile	NULL
-Ecuador	NULL
-Egypt	NULL
-Spain	NULL
-Ethiopia	NULL
-Philippines	NULL
-Ghana	NULL
-Guatemala	NULL
-Indonesia	NULL
-India	NULL
-Iraq	NULL
-Iran	NULL
-Italy	NULL
-Yemen	NULL
 Yugoslavia	NULL
-Cambodia	NULL
-Cameroon	NULL
-Kazakstan	NULL
-Kenya	NULL
-China	NULL
-Colombia	NULL
-Congo, The Democratic Republic of the	NULL
-North Korea	NULL
+Yemen	NULL
+Vietnam	NULL
+Venezuela	NULL
+Uzbekistan	NULL
+United States	86.2
+United Kingdom	97.3
+Ukraine	NULL
+Uganda	NULL
+Turkey	NULL
+Thailand	NULL
+Tanzania	NULL
+Taiwan	NULL
+Syria	NULL
+Sudan	NULL
+Sri Lanka	NULL
+Spain	NULL
 South Korea	NULL
-Greece	NULL
-Cuba	NULL
-Madagascar	NULL
-Malawi	NULL
-Mali	NULL
+South Africa	8.5
+Somalia	NULL
+Saudi Arabia	NULL
+Russian Federation	NULL
+Romania	NULL
+Poland	NULL
+Philippines	NULL
+Peru	NULL
+Pakistan	NULL
+North Korea	NULL
+Nigeria	NULL
+Niger	NULL
+Netherlands	NULL
+Nepal	NULL
+Myanmar	NULL
+Mozambique	NULL
 Morocco	NULL
 Mexico	NULL
-Mozambique	NULL
-Myanmar	NULL
-Nepal	NULL
-Niger	NULL
-Nigeria	NULL
-Côte d?Ivoire	NULL
-Pakistan	NULL
-Peru	NULL
-Poland	NULL
-France	NULL
-Romania	NULL
-Germany	NULL
-Saudi Arabia	NULL
-Somalia	NULL
-Sri Lanka	NULL
-Sudan	NULL
-Syria	NULL
-Taiwan	NULL
-Tanzania	NULL
-Thailand	NULL
-Czech Republic	NULL
-Turkey	NULL
-Uganda	NULL
-Ukraine	NULL
+Mali	NULL
+Malaysia	1.6
+Malawi	NULL
+Madagascar	NULL
+Kenya	NULL
+Kazakstan	NULL
+Japan	0.1
+Italy	NULL
+Iraq	NULL
+Iran	NULL
+Indonesia	NULL
+India	NULL
 Hungary	NULL
-Uzbekistan	NULL
+Guatemala	NULL
+Greece	NULL
+Ghana	NULL
+Germany	NULL
+France	NULL
+Ethiopia	NULL
+Egypt	NULL
+Ecuador	NULL
+Czech Republic	NULL
+Cuba	NULL
+Côte d?Ivoire	NULL
+Congo, The Democratic Republic of the	NULL
+Colombia	NULL
+China	NULL
+Chile	NULL
+Canada	60.4
+Cameroon	NULL
+Cambodia	NULL
+Burkina Faso	NULL
+Brazil	NULL
+Belgium	NULL
 Belarus	NULL
-Venezuela	NULL
-Russian Federation	NULL
-Vietnam	NULL
+Bangladesh	NULL
+Australia	81.2
+Argentina	NULL
+Angola	NULL
+Algeria	NULL
+Afghanistan	NULL
 show variables like 'join_buffer_size';
 Variable_name	Value
 join_buffer_size	262144
@@ -870,120 +871,121 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
-Maseru
+?iauliai
 Beirut
-Tripoli
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
 WHERE 
-Country.Population > 10000000;
+Country.Population > 10000000
+order by Name desc,2 desc;
 Name	IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
-Australia	81.2
-United Kingdom	97.3
-Canada	60.4
-United States	86.2
 Zimbabwe	2.2
-Japan	0.1
-South Africa	8.5
-Malaysia	1.6
-Afghanistan	NULL
-Netherlands	NULL
-Algeria	NULL
-Angola	NULL
-Argentina	NULL
-Bangladesh	NULL
-Belgium	NULL
-Brazil	NULL
-Burkina Faso	NULL
-Chile	NULL
-Ecuador	NULL
-Egypt	NULL
-Spain	NULL
-Ethiopia	NULL
-Philippines	NULL
-Ghana	NULL
-Guatemala	NULL
-Indonesia	NULL
-India	NULL
-Iraq	NULL
-Iran	NULL
-Italy	NULL
-Yemen	NULL
 Yugoslavia	NULL
-Cambodia	NULL
-Cameroon	NULL
-Kazakstan	NULL
-Kenya	NULL
-China	NULL
-Colombia	NULL
-Congo, The Democratic Republic of the	NULL
-North Korea	NULL
+Yemen	NULL
+Vietnam	NULL
+Venezuela	NULL
+Uzbekistan	NULL
+United States	86.2
+United Kingdom	97.3
+Ukraine	NULL
+Uganda	NULL
+Turkey	NULL
+Thailand	NULL
+Tanzania	NULL
+Taiwan	NULL
+Syria	NULL
+Sudan	NULL
+Sri Lanka	NULL
+Spain	NULL
 South Korea	NULL
-Greece	NULL
-Cuba	NULL
-Madagascar	NULL
-Malawi	NULL
-Mali	NULL
+South Africa	8.5
+Somalia	NULL
+Saudi Arabia	NULL
+Russian Federation	NULL
+Romania	NULL
+Poland	NULL
+Philippines	NULL
+Peru	NULL
+Pakistan	NULL
+North Korea	NULL
+Nigeria	NULL
+Niger	NULL
+Netherlands	NULL
+Nepal	NULL
+Myanmar	NULL
+Mozambique	NULL
 Morocco	NULL
 Mexico	NULL
-Mozambique	NULL
-Myanmar	NULL
-Nepal	NULL
-Niger	NULL
-Nigeria	NULL
-Côte d?Ivoire	NULL
-Pakistan	NULL
-Peru	NULL
-Poland	NULL
-France	NULL
-Romania	NULL
-Germany	NULL
-Saudi Arabia	NULL
-Somalia	NULL
-Sri Lanka	NULL
-Sudan	NULL
-Syria	NULL
-Taiwan	NULL
-Tanzania	NULL
-Thailand	NULL
-Czech Republic	NULL
-Turkey	NULL
-Uganda	NULL
-Ukraine	NULL
+Mali	NULL
+Malaysia	1.6
+Malawi	NULL
+Madagascar	NULL
+Kenya	NULL
+Kazakstan	NULL
+Japan	0.1
+Italy	NULL
+Iraq	NULL
+Iran	NULL
+Indonesia	NULL
+India	NULL
 Hungary	NULL
-Uzbekistan	NULL
+Guatemala	NULL
+Greece	NULL
+Ghana	NULL
+Germany	NULL
+France	NULL
+Ethiopia	NULL
+Egypt	NULL
+Ecuador	NULL
+Czech Republic	NULL
+Cuba	NULL
+Côte d?Ivoire	NULL
+Congo, The Democratic Republic of the	NULL
+Colombia	NULL
+China	NULL
+Chile	NULL
+Canada	60.4
+Cameroon	NULL
+Cambodia	NULL
+Burkina Faso	NULL
+Brazil	NULL
+Belgium	NULL
 Belarus	NULL
-Venezuela	NULL
-Russian Federation	NULL
-Vietnam	NULL
+Bangladesh	NULL
+Australia	81.2
+Argentina	NULL
+Angola	NULL
+Algeria	NULL
+Afghanistan	NULL
 SELECT Country.Name, Country.Population, City.Name, City.Population 
 FROM Country LEFT JOIN City
 ON City.Country=Country.Code AND City.Population > 5000000
 WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 Name	Population	Name	Population
-China	1277558000	Shanghai	9696300
-China	1277558000	Peking	7472000
-China	1277558000	Chongqing	6351600
-China	1277558000	Tianjin	5286800
-Colombia	42321000	Santafé de Bogotá	6260862
-Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cambodia	11168000	NULL	NULL
 Cameroon	15085000	NULL	NULL
 Canada	31147000	NULL	NULL
 Chile	15211000	NULL	NULL
+China	1277558000	Chongqing	6351600
+China	1277558000	Peking	7472000
+China	1277558000	Shanghai	9696300
+China	1277558000	Tianjin	5286800
+Colombia	42321000	Santafé de Bogotá	6260862
+Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cuba	11201000	NULL	NULL
 Czech Republic	10278100	NULL	NULL
 Côte d?Ivoire	14786000	NULL	NULL
@@ -994,19 +996,19 @@ ON City.Country=Country.Code AND
 (City.Population > 5000000 OR City.Name LIKE 'Za%')
 WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 Name	Population	Name	Population
-China	1277558000	Shanghai	9696300
-China	1277558000	Peking	7472000
-China	1277558000	Chongqing	6351600
-China	1277558000	Tianjin	5286800
-China	1277558000	Zaozhuang	380846
-China	1277558000	Zaoyang	162198
-China	1277558000	Zalantun	130031
-Colombia	42321000	Santafé de Bogotá	6260862
-Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cambodia	11168000	NULL	NULL
 Cameroon	15085000	NULL	NULL
 Canada	31147000	NULL	NULL
 Chile	15211000	NULL	NULL
+China	1277558000	Chongqing	6351600
+China	1277558000	Peking	7472000
+China	1277558000	Shanghai	9696300
+China	1277558000	Tianjin	5286800
+China	1277558000	Zalantun	130031
+China	1277558000	Zaoyang	162198
+China	1277558000	Zaozhuang	380846
+Colombia	42321000	Santafé de Bogotá	6260862
+Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cuba	11201000	NULL	NULL
 Czech Republic	10278100	NULL	NULL
 Côte d?Ivoire	14786000	NULL	NULL
@@ -1077,105 +1079,106 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
+?iauliai
 Beirut
-Tripoli
-Maseru
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
 WHERE 
-Country.Population > 10000000;
+Country.Population > 10000000
+order by Name desc,2 desc;
 Name	IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
-Afghanistan	NULL
-Netherlands	NULL
-Algeria	NULL
-Angola	NULL
-Argentina	NULL
-Australia	81.2
-Bangladesh	NULL
-Belgium	NULL
-Brazil	NULL
-United Kingdom	97.3
-Burkina Faso	NULL
-Chile	NULL
-Ecuador	NULL
-Egypt	NULL
-Spain	NULL
-South Africa	8.5
-Ethiopia	NULL
-Philippines	NULL
-Ghana	NULL
-Guatemala	NULL
-Indonesia	NULL
-India	NULL
-Iraq	NULL
-Iran	NULL
-Italy	NULL
-Japan	0.1
-Yemen	NULL
+Zimbabwe	2.2
 Yugoslavia	NULL
-Cambodia	NULL
-Cameroon	NULL
-Canada	60.4
-Kazakstan	NULL
-Kenya	NULL
-China	NULL
-Colombia	NULL
-Congo, The Democratic Republic of the	NULL
-North Korea	NULL
+Yemen	NULL
+Vietnam	NULL
+Venezuela	NULL
+Uzbekistan	NULL
+United States	86.2
+United Kingdom	97.3
+Ukraine	NULL
+Uganda	NULL
+Turkey	NULL
+Thailand	NULL
+Tanzania	NULL
+Taiwan	NULL
+Syria	NULL
+Sudan	NULL
+Sri Lanka	NULL
+Spain	NULL
 South Korea	NULL
-Greece	NULL
-Cuba	NULL
-Madagascar	NULL
-Malawi	NULL
-Malaysia	1.6
-Mali	NULL
+South Africa	8.5
+Somalia	NULL
+Saudi Arabia	NULL
+Russian Federation	NULL
+Romania	NULL
+Poland	NULL
+Philippines	NULL
+Peru	NULL
+Pakistan	NULL
+North Korea	NULL
+Nigeria	NULL
+Niger	NULL
+Netherlands	NULL
+Nepal	NULL
+Myanmar	NULL
+Mozambique	NULL
 Morocco	NULL
 Mexico	NULL
-Mozambique	NULL
-Myanmar	NULL
-Nepal	NULL
-Niger	NULL
-Nigeria	NULL
-Côte d?Ivoire	NULL
-Pakistan	NULL
-Peru	NULL
-Poland	NULL
-France	NULL
-Romania	NULL
-Germany	NULL
-Saudi Arabia	NULL
-Somalia	NULL
-Sri Lanka	NULL
-Sudan	NULL
-Syria	NULL
-Taiwan	NULL
-Tanzania	NULL
-Thailand	NULL
-Czech Republic	NULL
-Turkey	NULL
-Uganda	NULL
-Ukraine	NULL
+Mali	NULL
+Malaysia	1.6
+Malawi	NULL
+Madagascar	NULL
+Kenya	NULL
+Kazakstan	NULL
+Japan	0.1
+Italy	NULL
+Iraq	NULL
+Iran	NULL
+Indonesia	NULL
+India	NULL
 Hungary	NULL
-Uzbekistan	NULL
+Guatemala	NULL
+Greece	NULL
+Ghana	NULL
+Germany	NULL
+France	NULL
+Ethiopia	NULL
+Egypt	NULL
+Ecuador	NULL
+Czech Republic	NULL
+Cuba	NULL
+Côte d?Ivoire	NULL
+Congo, The Democratic Republic of the	NULL
+Colombia	NULL
+China	NULL
+Chile	NULL
+Canada	60.4
+Cameroon	NULL
+Cambodia	NULL
+Burkina Faso	NULL
+Brazil	NULL
+Belgium	NULL
 Belarus	NULL
-Venezuela	NULL
-Russian Federation	NULL
-Vietnam	NULL
-United States	86.2
-Zimbabwe	2.2
+Bangladesh	NULL
+Australia	81.2
+Argentina	NULL
+Angola	NULL
+Algeria	NULL
+Afghanistan	NULL
 set join_cache_level=6;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -1199,145 +1202,110 @@ Tripoli	Lebanon
 Tripoli	Libyan Arab Jamahiriya
 Vientiane	Laos
 Vilnius	Lithuania
-SELECT City.Name, Country.Name, CountryLanguage.Language
-FROM City,Country,CountryLanguage
-WHERE City.Country=Country.Code AND
-CountryLanguage.Country=Country.Code AND
-City.Name LIKE 'L%' AND Country.Population > 3000000 AND
-CountryLanguage.Percentage > 50 AND
-LENGTH(Language) < LENGTH(City.Name) - 2;
-Name	Name	Language
-La Matanza	Argentina	Spanish
-Lagos de Moreno	Mexico	Spanish
-Lalitapur	Nepal	Nepali
-Las Margaritas	Mexico	Spanish
-Las Palmas de Gran Canaria	Spain	Spanish
-Lashio (Lasho)	Myanmar	Burmese
-Lauro de Freitas	Brazil	Portuguese
-Lengshuijiang	China	Chinese
-Leninsk-Kuznetski	Russian Federation	Russian
-Leverkusen	Germany	German
-Lexington-Fayette	United States	English
-Liangcheng	China	Chinese
-Lianyungang	China	Chinese
-Little Rock	United States	English
-Liupanshui	China	Chinese
-Lleida (Lérida)	Spain	Spanish
-Lomas de Zamora	Argentina	Spanish
-Long Beach	United States	English
-Los Angeles	Chile	Spanish
-Los Angeles	United States	English
-Los Teques	Venezuela	Spanish
-Louisville	United States	English
-Lower Hutt	New Zealand	English
-Luchou	Taiwan	Min
-Ludwigshafen am Rhein	Germany	German
-Lungtan	Taiwan	Min
-L´Hospitalet de Llobregat	Spain	Spanish
-Lázaro Cárdenas	Mexico	Spanish
 SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
+?iauliai
 Beirut
-Tripoli
-Maseru
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
 WHERE 
-Country.Population > 10000000;
+Country.Population > 10000000
+order by Name desc,2 desc;
 Name	IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
-Afghanistan	NULL
-Netherlands	NULL
-Algeria	NULL
-Angola	NULL
-Argentina	NULL
-Australia	81.2
-Bangladesh	NULL
-Belgium	NULL
-Brazil	NULL
-United Kingdom	97.3
-Burkina Faso	NULL
-Chile	NULL
-Ecuador	NULL
-Egypt	NULL
-Spain	NULL
-South Africa	8.5
-Ethiopia	NULL
-Philippines	NULL
-Ghana	NULL
-Guatemala	NULL
-Indonesia	NULL
-India	NULL
-Iraq	NULL
-Iran	NULL
-Italy	NULL
-Japan	0.1
-Yemen	NULL
+Zimbabwe	2.2
 Yugoslavia	NULL
-Cambodia	NULL
-Cameroon	NULL
-Canada	60.4
-Kazakstan	NULL
-Kenya	NULL
-China	NULL
-Colombia	NULL
-Congo, The Democratic Republic of the	NULL
-North Korea	NULL
+Yemen	NULL
+Vietnam	NULL
+Venezuela	NULL
+Uzbekistan	NULL
+United States	86.2
+United Kingdom	97.3
+Ukraine	NULL
+Uganda	NULL
+Turkey	NULL
+Thailand	NULL
+Tanzania	NULL
+Taiwan	NULL
+Syria	NULL
+Sudan	NULL
+Sri Lanka	NULL
+Spain	NULL
 South Korea	NULL
-Greece	NULL
-Cuba	NULL
-Madagascar	NULL
-Malawi	NULL
-Malaysia	1.6
-Mali	NULL
+South Africa	8.5
+Somalia	NULL
+Saudi Arabia	NULL
+Russian Federation	NULL
+Romania	NULL
+Poland	NULL
+Philippines	NULL
+Peru	NULL
+Pakistan	NULL
+North Korea	NULL
+Nigeria	NULL
+Niger	NULL
+Netherlands	NULL
+Nepal	NULL
+Myanmar	NULL
+Mozambique	NULL
 Morocco	NULL
 Mexico	NULL
-Mozambique	NULL
-Myanmar	NULL
-Nepal	NULL
-Niger	NULL
-Nigeria	NULL
-Côte d?Ivoire	NULL
-Pakistan	NULL
-Peru	NULL
-Poland	NULL
-France	NULL
-Romania	NULL
-Germany	NULL
-Saudi Arabia	NULL
-Somalia	NULL
-Sri Lanka	NULL
-Sudan	NULL
-Syria	NULL
-Taiwan	NULL
-Tanzania	NULL
-Thailand	NULL
-Czech Republic	NULL
-Turkey	NULL
-Uganda	NULL
-Ukraine	NULL
+Mali	NULL
+Malaysia	1.6
+Malawi	NULL
+Madagascar	NULL
+Kenya	NULL
+Kazakstan	NULL
+Japan	0.1
+Italy	NULL
+Iraq	NULL
+Iran	NULL
+Indonesia	NULL
+India	NULL
 Hungary	NULL
-Uzbekistan	NULL
+Guatemala	NULL
+Greece	NULL
+Ghana	NULL
+Germany	NULL
+France	NULL
+Ethiopia	NULL
+Egypt	NULL
+Ecuador	NULL
+Czech Republic	NULL
+Cuba	NULL
+Côte d?Ivoire	NULL
+Congo, The Democratic Republic of the	NULL
+Colombia	NULL
+China	NULL
+Chile	NULL
+Canada	60.4
+Cameroon	NULL
+Cambodia	NULL
+Burkina Faso	NULL
+Brazil	NULL
+Belgium	NULL
 Belarus	NULL
-Venezuela	NULL
-Russian Federation	NULL
-Vietnam	NULL
-United States	86.2
-Zimbabwe	2.2
+Bangladesh	NULL
+Australia	81.2
+Argentina	NULL
+Angola	NULL
+Algeria	NULL
+Afghanistan	NULL
 set join_cache_level=7;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -1401,105 +1369,106 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
+?iauliai
 Beirut
-Tripoli
-Maseru
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
 WHERE 
-Country.Population > 10000000;
+Country.Population > 10000000
+order by Name desc,2 desc;
 Name	IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
-Afghanistan	NULL
-Netherlands	NULL
-Algeria	NULL
-Angola	NULL
-Argentina	NULL
-Australia	81.2
-Bangladesh	NULL
-Belgium	NULL
-Brazil	NULL
-United Kingdom	97.3
-Burkina Faso	NULL
-Chile	NULL
-Ecuador	NULL
-Egypt	NULL
-Spain	NULL
-South Africa	8.5
-Ethiopia	NULL
-Philippines	NULL
-Ghana	NULL
-Guatemala	NULL
-Indonesia	NULL
-India	NULL
-Iraq	NULL
-Iran	NULL
-Italy	NULL
-Japan	0.1
-Yemen	NULL
+Zimbabwe	2.2
 Yugoslavia	NULL
-Cambodia	NULL
-Cameroon	NULL
-Canada	60.4
-Kazakstan	NULL
-Kenya	NULL
-China	NULL
-Colombia	NULL
-Congo, The Democratic Republic of the	NULL
-North Korea	NULL
+Yemen	NULL
+Vietnam	NULL
+Venezuela	NULL
+Uzbekistan	NULL
+United States	86.2
+United Kingdom	97.3
+Ukraine	NULL
+Uganda	NULL
+Turkey	NULL
+Thailand	NULL
+Tanzania	NULL
+Taiwan	NULL
+Syria	NULL
+Sudan	NULL
+Sri Lanka	NULL
+Spain	NULL
 South Korea	NULL
-Greece	NULL
-Cuba	NULL
-Madagascar	NULL
-Malawi	NULL
-Malaysia	1.6
-Mali	NULL
+South Africa	8.5
+Somalia	NULL
+Saudi Arabia	NULL
+Russian Federation	NULL
+Romania	NULL
+Poland	NULL
+Philippines	NULL
+Peru	NULL
+Pakistan	NULL
+North Korea	NULL
+Nigeria	NULL
+Niger	NULL
+Netherlands	NULL
+Nepal	NULL
+Myanmar	NULL
+Mozambique	NULL
 Morocco	NULL
 Mexico	NULL
-Mozambique	NULL
-Myanmar	NULL
-Nepal	NULL
-Niger	NULL
-Nigeria	NULL
-Côte d?Ivoire	NULL
-Pakistan	NULL
-Peru	NULL
-Poland	NULL
-France	NULL
-Romania	NULL
-Germany	NULL
-Saudi Arabia	NULL
-Somalia	NULL
-Sri Lanka	NULL
-Sudan	NULL
-Syria	NULL
-Taiwan	NULL
-Tanzania	NULL
-Thailand	NULL
-Czech Republic	NULL
-Turkey	NULL
-Uganda	NULL
-Ukraine	NULL
+Mali	NULL
+Malaysia	1.6
+Malawi	NULL
+Madagascar	NULL
+Kenya	NULL
+Kazakstan	NULL
+Japan	0.1
+Italy	NULL
+Iraq	NULL
+Iran	NULL
+Indonesia	NULL
+India	NULL
 Hungary	NULL
-Uzbekistan	NULL
+Guatemala	NULL
+Greece	NULL
+Ghana	NULL
+Germany	NULL
+France	NULL
+Ethiopia	NULL
+Egypt	NULL
+Ecuador	NULL
+Czech Republic	NULL
+Cuba	NULL
+Côte d?Ivoire	NULL
+Congo, The Democratic Republic of the	NULL
+Colombia	NULL
+China	NULL
+Chile	NULL
+Canada	60.4
+Cameroon	NULL
+Cambodia	NULL
+Burkina Faso	NULL
+Brazil	NULL
+Belgium	NULL
 Belarus	NULL
-Venezuela	NULL
-Russian Federation	NULL
-Vietnam	NULL
-United States	86.2
-Zimbabwe	2.2
+Bangladesh	NULL
+Australia	81.2
+Argentina	NULL
+Angola	NULL
+Algeria	NULL
+Afghanistan	NULL
 set join_cache_level=8;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -1563,105 +1532,106 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
+?iauliai
 Beirut
-Tripoli
-Maseru
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
 WHERE 
-Country.Population > 10000000;
+Country.Population > 10000000
+order by Name desc,2 desc;
 Name	IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
-Afghanistan	NULL
-Netherlands	NULL
-Algeria	NULL
-Angola	NULL
-Argentina	NULL
-Australia	81.2
-Bangladesh	NULL
-Belgium	NULL
-Brazil	NULL
-United Kingdom	97.3
-Burkina Faso	NULL
-Chile	NULL
-Ecuador	NULL
-Egypt	NULL
-Spain	NULL
-South Africa	8.5
-Ethiopia	NULL
-Philippines	NULL
-Ghana	NULL
-Guatemala	NULL
-Indonesia	NULL
-India	NULL
-Iraq	NULL
-Iran	NULL
-Italy	NULL
-Japan	0.1
-Yemen	NULL
+Zimbabwe	2.2
 Yugoslavia	NULL
-Cambodia	NULL
-Cameroon	NULL
-Canada	60.4
-Kazakstan	NULL
-Kenya	NULL
-China	NULL
-Colombia	NULL
-Congo, The Democratic Republic of the	NULL
-North Korea	NULL
+Yemen	NULL
+Vietnam	NULL
+Venezuela	NULL
+Uzbekistan	NULL
+United States	86.2
+United Kingdom	97.3
+Ukraine	NULL
+Uganda	NULL
+Turkey	NULL
+Thailand	NULL
+Tanzania	NULL
+Taiwan	NULL
+Syria	NULL
+Sudan	NULL
+Sri Lanka	NULL
+Spain	NULL
 South Korea	NULL
-Greece	NULL
-Cuba	NULL
-Madagascar	NULL
-Malawi	NULL
-Malaysia	1.6
-Mali	NULL
+South Africa	8.5
+Somalia	NULL
+Saudi Arabia	NULL
+Russian Federation	NULL
+Romania	NULL
+Poland	NULL
+Philippines	NULL
+Peru	NULL
+Pakistan	NULL
+North Korea	NULL
+Nigeria	NULL
+Niger	NULL
+Netherlands	NULL
+Nepal	NULL
+Myanmar	NULL
+Mozambique	NULL
 Morocco	NULL
 Mexico	NULL
-Mozambique	NULL
-Myanmar	NULL
-Nepal	NULL
-Niger	NULL
-Nigeria	NULL
-Côte d?Ivoire	NULL
-Pakistan	NULL
-Peru	NULL
-Poland	NULL
-France	NULL
-Romania	NULL
-Germany	NULL
-Saudi Arabia	NULL
-Somalia	NULL
-Sri Lanka	NULL
-Sudan	NULL
-Syria	NULL
-Taiwan	NULL
-Tanzania	NULL
-Thailand	NULL
-Czech Republic	NULL
-Turkey	NULL
-Uganda	NULL
-Ukraine	NULL
+Mali	NULL
+Malaysia	1.6
+Malawi	NULL
+Madagascar	NULL
+Kenya	NULL
+Kazakstan	NULL
+Japan	0.1
+Italy	NULL
+Iraq	NULL
+Iran	NULL
+Indonesia	NULL
+India	NULL
 Hungary	NULL
-Uzbekistan	NULL
+Guatemala	NULL
+Greece	NULL
+Ghana	NULL
+Germany	NULL
+France	NULL
+Ethiopia	NULL
+Egypt	NULL
+Ecuador	NULL
+Czech Republic	NULL
+Cuba	NULL
+Côte d?Ivoire	NULL
+Congo, The Democratic Republic of the	NULL
+Colombia	NULL
+China	NULL
+Chile	NULL
+Canada	60.4
+Cameroon	NULL
+Cambodia	NULL
+Burkina Faso	NULL
+Brazil	NULL
+Belgium	NULL
 Belarus	NULL
-Venezuela	NULL
-Russian Federation	NULL
-Vietnam	NULL
-United States	86.2
-Zimbabwe	2.2
+Bangladesh	NULL
+Australia	81.2
+Argentina	NULL
+Angola	NULL
+Algeria	NULL
+Afghanistan	NULL
 set join_buffer_size=256;
 show variables like 'join_buffer_size';
 Variable_name	Value
@@ -1729,21 +1699,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
-Maseru
+?iauliai
 Beirut
-Tripoli
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 set join_cache_level=4;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -1826,61 +1796,25 @@ Tripoli	Lebanon
 Tripoli	Libyan Arab Jamahiriya
 Vientiane	Laos
 Vilnius	Lithuania
-SELECT City.Name, Country.Name, CountryLanguage.Language
-FROM City,Country,CountryLanguage
-WHERE City.Country=Country.Code AND
-CountryLanguage.Country=Country.Code AND
-City.Name LIKE 'L%' AND Country.Population > 3000000 AND
-CountryLanguage.Percentage > 50 AND
-LENGTH(Language) < LENGTH(City.Name) - 2;
-Name	Name	Language
-La Matanza	Argentina	Spanish
-Lagos de Moreno	Mexico	Spanish
-Lalitapur	Nepal	Nepali
-Las Margaritas	Mexico	Spanish
-Las Palmas de Gran Canaria	Spain	Spanish
-Lashio (Lasho)	Myanmar	Burmese
-Lauro de Freitas	Brazil	Portuguese
-Lengshuijiang	China	Chinese
-Leninsk-Kuznetski	Russian Federation	Russian
-Leverkusen	Germany	German
-Lexington-Fayette	United States	English
-Liangcheng	China	Chinese
-Lianyungang	China	Chinese
-Little Rock	United States	English
-Liupanshui	China	Chinese
-Lleida (Lérida)	Spain	Spanish
-Lomas de Zamora	Argentina	Spanish
-Long Beach	United States	English
-Los Angeles	Chile	Spanish
-Los Angeles	United States	English
-Los Teques	Venezuela	Spanish
-Louisville	United States	English
-Lower Hutt	New Zealand	English
-Luchou	Taiwan	Min
-Ludwigshafen am Rhein	Germany	German
-Lungtan	Taiwan	Min
-L´Hospitalet de Llobregat	Spain	Spanish
-Lázaro Cárdenas	Mexico	Spanish
 SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
+?iauliai
 Beirut
-Tripoli
-Maseru
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 set join_cache_level=6;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -1904,61 +1838,25 @@ Tripoli	Lebanon
 Tripoli	Libyan Arab Jamahiriya
 Vientiane	Laos
 Vilnius	Lithuania
-SELECT City.Name, Country.Name, CountryLanguage.Language
-FROM City,Country,CountryLanguage
-WHERE City.Country=Country.Code AND
-CountryLanguage.Country=Country.Code AND
-City.Name LIKE 'L%' AND Country.Population > 3000000 AND
-CountryLanguage.Percentage > 50 AND
-LENGTH(Language) < LENGTH(City.Name) - 2;
-Name	Name	Language
-La Matanza	Argentina	Spanish
-Lagos de Moreno	Mexico	Spanish
-Lalitapur	Nepal	Nepali
-Las Margaritas	Mexico	Spanish
-Las Palmas de Gran Canaria	Spain	Spanish
-Lashio (Lasho)	Myanmar	Burmese
-Lauro de Freitas	Brazil	Portuguese
-Lengshuijiang	China	Chinese
-Leninsk-Kuznetski	Russian Federation	Russian
-Leverkusen	Germany	German
-Lexington-Fayette	United States	English
-Liangcheng	China	Chinese
-Lianyungang	China	Chinese
-Little Rock	United States	English
-Liupanshui	China	Chinese
-Lleida (Lérida)	Spain	Spanish
-Lomas de Zamora	Argentina	Spanish
-Long Beach	United States	English
-Los Angeles	Chile	Spanish
-Los Angeles	United States	English
-Los Teques	Venezuela	Spanish
-Louisville	United States	English
-Lower Hutt	New Zealand	English
-Luchou	Taiwan	Min
-Ludwigshafen am Rhein	Germany	German
-Lungtan	Taiwan	Min
-L´Hospitalet de Llobregat	Spain	Spanish
-Lázaro Cárdenas	Mexico	Spanish
 SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
+?iauliai
 Beirut
-Tripoli
-Maseru
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 set join_cache_level=7;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -2022,21 +1920,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
+?iauliai
 Beirut
-Tripoli
-Maseru
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 set join_cache_level=8;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -2100,21 +1998,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Vientiane
-Riga
-Daugavpils
+?iauliai
 Beirut
-Tripoli
-Maseru
-Monrovia
-Tripoli
 Bengasi
-Misrata
-Vilnius
+Daugavpils
 Kaunas
 Klaipeda
-?iauliai
+Maseru
+Misrata
+Monrovia
 Panevezys
+Riga
+Tripoli
+Tripoli
+Vientiane
+Vilnius
 set join_cache_level=default;
 set join_buffer_size=default;
 show variables like 'join_buffer_size';
@@ -2524,20 +2422,20 @@ SELECT a1<>a2, a1, a2, b2, b3, c3,
 SUBSTR(filler1,1,1) AS s1, SUBSTR(filler2,1,1) AS s2
 FROM t1,t2,t3 WHERE a1=a2 AND b2=b3 AND MOD(c3,10)>7;
 a1<>a2	a1	a2	b2	b3	c3	s1	s2
-0	4	4	13	13	138		
-0	4	4	18	18	188		
 0	1	1	30	30	309		
 0	1	1	32	32	329		
-0	9	9	22	22	228		
-0	8	8	92	92	929		
-0	8	8	99	99	998		
+0	2	2	61	61	618		
+0	3	3	45	45	458		
+0	3	3	45	45	459		
+0	4	4	13	13	138		
+0	4	4	18	18	188		
 0	5	5	82	82	829		
 0	5	5	87	87	878		
-0	3	3	45	45	459		
-0	3	3	45	45	458		
 0	6	6	73	73	738		
 0	6	6	74	74	749		
-0	2	2	61	61	618		
+0	8	8	92	92	929		
+0	8	8	99	99	998		
+0	9	9	22	22	228		
 DROP TABLE t1,t2,t3;
 CREATE TABLE t1 (a int, b int, INDEX idx(b));
 CREATE TABLE t2 (a int, b int, INDEX idx(a));
@@ -2993,37 +2891,37 @@ FROM t1 JOIN  t2 JOIN  t3 JOIN  t4 JOIN  t5
 WHERE t1.id1=t5.id1 AND t1.id2=t5.id2 and  t4.id2=t1.id2 AND
 t5.enum2='Active' AND t3.id4=t2.id4 AND t2.id3=t1.id3 AND t3.text1<'D';
 id1	num3	text1	id4	id3	dummy
-228172702	14	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	2567095402	2667134182	0
 228172702	134	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	2567095402	2667134182	0
+228172702	14	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	2567095402	2667134182	0
 228172702	15	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	2567095402	2667134182	0
 228172702	3	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	2567095402	2667134182	0
-228808822	17	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	50	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	61	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	13	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	60	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	13	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	3	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	4	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	6	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	18	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	1	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	1	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
 228808822	1	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	3	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	4	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
-228808822	28	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	62	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	89	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	19	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	84	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	14	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	9	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	1	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
 228808822	10	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	13	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	13	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	14	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	17	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	18	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	19	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
 228808822	26	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	28	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
 228808822	3	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	1	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	3	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	3	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	3	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
 228808822	4	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
-228808822	3	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	4	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	4	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	50	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	6	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	60	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	61	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	826928662	935693782	0
+228808822	62	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	84	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	89	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
+228808822	9	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC	2381969632	2482416112	0
 set join_buffer_size=default;
 set join_cache_level=default;
 DROP TABLE t1,t2,t3,t4,t5;
