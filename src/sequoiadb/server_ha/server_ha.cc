@@ -3585,7 +3585,7 @@ static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
   }
   const char *cl_version_err = sdb_errno_message(thd);
   // sequoiadb error 'sdb client cata version old' or 'Got error XXX'
-  if (0 == strncmp(CL_VERSION_ERR, cl_version_err, MAX_ERR_LEN)) {
+  if (0 == strncmp(CL_VERSION_ERR, cl_version_err, strlen(CL_VERSION_ERR))) {
     version_error = true;
     DBUG_ASSERT(!sql_info->is_result_set_started);
     SDB_LOG_DEBUG("HA: Set result set started flag to true for %s",
@@ -3596,6 +3596,17 @@ static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
     // if sql command is 'SQLCOM_SELECT', the metadata has been sent to client
     // if the error message is "collection does not exist"
     sql_info->is_result_set_started = true;
+  }
+
+  // retry multiple times only for version number error
+  // sql_info->dml_checked_objects was initialized during the first execution
+  if (sql_info->dml_checked_objects.records) {
+    if (version_error) {
+      sleep(1);
+      thd->get_stmt_da()->reset_diagnostics_area();
+      sql_info->dml_retry_flag = true;
+    }
+    DBUG_VOID_RETURN;
   }
 
   if (need_retry_stmt(thd) &&
