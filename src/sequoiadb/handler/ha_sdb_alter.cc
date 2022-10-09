@@ -3934,7 +3934,8 @@ done:
   DBUG_RETURN(rc);
 error:
   if (created_cl) {
-    tmp_rc = dst_cl.drop();
+    dst_tbl_mapping.reset();
+    conn->drop_cl(dst_db_name, dst_tbl_name, &dst_tbl_mapping, true);
     if (tmp_rc != 0) {
       SDB_LOG_WARNING(
           "Failed to rollback the creation of copied cl[%s.%s], rc: %d",
@@ -4090,7 +4091,8 @@ error:
     ha->handle_sdb_error(rc, MYF(0));
   }
   if (created_new_cl_tmp) {
-    tmp_rc = m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name, &new_tbl_mapping);
+    tmp_rc =
+        m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name, &new_tbl_mapping, true);
     if (tmp_rc != 0) {
       SDB_LOG_WARNING("Failed to rollback creation of cl[%s.%s], rc: %d",
                       m_new_cs, m_new_mcl_tmp_name, tmp_rc);
@@ -4100,7 +4102,7 @@ error:
   while ((cl_fullname = list_it++)) {
     Mapping_context_impl scl_mapping;
     sdb_tmp_split_cl_fullname(cl_fullname, &db_name, &tbl_name);
-    tmp_rc = m_conn->drop_cl(db_name, tbl_name);
+    tmp_rc = m_conn->drop_cl(db_name, tbl_name, NULL, true);
     if (tmp_rc != 0) {
       SDB_LOG_WARNING("Failed to rollback creation of sub cl[%s], rc: %d",
                       cl_fullname, tmp_rc);

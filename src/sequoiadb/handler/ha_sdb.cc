@@ -7997,6 +7997,7 @@ error:
 int ha_sdb::truncate() {
   DBUG_ENTER("ha_sdb::truncate");
   int rc = 0;
+  bool skip_recycle_bin = false;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
@@ -8013,7 +8014,12 @@ int ha_sdb::truncate() {
 
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
-  rc = collection->truncate();
+  if (table && table->pos_in_table_list &&
+      is_temporary_table(table->pos_in_table_list)) {
+    skip_recycle_bin = true;
+  }
+
+  rc = collection->truncate(skip_recycle_bin);
   if (0 == rc) {
     update_incr_stat(-share->stat.total_records);
     stats.records = 0;
@@ -8507,6 +8513,7 @@ int ha_sdb::delete_table(const char *from) {
   Thd_sdb *thd_sdb = NULL;
   char part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
   Mapping_context_impl tbl_mapping;
+  bool skip_recycle_bin = false;
 
   if (sdb_execute_only_in_mysql(thd)
 // Don't skip dropping sequence when dropping database for MariaDB.
@@ -8531,6 +8538,15 @@ int ha_sdb::delete_table(const char *from) {
   }
 
   sdb_convert_sub2main_partition_name(part_tab_name, table_name);
+  // Enable 'SkipRecycleBin' for following temporary table:
+  // 1. User temporary table(created by 'CREATE TEMPORARY TABLE ...' syntax).
+  // 2. Temporary table generated during query(SQL command is not
+  // SQLCOM_DROP_TABLE, eg: ALTER TABLE with copy algorithm).
+  if ((SQLCOM_DROP_TABLE == thd_sql_command(thd) &&
+       sdb_is_tmp_table(from, table_name)) ||
+      SQLCOM_DROP_TABLE != thd_sql_command(thd)) {
+    skip_recycle_bin = true;
+  }
 
   if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
       sdb_alter_partition_flags(thd) & ALTER_PARTITION_DROP) {
@@ -8561,7 +8577,7 @@ int ha_sdb::delete_table(const char *from) {
   }
 #endif
 
-  rc = conn->drop_cl(db_name, table_name, &tbl_mapping);
+  rc = conn->drop_cl(db_name, table_name, &tbl_mapping, skip_recycle_bin);
   if (0 != rc) {
     goto error;
   }
@@ -8809,7 +8825,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto error;
   }
 
-  rc = conn->drop_cl(db_name, part_name, &table_part_mapping);
+  rc = conn->drop_cl(db_name, part_name, &table_part_mapping, false);
   if (rc != 0) {
     goto error;
   }
@@ -9846,7 +9862,7 @@ done:
 error:
   handle_sdb_error(rc, MYF(0));
   if (created_cl) {
-    conn->drop_cl(db_name, table_name, &tbl_mapping);
+    conn->drop_cl(db_name, table_name, &tbl_mapping, true);
   } else if (mapping_persisted) {
     Name_mapping::delete_mapping(db_name, table_name, conn, &tbl_mapping);
   }

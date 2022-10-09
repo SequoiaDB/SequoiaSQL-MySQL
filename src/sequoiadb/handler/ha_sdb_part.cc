@@ -2224,7 +2224,7 @@ error:
   }
   if (created_cl) {
     handle_sdb_error(rc, MYF(0));
-    conn->drop_cl(db_name, part_name, &scl_tmp_mapping);
+    conn->drop_cl(db_name, part_name, &scl_tmp_mapping, true);
   } else if (mapping_persisted) {
     Name_mapping::delete_mapping(db_name, part_name, conn, &scl_tmp_mapping);
   }
@@ -2616,7 +2616,7 @@ done:
 error:
   handle_sdb_error(rc, MYF(0));
   if (created_cl) {
-    conn->drop_cl(db_name, table_name, &tbl_ctx_impl);
+    conn->drop_cl(db_name, table_name, &tbl_ctx_impl, true);
   } else if (mapping_persisted) {
     Name_mapping::delete_mapping(db_name, table_name, conn, &tbl_ctx_impl);
   }

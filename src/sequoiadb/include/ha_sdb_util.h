@@ -173,6 +173,9 @@ int sdb_set_mapping_name(Mapping_context_impl &tbl_mapping,
 int sdb_bson_element_to_field(const bson::BSONElement elem, Field *field,
                               MEM_ROOT *blobroot = NULL);
 
+int sdb_build_recycle_bin_option(Sdb_conn &sdb_conn, bson::BSONObj &options,
+                                 bool skip_recycle_bin = false);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

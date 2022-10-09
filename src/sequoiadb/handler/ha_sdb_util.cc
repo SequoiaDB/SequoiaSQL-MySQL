@@ -1570,3 +1570,37 @@ done:
 error:
   goto done;
 }
+
+int sdb_build_recycle_bin_option(Sdb_conn &sdb_conn, bson::BSONObj &options,
+                                 bool skip_recycle_bin) {
+  int major = 0, minor = 0, fix = 0;
+  bool supported = false;
+  int rc = sdb_get_version(sdb_conn, major, minor, fix, true);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to get SequoiaDB version, error: %d", rc);
+    goto error;
+  }
+
+  // check if Recycle Bin function is supported
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 6) ||              // 3.x < 3.6
+      (5 == major && 0 == minor && fix < 3)) {  // 5.0.x < 5.0.3
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+  if (supported) {
+    try {
+      bson::BSONObjBuilder builder;
+      builder.append(SDB_FIELD_SKIP_RECYCLE_BIN, skip_recycle_bin);
+      options = builder.obj();
+    }
+    SDB_EXCEPTION_CATCHER(
+        rc, "Failed to build 'SkipRecycleBin' option, exception:%s", e.what());
+  }
+done:
+  return rc;
+error:
+  goto done;
+}

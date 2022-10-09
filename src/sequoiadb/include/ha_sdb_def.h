@@ -278,6 +278,7 @@
 #define SDB_FIELD_MINOR "Minor"
 #define SDB_FIELD_FIX "Fix"
 #define SDB_FIELD_ROLE "role"
+#define SDB_FIELD_SKIP_RECYCLE_BIN "SkipRecycleBin"
 
 #define SDB_DEFAULT_FILL_MESSAGE ""
 #define SDB_ITEM_IGNORE_TYPE "ignore"

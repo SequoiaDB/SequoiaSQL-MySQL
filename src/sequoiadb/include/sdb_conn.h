@@ -291,7 +291,8 @@ class Sdb_conn {
               Mapping_context *new_ctx = NULL);
 
   int drop_cl(const char *cs_name, const char *cl_name,
-              Mapping_context *mapping_ctx = NULL);
+              Mapping_context *mapping_ctx = NULL,
+              bool skip_recycle_bin = false);
 
   int drop_cs(const char *cs_name);
 

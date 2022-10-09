@@ -107,7 +107,7 @@ class Sdb_cl {
 
   int drop_index(const char *name);
 
-  int truncate();
+  int truncate(bool skip_recycle_bin = false);
 
   int set_attributes(const bson::BSONObj &options);
 
