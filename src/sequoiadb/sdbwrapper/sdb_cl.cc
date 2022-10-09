@@ -23,6 +23,7 @@
 #include "sdb_conn.h"
 #include "ha_sdb_errcode.h"
 #include "ha_sdb_log.h"
+#include "ha_sdb_util.h"
 
 using namespace sdbclient;
 
@@ -527,12 +528,30 @@ int Sdb_cl::drop_index(const char *name) {
   return retry(boost::bind(cl_drop_index, &m_cl, name));
 }
 
-int cl_truncate(sdbclient::sdbCollection *cl) {
-  return cl->truncate();
+int cl_truncate(sdbclient::sdbCollection *cl, bson::BSONObj *options) {
+  int rc = SDB_ERR_OK;
+  if (options && !options->isEmpty()) {
+    rc = cl->truncate(*options);
+  } else {
+    rc = cl->truncate();
+  }
+  return rc;
 }
 
-int Sdb_cl::truncate() {
-  return retry(boost::bind(cl_truncate, &m_cl));
+int Sdb_cl::truncate(bool skip_recycle_bin) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObj options = SDB_EMPTY_BSON;
+  // build truncate collection options
+  Sdb_conn *conn = get_conn();
+  rc = sdb_build_recycle_bin_option(*conn, options, skip_recycle_bin);
+  if (0 != rc) {
+    goto error;
+  }
+  rc = retry(boost::bind(cl_truncate, &m_cl, &options));
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int cl_set_attributes(sdbclient::sdbCollection *cl,

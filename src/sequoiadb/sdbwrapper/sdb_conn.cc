@@ -648,7 +648,7 @@ error:
     new_cs = false;
     new_cl = false;
   } else if (new_cl) {
-    drop_cl(cs_name, cl_name, mapping_ctx);
+    drop_cl(cs_name, cl_name, mapping_ctx, true);
     new_cl = false;
   }
   goto done;
@@ -858,7 +858,7 @@ error:
 }
 
 int conn_drop_cl(sdbclient::sdb *connection, const char *cs_name,
-                 const char *cl_name) {
+                 const char *cl_name, const bson::BSONObj *options) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCollectionSpace cs;
 
@@ -873,7 +873,14 @@ int conn_drop_cl(sdbclient::sdb *connection, const char *cs_name,
       goto error;
     }
 
-    rc = cs.dropCollection(cl_name);
+    // 'options' may include 'SkipRecycleBin' option if it's not empty.
+    // 'SkipRecycleBin' option will be set in 'sdb_build_recycle_bin_option' if
+    // Recycle Bin function is supported
+    if (options && !options->isEmpty()) {
+      rc = cs.dropCollection(cl_name, *options);
+    } else {
+      rc = cs.dropCollection(cl_name);
+    }
     if (rc != SDB_ERR_OK) {
       if (SDB_DMS_NOTEXIST == rc || SDB_DMS_CS_NOTEXIST == rc) {
         // There is no specified collection, igonre the error.
@@ -892,10 +899,11 @@ error:
 }
 
 int Sdb_conn::drop_cl(const char *db_name, const char *table_name,
-                      Mapping_context *mapping_ctx) {
+                      Mapping_context *mapping_ctx, bool skip_recycle_bin) {
   int rc = 0;
   const char *cs_name = db_name;
   const char *cl_name = table_name;
+  bson::BSONObj options = SDB_EMPTY_BSON;
   if (NULL != mapping_ctx) {
     rc = Name_mapping::get_mapping(db_name, table_name, this, mapping_ctx);
     if (HA_ERR_END_OF_FILE == rc) {
@@ -907,7 +915,14 @@ int Sdb_conn::drop_cl(const char *db_name, const char *table_name,
     cs_name = mapping_ctx->get_mapping_cs();
     cl_name = mapping_ctx->get_mapping_cl();
   }
-  rc = retry(boost::bind(conn_drop_cl, m_connection, cs_name, cl_name));
+
+  // build drop collection options
+  rc = sdb_build_recycle_bin_option(*this, options, skip_recycle_bin);
+  if (0 != rc) {
+    goto error;
+  }
+  rc = retry(
+      boost::bind(conn_drop_cl, m_connection, cs_name, cl_name, &options));
   if (0 != rc) {
     goto error;
   }

@@ -1390,6 +1390,23 @@ error:
   goto done;
 }
 
+// check if the object to be dropped exists
+bool dropping_object_exist(THD *thd, const char *db, const char *object_name) {
+  bool dropping_obj_exist = true;
+  char *db_name = NULL, *obj_name = NULL;
+  List_iterator<char> obj_it(thd->wrong_objects);
+  while ((db_name = obj_it++)) {
+    obj_name = obj_it++;
+    if (0 == strcmp(db, db_name) && 0 == strcmp(object_name, obj_name)) {
+      dropping_obj_exist = false;
+    }
+  }
+  if (dropping_obj_exist) {
+    SDB_LOG_DEBUG("Dropping object '%s.%s' exists", db, object_name);
+  }
+  return dropping_obj_exist;
+}
+
 // 1. write SQL into 'HASQLLog'
 // 2. update 'HAObjectState' and 'HAInstanceObjectState'
 static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
@@ -1501,7 +1518,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
 #endif
       ) {
         // check if the dropping object exists
-        if (!ha_tables->dropping_object_exists &&
+        if (!dropping_object_exist(thd, db_name, table_name) &&
             !ha_is_executing_pending_log(thd)) {
           continue;
         }
@@ -3068,13 +3085,14 @@ bool can_write_user_ddl_sql_log(THD *thd, ha_sql_stmt_info *sql_info,
 #else
        || ER_ROW_IS_REFERENCED == error_code
 #endif
-       ) &&
+       || get_sdb_code(error_code) == SDB_RECYCLE_FULL) &&
       (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command
 #ifdef IS_MARIADB
        || SQLCOM_DROP_SEQUENCE == sql_command
 #endif
        )) {
     // if drop tables/views partial success
+    can_write_log = true;
   } else if (can_write_log && ER_CANNOT_USER == error_code &&
              (SQLCOM_CREATE_USER == sql_command ||
               SQLCOM_DROP_USER == sql_command ||
@@ -3132,7 +3150,8 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
     // if 'XXX not exists' or 'XXX already exists' warning are found for
     // pending log replayer, need to write SQL log
     can_write_log = is_pending_log_ignorable_error(thd) ||
-                    have_exist_warning(thd) || have_ignorable_warnings(thd);
+                    (0 == error_code &&
+                     (have_exist_warning(thd) || have_ignorable_warnings(thd)));
   }
 
   // In some situations, MySQL/MariaDB will rollback the whole operation if it
