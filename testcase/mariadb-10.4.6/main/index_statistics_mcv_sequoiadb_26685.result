@@ -47,7 +47,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	2	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	2	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	2,2	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -97,7 +97,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	3	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	3	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	3,3	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -147,7 +147,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	4	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	4	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	4,4	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -197,7 +197,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -247,7 +247,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	9	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	9	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	9,9	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -320,7 +320,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -353,7 +353,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t2	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t2 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t2	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t2 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t2	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -426,7 +426,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -459,7 +459,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t2	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t2 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t2	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t2 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t2	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -574,7 +574,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -607,7 +607,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t2	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t2 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t2	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t2 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t2	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -659,7 +659,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='a';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	2	const	2	Using where with pushed condition
+1	SIMPLE	t1	ref	idx_b	idx_b	2	const	3	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a='e' and b='a';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	2,2	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -711,7 +711,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='a';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	258	const	2	Using where with pushed condition
+1	SIMPLE	t1	ref	idx_b	idx_b	258	const	3	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a='e' and b='a';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	258,258	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -764,7 +764,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='a123abc';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	258	const	2	Using where with pushed condition
+1	SIMPLE	t1	ref	idx_b	idx_b	258	const	3	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a='e123abc' and b='a123abc';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	258,258	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -817,7 +817,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='a123abc';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	258	const	2	Using where with pushed condition
+1	SIMPLE	t1	ref	idx_b	idx_b	258	const	3	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a='e123abc' and b='a123abc';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	258,258	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -870,7 +870,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='a123abc';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	258	const	2	Using where with pushed condition
+1	SIMPLE	t1	ref	idx_b	idx_b	258	const	3	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a='e123abc' and b='a123abc';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	258,258	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -923,7 +923,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='a123abc';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	258	const	2	Using where with pushed condition
+1	SIMPLE	t1	ref	idx_b	idx_b	258	const	3	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a='e123abc' and b='a123abc';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	258,258	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -973,7 +973,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT a, b, c+0 FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT a, b, c+0 FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -1026,7 +1026,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -1079,7 +1079,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='2001-11-01';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	4	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	4	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a='6001-11-01' and b='2001-11-01';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	4,4	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -1132,7 +1132,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='2001-11-01 00:00:00';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	6	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	6	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a='6001-11-01 00:00:00' and b='2001-11-01 00:00:00';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	6,6	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -1185,7 +1185,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b='21:07:35';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	4	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	4	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a='61:07:35' and b='21:07:35';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	4,4	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -1238,7 +1238,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -1288,7 +1288,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
@@ -1338,7 +1338,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	idx_a	NULL	NULL	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	idx_b	idx_b	5	const	2	
+1	SIMPLE	t1	ref	idx_b	idx_b	5	const	3	
 EXPLAIN SELECT * FROM t1 WHERE a=5 and b=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	idx_a,idx_b	idx_a,idx_b	5,5	NULL	1	Using intersect(idx_a,idx_b); Using where with pushed condition
