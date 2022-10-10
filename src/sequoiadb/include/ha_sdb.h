@@ -567,6 +567,14 @@ class ha_sdb : public handler {
 
   int update_stats(THD *thd, bool do_read_stat);
 
+  int read_current_table_diag_info_file(THD *thd, const char *file_name,
+                                        bson::BSONObj &diag_info);
+
+  int replace_table_stats_from_diag_file(THD *thd);
+
+  int replace_index_stats_from_diag_file(THD *thd, KEY *key_info,
+                                         bson::BSONObj &diag_info);
+
   int ensure_stats(THD *thd, int keynr = -1);
 
   int build_auto_inc_option(const Field *field,

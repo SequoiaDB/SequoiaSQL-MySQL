@@ -7128,6 +7128,12 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       share = new_share_ptr;
       mysql_mutex_unlock(&sdb_mutex);
     }
+  } else if (NULL != sdb_get_diag_info_path(thd) &&
+             0 != strlen(sdb_get_diag_info_path(thd))) {
+    // replace share->stat
+    if (!replace_table_stats_from_diag_file(thd)) {
+      share->stat.is_substituted = true;
+    }
   }
 
   stats.block_size = (uint)share->stat.page_size;
@@ -7144,14 +7150,201 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
     stats.mean_rec_length = 0;
   }
 
-  DBUG_PRINT("exit", ("stats.block_size: %u  "
-                      "stats.records: %d, stat.total_index_pages: %d",
-                      (uint)stats.block_size, (int)stats.records,
-                      stat.total_index_pages));
+  DBUG_PRINT("exit",
+             ("stats.block_size: %u, stats.data_file_length: %llu, "
+              "stats.index_file_length: %llu, stats.delete_length: %llu, "
+              "stats.records: %d, stat.total_index_pages: %d, "
+              "stats.mean_rec_length: %lu",
+              (uint)stats.block_size, stats.data_file_length,
+              stats.index_file_length, stats.delete_length, (int)stats.records,
+              stat.total_index_pages, stats.mean_rec_length));
 done:
   DBUG_RETURN(rc);
 error:
   convert_sdb_code(rc);
+  goto done;
+}
+
+/**
+  Read current table diag info from file
+
+  @param[in] thd            thread handler
+  @param[in] file_name      root diretory is the current table directory
+  @param[out] diag_info     diag info BSONObj
+
+  @return
+    0       ok
+    errno   some errors have occurred
+*/
+int ha_sdb::read_current_table_diag_info_file(THD *thd, const char *file_name,
+                                              bson::BSONObj &diag_info) {
+  DBUG_ENTER("ha_sdb::read_current_table_diag_info_file()");
+
+  File file = -1;
+  int bytes_read = 0;
+  int rc = 0;
+  int offset = 0;
+  char data_buf[4096] = {0};
+  char *diag_info_path = sdb_get_diag_info_path(thd);
+  String absolute_file_path;
+  String stats_str;
+  String real_table_name(table_name, &my_charset_bin);
+  String slash("/", &my_charset_bin);
+  DBUG_ASSERT(share);
+
+  // replace '.' with '/' in tb_name
+  while (-1 != (offset = real_table_name.strstr(slash, 0))) {
+    real_table_name.replace(offset, 1, ".", 1);
+  }
+
+  // /PATH/catalog/db1/t1/xxxxx.json
+  if (NULL == diag_info_path) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  if (absolute_file_path.append(diag_info_path) ||
+      absolute_file_path.append("/") ||
+      absolute_file_path.append(SDB_FN_CATALOG) ||
+      absolute_file_path.append("/") || absolute_file_path.append(db_name) ||
+      absolute_file_path.append("/") ||
+      absolute_file_path.append(real_table_name) ||
+      absolute_file_path.append("/") || absolute_file_path.append(file_name)) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  if ((file = mysql_file_open(key_file_loadfile, absolute_file_path.ptr(),
+                              O_RDONLY | O_SHARE, MYF(0))) < 0) {
+    // statistics for this table may not be collected
+#ifdef IS_MYSQL
+    rc = my_errno();
+#elif IS_MARIADB
+    rc = my_errno;
+#endif
+    goto error;
+  }
+
+  while (true) {
+    memset(data_buf, 0, 4096);
+    if ((bytes_read = (int)mysql_file_read(file, (uchar *)data_buf,
+                                           sizeof(data_buf), MYF(0))) < 0) {
+#ifdef IS_MYSQL
+      rc = my_errno();
+#elif IS_MARIADB
+      rc = my_errno;
+#endif
+      goto error;
+    }
+    if (0 == bytes_read) {
+      break;
+    }
+
+    if (stats_str.append(data_buf)) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+  }
+
+  rc = fromjson(stats_str.ptr(), diag_info);
+  if (0 != rc) {
+    goto error;
+  }
+
+done:
+  if (file > 0) {
+    mysql_file_close(file, MYF(0));
+  }
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_sdb::replace_table_stats_from_diag_file(THD *thd) {
+  DBUG_ENTER("ha_sdb::replace_table_stats_from_diag_file()");
+
+  int rc = 0;
+  bson::BSONObj diag_info;
+  bson::BSONObj stats_data;
+  int32 page_size = 0;
+  int32 total_data_pages = 0;
+  int32 total_index_pages = 0;
+  int64 total_data_free_space = 0;
+  int64 total_records = 0;
+
+  DBUG_ASSERT(share);
+
+  rc = read_current_table_diag_info_file(thd, SDB_FN_TABLE_STATISTICS_JSON,
+                                         diag_info);
+  if (rc != 0) {
+    goto error;
+  }
+
+  try {
+    stats_data = diag_info.getObjectField("Details").getObjectField("0");
+    page_size = stats_data.getIntField("PageSize");
+    total_data_pages = stats_data.getIntField("TotalDataPages");
+    total_index_pages = stats_data.getIntField("TotalIndexPages");
+    total_data_free_space = stats_data.getIntField("TotalDataFreeSpace");
+    total_records = stats_data.getIntField("TotalRecords");
+  } catch (bson::assertion &e) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  if (page_size < 0 || total_data_pages < 0 || total_data_free_space < 0 ||
+      total_data_free_space < 0 || total_records < 0) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+  share->stat.page_size = page_size;
+  share->stat.total_data_pages = total_data_pages;
+  share->stat.total_index_pages = total_index_pages;
+  share->stat.total_data_free_space = total_data_free_space;
+  share->stat.total_records = total_records;
+
+done:
+  DBUG_RETURN(rc);
+error:
+  push_warning_printf(thd, Sql_condition::SL_WARNING, rc,
+                      "Can not read %s.%s table stat diag info file", db_name,
+                      table_name);
+  goto done;
+}
+
+int ha_sdb::replace_index_stats_from_diag_file(THD *thd, KEY *key_info,
+                                               bson::BSONObj &diag_info) {
+  DBUG_ENTER("ha_sdb::replace_index_stats_from_diag_file()");
+
+  int rc = 0;
+  int offset = 0;
+  String file_name;
+  String real_key_name(sdb_key_name(key_info), &my_charset_bin);
+  String slash("/", &my_charset_bin);
+
+  // replace '.' with '/' in key_name
+  while (-1 != (offset = real_key_name.strstr(slash, 0))) {
+    real_key_name.replace(offset, 1, ".", 1);
+  }
+
+  // index_statistics/key_name
+  if (file_name.append(SDB_FN_INDEX_STATISTICS) || file_name.append("/") ||
+      file_name.append(real_key_name)) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  rc = read_current_table_diag_info_file(thd, file_name.ptr(), diag_info);
+  if (0 != rc) {
+    goto error;
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  push_warning_printf(thd, Sql_condition::SL_WARNING, rc,
+                      "Can not read %s.%s index %s stat diag info file",
+                      db_name, table_name, sdb_key_name(key_info));
   goto done;
 }
 
@@ -7170,6 +7363,13 @@ int ha_sdb::ensure_stats(THD *thd, int keynr) {
       SDB_LOG_ERROR("Failed to build a new 'Sdb_share', error: %s", rc);
       goto error;
     }
+  }
+
+  if (share->stat.is_substituted && NULL != sdb_get_diag_info_path(thd) &&
+      0 == strlen(sdb_get_diag_info_path(thd))) {
+    // stat->reset() -> is_substituted = false
+    share->stat.reset();
+    stats.records = ~(ha_rows)0;
   }
 
   // stats.records will be reset in ha_sdb::reset()
@@ -7888,15 +8088,24 @@ bool ha_sdb::is_idx_stat_valid(Sdb_idx_stat_ptr &ptr) {
   /*
     Invalid in following cases:
     1. statistics doesn't exist;
-    2. sequoiadb_stats_cache was changed.(ON => OFF or OFF => ON)
-    3. sequoiadb_stats_cache_level is higher than the current;
+    2. statistics.is_substituted is true and sequoiadb_diag_info_path is empty
+    3. sequoiadb_stats_cache was changed.(ON => OFF or OFF => ON)
+    4. sequoiadb_stats_cache_level is higher than the current;
   */
   sdb_index_stat_level current_level = sdb_get_stats_cache_level(ha_thd());
   if (!is_mcv_supported()) {
     current_level = SDB_STATS_LVL_BASE;
   }
-  return (ptr.get() && ptr->version == sdb_stats_cache_version &&
-          ptr->level >= current_level);
+
+  if (ptr.get() && ptr->is_substituted &&
+      NULL != sdb_get_diag_info_path(ha_thd()) &&
+      0 == strlen(sdb_get_diag_info_path(ha_thd()))) {
+    // reset index stat
+    return false;
+  } else {
+    return (ptr.get() && ptr->version == sdb_stats_cache_version &&
+            ptr->level >= current_level);
+  }
 }
 
 int ha_sdb::ensure_index_stat(int keynr) {
@@ -8104,6 +8313,7 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
   Sdb_cl cl;
   bson::BSONObj obj;
   bool need_detail = (SDB_STATS_LVL_MCV == s.level);
+  bool is_stats_replaced = false;
 
   if (!is_index_stat_supported()) {
     s.sample_records = 0;
@@ -8116,28 +8326,38 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
     goto error;
   }
 
-  rc = conn->get_cl(db_name, table_name, cl, false, &tbl_ctx_impl);
-  if (rc != 0) {
-    goto error;
+  if (NULL != sdb_get_diag_info_path(thd) &&
+      0 != strlen(sdb_get_diag_info_path(thd))) {
+    if (!replace_index_stats_from_diag_file(thd, key_info, obj)) {
+      is_stats_replaced = true;
+      s.is_substituted = true;
+    }
   }
 
-  rc = cl.get_index_stat(sdb_key_name(key_info), obj, need_detail);
-  if (SDB_INVALIDARG == get_sdb_code(rc)) {
-    s.sample_records = 0;
-    s.static_total_records = 0;
-    rc = 0;
-    goto done;
-  }
+  if (!is_stats_replaced) {
+    rc = conn->get_cl(db_name, table_name, cl, false, &tbl_ctx_impl);
+    if (rc != 0) {
+      goto error;
+    }
 
-  if (SDB_IXM_STAT_NOTEXIST == get_sdb_code(rc)) {
-    s.sample_records = 0;
-    s.static_total_records = 0;
-    rc = 0;
-    goto done;
-  }
+    rc = cl.get_index_stat(sdb_key_name(key_info), obj, need_detail);
+    if (SDB_INVALIDARG == get_sdb_code(rc)) {
+      s.sample_records = 0;
+      s.static_total_records = 0;
+      rc = 0;
+      goto done;
+    }
 
-  if (rc != 0) {
-    goto error;
+    if (SDB_IXM_STAT_NOTEXIST == get_sdb_code(rc)) {
+      s.sample_records = 0;
+      s.static_total_records = 0;
+      rc = 0;
+      goto done;
+    }
+
+    if (rc != 0) {
+      goto error;
+    }
   }
 
   try {
