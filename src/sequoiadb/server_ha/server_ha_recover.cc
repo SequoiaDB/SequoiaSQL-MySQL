@@ -1154,8 +1154,6 @@ static int drop_non_system_databases(MYSQL *conn) {
         !strcmp(HA_PERFORMANCE_DB, db)
 #ifdef IS_MYSQL
         || !strcmp(HA_SYS_DB, db)
-#else
-        || !strcmp(HA_TEST_DB, db)
 #endif
     ) {
       continue;
