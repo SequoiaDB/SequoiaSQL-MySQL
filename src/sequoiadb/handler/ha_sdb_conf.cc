@@ -37,6 +37,7 @@ static const my_bool SDB_DEBUG_LOG_DFT = FALSE;
 static const my_bool SDB_DEFAULT_USE_BULK_INSERT = TRUE;
 static const my_bool SDB_DEFAULT_USE_AUTOCOMMIT = TRUE;
 static const int SDB_DEFAULT_BULK_INSERT_SIZE = 2000;
+static const my_bool SDB_DEFAULT_BKA_REMOVE_ORDERBY = TRUE;
 /* Always doing transactions on SDB, commit on SDB will make sure all the
    replicas have completed sync datas. So default replsize: 1 to
    improve write row performance.*/
@@ -535,12 +536,20 @@ static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
                         NULL, NULL, 0, 0, 720, 1);
 
 // SDB_DOC_OPT = IGNORE
-static MYSQL_THDVAR_STR(diag_info_path,
-                        PLUGIN_VAR_NOCMDOPT | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
-                        "Path to the table and index statistics replacement file. (Default: \"\")"
-                        /*表及索引统计信息替换文件的路径。*/,
-                        NULL, NULL,
-                        SDB_DEFAULT_DIAG_INFO_PATH);
+static MYSQL_THDVAR_STR(
+    diag_info_path,
+    PLUGIN_VAR_NOCMDOPT | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
+    "Path to the table and index statistics replacement file. (Default: \"\")"
+    /*表及索引统计信息替换文件的路径。*/,
+    NULL, NULL, SDB_DEFAULT_DIAG_INFO_PATH);
+
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(bka_remove_orderby,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+                         "Remove index sort from BKA"
+                         "(Default: ON)"
+                         /*执行 bka join 携带 index 排序*/,
+                         NULL, NULL, SDB_DEFAULT_BKA_REMOVE_ORDERBY);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
@@ -582,6 +591,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(mapping_unit_count),
     MYSQL_SYSVAR(stats_flush_time_threshold),
     MYSQL_SYSVAR(diag_info_path),
+    MYSQL_SYSVAR(bka_remove_orderby),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -774,6 +784,10 @@ char *sdb_preferred_instance_mode(THD *thd) {
 
 bool sdb_preferred_strict(THD *thd) {
   return THDVAR(thd, preferred_strict);
+}
+
+bool sdb_bka_using_index_sort(THD *thd) {
+  return !THDVAR(thd, bka_remove_orderby);
 }
 
 int sdb_preferred_period(THD *thd) {

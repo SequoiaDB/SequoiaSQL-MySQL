@@ -2409,9 +2409,9 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
         time_t time_tmp = mktime(&tm_val);
         time_t true_time_val = time_tmp;
 
-        //DST correction 
-        //if tm_isdst has changed, we use the
-        //old date to recount the seconds in dst
+        // DST correction
+        // if tm_isdst has changed, we use the
+        // old date to recount the seconds in dst
         if (tm_val.tm_isdst != tmp_tm.tm_isdst) {  // maybe dst
           tmp_tm.tm_isdst = tm_val.tm_isdst;
           time_tmp = mktime(&tmp_tm);
@@ -5974,11 +5974,13 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   if (!field_order_condition.isEmpty()) {
     order_by = field_order_condition;
   } else {
-    rc = sdb_get_idx_order(key_info, order_by, order_direction,
-                           m_secondary_sort_rowid);
-    if (rc) {
-      SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
-      goto error;
+    if (!is_join_bka || sdb_bka_using_index_sort(ha_thd())) {
+      rc = sdb_get_idx_order(key_info, order_by, order_direction,
+                             m_secondary_sort_rowid);
+      if (rc) {
+        SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
+        goto error;
+      }
     }
   }
 
