@@ -38,6 +38,7 @@ static const my_bool SDB_DEBUG_LOG_DFT = FALSE;
 static const my_bool SDB_DEFAULT_USE_BULK_INSERT = TRUE;
 static const my_bool SDB_DEFAULT_USE_AUTOCOMMIT = TRUE;
 static const int SDB_DEFAULT_BULK_INSERT_SIZE = 2000;
+static const my_bool SDB_DEFAULT_BKA_REMOVE_ORDERBY = TRUE;
 /* Always doing transactions on SDB, commit on SDB will make sure all the
    replicas have completed sync datas. So default replsize: 1 to
    improve write row performance.*/
@@ -630,6 +631,13 @@ static MYSQL_THDVAR_UINT(execution_mode, PLUGIN_VAR_NOCMDOPT,
                          /* SQL 语句的执行模式 [0, 2]。*/,
                          NULL, sdb_exec_mode_update, 0, 0, 2, 1);
 
+static MYSQL_THDVAR_BOOL(bka_remove_orderby,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+                         "Remove index sort from BKA"
+                         "(Default: ON)"
+                         /*执行 bka join 携带 index 排序*/,
+                         NULL, NULL, SDB_DEFAULT_BKA_REMOVE_ORDERBY);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -678,6 +686,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(support_cond_const_bool),
     MYSQL_SYSVAR(enable_null_reject_for_bka_join),
     MYSQL_SYSVAR(execution_mode),
+    MYSQL_SYSVAR(bka_remove_orderby),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -894,6 +903,10 @@ char *sdb_preferred_instance_mode(THD *thd) {
 
 bool sdb_preferred_strict(THD *thd) {
   return THDVAR(thd, preferred_strict);
+}
+
+bool sdb_bka_using_index_sort(THD *thd) {
+  return !THDVAR(thd, bka_remove_orderby);
 }
 
 int sdb_preferred_period(THD *thd) {

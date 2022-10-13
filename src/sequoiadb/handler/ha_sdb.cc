@@ -7032,6 +7032,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     m_index_need_sorted = true;
   }
 
+  if (is_join_bka && !sdb_bka_using_index_sort(thd) &&
+      is_no_order_range_supported()) {
+    m_index_need_sorted = false;
+  }
+
   idx_order_direction = order_direction;
 
   DBUG_EXECUTE_IF("index_sort_prune_test",
