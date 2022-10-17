@@ -14,11 +14,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /*
- * @Description   : seqDB-236301:创建两个表名尾部相同的分区表，主分区和子分区都指定sdb表名，删除其中一张分区表
+ * @Description   : seqDB-26301:创建两个表名尾部相同的分区表，主分区和子分区都指定sdb表名，删除其中一张分区表
  * @Author        : Xiao ZhenFan
  * @CreateTime    : 2022.03.29
- * @LastEditTime  : 2022.03.31
- * @LastEditors   : Xiao ZhenFan
+ * @LastEditTime  : 2022.10.12
+ * @LastEditors   : Xiao Zhenfan
  */
 
 public class MetaDataMapping26301 extends MysqlTestBase {
@@ -83,19 +83,6 @@ public class MetaDataMapping26301 extends MysqlTestBase {
         }
         cursor1.close();
         
-        // debug
-        System.out.println( "mappingCSName :" +  mappingCSName);
-        jdbc.update( "use " + dbName + ";" );
-        List< String > tables = jdbc.query( "show tables ;" );
-        System.out.println( tables );
-        List< String > listCL = new ArrayList<>();
-        DBCursor cursor = sdb.listCollections();
-        while ( cursor.hasNext() ) {
-            listCL.add( cursor.getNext().toString() );
-        }
-        cursor.close();
-        System.out.println( listCL );
-
         // 验证映射表记录数的正确性
         int expCount1 = 10;
         int actCount1 = 0;
