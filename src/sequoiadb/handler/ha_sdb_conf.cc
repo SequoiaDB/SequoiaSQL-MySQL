@@ -551,6 +551,15 @@ static MYSQL_THDVAR_BOOL(bka_remove_orderby,
                          /*执行 bka join 携带 index 排序*/,
                          NULL, NULL, SDB_DEFAULT_BKA_REMOVE_ORDERBY);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    lossy_end_range, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Ignore the end range on character strings data type fields when using "
+    "index to retrieve on a given range."
+    "(Default: OFF)"
+    /* 字符型类型字段是否在 range 索引扫描时忽略右边界索引条件。*/,
+    NULL, NULL, FALSE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -592,6 +601,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(stats_flush_time_threshold),
     MYSQL_SYSVAR(diag_info_path),
     MYSQL_SYSVAR(bka_remove_orderby),
+    MYSQL_SYSVAR(lossy_end_range),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -816,4 +826,8 @@ int sdb_stats_flush_time_threshold(THD *thd) {
 
 char *sdb_get_diag_info_path(THD *thd) {
   return THDVAR(thd, diag_info_path);
+}
+
+int sdb_lossy_end_range(THD *thd) {
+  return THDVAR(thd, lossy_end_range);
 }

@@ -103,7 +103,7 @@ sdb_index_stat_level sdb_get_stats_cache_level(THD *thd);
 int sdb_stats_flush_time_threshold(THD *thd);
 char *sdb_get_diag_info_path(THD *thd);
 bool sdb_bka_using_index_sort(THD *thd);
-
+int sdb_lossy_end_range(THD *thd);
 extern char *sdb_conn_str;
 extern char *sdb_user;
 extern char *sdb_password_token;

@@ -3520,12 +3520,24 @@ void ha_sdb::build_single_range(bson::BSONObjBuilder &rang_arr_blder,
                               start_range ? NO_MIN_RANGE : NO_MAX_RANGE);
     }
   } else {
+    KEY *key_info = NULL;
+    key_info = table->key_info + active_index;
+    const KEY_PART_INFO *key_part = key_info->key_part;
+
     while (it.more()) {
       pos++;
       BSONElement elem = it.next();
       if (Object == elem.type() || Undefined == elem.type()) {
-        pos_str[0] = D2C(pos);
+        for (;
+             (0 != strcmp(elem.fieldName(), sdb_field_name(key_part->field))) &&
+             pos <= key_info->user_defined_key_parts;
+             pos++, key_part++) {
+          pos_str[0] = D2C(pos);
+          append_infinity_element(rang_arr_blder, pos_str,
+                                  start_range ? NO_MIN_RANGE : NO_MAX_RANGE);
+        }
 
+        pos_str[0] = D2C(pos);
         if (Undefined == elem.type()) {
           /*end range should never be undefined.*/
           DBUG_ASSERT(start_range);
@@ -3560,6 +3572,7 @@ void ha_sdb::build_single_range(bson::BSONObjBuilder &rang_arr_blder,
           break;
         }
       }
+      key_part++;
     }
     /*fields of start range less than fields of end range
       eg:  start: a>=1
