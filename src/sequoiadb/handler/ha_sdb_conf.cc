@@ -535,13 +535,21 @@ static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
                         NULL, NULL, 0, 0, 720, 1);
 
 // SDB_DOC_OPT = IGNORE
-static MYSQL_THDVAR_STR(diag_info_path,
-                        PLUGIN_VAR_NOCMDOPT | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
-                        "Path to the table and index statistics replacement file. (Default: \"\")"
-                        /*表及索引统计信息替换文件的路径。*/,
-                        NULL, NULL,
-                        SDB_DEFAULT_DIAG_INFO_PATH);
+static MYSQL_THDVAR_STR(
+    diag_info_path,
+    PLUGIN_VAR_NOCMDOPT | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
+    "Path to the table and index statistics replacement file. (Default: \"\")"
+    /*表及索引统计信息替换文件的路径。*/,
+    NULL, NULL, SDB_DEFAULT_DIAG_INFO_PATH);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    lossy_end_range, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Ignore the end range on character strings data type fields when using "
+    "index to retrieve on a given range."
+    "(Default: OFF)"
+    /* 字符型类型字段是否在 range 索引扫描时忽略右边界索引条件。*/,
+    NULL, NULL, FALSE);
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -582,6 +590,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(mapping_unit_count),
     MYSQL_SYSVAR(stats_flush_time_threshold),
     MYSQL_SYSVAR(diag_info_path),
+    MYSQL_SYSVAR(lossy_end_range),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -802,4 +811,8 @@ int sdb_stats_flush_time_threshold(THD *thd) {
 
 char *sdb_get_diag_info_path(THD *thd) {
   return THDVAR(thd, diag_info_path);
+}
+
+int sdb_lossy_end_range(THD *thd) {
+  return THDVAR(thd, lossy_end_range);
 }

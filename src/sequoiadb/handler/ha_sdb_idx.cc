@@ -509,6 +509,8 @@ int sdb_get_key_part_value(const KEY_PART_INFO *key_part, const uchar *key_ptr,
                            const char *op_str, bool ignore_text_key,
                            bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
+  DBUG_ASSERT(current_thd);
+  bool lossy_end_range = sdb_lossy_end_range(current_thd);
 
   switch (key_part->field->type()) {
     case MYSQL_TYPE_TINY:
@@ -573,10 +575,20 @@ int sdb_get_key_part_value(const KEY_PART_INFO *key_part, const uchar *key_ptr,
         break;
       }
       if (!key_part->field->binary()) {
-        if (!ignore_text_key) {
-          rc = get_char_key_obj(key_ptr, key_part, op_str, builder);
-          if (rc) {
-            goto error;
+        /*keep partial character string column ignoring key like before.*/
+        if (key_part->key_part_flag & HA_PART_KEY_SEG) {
+          if (!ignore_text_key) {
+            rc = get_char_key_obj(key_ptr, key_part, op_str, builder);
+            if (rc) {
+              goto error;
+            }
+          }
+        } else {
+          if (!ignore_text_key || !lossy_end_range) {
+            rc = get_char_key_obj(key_ptr, key_part, op_str, builder);
+            if (rc) {
+              goto error;
+            }
           }
         }
       } else {
@@ -589,10 +601,20 @@ int sdb_get_key_part_value(const KEY_PART_INFO *key_part, const uchar *key_ptr,
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_BLOB: {
       if (!key_part->field->binary()) {
-        if (!ignore_text_key) {
-          rc = get_text_key_obj(key_ptr, key_part, op_str, builder);
-          if (rc) {
-            goto error;
+        /*keep partial character string column ignoring key like before.*/
+        if (key_part->key_part_flag & HA_PART_KEY_SEG) {
+          if (!ignore_text_key) {
+            rc = get_text_key_obj(key_ptr, key_part, op_str, builder);
+            if (rc) {
+              goto error;
+            }
+          }
+        } else {
+          if (!ignore_text_key || !lossy_end_range) {
+            rc = get_text_key_obj(key_ptr, key_part, op_str, builder);
+            if (rc) {
+              goto error;
+            }
           }
         }
       } else {
