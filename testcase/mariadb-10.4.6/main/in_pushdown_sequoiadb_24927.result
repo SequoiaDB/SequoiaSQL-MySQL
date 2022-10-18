@@ -36,7 +36,7 @@ count(1)
 select count(1) from t1 where b in (1,2,3);
 count(1)
 10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$in": [ 1, 2, 3 ] } }, { "b": { "$et": 3 } } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[in_pushdown_sequoiadb24927.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$in": [ 1, 2, 3 ] } }, { "b": { "$et": 3 } } ] }], selector[{}], order_by[{}], hint[{ "": "b" }], limit[-1], offset[0], table[in_pushdown_sequoiadb24927.t1]
 update t1 set a = 2 where a in (1,2,3);
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 2 } }, condition: { "a": { "$in": [ 1, 2, 3 ] } }, table: in_pushdown_sequoiadb24927.t1
 select * from t1 order by a,b,c;

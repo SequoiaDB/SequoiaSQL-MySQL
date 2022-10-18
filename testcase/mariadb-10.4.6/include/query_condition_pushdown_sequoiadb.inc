@@ -3814,7 +3814,7 @@ DROP TABLE t1;
 # seqDB-16827,seqDB-16835,seqDB-16868
 # check type of set 
 #
-CREATE TABLE t1(id int auto_increment key, a set("hello","hello1","hello2"," HELLO"," HELLO1", " HELLO2"), b set("hello","hello1","hello2"," HELLO"," HELLO1", " HELLO2"));
+CREATE TABLE t1(id int auto_increment key, a set("hello","hello1","hello2"," HELLO"," HELLO1", " HELLO2") character set latin1, b set("hello","hello1","hello2"," HELLO"," HELLO1", " HELLO2") character set latin1);
 INSERT INTO t1(a, b) VALUES ("hello", "hello");
 INSERT INTO t1(a, b) VALUES ("HELLO", "HELLO");
 INSERT INTO t1(a, b) VALUES ("hello ", "hello ");
@@ -4006,7 +4006,7 @@ DROP TABLE t1;
 # seqDB-16826,seqDB-16869
 # check type of enum 
 #
-CREATE TABLE t1(id int auto_increment key, a enum("hello","hello1","hello2"," HELLO"," HELLO1", " HELLO2"), b enum("hello","hello1","hello2"," HELLO"," HELLO1", " HELLO2"));
+CREATE TABLE t1(id int auto_increment key, a enum("hello","hello1","hello2"," HELLO"," HELLO1", " HELLO2") character set latin1, b enum("hello","hello1","hello2"," HELLO"," HELLO1", " HELLO2") character set latin1);
 INSERT INTO t1(a, b) VALUES ("hello", "hello");
 INSERT INTO t1(a, b) VALUES ("HELLO", "HELLO");
 INSERT INTO t1(a, b) VALUES ("hello ", "hello ");

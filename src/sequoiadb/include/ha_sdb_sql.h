@@ -280,7 +280,9 @@ typedef enum sdb_join_type {
   SDB_JOIN_INDEX_MERGE_SORT_INTERSECT,
   SDB_JOIN_INDEX_MERGE_ROR_UNION,
   SDB_JOIN_INDEX_MERGE_ROR_INTERSECT,
-  SDB_JOIN_MULTI_RANGE
+  SDB_JOIN_MULTI_RANGE,
+  SDB_JOIN_GROUP_MIN_MAX,
+  SDB_JOIN_MULTI_RANGE_DESC
 } sdb_join_type;
 
 #if defined IS_MYSQL
@@ -332,15 +334,15 @@ bool sdb_use_filesort(THD *thd);
 
 bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table);
 
-sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq);
+sdb_join_type sdb_get_join_type(THD *thd);
 
 bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index);
 
 void sdb_clear_const_keys(THD *thd);
 
-st_order *sdb_get_join_order(THD *thd);
+st_order *sdb_get_join_order_by(THD *thd);
 
-void sdb_set_join_order(THD *thd, st_order *order);
+void sdb_set_join_order_by(THD *thd, st_order *order);
 
 st_order *sdb_get_join_group_list(THD *thd);
 

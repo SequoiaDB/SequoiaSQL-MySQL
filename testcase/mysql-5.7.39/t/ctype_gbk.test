@@ -30,7 +30,9 @@ SET collation_connection='gbk_bin';
 # NOW not concern other engine, just testing for SequoiaDB
 #-- source include/ctype_innodb_like.inc
 -- source include/ctype_like_escape.inc
--- source include/ctype_like_range_f1f2.inc
+# max sort char of this collation cannot be converted to utf8mb4,
+# so that ignore this meaning less test
+# -- source include/ctype_like_range_f1f2.inc
 
 # NOW SequoiaDB will convert all character sets to utf8, so the following records is not allowed to converted into utf8
 #

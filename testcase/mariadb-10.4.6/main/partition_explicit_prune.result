@@ -11,8 +11,8 @@ CREATE VIEW v1 AS SELECT a FROM t1 PARTITION (p0);
 ERROR 0A000: Cannot specify HASH or KEY partitions
 CREATE VIEW v1 AS SELECT a FROM t1;
 SHOW CREATE VIEW v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a` from `t1`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a` from `t1`	latin1	latin1_swedish_ci	
 FLUSH STATUS;
 SELECT * FROM v1;
 a
@@ -376,16 +376,16 @@ HANDLER_TMP_WRITE	24
 FLUSH STATUS;
 SELECT * FROM t1 AS TableAlias;
 a	b
+-1	pNeg(-subp1)
 -2	(pNeg-)subp0
+-3	pNeg(-subp1)
+1	subp3
+10	p10-99
 100	`p100-99999`(-subp6)
 1000	`p100-99999`(-subp6)
 101	`p100-99999`(-subp7)
-5	p0-9:subp3
-10	p10-99
--3	pNeg(-subp1)
--1	pNeg(-subp1)
-1	subp3
 3	subp3
+5	p0-9:subp3
 SELECT * FROM INFORMATION_SCHEMA.SESSION_STATUS
 WHERE VARIABLE_NAME LIKE 'HANDLER_%' AND VARIABLE_VALUE > 0;
 VARIABLE_NAME	VARIABLE_VALUE
@@ -415,16 +415,16 @@ HANDLER_TMP_WRITE	24
 # 17 writes (internal I_S)
 SELECT * FROM t1 AS TableAlias;
 a	b
+-1	pNeg(-subp1)
 -2	(pNeg-)subp0
+-3	pNeg(-subp1)
+1	subp3
+10	p10-99
 100	`p100-99999`(-subp6)
 1000	`p100-99999`(-subp6)
 101	`p100-99999`(-subp7)
-5	p0-9:subp3
-10	p10-99
--3	pNeg(-subp1)
--1	pNeg(-subp1)
-1	subp3
 3	subp3
+5	p0-9:subp3
 SELECT * FROM INFORMATION_SCHEMA.SESSION_STATUS
 WHERE VARIABLE_NAME LIKE 'HANDLER_%' AND VARIABLE_VALUE > 0;
 VARIABLE_NAME	VARIABLE_VALUE
@@ -514,30 +514,30 @@ SELECT * FROM t1 PARTITION;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1
 SELECT * FROM t1 `PARTITION`;
 a	b
+-1	pNeg(-subp1)
 -2	(pNeg-)subp0
+-3	pNeg(-subp1)
+1	subp3
+10	p10-99
 100	`p100-99999`(-subp6)
 1000	`p100-99999`(-subp6)
 101	`p100-99999`(-subp7)
-5	p0-9:subp3
-10	p10-99
--3	pNeg(-subp1)
--1	pNeg(-subp1)
-1	subp3
 3	subp3
+5	p0-9:subp3
 SELECT * FROM t1 AS PARTITION;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'PARTITION' at line 1
 SELECT * FROM t1 AS `PARTITION`;
 a	b
+-1	pNeg(-subp1)
 -2	(pNeg-)subp0
+-3	pNeg(-subp1)
+1	subp3
+10	p10-99
 100	`p100-99999`(-subp6)
 1000	`p100-99999`(-subp6)
 101	`p100-99999`(-subp7)
-5	p0-9:subp3
-10	p10-99
--3	pNeg(-subp1)
--1	pNeg(-subp1)
-1	subp3
 3	subp3
+5	p0-9:subp3
 #
 # Test REPLACE
 #
@@ -770,7 +770,7 @@ WHERE VARIABLE_NAME LIKE 'HANDLER_%' AND VARIABLE_VALUE > 0;
 VARIABLE_NAME	VARIABLE_VALUE
 HANDLER_ROLLBACK	1
 HANDLER_TMP_WRITE	24
-HANDLER_WRITE	6
+HANDLER_WRITE	2
 # 6 locks (1 ha_partition + 2 ha_innobase) x 2 (lock+unlock)
 # 1 rollback
 SELECT * FROM t1;
@@ -1201,10 +1201,10 @@ SUBPARTITION BY HASH (`a`)
   SUBPARTITION `subp7` ENGINE = SequoiaDB))
 SELECT * FROM t2;
 a	b
-1000	`p100-99999`(-subp6), Updated
-100	`p100-99999`(-subp6), Updated, Updated2
-101	`p100-99999`(-subp7), Updated
 10	p10-99, Updated
+100	`p100-99999`(-subp6), Updated, Updated2
+1000	`p100-99999`(-subp6), Updated
+101	`p100-99999`(-subp7), Updated
 SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
@@ -1376,7 +1376,7 @@ PARTITION p2 VALUES LESS THAN (16) ENGINE = SequoiaDB,
 PARTITION p3 VALUES LESS THAN (21) ENGINE = SequoiaDB);
 INSERT INTO `t2` VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10),
 (11), (12), (13), (14), (15), (16), (17), (18), (19), (20);
-SELECT * FROM t2;
+SELECT * FROM t2 ORDER BY id;
 id
 1
 2

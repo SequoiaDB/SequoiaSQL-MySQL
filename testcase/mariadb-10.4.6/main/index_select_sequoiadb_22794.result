@@ -27,7 +27,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 SELECT * FROM t1 WHERE a=318387;
 a	b	c
 318387	TQBRCVDUWXYZ	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 318387 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 318387 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="ghiuj";
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	b,ba	b	65	const	#	Using where with pushed condition
@@ -54,21 +54,21 @@ a	b	c
 656313	ghiuj	1
 656495	ghiuj	1
 659491	ghiuj	1
-[Note] SequoiaDB: Query message: condition[{ "b": { "$et": "ghiuj" } }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": "ghiuj" } }], selector[{}], order_by[{}], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=183265 AND b="fghiujmklnopqvwxyzEKLMN";
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,b,ab,ba	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE a=183265 AND b="fghiujmklnopqvwxyzEKLMN";
 a	b	c
 183265	fghiujmklnopqvwxyzEKLMN	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 183265 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 183265 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="TQBRCVDUWXYZ" AND a=596115;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,b,ab,ba	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE b="TQBRCVDUWXYZ" AND a=596115;
 a	b	c
 596115	TQBRCVDUWXYZ	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 596115 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 596115 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22794.t1	analyze	status	Engine-independent statistics collected
@@ -79,7 +79,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 SELECT * FROM t1 WHERE a=318387;
 a	b	c
 318387	TQBRCVDUWXYZ	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 318387 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 318387 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="ghiuj";
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	b,ba	b	65	const	#	Using where with pushed condition
@@ -106,21 +106,21 @@ a	b	c
 656313	ghiuj	1
 656495	ghiuj	1
 659491	ghiuj	1
-[Note] SequoiaDB: Query message: condition[{ "b": { "$et": "ghiuj" } }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": "ghiuj" } }], selector[{}], order_by[{}], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=183265 AND b="fghiujmklnopqvwxyzEKLMN";
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,b,ab,ba	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE a=183265 AND b="fghiujmklnopqvwxyzEKLMN";
 a	b	c
 183265	fghiujmklnopqvwxyzEKLMN	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 183265 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 183265 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="TQBRCVDUWXYZ" AND a=596115;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,b,ab,ba	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE b="TQBRCVDUWXYZ" AND a=596115;
 a	b	c
 596115	TQBRCVDUWXYZ	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 596115 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 596115 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 id INT,
@@ -151,42 +151,42 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 SELECT * FROM t1 WHERE id=400812;
 id	a	b
 400812	5	a
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 400812 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 400812 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	a,ab	a	2	const	#	Using where
 SELECT COUNT(*) FROM t1 WHERE a=4;
 COUNT(*)
 10626
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 4 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 4 } }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=4 AND b="a,b";
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	a,ab	ab	4	const,const	#	Using where with pushed condition
 SELECT COUNT(*) FROM t1 WHERE a=4 AND b="a,b";
 COUNT(*)
 1598
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$et": 3 } }, { "a": { "$et": 4 }, "b": { "$et": 3 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$et": 3 } }, { "a": { "$et": 4 }, "b": { "$et": 3 } } ] }], selector[{}], order_by[{}], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE id=338285 AND a=3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,a,ab,ida,idab	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE id=338285 AND a=3;
 id	a	b
 338285	3	a,b
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE id=338285 AND a=3 AND b="a,b";
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,a,ab,ida,idab	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE id=338285 AND a=3 AND b="a,b";
 id	a	b
 338285	3	a,b
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=3 AND b="a,b" AND id=338285;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,a,ab,ida,idab	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE a=3 AND b="a,b" AND id=338285;
 id	a	b
 338285	3	a,b
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22794.t1	analyze	status	Engine-independent statistics collected
@@ -197,42 +197,42 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 SELECT * FROM t1 WHERE id=400812;
 id	a	b
 400812	5	a
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 400812 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 400812 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	a,ab	a	2	const	#	Using where
 SELECT COUNT(*) FROM t1 WHERE a=4;
 COUNT(*)
 10626
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 4 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 4 } }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=4 AND b="a,b";
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	a,ab	ab	4	const,const	#	Using where with pushed condition
 SELECT COUNT(*) FROM t1 WHERE a=4 AND b="a,b";
 COUNT(*)
 1598
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$et": 3 } }, { "a": { "$et": 4 }, "b": { "$et": 3 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$et": 3 } }, { "a": { "$et": 4 }, "b": { "$et": 3 } } ] }], selector[{}], order_by[{}], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE id=338285 AND a=3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,a,ab,ida,idab	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE id=338285 AND a=3;
 id	a	b
 338285	3	a,b
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE id=338285 AND a=3 AND b="a,b";
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,a,ab,ida,idab	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE id=338285 AND a=3 AND b="a,b";
 id	a	b
 338285	3	a,b
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=3 AND b="a,b" AND id=338285;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,a,ab,ida,idab	PRIMARY	4	const	#	
 SELECT * FROM t1 WHERE a=3 AND b="a,b" AND id=338285;
 id	a	b
 338285	3	a,b
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 338285 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a CHAR(10),
@@ -261,21 +261,21 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 SELECT * FROM t1 WHERE a='d58beb7d5' and b=16661.5;
 a	b	c
 d58beb7d5	16661.5	2026-04-10
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "d58beb7d5" } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "d58beb7d5" } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a='4ab272c58' and c='1994-07-13';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,ab,abc	PRIMARY	10	const	#	
 SELECT * FROM t1 WHERE a='4ab272c58' and c='1994-07-13';
 a	b	c
 4ab272c58	16832.6	1994-07-13
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "4ab272c58" } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "4ab272c58" } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a='d58beb7d5' and b=16661.5 and c='2026-04-10';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,b,ab,abc	PRIMARY	10	const	#	
 SELECT * FROM t1 WHERE a='d58beb7d5' and b=16661.5 and c='2026-04-10';
 a	b	c
 d58beb7d5	16661.5	2026-04-10
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "d58beb7d5" } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "d58beb7d5" } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22794.t1	analyze	status	Engine-independent statistics collected
@@ -286,20 +286,20 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 SELECT * FROM t1 WHERE a='d58beb7d5' and b=16661.5;
 a	b	c
 d58beb7d5	16661.5	2026-04-10
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "d58beb7d5" } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "d58beb7d5" } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a='4ab272c58' and c='1994-07-13';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,ab,abc	PRIMARY	10	const	#	
 SELECT * FROM t1 WHERE a='4ab272c58' and c='1994-07-13';
 a	b	c
 4ab272c58	16832.6	1994-07-13
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "4ab272c58" } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "4ab272c58" } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a='d58beb7d5' and b=16661.5 and c='2026-04-10';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,b,ab,abc	PRIMARY	10	const	#	
 SELECT * FROM t1 WHERE a='d58beb7d5' and b=16661.5 and c='2026-04-10';
 a	b	c
 d58beb7d5	16661.5	2026-04-10
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "d58beb7d5" } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": "d58beb7d5" } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22794.t1]
 DROP TABLE t1;
 DROP DATABASE index_select_sequoiadb_22794;

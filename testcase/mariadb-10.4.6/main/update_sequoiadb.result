@@ -148,11 +148,11 @@ insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'
 update t1 set b='update' where id=1 order by id;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[update_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[update_test_sequoiadb.t1]
 update t1 set b='update123' where id=2 order by a;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[update_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[update_test_sequoiadb.t1]
 update t1 set id=101 where a=100 order by id;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
@@ -229,11 +229,11 @@ insert into t1 values(),(),(),();
 update ignore t1 set id=100 where id>2;
 affected rows: 1
 info: Rows matched: 2  Changed: 1  Warnings: 0
-[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 2 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[update_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[update_test_sequoiadb.t1]
 update ignore t1 set id=1000 where id=2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[update_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[update_test_sequoiadb.t1]
 update low_priority t1 set id=10000 where id=4;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0

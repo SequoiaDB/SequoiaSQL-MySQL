@@ -1485,9 +1485,6 @@ ALTER TABLE t1 MODIFY a VARCHAR(10) CHARACTER SET ucs2 COLLATE ucs2_croatian_ci;
 SELECT hex(concat('d',_ucs2 0x017E,'%'));
 hex(concat('d',_ucs2 0x017E,'%'))
 0064017E0025
-SELECT hex(a) FROM t1 WHERE a LIKE concat('D',_ucs2 0x017E,'%');
-hex(a)
-0064017E
 DROP TABLE t1;
 #
 # End of 5.1 tests

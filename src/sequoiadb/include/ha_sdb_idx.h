@@ -143,8 +143,7 @@ int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,
 */
 int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                                   const key_range *start_key,
-                                  const key_range *end_key,
-                                  bool from_records_in_range, bool eq_range_arg,
+                                  const key_range *end_key, bool eq_range_arg,
                                   bson::BSONObj &start_cond,
                                   bson::BSONObj &end_cond);
 

@@ -700,11 +700,5 @@ hex(b)
 00
 01
 61
-select hex(b) from t1 where b<'zzz' order by b;
-hex(b)
-
-00
-01
-61
 drop table t1;
 DROP DATABASE test_ctype_collate;
