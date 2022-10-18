@@ -533,6 +533,15 @@ static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
                         /* 统计信息刷新时间阈值, 范围[0, 720]，单位：小时。*/,
                         NULL, NULL, 0, 0, 720, 1);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    lossy_end_range, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Ignore the end range on character strings data type fields when using "
+    "index to retrieve on a given range."
+    "(Default: OFF)"
+    /* 字符型类型字段是否在 range 索引扫描时忽略右边界索引条件。*/,
+    NULL, NULL, FALSE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -572,6 +581,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(mapping_unit_size),
     MYSQL_SYSVAR(mapping_unit_count),
     MYSQL_SYSVAR(stats_flush_time_threshold),
+    MYSQL_SYSVAR(lossy_end_range),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -788,4 +798,8 @@ sdb_index_stat_level sdb_get_stats_cache_level(THD *thd) {
 
 int sdb_stats_flush_time_threshold(THD *thd) {
   return THDVAR(thd, stats_flush_time_threshold);
+}
+
+int sdb_lossy_end_range(THD *thd) {
+  return THDVAR(thd, lossy_end_range);
 }
