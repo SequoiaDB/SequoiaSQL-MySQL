@@ -16,7 +16,7 @@ a	b
 1	30
 20	30
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lte": 20 } } ] }, { "$and": [ { "b": { "$gte": 20 } }, { "b": { "$lte": 30 } } ] } ] }, { "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gte": 20 } }, { "a": { "$lte": 20 } }, { "b": { "$lte": 30 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lte": 20 } } ] }, { "$and": [ { "b": { "$gte": 20 } }, { "b": { "$lte": 30 } } ] } ] }, { "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gte": 20 } }, { "a": { "$lte": 20 } }, { "b": { "$lte": 30 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>=1 and a<=20 and b>=10 and b<=30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -29,7 +29,7 @@ a	b
 20	30
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gte": 10 } }, { "a": { "$lte": 20 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gte": 10 } }, { "a": { "$lte": 20 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>1 and a<20 and b>10 and b<30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	5	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -37,7 +37,7 @@ select * from t1 where a>1 and a<20 and b>10 and b<30;
 a	b
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>=1 and a<20 and b>10 and b<30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -46,7 +46,7 @@ a	b
 1	20
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>1 and a<=20 and b>10 and b<30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -54,7 +54,7 @@ select * from t1 where a>1 and a<=20 and b>10 and b<30;
 a	b
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lte": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lte": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>=1 and a<=20 and b>10 and b<30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -63,7 +63,7 @@ a	b
 1	20
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gt": 10 } }, { "a": { "$lte": 20 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gt": 10 } }, { "a": { "$lte": 20 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>1 and a<20 and b>=10 and b<30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	5	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -72,7 +72,7 @@ a	b
 10	10
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gte": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gte": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>=1 and a<20 and b>=10 and b<30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -82,7 +82,7 @@ a	b
 10	10
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gte": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gte": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>1 and a<=20 and b>=10 and b<30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -92,7 +92,7 @@ a	b
 20	10
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lte": 20 } }, { "b": { "$gte": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lte": 20 } }, { "b": { "$gte": 10 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>=1 and a<=20 and b>= 10 and b<30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -103,7 +103,7 @@ a	b
 20	10
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gte": 10 } }, { "a": { "$lte": 20 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gte": 10 } }, { "a": { "$lte": 20 } }, { "b": { "$lt": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>1 and a<20 and b>10 and b<=30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	5	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -111,7 +111,7 @@ select * from t1 where a>1 and a<20 and b>10 and b<=30;
 a	b
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>=1 and a<20 and b>10 and b<=30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -121,7 +121,7 @@ a	b
 1	30
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lt": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>1 and a<=20 and b>10 and b<=30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -130,7 +130,7 @@ a	b
 20	30
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lte": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 1 } }, { "a": { "$lte": 20 } }, { "b": { "$gt": 10 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 explain select * from t1 where a>=1 and a<=20 and b>10 and b<=30;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	union_ab2	union_ab2	10	NULL	2	Using where with pushed condition; Using index; Using MRR
@@ -141,7 +141,7 @@ a	b
 20	30
 3	11
 5	21
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gt": 10 } }, { "a": { "$lte": 20 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "b": { "$gt": 10 } }, { "a": { "$lte": 20 } }, { "b": { "$lte": 30 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab2" }], limit[-1], offset[0], table[multi_field_query_optimize_25618.t1]
 drop table t1;
 set session optimizer_switch=default;
 set session sequoiadb_debug_log=off;

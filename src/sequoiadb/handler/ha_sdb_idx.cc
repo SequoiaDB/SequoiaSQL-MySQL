@@ -667,8 +667,7 @@ error:
 // This function is modified from ha_federated::create_where_from_key.
 int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                                   const key_range *start_key,
-                                  const key_range *end_key,
-                                  bool from_records_in_range, bool eq_range_arg,
+                                  const key_range *end_key, bool eq_range_arg,
                                   bson::BSONObj &start_cond,
                                   bson::BSONObj &end_cond) {
   int rc = SDB_ERR_OK;
@@ -687,6 +686,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
     for (uint i = 0; i <= 1; i++) {
       const KEY_PART_INFO *key_part;
       bool ignore_text_key = false;
+      bool is_prefix_index = false;
 
       if (ranges[i] == NULL) {
         continue;
@@ -766,7 +766,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
         switch (ranges[i]->flag) {
           case HA_READ_KEY_EXACT: {
             DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_EXACT %d", i));
-            const char *op_str = from_records_in_range ? "$gte" : "$et";
+            const char *op_str = "$et";
             rc = create_condition(field, key_part, key_ptr, op_str,
                                   ignore_text_key, builder[i]);
             if (0 != rc) {

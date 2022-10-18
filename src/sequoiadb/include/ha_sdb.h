@@ -495,6 +495,10 @@ class ha_sdb : public handler {
 
   Item *idx_cond_push(uint keyno, Item *idx_cond);
 
+#ifdef IS_MARIADB
+  bool filesort_push(const ORDER *order);
+#endif
+
   void handle_sdb_error(int error, myf errflag);
 
   int check(THD *thd, HA_CHECK_OPT *check_opt) { return 0; }
@@ -723,6 +727,8 @@ class ha_sdb : public handler {
       TABLE *altered_table, Alter_inplace_info *ha_alter_info,
       ha_sdb_alter_ctx *ctx);
 
+  bool is_in_one_query();
+
  private:
   // swap table if swap_table is true
   int rename_or_swap_table(const char *from, const char *to, bool swap_table);
@@ -788,5 +794,6 @@ class ha_sdb : public handler {
   bool m_use_position;
   sdb_batched_keys_ranges m_batched_keys_ranges;
   bool m_null_rejecting;
+  bool m_index_need_sorted;
 };
 #endif

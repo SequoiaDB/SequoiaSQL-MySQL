@@ -19,10 +19,10 @@ insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'
 insert into t1(a,b,c) values(11, 'sb', 'sb'), (1001, 'st', 'st'),(102, 'sr', 'r'),(2, 'sy', 'sy');
 delete from t1 where id=1 order by id;
 affected rows: 1
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[delete_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[delete_test_sequoiadb.t1]
 delete from t1 where id=2 order by a;
 affected rows: 1
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[delete_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[delete_test_sequoiadb.t1]
 delete from t1 where a=100 order by id;
 affected rows: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_test_sequoiadb.t1]

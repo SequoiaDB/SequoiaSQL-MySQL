@@ -884,7 +884,8 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
                               st_order **sdb_order, st_order **sdb_group_list,
                               bool &direct_sort,
                               bson::BSONObj &field_order_condition,
-                              bson::BSONObj &group_list_condition) {
+                              bson::BSONObj &group_list_condition,
+                              bool check_order_by_only) {
   DBUG_ENTER("sdb_handle_sort_condition");
   int rc = SDB_OK;
   Field *field = NULL;
@@ -899,11 +900,19 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
   bson::BSONObjBuilder builder_selector_field(96);
   const bool use_having_condition = sdb_having_condition(thd);
   const bool use_distinct = sdb_use_distinct(thd);
-  const bool use_force_index = table->force_index;
-  if (!(*sdb_condition) || !join || use_having_condition || use_distinct ||
-      use_force_index) {
+
+  if (!(*sdb_condition) || !join || use_having_condition || use_distinct) {
     goto done;
   }
+  /*
+    The old way to pushdown order requires the table scan access plan, so that
+    when user force to use the index scan, the order should not be pushed.
+    But the new way allows it.
+  */
+  if (!check_order_by_only && table->force_index) {
+    goto done;
+  }
+
   if (sdb_where_condition(thd)) {
     (*sdb_condition)->type = ha_sdb_cond_ctx::WHERE_COND;
     sdb_parse_condtion(sdb_where_condition(thd), *sdb_condition);
@@ -916,11 +925,11 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
     goto done;
   }
 #endif
-  order = sdb_get_join_order(thd);
+  order = sdb_get_join_order_by(thd);
   group_list = sdb_get_join_group_list(thd);
 
   try {
-    if (order) {
+    if (order && (check_order_by_only ? !group_list : true)) {
       while (order) {
         if (Item::FIELD_ITEM != order->item[0]->type() &&
             !(Item::REF_ITEM == order->item[0]->type() &&
@@ -941,9 +950,15 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
         order = order->next;
       }
       field_order_condition = builder_order.obj();
-      *sdb_order = sdb_get_join_order(thd);
-      sdb_set_join_order(thd, NULL);
+      *sdb_order = sdb_get_join_order_by(thd);
+      if (!check_order_by_only) {
+        sdb_set_join_order_by(thd, NULL);
+      }
       direct_sort = true;
+    }
+
+    if (check_order_by_only) {
+      goto done;
     }
 
     if (group_list) {
@@ -1023,7 +1038,7 @@ done:
   DBUG_RETURN(rc);
 error:
   if (direct_sort) {
-    sdb_set_join_order(thd, *sdb_order);
+    sdb_set_join_order_by(thd, *sdb_order);
     sdb_order = NULL;
     field_order_condition = SDB_EMPTY_BSON;
     direct_sort = false;
@@ -1694,6 +1709,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_method = IDX_COND_INVALID;
   m_use_position = false;
   m_null_rejecting = false;
+  m_index_need_sorted = true;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1983,6 +1999,7 @@ int ha_sdb::reset() {
   m_last_range_obj_is_full = false;
   m_method = IDX_COND_INVALID;
   m_null_rejecting = false;
+  m_index_need_sorted = true;
   DBUG_RETURN(0);
 }
 
@@ -3796,7 +3813,7 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
       bson::BSONObj end_cond_idx;
 
       rc = sdb_create_condition_from_key(
-          table, key_info, &mrr_cur_range.start_key, &mrr_cur_range.end_key, 0,
+          table, key_info, &mrr_cur_range.start_key, &mrr_cur_range.end_key,
           (NULL != end_range) ? eq_range : 0, start_cond_idx, end_cond_idx);
       if (0 != rc) {
         SDB_LOG_ERROR("Failed to build index match object. rc: %d", rc);
@@ -3878,6 +3895,30 @@ done:
   return rc;
 error:
   goto done;
+}
+
+/**
+  return true if the query plan can be resolved by 1 json api query request.
+*/
+bool ha_sdb::is_in_one_query() {
+  sdb_join_type type = sdb_get_join_type(ha_thd());
+  switch (type) {
+    case SDB_JOIN_UNKNOWN: {
+      return true;
+    }
+    case SDB_JOIN_MULTI_RANGE: {
+      return (ranges_in_seq <= 1 || !m_use_default_impl);
+    }
+    case SDB_JOIN_REF_OR_NULL:
+    case SDB_JOIN_INDEX_MERGE_ROR_INTERSECT:
+    case SDB_JOIN_INDEX_MERGE_SORT_INTERSECT:
+    case SDB_JOIN_INDEX_MERGE_SORT_UNION:
+    case SDB_JOIN_INDEX_MERGE_ROR_UNION:
+    case SDB_JOIN_GROUP_MIN_MAX:
+    case SDB_JOIN_MULTI_RANGE_DESC:
+    default: { return false; }
+  }
+  return false;
 }
 
 int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
@@ -3984,6 +4025,12 @@ error:
 bool ha_sdb::choose_mrr_impl(uint keyno, uint *bufsz, uint *flags,
                              Cost_estimate *cost, bool reset_cost) {
   bool default_impl = false;
+  /*
+    Always don't guarantee the order, even if it is default implementation.
+    If the order is necessary, SQL compiler would tell us.
+  */
+  *flags &= ~SDB_HA_MRR_SUPPORT_SORRTED; /* We can't provide ordered output */
+
   if (*flags & HA_MRR_USE_DEFAULT_IMPL) {
     bool mrr_on = false;
     bool force_mrr_by_hints = false;
@@ -4002,22 +4049,12 @@ bool ha_sdb::choose_mrr_impl(uint keyno, uint *bufsz, uint *flags,
     if (!(mrr_on || force_mrr_by_hints) || key_use_parital_cols) {
       /* Default implementation is choosen */
       *flags |= HA_MRR_USE_DEFAULT_IMPL;
-      *flags |=
-          SDB_HA_MRR_SUPPORT_SORRTED; /* We can't provide ordered output */
       default_impl = true;
       goto done;
     }
     *flags &= ~HA_MRR_USE_DEFAULT_IMPL; /* Use the mrr implementation */
-    if (is_join_bka) {
-      *flags &=
-          ~SDB_HA_MRR_SUPPORT_SORRTED; /* We can't provide ordered output */
-    }
     goto done;
   } else {
-    if (is_join_bka) {
-      *flags &=
-          ~SDB_HA_MRR_SUPPORT_SORRTED; /* We can't provide ordered output */
-    }
     default_impl = false;
   }
   *bufsz = 0; /* We do not use the buf mixed.*/
@@ -4059,6 +4096,15 @@ ha_rows ha_sdb::multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
                                             uint n_ranges_arg, uint *bufsz,
                                             uint *flags, Cost_estimate *cost) {
   ha_rows rows = 0;
+  range_seq_t seq_it;
+  KEY_MULTI_RANGE range;
+
+  seq_it = seq->init(seq_init_param, 0, 0);
+  ranges_in_seq = 0;
+  while (!seq->next(seq_it, &range)) {
+    ranges_in_seq += 1;
+  }
+
   /* Get cost/flags/mem_usage of default MRR implementation */
   rows = handler::multi_range_read_info_const(keyno, seq, seq_init_param,
                                               n_ranges_arg, bufsz, flags, cost);
@@ -4282,13 +4328,13 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   DBUG_ENTER("ha_sdb::multi_range_read_init()");
   int rc = 0;
   uint bufsz = 0;
-  uint flags = 0;
   Cost_estimate cost;
   bool is_mrr_assoc = false;
   uint key_length = 0;
   KEY *key_info = table->key_info + active_index;
   const KEY_PART_INFO *key_part = key_info->key_part;
   is_mrr_assoc = !MY_TEST(mode & HA_MRR_NO_ASSOCIATION);
+  m_index_need_sorted = MY_TEST(mode & SDB_HA_MRR_SUPPORT_SORRTED);
 
   m_null_rejecting = false;
   rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
@@ -4302,7 +4348,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   m_seq_init_param = seq_init_param;
 
   if (n_ranges <= 1 ||
-      choose_mrr_impl(active_index, &bufsz, &flags, &cost, false)) {
+      choose_mrr_impl(active_index, &bufsz, &mode, &cost, false)) {
     m_use_default_impl = true;
     goto done;
   }
@@ -4381,7 +4427,7 @@ int ha_sdb::multi_range_read_next_first() {
   }
 
   if (IDX_COND_USING_IN == m_method) {
-    // if ALL is equal and sigle column
+    // if ALL is equal and single column
     rc = create_condition_in_for_mrr(condition_idx);
   } else {
     rc = create_range_obj(hint_builder);
@@ -5208,7 +5254,7 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   bson::BSONObjBuilder count_cond_blder;
   SELECT_LEX *const select = sdb_lex_first_select(ha_thd());
   JOIN *join = select->join;
-  ORDER *order = sdb_get_join_order(ha_thd());
+  ORDER *order = sdb_get_join_order_by(ha_thd());
   ORDER *group = sdb_get_join_group_list(ha_thd());
   bool only_one_func = join && (join->tmp_table_param.sum_func_count == 1);
   bool optimize_with_materialization =
@@ -5224,11 +5270,8 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   try {
     if (only_one_func && sdb_is_single_table(ha_thd()) && !order && !group &&
         optimize_with_materialization && !using_hint_range) {
-      sdb_join_type cur_type = sdb_get_join_type(ha_thd(), mrr_iter);
-      if ((SDB_JOIN_UNKNOWN == cur_type ||
-           (SDB_JOIN_MULTI_RANGE == cur_type && !m_use_default_impl)) &&
-          (SDB_COND_UNCALLED == sdb_condition->status ||
-           SDB_COND_SUPPORTED == sdb_condition->status)) {
+      if (is_in_one_query() && (SDB_COND_UNCALLED == sdb_condition->status ||
+                                SDB_COND_SUPPORTED == sdb_condition->status)) {
         List_iterator<Item> li(select->item_list);
         Item *item;
         while ((item = li++)) {
@@ -5562,8 +5605,8 @@ int ha_sdb::append_end_range(bson::BSONObj &condition) {
 
   DBUG_ASSERT(end_range);
 
-  rc = sdb_create_condition_from_key(table, key_info, NULL, end_range, 0,
-                                     eq_range, start_cond, end_cond);
+  rc = sdb_create_condition_from_key(table, key_info, NULL, end_range, eq_range,
+                                     start_cond, end_cond);
   if (0 != rc) {
     SDB_LOG_ERROR("Failed to build index match object. rc: %d", rc);
     goto error;
@@ -5880,7 +5923,7 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
     start_key.flag = find_flag;
 
     rc = sdb_create_condition_from_key(table, key_info, &start_key, end_range,
-                                       0, (NULL != end_range) ? eq_range : 0,
+                                       (NULL != end_range) ? eq_range : 0,
                                        start_cond_idx, end_cond_idx);
     if (0 != rc) {
       SDB_LOG_ERROR("Failed to build index match object. rc: %d", rc);
@@ -5956,6 +5999,17 @@ error:
   goto done;
 }
 
+static bool sdb_index_contain_part_key(KEY *key_info) {
+  const KEY_PART_INFO *key_part = key_info->key_part;
+  const KEY_PART_INFO *key_end = key_part + key_info->user_defined_key_parts;
+  for (; key_part != key_end; ++key_part) {
+    if (key_part->key_part_flag & HA_PART_KEY_SEG) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                            uchar *buf, bson::BSONObjBuilder *hint_builder) {
   int rc = 0;
@@ -5984,7 +6038,41 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
+#if defined IS_MARIADB
+  if (!sdb_is_single_table(ha_thd()) ||
+      !ha_thd()->variables.optimizer_index_sort_prune ||
+      sdb_index_contain_part_key(key_info)) {
+    m_index_need_sorted = true;
+  }
+
+  if (is_join_bka && !sdb_bka_using_index_sort(ha_thd())) {
+    m_index_need_sorted = false;
+  }
+#elif defined IS_MYSQL
+  m_index_need_sorted = true;
+#endif
+
   idx_order_direction = order_direction;
+
+  DBUG_EXECUTE_IF("index_sort_prune_test",
+                  if (!m_index_need_sorted && field_order_condition.isEmpty()) {
+                    // reverse order to make result not in the needed order.
+                    order_direction = -order_direction;
+                    m_index_need_sorted = true;
+                  });
+
+#ifdef IS_MARIADB
+  if (m_index_need_sorted) {
+    rc = sdb_get_idx_order(key_info, order_by, order_direction,
+                           m_secondary_sort_rowid);
+    if (rc) {
+      SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
+      goto error;
+    }
+  } else if (!field_order_condition.isEmpty()) {
+    order_by = field_order_condition;
+  }
+#else
   if (!field_order_condition.isEmpty()) {
     order_by = field_order_condition;
   } else {
@@ -5995,6 +6083,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
       goto error;
     }
   }
+#endif
 
   rc = get_query_flag(thd_sql_command(ha_thd()), m_lock_type, flag);
   if (rc != 0) {
@@ -6040,7 +6129,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
         sdb_is_single_table(ha_thd()) &&
         ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_LIMIT) &&
          sdb_check_condition_pushdown_switch(ha_thd()))) {
-      type = sdb_get_join_type(ha_thd(), mrr_iter);
+      type = sdb_get_join_type(ha_thd());
       if (sdb_can_push_down_limit(ha_thd(), sdb_condition, type)) {
         // org_num_to_return/org_num_to_skip keep the initial value for easy
         // printing debug log.
@@ -6049,9 +6138,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
           org_num_to_skip = num_to_skip = select_lex->get_offset();
           // Handle scenarios where conditions are batched down, like
           // 'MULTI_RANGE/INDEX_MERGE/JT_REF_OR_NULL'.
-          if (SDB_JOIN_UNKNOWN != type) {
-            // If there is a direct_sort, the indexes has been removed.
-            DBUG_ASSERT(false == direct_sort);
+          if (!is_in_one_query()) {
             use_multi_down = true;
             num_to_return += num_to_skip;
             num_to_skip = 0;
@@ -6139,7 +6226,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
-  rc = (1 == order_direction) ? index_next(buf) : index_prev(buf);
+  rc = (1 == idx_order_direction) ? index_next(buf) : index_prev(buf);
   if (rc != 0) {
     table->status = STATUS_NOT_FOUND;
   } else {
@@ -6159,6 +6246,7 @@ int ha_sdb::index_init(uint idx, bool sorted) {
   }
   last_key_value = SDB_EMPTY_BSON;
   first_read = true;
+  m_index_need_sorted = sorted;
   DBUG_RETURN(0);
 }
 
@@ -6858,8 +6946,9 @@ int ha_sdb::info(uint flag) {
   DBUG_ENTER("ha_sdb::info()");
   int rc = 0;
   Sdb_conn *conn = NULL;
+  THD *thd = ha_thd();
 
-  if (sdb_execute_only_in_mysql(ha_thd())) {
+  if (sdb_execute_only_in_mysql(thd)) {
     if (flag & HA_STATUS_VARIABLE) {
       // make sure share is not empty and has not expired
       if (!share || share->expired) {
@@ -6871,7 +6960,7 @@ int ha_sdb::info(uint flag) {
           goto error;
         }
       }
-      rc = update_stats(ha_thd(), false);
+      rc = update_stats(thd, false);
       if (0 != rc) {
         goto error;
       }
@@ -6882,21 +6971,37 @@ int ha_sdb::info(uint flag) {
 #ifdef IS_MARIADB
   // For compatible MariaDB LIMIT ROWS EXAMINED syntax.
   // Clear examined rows before rnd_next/index_read_one.
-  if (ULONGLONG_MAX == ha_thd()->lex->limit_rows_examined_cnt) {
-    ha_thd()->accessed_rows_and_keys = 0;
+  if (ULONGLONG_MAX == thd->lex->limit_rows_examined_cnt) {
+    thd->accessed_rows_and_keys = 0;
   }
 #endif
 
   if (first_info) {
-    if (thd_sql_command(ha_thd()) == SQLCOM_SELECT &&
-        sdb_is_single_table(ha_thd()) &&
-        ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_SORT) &&
-         sdb_check_condition_pushdown_switch(ha_thd()))) {
-      rc = sdb_handle_sort_condition(
-          ha_thd(), table, &sdb_condition, &sdb_order, &sdb_group_list,
-          direct_sort, field_order_condition, group_list_condition);
-      if (rc) {
-        goto error;
+    if (thd_sql_command(thd) == SQLCOM_SELECT && sdb_is_single_table(thd) &&
+        ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SORT) &&
+         sdb_check_condition_pushdown_switch(thd))) {
+      bool has_filesort_pushdown = false;
+#ifdef IS_MARIADB
+      st_order *order = sdb_get_join_order_by(thd);
+      st_order *group_list = sdb_get_join_group_list(thd);
+      has_filesort_pushdown =
+          (optimizer_flag(thd, OPTIMIZER_SWITCH_FILESORT_PUSHDOWN) && order &&
+           !group_list);
+      // If ORDER BY + LIMIT and no index sort prune, walk on the old way to
+      // ensure performance.
+      SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
+      const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+      if (!thd->variables.optimizer_index_sort_prune && use_limit) {
+        has_filesort_pushdown = false;
+      }
+#endif
+      if (!has_filesort_pushdown) {
+        rc = sdb_handle_sort_condition(
+            thd, table, &sdb_condition, &sdb_order, &sdb_group_list,
+            direct_sort, field_order_condition, group_list_condition, false);
+        if (rc) {
+          goto error;
+        }
       }
     }
     first_info = false;
@@ -6913,7 +7018,7 @@ int ha_sdb::info(uint flag) {
       }
     }
     if (!(flag & HA_STATUS_NO_LOCK)) {
-      rc = update_stats(ha_thd(), true);
+      rc = update_stats(thd, true);
       if (0 != rc) {
         goto error;
       }
@@ -6932,14 +7037,14 @@ int ha_sdb::info(uint flag) {
       }
 
       // use static 'TotalRecords' if it's set
-      if (sdb_stats_flush_time_threshold(ha_thd()) &&
+      if (sdb_stats_flush_time_threshold(thd) &&
           ~(ha_rows)0 != share->first_loaded_static_total_records) {
         stats.records = share->first_loaded_static_total_records;
       }
       DBUG_PRINT("info", ("read info from share, table name: %s, records: %d, ",
                           table_name, (int)stats.records));
     }
-    rc = ensure_stats(ha_thd());
+    rc = ensure_stats(thd);
     if (0 != rc) {
       goto error;
     }
@@ -6956,8 +7061,8 @@ int ha_sdb::info(uint flag) {
       }
 
       // statistics are needed when multi-table joining
-      if (!sdb_is_single_table(ha_thd())) {
-        int tmp_rc = ensure_stats(ha_thd(), i);
+      if (!sdb_is_single_table(thd)) {
+        int tmp_rc = ensure_stats(thd, i);
         if (tmp_rc) {
           SDB_LOG_WARNING("Failed to load index statistics, rc: %d", tmp_rc);
         }
@@ -6985,7 +7090,6 @@ int ha_sdb::info(uint flag) {
 
   if ((flag & HA_STATUS_AUTO) && table->found_next_number_field) {
     DBUG_PRINT("info", ("HA_STATUS_AUTO"));
-    THD *thd = ha_thd();
     Field *auto_inc_field = table->found_next_number_field;
     ulonglong cur_value = 0;
     ulonglong auto_inc_val = 0;
@@ -7002,7 +7106,7 @@ int ha_sdb::info(uint flag) {
     if (0 != rc) {
       goto error;
     }
-    rc = ensure_stats(ha_thd());
+    rc = ensure_stats(thd);
     if (0 != rc) {
       goto error;
     }
@@ -9995,8 +10099,14 @@ const Item *ha_sdb::cond_push(const Item *cond) {
 
   if (direct_sort && (SDB_COND_SUPPORTED != sdb_condition->status ||
                       sdb_use_JT_REF_OR_NULL(ha_thd(), table))) {
+    if ((!sdb_get_join_order_by(ha_thd()) && sdb_order) ||
+        (!sdb_get_join_group_list(ha_thd()) && sdb_group_list)) {
+      direct_sort = false;
+      field_order_condition = SDB_EMPTY_BSON;
+      group_list_condition = SDB_EMPTY_BSON;
+    }
     if (sdb_order) {
-      sdb_set_join_order(ha_thd(), sdb_order);
+      sdb_set_join_order_by(ha_thd(), sdb_order);
       sdb_order = NULL;
     }
     if (sdb_group_list) {
@@ -10008,9 +10118,6 @@ const Item *ha_sdb::cond_push(const Item *cond) {
       sdb_set_join_group_list(ha_thd(), sdb_group_list, true);
       sdb_group_list = NULL;
     }
-    direct_sort = false;
-    field_order_condition = SDB_EMPTY_BSON;
-    group_list_condition = SDB_EMPTY_BSON;
   }
 
   if (SDB_COND_SUPPORTED == sdb_condition->status ||
@@ -10037,6 +10144,86 @@ done:
 Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
   return idx_cond;
 }
+
+#ifdef IS_MARIADB
+/**
+  @return false has been pushed
+  @return true cannot be pushed
+*/
+bool ha_sdb::filesort_push(const ORDER *order) {
+  bool rs = true;
+  THD *thd = ha_thd();
+  JOIN_TAB *join_tab = NULL;
+  KEY *key_info = NULL;
+  /*
+    The order can be pushdown when
+    1) It is a SELECT statement. Because others statements are not considered.
+    2) Query has only 1 query block and 1 table, the most simple case.
+    3) Only 1 json api request is needed. Because the order cannot be pushed
+       down across multi read.
+    4) Condition can be pushed down. Because filter is more important than the
+       distributed sort.
+    5) No expanded index search, which is to reslove some string problem, such
+       as prefix index. It rely on index inner order.
+  */
+  if (!(thd_sql_command(thd) == SQLCOM_SELECT &&  // 1)
+        sdb_is_single_table(thd) &&               // 2)
+        is_in_one_query())) {                     // 3)
+    goto done;
+  }
+
+  // 4)
+  if (sdb_check_condition_pushdown_switch(thd) && !sdb_condition &&
+      ensure_cond_ctx(thd)) {
+    goto done;
+  }
+
+  if (sdb_where_condition(thd)) {
+    sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
+    sdb_parse_condtion(sdb_where_condition(thd), sdb_condition);
+  }
+
+  if ((SDB_COND_UNCALLED == sdb_condition->status &&
+       !bitmap_is_clear_all(&sdb_condition->where_cond_set)) ||
+      (SDB_COND_UNCALLED != sdb_condition->status &&
+       SDB_COND_SUPPORTED != sdb_condition->status) ||
+      sdb_condition->sub_sel) {
+    goto done;
+  }
+
+  // 5)
+  join_tab = table->reginfo.join_tab;
+  if (join_tab) {
+    if (JT_NEXT == join_tab->type) {
+      key_info = table->key_info + join_tab->index;
+    } else if (join_tab->ref.key_parts) {
+      key_info = table->key_info + join_tab->ref.key;
+    } else if (join_tab->select && join_tab->select->quick) {
+      key_info = table->key_info + join_tab->select->quick->index;
+    }
+  }
+
+  if (key_info && sdb_index_contain_part_key(key_info)) {
+    goto done;
+  }
+
+  // Since index inner order always exists, no filesort can be pushed down.
+  if (key_info && !thd->variables.optimizer_index_sort_prune) {
+    goto done;
+  }
+
+  if (0 == sdb_handle_sort_condition(thd, table, &sdb_condition, &sdb_order,
+                                     &sdb_group_list, direct_sort,
+                                     field_order_condition,
+                                     group_list_condition, true) &&
+      direct_sort) {
+    rs = false;
+    goto done;
+  }
+done:
+  return rs;
+}
+#endif
 
 /*Get the error message during connecting.*/
 bool ha_sdb::get_error_message(int error, String *buf) {

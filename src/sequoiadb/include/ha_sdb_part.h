@@ -750,6 +750,10 @@ class ha_sdb_part_wrapper : public ha_partition {
 
   const COND* cond_push(const COND* cond);
 
+  bool filesort_push(const ORDER* order) {
+    return m_file[0]->filesort_push(order);
+  }
+
   THD* get_thd() const { return ha_thd(); }
 
   int read_range_first(const key_range* start_key, const key_range* end_key,
