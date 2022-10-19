@@ -4087,7 +4087,6 @@ ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
   } else {
     DBUG_PRINT("info", ("Sdb Batched Keys access implementation choosen"));
   }
-done:
   return 0;
 }
 
@@ -6043,10 +6042,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
       !ha_thd()->variables.optimizer_index_sort_prune ||
       sdb_index_contain_part_key(key_info)) {
     m_index_need_sorted = true;
-  }
-
-  if (is_join_bka && !sdb_bka_using_index_sort(ha_thd())) {
-    m_index_need_sorted = false;
   }
 #elif defined IS_MYSQL
   m_index_need_sorted = true;
