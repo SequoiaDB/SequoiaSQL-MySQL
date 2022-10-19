@@ -2604,6 +2604,7 @@ class Sdb_index_info : public Sql_alloc {
   Sdb_index_info();
   Sdb_index_info(const char *index_name, bson::BSONObj idx_def,
                  bson::BSONObj key_fields);
+  ~Sdb_index_info(){};
   bool operator==(Sdb_index_info &right);
 
  public:
@@ -2764,6 +2765,7 @@ class Sdb_collection_info : public Sql_alloc {
   Sdb_collection_info();
   Sdb_collection_info(const char *db, const char *table, const bool is_main_cl,
                       const bool has_autoinc);
+  ~Sdb_collection_info();
   bool compare_cl(Sdb_collection_info &right, enum SDB_CL_SHARING_TYPE type);
   bool compare_sub_cl_list(List<Sdb_collection_info> &sub_cl_list1,
                            List<Sdb_collection_info> &sub_cl_list2);
@@ -2834,6 +2836,15 @@ Sdb_collection_info::Sdb_collection_info(const char *db, const char *table,
   is_main_cl = main_cl;
   with_autoinc = has_autoinc;
   with_datasource = false;
+}
+
+Sdb_collection_info::~Sdb_collection_info() {
+  if (sub_cls_list.elements) {
+    sub_cls_list.delete_elements();
+  }
+  if (index_list.elements) {
+    index_list.delete_elements();
+  }
 }
 
 /**
