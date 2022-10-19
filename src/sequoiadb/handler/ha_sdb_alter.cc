@@ -1600,6 +1600,7 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
         // Avoid ZERO DATE when sql_mode doesn't allow
         if (is_temporal_type_with_date(new_field->type()) &&
             !(new_field->flags & NO_DEFAULT_VALUE_FLAG)) {
+          bool default_value_is_null = false;
           MYSQL_TIME ltime;
           int warnings = 0;
 #ifdef IS_MYSQL
@@ -1614,10 +1615,15 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
             flags |= TIME_NO_ZERO_IN_DATE;
           }
 
-          if (new_field->get_date(&ltime, flags) ||
-              check_date(&ltime, non_zero_date(&ltime), (ulonglong)flags,
-                         &warnings) ||
-              warnings) {
+          if (new_field->maybe_null() &&
+              sdb_field_default_values_is_null(definition)) {
+            default_value_is_null = true;
+          }
+          if (!default_value_is_null &&
+              (new_field->get_date(&ltime, flags) ||
+               check_date(&ltime, non_zero_date(&ltime), (ulonglong)flags,
+                          &warnings) ||
+               warnings)) {
             rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
             goto error;
           }
