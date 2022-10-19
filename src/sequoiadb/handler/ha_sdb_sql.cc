@@ -879,6 +879,10 @@ KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
   }
   return key_info;
 }
+
+bool sdb_field_default_values_is_null(const Create_field *definition) {
+  return (NULL == definition->def);
+}
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1672,5 +1676,9 @@ KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
     }
   }
   return key_info;
+}
+
+bool sdb_field_default_values_is_null(const Create_field *definition) {
+  return (NULL == definition->default_value);
 }
 #endif

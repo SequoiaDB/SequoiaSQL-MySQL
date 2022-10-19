@@ -531,4 +531,6 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
 ulong sdb_thd_da_warn_count(THD *thd);
 
 KEY *sdb_get_join_tab_key_in_use(TABLE *table);
+
+bool sdb_field_default_values_is_null(const Create_field *definition);
 #endif
