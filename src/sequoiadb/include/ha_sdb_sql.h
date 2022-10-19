@@ -512,4 +512,6 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
                      bool comma);
 
 ulong sdb_thd_da_warn_count(THD *thd);
+
+bool sdb_field_default_values_is_null(const Create_field *definition);
 #endif

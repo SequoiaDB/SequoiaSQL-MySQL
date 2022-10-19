@@ -840,6 +840,10 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
 ulong sdb_thd_da_warn_count(THD *thd) {
   return thd->get_stmt_da()->current_statement_cond_count();
 }
+
+bool sdb_field_default_values_is_null(const Create_field *definition) {
+  return (NULL == definition->def);
+}
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1583,5 +1587,9 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
 
 ulong sdb_thd_da_warn_count(THD *thd) {
   return thd->get_stmt_da()->current_statement_warn_count();
+}
+
+bool sdb_field_default_values_is_null(const Create_field *definition) {
+  return (NULL == definition->default_value);
 }
 #endif
