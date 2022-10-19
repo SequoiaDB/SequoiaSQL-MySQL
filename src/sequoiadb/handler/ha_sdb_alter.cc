@@ -3386,7 +3386,7 @@ int sdb_extra_cl_options(Sdb_conn *conn, Sdb_collection_info *cl_info,
   const char *table_name = cl_info->table_name;
   DBUG_ASSERT(db_name);
   DBUG_ASSERT(table_name);
-
+  Mapping_context_impl tbl_mapping;
   rc = sdb_extra_cl_option_from_snap(conn, db_name, table_name,
                                      cl_info->options, cata_info, true, true);
   if (SDB_OK != rc) {
@@ -3458,12 +3458,10 @@ int sdb_extra_cl_options(Sdb_conn *conn, Sdb_collection_info *cl_info,
       goto error;
     } else {
       cl_info->autoinc_options = ele.embeddedObject().getOwned();
-      ;
     }
   }
 
-  /* Not support mapping, so not use mapping_ctx to get cl */
-  rc = conn->get_cl(db_name, table_name, cl, false, NULL);
+  rc = conn->get_cl(db_name, table_name, cl, false, &tbl_mapping);
   if (rc != 0) {
     goto error;
   }
@@ -3487,7 +3485,6 @@ int sdb_extra_cl_options(Sdb_conn *conn, Sdb_collection_info *cl_info,
         goto error;
       }
       cata_info_ele_obj = ele.embeddedObject();
-      ;
       BSONElement sub_cl_name_ele =
           cata_info_ele_obj.getField(SDB_FIELD_SUBCL_NAME);
       const char *sub_cl_name = sub_cl_name_ele.valuestrsafe();
@@ -3511,7 +3508,6 @@ int sdb_extra_cl_options(Sdb_conn *conn, Sdb_collection_info *cl_info,
         goto error;
       }
       BSONObj low_bound = ele_low_bound.embeddedObject().getOwned();
-      ;
       BSONElement ele_up_bound = cata_info_ele_obj.getField(SDB_FIELD_UP_BOUND);
       if (Object != ele_up_bound.type()) {
         SDB_LOG_ERROR(
@@ -3522,7 +3518,6 @@ int sdb_extra_cl_options(Sdb_conn *conn, Sdb_collection_info *cl_info,
         goto error;
       }
       BSONObj up_bound = ele_up_bound.embeddedObject().getOwned();
-      ;
 
       int cl_len = strlen(sub_cl_name);
       if (cl_len > SDB_CL_FULL_NAME_MAX_SIZE) {
