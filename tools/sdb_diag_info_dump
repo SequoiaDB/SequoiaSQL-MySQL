@@ -847,8 +847,9 @@ function handle_sql_file_if_is_view()
    local table_type=`eval "${MYSQL_EXEC_CMD} -e \"${sql}\" | sed '1d'"`
    if [ "${table_type}" == "TABLE_TYPE: VIEW" ]; then
       #handler view .sql file
-      sed -i -e 's/^[ ]*Create View: //' -e 's/^character_set_client: .*//' \
-         -e 's/^collation_connection: .*//' "${file_path}/${TABLE_CATALOG_SQL_FILENAME}"
+      local tmp_sql=`cat "${file_path}/${TABLE_CATALOG_SQL_FILENAME}" \
+      | grep '^[ ]*Create View' | sed -e 's/^[ ]*Create View: //'`
+      echo "${tmp_sql}" > "${file_path}/${TABLE_CATALOG_SQL_FILENAME}"
       return 0
    else
       return 1
