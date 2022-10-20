@@ -7,6 +7,7 @@
 function(get_sdb_version version git_version)
    set(SDB_VERTOOL_DIR ${CMAKE_SOURCE_DIR}/misc/versiontool)
    set(SDB_VERTOOL ${SDB_VERTOOL_DIR}/sdbvertool)
+   set(SDB_CGB_TYPE "")
 
    # Build the sdb version tool in misc.
    if(IS_ABSOLUTE ${WITH_SDB_DRIVER})
@@ -106,6 +107,7 @@ MACRO(gen_version_file)
    endif()
 
    if(CMAKE_BUILD_TYPE MATCHES "Debug")
+     SET(SDB_CGB_TYPE " CGB")
      if((NOT ENTERPRISE) AND (NOT HYBRID))
        set(BUILD_TYPE_STR "${BUILD_TYPE_STR}Debug")
      else()
@@ -116,7 +118,7 @@ MACRO(gen_version_file)
           "Type of build, options are: Debug RelWithDebInfo" FORCE)
    endif()
    if(NOT (BUILD_TYPE_STR STREQUAL ""))
-      set(BUILD_TYPE_STR " (${BUILD_TYPE_STR})")
+      set(BUILD_TYPE_STR " (${BUILD_TYPE_STR}${SDB_CGB_TYPE})")
    endif()
 
    set(FULL_VERSION "${PROJECT_NAME} version: ${SDB_VERSION}\nGit version: ${SDB_PLUGIN_VERSION}\nSDB driver: ${SDB_VERSION}(${SDB_GIT_VERSION})\n${BUILDDATE}${BUILD_TYPE_STR}\n")
