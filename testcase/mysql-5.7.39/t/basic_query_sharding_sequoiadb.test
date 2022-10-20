@@ -391,7 +391,9 @@ SELECT * FROM t1 WHERE a > CONCAT_WS('com','.','sequoiadb');
 #SEQUOIASQLMAINSTREM-206
 #--sorted_result
 #SELECT * FROM t2 WHERE STRCMP(a , 'hel') > 0;
+--sorted_result
 SELECT DISTINCT a FROM t1 WHERE ELT(a, 'ab') IS NOT NULL;
+--sorted_result
 SELECT a FROM t1 WHERE FIELD(a, "abc","abcdefg","hello") > 0;
 --sorted_result
 SELECT a,b FROM t1 WHERE FIND_IN_SET(a, 'abc') > 0;
@@ -400,11 +402,14 @@ SELECT * FROM t1 WHERE INSTR(a, 'o') > 0;
 # SEQUOIASQLMAINSTREAM-220
 #--sorted_result
 #SELECT a FROM t1 WHERE a != INSERT('axdefg',2,1,'bc');
+--sorted_result
 SELECT a,b FROM t1 WHERE a > REPLACE('hello','hel','ol');
 # SEQUOIASQLMAINSTREAM-220
 #--sorted_result
 #SELECT * FROM t1 WHERE a < REVERSE('com');
+--sorted_result
 SELECT * FROM t1 WHERE a > RPAD('abcd',3,'12') AND a < LPAD('helxy', 3 , 2);
+--sorted_result
 SELECT * FROM t1 WHERE a >= MAKE_SET(7,'a','b','c');
 --sorted_result
 SELECT * FROM t1 WHERE b < OCT(56);
@@ -506,6 +511,7 @@ SELECT * FROM t1 WHERE YEARWEEK(d) > 200201 AND HOUR(t) < 20 AND QUARTER(dt) <> 
 SELECT * FROM t1 WHERE TO_DAYS(t) <= 731516;
 --sorted_result
 SELECT * FROM t1 WHERE UNIX_TIMESTAMP(t) > 1000000000;
+--sorted_result
 SELECT * FROM t1 WHERE t < FROM_UNIXTIME(950000000);
 --sorted_result
 SELECT d,t FROM t1 WHERE t >= TIMESTAMPADD(HOUR,8820,d);
@@ -513,6 +519,7 @@ SELECT d,t FROM t1 WHERE t >= TIMESTAMPADD(HOUR,8820,d);
 SELECT * FROM t1 WHERE TIMESTAMPDIFF(day,dt,t) > 0;
 --sorted_result
 SELECT * FROM t1 WHERE LAST_DAY(d) < "2005-12-31" AND FROM_DAYS(TO_DAYS(t)) > "1999-12-01";
+--sorted_result
 SELECT * FROM t1 WHERE t < LOCALTIMESTAMP() AND t <> UTC_TIMESTAMP();
 --sorted_result
 SELECT * FROM t1 WHERE MONTHNAME(STR_TO_DATE(d,'%Y-%m-%d')) >= 'March';
@@ -1075,6 +1082,7 @@ SELECT * FROM t3 WHERE a >= ANY (SELECT b FROM t2);
 SELECT * FROM t1 WHERE b != ALL (SELECT b FROM t2 WHERE b < 'www');
 --sorted_result
 SELECT * FROM t2 WHERE 'abc' <= SOME (SELECT b FROM t2 WHERE a > 0 GROUP BY 1);
+--sorted_result
 SELECT m.a1 FROM (SELECT a AS a1, b FROM t1) AS m LEFT JOIN t2 AS n ON m.b >= 'erw' AND m.b = n.b WHERE n.b <> 'ope';
 DROP TABLE t1,t2,t3;
 

@@ -239,10 +239,10 @@ a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb.t5]
 select * from t2 where a like sleep(1) order by a;
 a
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb.t2]
 select * from t2 where a like uuid() order by a;
 a
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb.t2]
 select * from t2 where a like uuid_short() order by a;
 a
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb.t2]

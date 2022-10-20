@@ -343,7 +343,6 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
 
 sdb_join_type sdb_get_join_type(THD *thd) {
   sdb_join_type type = SDB_JOIN_UNKNOWN;
-  int count = 0;
   QEP_TAB *tab = NULL;
   QUICK_SELECT_I *quick = NULL;
   JOIN *const join = sdb_lex_first_select(thd)->join;
@@ -860,6 +859,25 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
 
 ulong sdb_thd_da_warn_count(THD *thd) {
   return thd->get_stmt_da()->current_statement_cond_count();
+}
+
+KEY* sdb_get_join_tab_key_in_use(TABLE *table) {
+  KEY *key_info = NULL;
+  QEP_TAB *qep_tab = table->reginfo.qep_tab;
+  if (qep_tab) {
+    if (qep_tab->type() == JT_INDEX_SCAN) {
+      key_info = table->key_info + qep_tab->index();
+    } else if (qep_tab->ref().key_parts) {
+      key_info = table->key_info + qep_tab->ref().key;
+    } else if (qep_tab->type() == JT_RANGE ||
+               qep_tab->type() == JT_INDEX_MERGE ||
+               ((qep_tab->type() == JT_REF ||
+                 qep_tab->type() == JT_REF_OR_NULL) &&
+                 qep_tab->quick())) {
+      key_info = table->key_info + qep_tab->quick()->index;
+    }
+  }
+  return key_info;
 }
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
@@ -1638,5 +1656,21 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
 
 ulong sdb_thd_da_warn_count(THD *thd) {
   return thd->get_stmt_da()->current_statement_warn_count();
+}
+
+KEY* sdb_get_join_tab_key_in_use(TABLE *table) {
+  JOIN_TAB *join_tab = NULL;
+  KEY *key_info = NULL;
+  join_tab = table->reginfo.join_tab;
+  if (join_tab) {
+    if (JT_NEXT == join_tab->type) {
+      key_info = table->key_info + join_tab->index;
+    } else if (join_tab->ref.key_parts) {
+      key_info = table->key_info + join_tab->ref.key;
+    } else if (join_tab->select && join_tab->select->quick) {
+      key_info = table->key_info + join_tab->select->quick->index;
+    }
+  }
+  return key_info;
 }
 #endif

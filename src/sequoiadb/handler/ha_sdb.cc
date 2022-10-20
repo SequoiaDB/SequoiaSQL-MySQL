@@ -4029,7 +4029,7 @@ bool ha_sdb::choose_mrr_impl(uint keyno, uint *bufsz, uint *flags,
     Always don't guarantee the order, even if it is default implementation.
     If the order is necessary, SQL compiler would tell us.
   */
-  *flags &= ~SDB_HA_MRR_SUPPORT_SORRTED; /* We can't provide ordered output */
+  *flags &= ~SDB_HA_MRR_SUPPORT_SORRTED;
 
   if (*flags & HA_MRR_USE_DEFAULT_IMPL) {
     bool mrr_on = false;
@@ -4333,7 +4333,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   KEY *key_info = table->key_info + active_index;
   const KEY_PART_INFO *key_part = key_info->key_part;
   is_mrr_assoc = !MY_TEST(mode & HA_MRR_NO_ASSOCIATION);
-  m_index_need_sorted = MY_TEST(mode & SDB_HA_MRR_SUPPORT_SORRTED);
+  m_index_need_sorted = MY_TEST(mode & HA_MRR_SORTED);
 
   m_null_rejecting = false;
   rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
@@ -6037,7 +6037,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
-#if defined IS_MARIADB
   if (!sdb_is_single_table(ha_thd()) ||
       !ha_thd()->variables.optimizer_index_sort_prune ||
       sdb_index_contain_part_key(key_info)) {
@@ -6047,9 +6046,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   if (is_join_bka && !sdb_bka_using_index_sort(ha_thd())) {
     m_index_need_sorted = false;
   }
-#elif defined IS_MYSQL
-  m_index_need_sorted = true;
-#endif
 
   idx_order_direction = order_direction;
 
@@ -6060,7 +6056,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                     m_index_need_sorted = true;
                   });
 
-#ifdef IS_MARIADB
   if (m_index_need_sorted) {
     rc = sdb_get_idx_order(key_info, order_by, order_direction,
                            m_secondary_sort_rowid);
@@ -6071,20 +6066,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   } else if (!field_order_condition.isEmpty()) {
     order_by = field_order_condition;
   }
-#else
-  if (!field_order_condition.isEmpty()) {
-    order_by = field_order_condition;
-  } else {
-    if (!is_join_bka || sdb_bka_using_index_sort(ha_thd())) {
-      rc = sdb_get_idx_order(key_info, order_by, order_direction,
-                             m_secondary_sort_rowid);
-      if (rc) {
-        SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
-        goto error;
-      }
-    }
-  }
-#endif
 
   rc = get_query_flag(thd_sql_command(ha_thd()), m_lock_type, flag);
   if (rc != 0) {
@@ -6982,7 +6963,6 @@ int ha_sdb::info(uint flag) {
         ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SORT) &&
          sdb_check_condition_pushdown_switch(thd))) {
       bool has_filesort_pushdown = false;
-#ifdef IS_MARIADB
       st_order *order = sdb_get_join_order_by(thd);
       st_order *group_list = sdb_get_join_group_list(thd);
       has_filesort_pushdown =
@@ -6995,7 +6975,7 @@ int ha_sdb::info(uint flag) {
       if (!thd->variables.optimizer_index_sort_prune && use_limit) {
         has_filesort_pushdown = false;
       }
-#endif
+
       if (!has_filesort_pushdown) {
         rc = sdb_handle_sort_condition(
             thd, table, &sdb_condition, &sdb_order, &sdb_group_list,
@@ -10146,7 +10126,6 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
   return idx_cond;
 }
 
-#ifdef IS_MARIADB
 /**
   @return false has been pushed
   @return true cannot be pushed
@@ -10193,17 +10172,7 @@ bool ha_sdb::filesort_push(const ORDER *order) {
   }
 
   // 5)
-  join_tab = table->reginfo.join_tab;
-  if (join_tab) {
-    if (JT_NEXT == join_tab->type) {
-      key_info = table->key_info + join_tab->index;
-    } else if (join_tab->ref.key_parts) {
-      key_info = table->key_info + join_tab->ref.key;
-    } else if (join_tab->select && join_tab->select->quick) {
-      key_info = table->key_info + join_tab->select->quick->index;
-    }
-  }
-
+  key_info = sdb_get_join_tab_key_in_use(table);
   if (key_info && sdb_index_contain_part_key(key_info)) {
     goto done;
   }
@@ -10224,7 +10193,6 @@ bool ha_sdb::filesort_push(const ORDER *order) {
 done:
   return rs;
 }
-#endif
 
 /*Get the error message during connecting.*/
 bool ha_sdb::get_error_message(int error, String *buf) {
