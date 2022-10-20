@@ -529,4 +529,6 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
                      bool comma);
 
 ulong sdb_thd_da_warn_count(THD *thd);
+
+KEY* sdb_get_join_tab_key_in_use(TABLE *table);
 #endif

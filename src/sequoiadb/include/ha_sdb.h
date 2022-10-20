@@ -495,9 +495,7 @@ class ha_sdb : public handler {
 
   Item *idx_cond_push(uint keyno, Item *idx_cond);
 
-#ifdef IS_MARIADB
   bool filesort_push(const ORDER *order);
-#endif
 
   void handle_sdb_error(int error, myf errflag);
 

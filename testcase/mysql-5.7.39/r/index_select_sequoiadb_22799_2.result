@@ -26,6 +26,6 @@ Warnings:
 Note	1003	/* select#1 */ select `index_select_sequoiadb_22799`.`t1`.`a` AS `a`,`index_select_sequoiadb_22799`.`t1`.`b` AS `b` from `index_select_sequoiadb_22799`.`t1` where isnull(`index_select_sequoiadb_22799`.`t1`.`b`)
 SELECT * FROM t1 WHERE b IS NULL;
 a	b
-[Note] SequoiaDB: Query message: condition[{ "b": { "$isnull": 1 } }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22799.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$isnull": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22799.t1]
 DROP TABLE t1;
 DROP DATABASE index_select_sequoiadb_22799;

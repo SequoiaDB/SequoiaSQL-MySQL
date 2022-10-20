@@ -268,9 +268,11 @@ UNLOCK TABLES;
 --echo # Test how it changes the alias/keywords/reserved words
 --error ER_PARSE_ERROR
 SELECT * FROM t1 PARTITION;
+--sorted_result
 SELECT * FROM t1 `PARTITION`;
 --error ER_PARSE_ERROR
 SELECT * FROM t1 AS PARTITION;
+--sorted_result
 SELECT * FROM t1 AS `PARTITION`;
 
 --echo #
@@ -575,8 +577,10 @@ FLUSH STATUS;
 CREATE TABLE t3 SELECT * FROM t1 PARTITION (pNeg,subp3,`p100-99999`);
 #--source include/get_handler_status_counts.inc
 SHOW CREATE TABLE t1;
+--sorted_result
 SELECT * FROM t1;
 SHOW CREATE TABLE t2;
+--sorted_result
 SELECT * FROM t2;
 #SHOW CREATE TABLE t3;
 #SELECT * FROM t3;
@@ -677,6 +681,7 @@ PARTITION p3 VALUES LESS THAN (21) ENGINE = SequoiaDB);
 INSERT INTO `t2` VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10),
 (11), (12), (13), (14), (15), (16), (17), (18), (19), (20);
 
+--sorted_result
 SELECT * FROM t2;
 SELECT * FROM t2 PARTITION (p0);
 SELECT * FROM t2 PARTITION (p1);

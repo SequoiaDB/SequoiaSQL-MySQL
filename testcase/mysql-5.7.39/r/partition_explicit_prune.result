@@ -171,18 +171,18 @@ SELECT * FROM t1 PARTITION;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' at line 1
 SELECT * FROM t1 `PARTITION`;
 a	b
+-1	pNeg(-subp1)
 100	`p100-99999`(-subp6)
 1000	`p100-99999`(-subp6)
 101	`p100-99999`(-subp7)
--1	pNeg(-subp1)
 SELECT * FROM t1 AS PARTITION;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'PARTITION' at line 1
 SELECT * FROM t1 AS `PARTITION`;
 a	b
+-1	pNeg(-subp1)
 100	`p100-99999`(-subp6)
 1000	`p100-99999`(-subp6)
 101	`p100-99999`(-subp7)
--1	pNeg(-subp1)
 #
 # Test REPLACE
 #
@@ -499,14 +499,6 @@ INSERT INTO `t2` VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10),
 SELECT * FROM t2;
 id
 1
-2
-3
-4
-5
-6
-7
-8
-9
 10
 11
 12
@@ -517,7 +509,15 @@ id
 17
 18
 19
+2
 20
+3
+4
+5
+6
+7
+8
+9
 SELECT * FROM t2 PARTITION (p0);
 id
 1
