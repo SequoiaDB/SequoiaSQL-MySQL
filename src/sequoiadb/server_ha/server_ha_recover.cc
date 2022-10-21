@@ -1955,6 +1955,11 @@ void *ha_recover_and_replay(void *arg) {
   mysql_mutex_lock(&ha_thread->replay_stopped_mutex);
   stopped_mutex_locked = true;
 
+  // always use RC in HA SQL log replayer
+  if (ISO_READ_COMMITTED != ha_thread->thd->tx_isolation) {
+    ha_thread->thd->tx_isolation = ISO_READ_COMMITTED;
+    ha_thread->thd->variables.tx_isolation = (ulong)ISO_READ_COMMITTED;
+  }
   try {
     bson::BSONObj attr;
     // 2. connect to sequoiadb
@@ -2204,6 +2209,11 @@ void *ha_replay_pending_logs(void *arg) {
   mysql_mutex_lock(current_mutex);
   stopped_mutex_locked = true;
   replayer->stopped = false;
+  // always use RC in HA pending log replayer
+  if (ISO_READ_COMMITTED != thd->tx_isolation) {
+    thd->tx_isolation = ISO_READ_COMMITTED;
+    thd->variables.tx_isolation = (ulong)ISO_READ_COMMITTED;
+  }
   while (!abort_loop && !mysqld_failed) {
     sdb_set_debug_log(thd, sdb_debug_log(NULL));
     SDB_LOG_DEBUG("HA: Check pending log");
@@ -2234,6 +2244,9 @@ void *ha_replay_pending_logs(void *arg) {
     order_by = BSON(HA_FIELD_SQL_ID << 1);
     rc = pending_log_cl.query(SDB_EMPTY_BSON, SDB_EMPTY_BSON, order_by,
                               SDB_EMPTY_BSON, 0, REPLAY_PENDING_LOG_LIMIT);
+    HA_RC_CHECK(rc, sleep_secs,
+                "HA: Failed to get pending log, sequoiadb error: %s",
+                ha_error_string(sdb_conn, rc, err_buff));
     while (!pending_log_cl.next(result, false)) {
       longlong start_time = result.getField(HA_FIELD_WRITE_TIME).numberLong();
       longlong now = time(NULL);
