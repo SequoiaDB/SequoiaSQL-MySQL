@@ -10452,6 +10452,32 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
         }
         break;
       }
+      case SDB_IXM_KEY_NOTNULL: {
+        // Print more error messages if 'AUTO_INCREMENT' field is 'Undefined' in
+        // last error object.
+        bool print_verbose_msg = false;
+        const char *auto_incr_field_name =
+            table->next_number_field ? sdb_field_name(table->next_number_field)
+                                     : NULL;
+        // eg: IndexValue": {"a": 1, "b": { "$undefined": 1 } }
+        bson::BSONElement idx_value_elem =
+            error_obj.getField(SDB_FIELD_INDEX_VALUE);
+        if (auto_incr_field_name && bson::EOO != idx_value_elem.type()) {
+          bson::BSONElement auto_incr_elem =
+              idx_value_elem[auto_incr_field_name];
+          print_verbose_msg = (bson::Undefined == auto_incr_elem.type());
+        }
+        if (auto_incr_field_name && print_verbose_msg) {
+          my_printf_error(error,
+                          "%s, check if AUTO_INCREMENT field(%s) on table "
+                          "'%s.%s' is dropped in SequoiaDB",
+                          MYF(0), error_msg, auto_incr_field_name, db_name,
+                          table_name);
+        } else {
+          my_printf_error(error, "%s", MYF(0), error_msg);
+        }
+        break;
+      }
       default:
         if (NULL == error_msg) {
           my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
