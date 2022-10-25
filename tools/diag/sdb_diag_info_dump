@@ -41,8 +41,9 @@ DATABASE_TABLE_ARRAY=()                        #db1 t1 db1 t2 db2 t1
 DATABASE_ROUTINE_NAME_TYPE_ARRAY=()            #db1 f1 function db1 f1 produce
 DATABASE_VIEW_ARRAY=()                         #db1 v1 db2 v2
 ALL_TABLES_IN_DATABASE_ARRAY=()                #tb1 tb2 v1 v2
-MYSQL_EXEC_CMD=""                                     #with -D db
-MYSQL_EXEC_CMD_WITHOUT_DB=""                          #without -D db
+MYSQL_EXEC_CMD=""                              #with -D db
+MYSQL_EXEC_CMD_WITHOUT_DB=""                   #without -D db
+REMOVE_PASSWORD_WARNING=""
 
 #sdb
 IS_SDB_CONNECTED=1
@@ -116,9 +117,9 @@ function exec_sql_with_print()
    local rc=0
 
    if [ "${without_db}" == "" ]; then
-      eval "${MYSQL_EXEC_CMD} -s -e \"${sql}\"" > "${filename}" 2>&1
+      eval "${MYSQL_EXEC_CMD} -s -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${filename}" 
    else
-      eval "${MYSQL_EXEC_CMD_WITHOUT_DB} -s -e \"${sql}\"" > "${filename}" 2>&1
+      eval "${MYSQL_EXEC_CMD_WITHOUT_DB} -s -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${filename}"
    fi
    rc=$?
    local error=`head -n 1 "${filename}" | grep "^ERROR "`
@@ -489,9 +490,9 @@ function get_path()
    # find mysql/mariadb install path
    dir_name=`dirname "${1}"`
    if [[ "${dir_name:0:1}" != "/" ]]; then
-      cd "$(pwd)/${dir_name}/../" && SQL_INSTALL_PATH=`pwd` # relative path
+      cd "$(pwd)/${dir_name}/../../" && SQL_INSTALL_PATH=`pwd` # relative path
    else
-      cd "${dir_name}/../" && SQL_INSTALL_PATH=`pwd`        # absolute path
+      cd "${dir_name}/../../" && SQL_INSTALL_PATH=`pwd`        # absolute path
    fi
    cd "${cur_path}" >> /dev/null >&1
 
@@ -729,8 +730,8 @@ function sdb_get_mapping_table()
 function find_mapping_table()
 {
    #find enable mapping
-   IS_MAPPING=`eval "${MYSQL_EXEC_CMD_WITHOUT_DB} -s -e \"select @@sequoiadb_enable_mapping\" \
-      |  sed 's/^@@sequoiadb_enable_mapping//'"`
+   IS_MAPPING=`eval "${MYSQL_EXEC_CMD_WITHOUT_DB} -s -e \"select @@sequoiadb_enable_mapping\"" \
+       "2>&1" "${REMOVE_PASSWORD_WARNING}" | sed 's/^@@sequoiadb_enable_mapping//'`
    test $? -ne 0 && echo "ERROR: Fail to check sequoiadb_enable_mapping" >&2
 
    if [ "${IS_MAPPING}" == "1" ]; then
@@ -788,7 +789,9 @@ function try_connect()
    fi
 
    if [ "${PASSWORD}" != "" ]; then
-      MYSQL_EXEC_CMD_WITHOUT_DB="${MYSQL_EXEC_CMD_WITHOUT_DB} -p \"${PASSWORD}\""
+      # ignore 'mysql: [Warning] Using a password on the command line interface can be insecure.'
+      MYSQL_EXEC_CMD_WITHOUT_DB="${MYSQL_EXEC_CMD_WITHOUT_DB} -p\"${PASSWORD}\""
+      REMOVE_PASSWORD_WARNING='| grep -v "mysql: \[Warning\] Using a password on the command line interface can be insecure"'
    fi
 
    exec_sql_with_print "select version();" "/dev/null" "without_db"
@@ -844,7 +847,7 @@ function handle_sql_file_if_is_view()
    local file_path="${OUTPUT}/${CATALOG_PATHNAME}/${db_path}/${tb_path}"
 
    local sql=`build_check_table_type_sql "${db_name}" "${tb_name}"`
-   local table_type=`eval "${MYSQL_EXEC_CMD} -e \"${sql}\" | sed '1d'"`
+   local table_type=`eval "${MYSQL_EXEC_CMD} -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" | sed '1d'`
    if [ "${table_type}" == "TABLE_TYPE: VIEW" ]; then
       #handler view .sql file
       local tmp_sql=`cat "${file_path}/${TABLE_CATALOG_SQL_FILENAME}" \
@@ -1023,8 +1026,8 @@ fi
 function get_all_table_in_database()
 {
    #table name cannot include '.', repalce the ' ' with '.', easy for AWK processing
-   local tmp_table="`eval \"${MYSQL_EXEC_CMD} -e \\\"show tables\\G\\\" \
-      | grep -v '^*' | sed -e 's/^Tables_in_.*: //g' -e 's/ /./g'\"`"
+   local tmp_table="`eval \"${MYSQL_EXEC_CMD} -e \\\"show tables\\G\\\"\" \
+     "2>&1" "${REMOVE_PASSWORD_WARNING}" | grep -v '^*' | sed -e 's/^Tables_in_.*: //g' -e 's/ /./g'`"
    test $? -ne 0 && { echo "ERROR: Fail to get all tables in the \"${DATABASE}\"" && return; }
    if [ "${tmp_table}" == "" ]; then
       echo "INFO: There are no tables in database \"${DATABASE}\""
@@ -1496,7 +1499,7 @@ function get_create_routine()
       sql=`build_get_create_routine_sql "${db_tmp_name}" "${type}" "${routine_tmp_name}"`
       get_create_routine_sql="${MYSQL_EXEC_CMD_WITHOUT_DB} -e \"${sql}\""
       type=`echo "${type}" | tr -t "[A-Z]" "[a-z]"`
-      eval "${get_create_routine_sql}" > "${file_path}/${type}_${ROUTINES_FILENAME}" 2>&1
+      eval "${get_create_routine_sql}" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${file_path}/${type}_${ROUTINES_FILENAME}"
       error=`tail -n 1 "${file_path}/${type}_${ROUTINES_FILENAME}"`
       if [ "${error%% *}" == "ERROR" ]; then
          echo "ERROR: Fail to get create ${type} \"${routine_name}\", \
@@ -1521,7 +1524,7 @@ please verify \"${file_path}/${type}_${ROUTINES_FILENAME}\""
       # function
       sql=`build_get_create_routine_sql "${db_tmp_name}" "function" "${routine_tmp_name}"`
       get_create_routine_sql="${MYSQL_EXEC_CMD_WITHOUT_DB} -e \"${sql}\""
-      eval "${get_create_routine_sql}" > "${file_path}/function_${ROUTINES_FILENAME}" 2>&1
+      eval "${get_create_routine_sql}" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${file_path}/function_${ROUTINES_FILENAME}"
       error=`tail -n 1 "${file_path}/function_${ROUTINES_FILENAME}"`
       if [ "${error%% *}" == "ERROR" ]; then
          if [ "${error}" == "ERROR 1305 (42000) at line 2: FUNCTION ${routine_name} does not exist" ]; then
@@ -1538,7 +1541,7 @@ please verify \"${file_path}/function_${ROUTINES_FILENAME}\""
       # procedure
       sql=`build_get_create_routine_sql "${db_tmp_name}" "procedure" "${routine_tmp_name}"`
       get_create_routine_sql="${MYSQL_EXEC_CMD_WITHOUT_DB} -e \"${sql}\""
-      eval "${get_create_routine_sql}" > "${file_path}/procedure_${ROUTINES_FILENAME}" 2>&1
+      eval "${get_create_routine_sql}" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${file_path}/procedure_${ROUTINES_FILENAME}"
       error=`tail -n 1 "${file_path}/procedure_${ROUTINES_FILENAME}"`
       if [ "${error%% *}" == "ERROR" ]; then
          if [ "${error}" == "ERROR 1305 (42000) at line 2: PROCEDURE ${routine_name} does not exist" ]; then
@@ -1613,7 +1616,7 @@ function get_all_create_routine()
    local db_tmp_name=`convert_special_character "${DATABASE}" "0100100"`
    
    local sql=`build_get_all_create_routine_sql "${db_tmp_name}"`
-   local tmp_routine=`eval "${MYSQL_EXEC_CMD} -e \"${sql}\" | grep -v '^*'"`
+   local tmp_routine=`eval "${MYSQL_EXEC_CMD} -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" | grep -v '^*'`
    test $? -ne 0 && { echo "ERROR: Fail to get all routines in the \"${DATABASE}\"" && return; }
 
    if [ "${tmp_routine}" == "" ]; then
@@ -1666,7 +1669,7 @@ function get_explain()
       tmp_sql="`echo "${QUERY}" | sed -z 's/\n/ /g' | awk -F";" -v fs="$i" '{printf(\"%s;\",$fs)}'`"
       real_sql="${real_sql}""${tmp_sql}"
       echo "${real_sql}" > "${sql_path}"
-      result=`eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" 2>&1`
+      result=`eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}"`
       if [ "`echo "${result}" | grep "You have an error in your SQL syntax;"`" == "" ]; then
          REAL_QUERY="${real_sql:0:-1}"
          if [[ $i -ne $count ]]; then
@@ -1678,7 +1681,7 @@ function get_explain()
    done
    local get_explain_sql="explain ${REAL_QUERY}\\G"
    echo "${get_explain_sql}" > "${sql_path}" 
-   eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s > \"${OUTPUT}/${EXPLAIN_FILENAME}\" 2>&1" 
+   eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${OUTPUT}/${EXPLAIN_FILENAME}" 
    test $? -ne 0 && echo "ERROR: Fail to get explain SQL informations, please verify \
 \"${OUTPUT}/${EXPLAIN_FILENAME}\"" >&2
 }
@@ -1698,7 +1701,7 @@ function get_optimizer_trace()
    local get_optimizer_trace_sql="`build_get_optimizer_trace_sql`"
    local sql_path="${OUTPUT}/${QUERY_PATHNAME}/query.sql"
    echo "${get_optimizer_trace_sql}" > "${sql_path}"
-   eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s > \"${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}\" 2>&1" 
+   eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}"
    test $? -ne 0 && echo "ERROR: Fail to get optimizer trace informations \
 please verify \"${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}\""
 }
