@@ -94,13 +94,6 @@ public class RenameTable24576 extends MysqlTestBase {
         expDocs.add( "5|40" );
         expDocs.add( "5|49" );
 
-        System.out.println(
-                "rtThread02.getRetCode() = " + rtThread02.getRetCode() );
-        System.out.println(
-                "rtThread12.getRetCode() = " + rtThread12.getRetCode() );
-        System.out.println(
-                "rtThread13.getRetCode() = " + rtThread13.getRetCode() );
-
         if ( rtThread02.getRetCode() == 0 ) {
             // 线程1 rtThread02：tableNames.get( 0 ) -> tableNames.get( 2 ) 成功，则：
             // 线程2 rtThread12：tableNames.get( 1 ) -> tableNames.get( 2 ) 失败
