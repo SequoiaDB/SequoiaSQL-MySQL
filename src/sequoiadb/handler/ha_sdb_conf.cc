@@ -537,7 +537,7 @@ static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_STR(
     diag_info_path,
-    PLUGIN_VAR_NOCMDOPT | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
+    PLUGIN_VAR_NOCMDARG | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
     "Path to the table and index statistics replacement file. (Default: \"\")"
     /*表及索引统计信息替换文件的路径。*/,
     NULL, NULL, SDB_DEFAULT_DIAG_INFO_PATH);
