@@ -7134,9 +7134,21 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
   Sdb_statistics stat;
   Sdb_cl cl;
   int rc = 0;
+  bool is_stats_replaced = false;
   DBUG_ASSERT(share);
 
-  if (do_read_stat) {
+  if (NULL != sdb_get_diag_info_path(thd) &&
+      0 != strlen(sdb_get_diag_info_path(thd))) {
+    // replace share->stat
+    rc = replace_table_stats_from_diag_file(thd);
+    if (0 == rc) {
+      share->stat.is_substituted = true;
+      is_stats_replaced = true;
+    } else {
+      rc = 0;
+    }
+  }
+  if (!is_stats_replaced && do_read_stat) {
     // new Sdb_share shared_ptr
     boost::shared_ptr<Sdb_share> new_share_ptr;
     Sdb_share *new_share = NULL;
@@ -7222,12 +7234,6 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       share = new_share_ptr;
       mysql_mutex_unlock(&sdb_mutex);
     }
-  } else if (NULL != sdb_get_diag_info_path(thd) &&
-             0 != strlen(sdb_get_diag_info_path(thd))) {
-    // replace share->stat
-    if (!replace_table_stats_from_diag_file(thd)) {
-      share->stat.is_substituted = true;
-    }
   }
 
   stats.block_size = (uint)share->stat.page_size;
@@ -7259,32 +7265,16 @@ error:
   goto done;
 }
 
-/**
-  Read current table diag info from file
+int ha_sdb::build_and_open_diag_info_file(THD *thd, const char *file_name,
+                                          File &file) {
+  DBUG_ENTER("ha_sdb::build_and_open_diag_info_file()");
 
-  @param[in] thd            thread handler
-  @param[in] file_name      root diretory is the current table directory
-  @param[out] diag_info     diag info BSONObj
-
-  @return
-    0       ok
-    errno   some errors have occurred
-*/
-int ha_sdb::read_current_table_diag_info_file(THD *thd, const char *file_name,
-                                              bson::BSONObj &diag_info) {
-  DBUG_ENTER("ha_sdb::read_current_table_diag_info_file()");
-
-  File file = -1;
-  int bytes_read = 0;
-  int rc = 0;
-  int offset = 0;
-  char data_buf[4096] = {0};
   char *diag_info_path = sdb_get_diag_info_path(thd);
   String absolute_file_path;
-  String stats_str;
   String real_table_name(table_name, &my_charset_bin);
   String slash("/", &my_charset_bin);
-  DBUG_ASSERT(share);
+  int offset = 0;
+  int rc = 0;
 
   // replace '.' with '/' in tb_name
   while (-1 != (offset = real_table_name.strstr(slash, 0))) {
@@ -7319,10 +7309,41 @@ int ha_sdb::read_current_table_diag_info_file(THD *thd, const char *file_name,
     goto error;
   }
 
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+/**
+  Read current table diag info from file
+
+  @param[in] thd            thread handler
+  @param[in] file_name      root diretory is the current table directory
+  @param[out] diag_info     diag info BSONObj
+
+  @return
+    0       ok
+    errno   some errors have occurred
+*/
+int ha_sdb::read_current_table_diag_info_file(THD *thd, const char *file_name,
+                                              bson::BSONObj &diag_info) {
+  DBUG_ENTER("ha_sdb::read_current_table_diag_info_file()");
+  String stats_str;
+  File file = -1;
+  int bytes_read = 0;
+  int rc = 0;
+  char data_buf[4096] = {0};
+
+  rc = build_and_open_diag_info_file(thd, file_name, file);
+  if (0 != rc) {
+    goto error;
+  }
+
   while (true) {
     memset(data_buf, 0, 4096);
     if ((bytes_read = (int)mysql_file_read(file, (uchar *)data_buf,
-                                           sizeof(data_buf), MYF(0))) < 0) {
+                                           sizeof(data_buf) - 1, MYF(0))) < 0) {
 #ifdef IS_MYSQL
       rc = my_errno();
 #elif IS_MARIADB
@@ -7357,47 +7378,83 @@ error:
 int ha_sdb::replace_table_stats_from_diag_file(THD *thd) {
   DBUG_ENTER("ha_sdb::replace_table_stats_from_diag_file()");
 
+  MYSQL_FILE *file = NULL;
+  Sdb_conn *connection = NULL;
   int rc = 0;
   bson::BSONObj diag_info;
-  bson::BSONObj stats_data;
-  int32 page_size = 0;
-  int32 total_data_pages = 0;
-  int32 total_index_pages = 0;
-  int64 total_data_free_space = 0;
-  int64 total_records = 0;
-
+  Sdb_statistics tmp_stats;
   DBUG_ASSERT(share);
+  int offset = 0;
 
-  rc = read_current_table_diag_info_file(thd, SDB_FN_TABLE_STATISTICS_JSON,
-                                         diag_info);
-  if (rc != 0) {
-    goto error;
+  char *diag_info_path = sdb_get_diag_info_path(thd);
+  String absolute_file_path;
+  String real_table_name(table_name, &my_charset_bin);
+  String slash("/", &my_charset_bin);
+
+  // replace '.' with '/' in tb_name
+  while (-1 != (offset = real_table_name.strstr(slash, 0))) {
+    real_table_name.replace(offset, 1, ".", 1);
   }
 
-  try {
-    stats_data = diag_info.getObjectField("Details").getObjectField("0");
-    page_size = stats_data.getIntField("PageSize");
-    total_data_pages = stats_data.getIntField("TotalDataPages");
-    total_index_pages = stats_data.getIntField("TotalIndexPages");
-    total_data_free_space = stats_data.getIntField("TotalDataFreeSpace");
-    total_records = stats_data.getIntField("TotalRecords");
-  } catch (bson::assertion &e) {
+  // /PATH/catalog/db1/t1/xxxxx.json
+  if (NULL == diag_info_path) {
     rc = HA_ERR_INTERNAL_ERROR;
     goto error;
   }
 
-  if (page_size < 0 || total_data_pages < 0 || total_data_free_space < 0 ||
-      total_data_free_space < 0 || total_records < 0) {
-    rc = HA_ERR_INTERNAL_ERROR;
+  if (absolute_file_path.append(diag_info_path) ||
+      absolute_file_path.append("/") ||
+      absolute_file_path.append(SDB_FN_CATALOG) ||
+      absolute_file_path.append("/") || absolute_file_path.append(db_name) ||
+      absolute_file_path.append("/") ||
+      absolute_file_path.append(real_table_name) ||
+      absolute_file_path.append("/") ||
+      absolute_file_path.append(SDB_FN_TABLE_STATISTICS_JSON)) {
+    rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
-  share->stat.page_size = page_size;
-  share->stat.total_data_pages = total_data_pages;
-  share->stat.total_index_pages = total_index_pages;
-  share->stat.total_data_free_space = total_data_free_space;
-  share->stat.total_records = total_records;
+
+  if (!(file = mysql_file_fopen(key_file_loadfile, absolute_file_path.ptr(),
+                                O_RDONLY | O_SHARE, MYF(0)))) {
+    // statistics for this table may not be collected
+#ifdef IS_MYSQL
+    rc = my_errno();
+#elif IS_MARIADB
+    rc = my_errno;
+#endif
+    goto error;
+  }
+
+  {
+    rc = check_sdb_in_thd(thd, &connection, true);
+    if (0 != rc) {
+      goto error;
+    }
+
+    Replaced_stat_cursor cursor(file);
+    rc = connection->get_cl_stats_from_cursor(cursor, tmp_stats);
+    // ignore HA_ERR_END_OF_FILE
+    if (0 != rc && HA_ERR_END_OF_FILE != rc) {
+      goto error;
+    }
+
+    if (tmp_stats.page_size < 0 || tmp_stats.total_data_pages < 0 ||
+        tmp_stats.total_data_free_space < 0 ||
+        tmp_stats.total_data_free_space < 0 || tmp_stats.total_records < 0) {
+      rc = HA_ERR_INTERNAL_ERROR;
+      goto error;
+    }
+    share->stat.page_size = tmp_stats.page_size;
+    share->stat.total_data_pages = tmp_stats.total_data_pages;
+    share->stat.total_index_pages = tmp_stats.total_index_pages;
+    share->stat.total_data_free_space = tmp_stats.total_data_free_space;
+    share->stat.total_records = tmp_stats.total_records;
+  }
 
 done:
+  if (NULL != file) {
+    mysql_file_fclose(file, MYF(0));
+  }
   DBUG_RETURN(rc);
 error:
   push_warning_printf(thd, Sql_condition::SL_WARNING, rc,
@@ -10129,7 +10186,6 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
 bool ha_sdb::filesort_push(const ORDER *order) {
   bool rs = true;
   THD *thd = ha_thd();
-  JOIN_TAB *join_tab = NULL;
   KEY *key_info = NULL;
   /*
     The order can be pushdown when

@@ -1257,30 +1257,12 @@ int Sdb_conn::get_cl_statistics(const char *cs_name, const char *cl_name,
   return rc;
 }
 
-int Sdb_conn::get_cl_stats_by_get_detail(const char *cs_name,
-                                         const char *cl_name,
-                                         Sdb_statistics &stats,
-                                         Mapping_context *mapping_ctx) {
+int Sdb_conn::get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats) {
   static const int PAGE_SIZE_MIN = 4096;
   static const int PAGE_SIZE_MAX = 65536;
 
-  int rc = SDB_ERR_OK;
-  sdbclient::sdbCursor cursor;
+  int rc = 0;
   bson::BSONObj obj;
-  Sdb_cl cl;
-
-  DBUG_ASSERT(NULL != cs_name);
-  DBUG_ASSERT(strlength(cs_name) != 0);
-
-  rc = get_cl(cs_name, cl_name, cl, false, mapping_ctx);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
-  rc = cl.get_detail(cursor);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
 
   stats.page_size = PAGE_SIZE_MAX;
   stats.total_data_pages = 0;
@@ -1358,6 +1340,40 @@ int Sdb_conn::get_cl_stats_by_get_detail(const char *cs_name,
     goto error;
   }
 
+done:
+  return rc;
+error:
+  goto error;
+}
+
+
+int Sdb_conn::get_cl_stats_by_get_detail(const char *cs_name,
+                                         const char *cl_name,
+                                         Sdb_statistics &stats,
+                                         Mapping_context *mapping_ctx) {
+  static const int PAGE_SIZE_MIN = 4096;
+  static const int PAGE_SIZE_MAX = 65536;
+
+  int rc = SDB_ERR_OK;
+  //sdbclient::sdbCursor sdb_cursor;
+  Sdb_stat_cursor cursor;
+  bson::BSONObj obj;
+  Sdb_cl cl;
+
+  DBUG_ASSERT(NULL != cs_name);
+  DBUG_ASSERT(strlength(cs_name) != 0);
+
+  rc = get_cl(cs_name, cl_name, cl, false, mapping_ctx);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  rc = cl.get_detail(cursor.get_m_cursor());
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  rc = get_cl_stats_from_cursor(cursor, stats);
   if (SDB_DMS_EOC == rc) {
     rc = SDB_ERR_OK;
   }

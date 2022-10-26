@@ -16,6 +16,7 @@
 #ifndef SDB_CONN__H
 #define SDB_CONN__H
 
+#include "mysql/psi/mysql_file.h"
 #include "ha_sdb_sql.h"
 #include <client.hpp>
 #include <sdbConnectionPool.hpp>
@@ -37,6 +38,8 @@ class Sdb_cl;
 class Sdb_seq;
 #endif
 class Sdb_statistics;
+
+class Stat_cursor;
 
 class Sdb_session_attrs {
  public:
@@ -253,6 +256,8 @@ class Sdb_conn {
   Sdb_conn(my_thread_id tid, bool server_ha_conn = false);
 
   virtual ~Sdb_conn();
+
+  int get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats);
 
   int connect();
 
@@ -573,4 +578,70 @@ class Sdb_simple_pool_conn {
   int m_actives;
   int m_max_conn_num;
 };
+
+class Stat_cursor {
+ public:
+  Stat_cursor() {}
+  virtual ~Stat_cursor() {}
+  virtual int next(bson::BSONObj &obj, bool getOwned) = 0;
+  virtual int close() = 0;
+};
+
+class Sdb_stat_cursor : public Stat_cursor {
+ public:
+  Sdb_stat_cursor() : m_cursor() {}
+  ~Sdb_stat_cursor() {}
+
+  int next(bson::BSONObj &obj, bool getOwned) {
+    return m_cursor.next(obj, getOwned);
+  }
+
+  int close() { return m_cursor.close(); }
+
+  sdbclient::sdbCursor &get_m_cursor() { return m_cursor; }
+
+ private:
+  sdbclient::sdbCursor m_cursor;
+};
+
+class Replaced_stat_cursor : public Stat_cursor {
+ public:
+  Replaced_stat_cursor(MYSQL_FILE *file) { m_file = file; }
+  ~Replaced_stat_cursor() {}
+
+  int next(bson::BSONObj &obj, bool getOwned) {
+    char *res = 0;
+    int rc = 0;
+    char str[4096] = {0};
+
+    res = mysql_file_fgets(str, 4096, m_file);
+    if (0 == res) {
+#ifdef IS_MYSQL
+      rc = my_errno();
+#elif IS_MARIADB
+      rc = my_errno;
+#endif
+      if (0 == strlen(str)) {
+        rc = HA_ERR_END_OF_FILE;
+      }
+      goto error;
+    }
+
+    rc = fromjson(str, obj);
+    if (0 != rc) {
+      goto error;
+    }
+
+  done:
+    return rc;
+  error:
+    goto done;
+  }
+
+  int close() { return mysql_file_fclose(m_file, MYF(0)); }
+
+ private:
+  MYSQL_FILE *m_file;
+};
+
 #endif

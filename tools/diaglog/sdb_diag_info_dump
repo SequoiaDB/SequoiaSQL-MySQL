@@ -1221,7 +1221,7 @@ EOF
 function get_sdb_table_detail_js()
 {
 cat << EOF
-db.getCS("${1}").getCL("${2}").getDetail()
+db.getCS("${1}").getCL("${2}").getDetail();
 EOF
 }
 
@@ -1323,9 +1323,11 @@ catalog from sdb, please verify \"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\""
       fi
    fi
 
+   "${SDB_SHELL}" -s "jsonFormat(false)"
    sdb_js=`get_sdb_table_detail_js "${db_name}" "${tb_tmp_name}"`
    local sdb_table_detail=`"${SDB_SHELL}" -s "${sdb_js}"`
    check_sdb_error
+   "${SDB_SHELL}" -s "jsonFormat(true)"
    
    if [[ $? -ne 0 ]]; then
       echo "${sdb_table_detail}" > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}"
@@ -1333,6 +1335,7 @@ catalog from sdb, please verify \"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\""
 \"${db_name}.${tb_name}\" detail from sdb, please verify \
 \"${file_path}/${TABLE_STATISTICS_JSON_FILENAME}\"" >&2
    else
+      # remove Return x rows
       echo "${sdb_table_detail}" \
          | sed '$d' > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}"
    fi
@@ -1431,10 +1434,11 @@ function get_sdb_table_index_information()
    for index in "${sdb_table_index_array[@]}"
    do
       index_tmp_name=`echo "${index}" | sed 's/^"\(.*\)"$/\1/'`
+      index_real_name=`convert_special_character "${index_tmp_name}" "0000010"`
 
       if [ "${SDB_HAVE_GETINDEXSTAT}" == "0" ]; then
          sdb_js=`get_sdb_table_index_js "${db_name}" "${cl_real_name}" "${index_tmp_name}"`
-         sdb_table_index=`"${SDB_SHELL}" -s "${sdb_js}"`
+         "${SDB_SHELL}" -s "${sdb_js}" > "${file_path}/${index_real_name}" 2>&1
          rc=$?
          error=$("${SDB_SHELL}" -s "getLastErrObj()")
          if [ "${error}" != "" ]; then
@@ -1446,8 +1450,6 @@ function get_sdb_table_index_information()
          fi
       fi
 
-      index_real_name=`convert_special_character "${index_tmp_name}" "0000010"`
-      echo "${sdb_table_index}" > "${file_path}/${index_real_name}"
       test $rc -ne 0 && echo "ERROR: Fail to get \"${db_name}.${tb_name}\" \
 index ${idnex} information from sdb, please verify \"${file_path}\""
    done

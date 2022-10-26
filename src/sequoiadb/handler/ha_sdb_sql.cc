@@ -861,7 +861,7 @@ ulong sdb_thd_da_warn_count(THD *thd) {
   return thd->get_stmt_da()->current_statement_cond_count();
 }
 
-KEY* sdb_get_join_tab_key_in_use(TABLE *table) {
+KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
   KEY *key_info = NULL;
   QEP_TAB *qep_tab = table->reginfo.qep_tab;
   if (qep_tab) {
@@ -873,7 +873,7 @@ KEY* sdb_get_join_tab_key_in_use(TABLE *table) {
                qep_tab->type() == JT_INDEX_MERGE ||
                ((qep_tab->type() == JT_REF ||
                  qep_tab->type() == JT_REF_OR_NULL) &&
-                 qep_tab->quick())) {
+                qep_tab->quick())) {
       key_info = table->key_info + qep_tab->quick()->index;
     }
   }
@@ -1658,7 +1658,7 @@ ulong sdb_thd_da_warn_count(THD *thd) {
   return thd->get_stmt_da()->current_statement_warn_count();
 }
 
-KEY* sdb_get_join_tab_key_in_use(TABLE *table) {
+KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
   JOIN_TAB *join_tab = NULL;
   KEY *key_info = NULL;
   join_tab = table->reginfo.join_tab;

@@ -572,6 +572,9 @@ class ha_sdb : public handler {
   int read_current_table_diag_info_file(THD *thd, const char *file_name,
                                         bson::BSONObj &diag_info);
 
+  int build_and_open_diag_info_file(THD *thd, const char *file_name,
+                                    File &file);
+
   int replace_table_stats_from_diag_file(THD *thd);
 
   int replace_index_stats_from_diag_file(THD *thd, KEY *key_info,
