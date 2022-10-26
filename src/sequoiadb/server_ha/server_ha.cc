@@ -4142,6 +4142,21 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   db = sdb_thd_db(thd);
   if (NULL == db) {  // set default database if it's not set
     db = HA_MYSQL_DB;
+  } else {
+    // Current database is set, check if current SQL statement is associated
+    // with current database
+    bool found_curr_db = false;
+    for (ha_table_list *table = sql_info->tables; table; table = table->next) {
+      if (0 == strcmp(db, table->db_name)) {
+        found_curr_db = true;
+        break;
+      }
+    }
+    if (!found_curr_db) {
+      // Current SQL statement has no releationship with current database, set
+      // running database to 'mysql'
+      db = HA_MYSQL_DB;
+    }
   }
 
   switch (sql_command) {
