@@ -1,0 +1,261 @@
+DROP DATABASE IF EXISTS db_28276;
+create database db_28276;
+use db_28276;
+create table t1(a int, b int);
+truncate t1;
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(NULL,5),(6,6),(7,NULL),(8,8),(9,NULL),(10,10);
+create table t2 as select * from t1;
+create view v1 as select * from t2 where a>4;
+set session sequoiadb_debug_log= on;
+set session sql_mode="STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION";
+select * from (select * from t1 where a>2) t2 limit 3;
+a	b
+3	3
+4	4
+6	6
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
+select * from (select * from t1 where a>2) t2 order by a;
+a	b
+3	3
+4	4
+6	6
+7	NULL
+8	8
+9	NULL
+10	10
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select * from (select * from t1 where a>2) t2 group by a;
+a	b
+3	3
+4	4
+6	6
+7	NULL
+8	8
+9	NULL
+10	10
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select * from (select * from t1 where a>2) t2 group by a order by a limit 3;
+a	b
+3	3
+4	4
+6	6
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+select * from (select * from t1 where a>2 order by a DESC) t2;
+a	b
+10	10
+9	NULL
+8	8
+7	NULL
+6	6
+4	4
+3	3
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select * from (select 1 from t1 where a>2 order by a) t2 limit 3;
+1
+1
+1
+1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
+select * from v1 limit 3;
+a	b
+6	6
+7	NULL
+8	8
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 4 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t2]
+select * from (select * from t1 where a>2 limit 3) t2 limit 3;
+a	b
+3	3
+4	4
+6	6
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select * from (select * from t1 where a>2 group by a) t2 limit 3;
+a	b
+3	3
+4	4
+6	6
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select * from (select * from t1 where a>2 group by a order by a limit 3) t2 limit 3;
+a	b
+3	3
+4	4
+6	6
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
+a	b
+10	10
+9	NULL
+8	8
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
+1
+1
+1
+1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select * from (select t1.* from t1,t2 where t1.a>2) t2 limit 3;
+a	b
+3	3
+4	4
+6	6
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select * from (select * from t1 where a>2) t3,t2 where t2.a=t3.a limit 3;
+a	b	a	b
+3	3	3	3
+4	4	4	4
+6	6	6	6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select * from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a limit 3;
+a	b	a	b
+3	3	3	3
+4	4	4	4
+6	6	6	6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select * from t1 where a in (select a from t1 where b<5) limit 3;
+a	b
+1	1
+2	2
+3	3
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 5 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select *,(select a from t2 limit 1) from t1 limit 3;
+a	b	(select a from t2 limit 1)
+1	1	1
+2	2	1
+3	3	1
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select * from t1 union select * from t2 limit 3;
+a	b
+1	1
+2	2
+3	3
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select * from t1 where a in(select a from t2 where a=2 union select 1) limit 3;
+a	b
+1	1
+2	2
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select * from t1,t2 limit 3;
+a	b	a	b
+1	1	1	1
+2	2	1	1
+3	3	1	1
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select * from t1 left outer join t2 on t1.a=t2.a limit 3;
+a	b	a	b
+1	1	1	1
+2	2	2	2
+3	3	3	3
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select * from t1 join t2 using(a) limit 3;
+a	b	b
+1	1	1
+2	2	2
+3	3	3
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from (select * from t1 where a>2) t2;
+count(*)
+7
+[Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[db_28276.t1]
+select count(*) from (select * from t1 where a>2) t2 limit 3;
+count(*)
+7
+[Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[db_28276.t1]
+select count(*) from (select * from t1 where a>2) t2 order by a;
+count(*)
+7
+[Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[db_28276.t1]
+select count(*) from (select * from t1 where a>2) t2 group by a;
+count(*)
+1
+1
+1
+1
+1
+1
+1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select count(*) from (select * from t1 where a>2) t2 group by a order by a limit 3;
+count(*)
+1
+1
+1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select count(*) from (select * from t1 where a>2 order by a DESC) t2;
+count(*)
+7
+[Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[db_28276.t1]
+select count(*) from v1 limit 3;
+count(*)
+5
+[Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 4 } }],hint[{}] table[db_28276.t2]
+select count(*) from (select * from t1 where a>2 limit 3) t2;
+count(*)
+3
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select count(*) from (select * from t1 where a>2 group by a) t2;
+count(*)
+7
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select count(*) from (select * from t1 where a>2 group by a order by a limit 3) t2;
+count(*)
+3
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select count(*) from (select * from t1 where a>2 order by a DESC limit 3) t2;
+count(*)
+3
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select count(*) from (select 1 from t1 where a>2 limit 3) t2;
+count(*)
+3
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select count(*) from (select t1.* from t1,t2 where t1.a>2) t2;
+count(*)
+70
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from (select * from t1 where a>2) t3,t2 where t2.a=t3.a;
+count(*)
+7
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a;
+count(*)
+3
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from t1 where a in (select a from t1 where b<5);
+count(*)
+4
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 5 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+select count(*),(select a from t2 limit 1) from t1;
+count(*)	(select a from t2 limit 1)
+10	1
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from t1 union select a from t2;
+count(*)
+10
+1
+2
+3
+4
+NULL
+6
+7
+8
+9
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from t1 where a in(select a from t2 where a=2 union select 1);
+count(*)
+2
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from t1,t2;
+count(*)
+100
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from t1 left outer join t2 on t1.a=t2.a;
+count(*)
+10
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+select count(*) from t1 join t2 using(a);
+count(*)
+9
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+set session sequoiadb_debug_log=default;
+set session sql_mode=default;
+drop database db_28276;
