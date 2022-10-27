@@ -8,6 +8,7 @@
 #                      new tests. Reason: All these might be not available.
 #                    - Minor cleanup
 #
+--source include/have_sequoiadb.inc
 --source include/have_partition.inc
 --source include/no_valgrind_without_big.inc
 
@@ -111,7 +112,6 @@ DROP TABLE t1;
 CREATE TABLE t1 (a INT NOT NULL, b INT NOT NULL)
 PARTITION BY KEY (a) PARTITIONS 2;
 INSERT INTO t1 VALUES (0,1), (0,2);
-#BUG:SEQUOIASQLMAINSTREAM-1250
 --error ER_DUP_ENTRY
 ALTER TABLE t1 ADD PRIMARY KEY (a);
 SHOW CREATE TABLE t1;
@@ -295,13 +295,14 @@ create table t1 (a int)
 partition by hash (a);
 # SEQUOIASQLMAINSTREAM-1089
 # # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 create index i on t1 (a);
 insert into t1 values (1);
 insert into t1 select * from t1;
---error 1061
+--error 1506
 create index i on t1 (a);
 #sequoiadb allows only one index with same scene
---error 40291
+--error 1506
 create index i2 on t1 (a);
 drop table t1;
 
@@ -471,6 +472,7 @@ SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 # SEQUOIASQLMAINSTREAM-1089
 # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 ALTER TABLE t1 ADD INDEX b USING HASH (b);
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
@@ -1727,6 +1729,7 @@ partition by key(a);
 insert into t1 values (1);
 # SEQUOIASQLMAINSTREAM-1089
 # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 create index inx1 on t1(a);
 drop table t1;
 
@@ -2250,6 +2253,7 @@ SET SQL_MODE= @orig_sql_mode;
 create table t1 (s1 int) partition by hash(s1) partitions 2;
 # SEQUOIASQLMAINSTREAM-1089
 # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 create index i on t1 (s1);
 insert into t1 values (1);
 insert into t1 select s1 from t1;
@@ -2261,6 +2265,7 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
+--error 1506
 create index i on t1 (s1);
 insert into t1 values (1);
 insert into t1 select s1 from t1;
@@ -2272,6 +2277,7 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
+--error 1506
 create index i on t1 (s1);
 insert into t1 values (20);
 insert into t1 select s1 from t1;
@@ -2283,6 +2289,7 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
+--error 1506
 create index i on t1 (s1);
 insert into t1 values (1), (2), (3), (4), (5), (6), (7), (8);
 insert into t1 select s1 from t1;
@@ -2630,4 +2637,20 @@ INSERT INTO t VALUES (6, 'ab'), (4, 'ab'), (5, 'ab'), (16, 'ab'), (14, 'ab'), (1
 SELECT id FROM t WHERE data = 'ab' ORDER BY id ASC;
 DROP TABLE t;
 
+--echo #
+--echo # Bug#29268656: BOGUS CONSTANT, RANDOM OR TIMEZONE-DEPENDENT
+--echo #               EXPRESSIONS IN (SUB)PARTITIONING FU
+--echo #
+
+# Create table with generated column containing non-deterministic expression
+CREATE TABLE t1 (c1 INT, c2 CHAR(32) GENERATED ALWAYS AS (RANDOM_BYTES(32))) ENGINE=SEQUOIADB PARTITION BY HASH(c1);
+CREATE TABLE t2 (c1 INT, c2 CHAR(32) GENERATED ALWAYS AS (RANDOM_BYTES(32))) ENGINE=SEQUOIADB PARTITION BY RANGE(c1) (PARTITION p1 VALUES LESS THAN(100));
+
+# Alter table with generated column containing non-deterministic expression
+CREATE TABLE t (c1 INT, c2 INT) ENGINE=SEQUOIADB PARTITION BY RANGE(c1) (PARTITION p1 VALUES LESS THAN(100));
+ALTER TABLE t MODIFY COLUMN c2 CHAR(32) GENERATED ALWAYS AS (RANDOM_BYTES(32)) STORED;
+ALTER TABLE t ADD COLUMN c3 CHAR(32) GENERATED ALWAYS AS (RANDOM_BYTES(32));
+
+DROP TABLE t, t1, t2;
 DROP DATABASE test_partition;
+--source include/uninstall_sequoiadb.inc
