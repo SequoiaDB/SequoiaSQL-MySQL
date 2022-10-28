@@ -1,0 +1,86 @@
+drop database if exists explain_direct_sort_27693;
+create database explain_direct_sort_27693;
+drop database explain_direct_sort_27693;
+create database explain_direct_sort_27693;
+use explain_direct_sort_27693;
+set session optimizer_switch='mrr=on,mrr_cost_based=off';
+set session sequoiadb_debug_log=on;
+set session join_cache_level = 8;
+drop table if exists t1,t2;
+create table t1(
+col1 int,
+col2 varchar(10),
+col3 varchar(10),
+col4 varchar(10),
+key idx_col1(col1),
+key idx_col2(col2),
+key idx_col12(col1,col2),
+unique key uniq_idx4(col4)
+);
+insert into t1 values(0,'abc','abc','abc');
+insert into t1 values(1,'abcdef','abcdef','abcdef');
+insert into t1 values(2,'abd','abd','abd');
+insert into t1 values(3,'abde','abde','efg');
+insert into t1 values(4,'def','def','def');
+insert into t1 values(5,'defg','defg','defg');
+insert into t1 values(6,'xyz','xyz','xyz');
+insert into t1 values(null,null,null,null);
+create table t2 like t1;
+insert into t2 select * from t1;
+explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using where
+1	PRIMARY	t1	ref	idx_col1,idx_col12	idx_col12	5	tt.col1	1	Using join buffer (flat, BKAH join); Using MRR
+2	DERIVED	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	2	Using where with pushed condition; Using MRR; Using temporary; Using filesort
+select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1;
+col1	col2	col3	col4
+0	abc	abc	abc
+1	abcdef	abcdef	abcdef
+2	abd	abd	abd
+3	abde	abde	efg
+4	def	def	def
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 0, 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27693.t1]
+explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col2;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using where; Using temporary; Using filesort
+1	PRIMARY	t1	ref	idx_col1,idx_col12	idx_col12	5	tt.col1	1	Using join buffer (flat, BKAH join); Using MRR
+2	DERIVED	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	2	Using where with pushed condition; Using MRR; Using temporary; Using filesort
+select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col2;
+col1	col2	col3	col4
+0	abc	abc	abc
+1	abcdef	abcdef	abcdef
+2	abd	abd	abd
+3	abde	abde	efg
+4	def	def	def
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 3, 2, 1, 0 ] } }], selector[{}], order_by[{}], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27693.t1]
+explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1 order by t1.col2 desc;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using where; Using temporary; Using filesort
+1	PRIMARY	t1	ref	idx_col1,idx_col12	idx_col12	5	tt.col1	1	Using join buffer (flat, BKAH join); Using MRR
+2	DERIVED	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	2	Using where with pushed condition; Using MRR; Using temporary; Using filesort
+select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1 order by t1.col2 desc;
+col1	col2	col3	col4
+4	def	def	def
+3	abde	abde	efg
+2	abd	abd	abd
+1	abcdef	abcdef	abcdef
+0	abc	abc	abc
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 0, 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27693.t1]
+explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using where; Using temporary; Using filesort
+1	PRIMARY	t1	ref	idx_col1,idx_col12	idx_col12	5	tt.col1	1	Using join buffer (flat, BKAH join); Using MRR
+2	DERIVED	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	2	Using where with pushed condition; Using MRR; Using temporary; Using filesort
+select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col3;
+col1	col2	col3	col4
+0	abc	abc	abc
+1	abcdef	abcdef	abcdef
+2	abd	abd	abd
+3	abde	abde	efg
+4	def	def	def
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 3, 2, 1, 0 ] } }], selector[{}], order_by[{}], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27693.t1]
+drop table t1,t2;
+set session optimizer_switch=default;
+set session sequoiadb_debug_log=off;
+set session join_cache_level = default;
+drop database explain_direct_sort_27693;
