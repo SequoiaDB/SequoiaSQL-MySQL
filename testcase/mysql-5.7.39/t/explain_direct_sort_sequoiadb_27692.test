@@ -1,0 +1,64 @@
+#seqDB-27692 分区表查询
+--source include/have_sequoiadb.inc
+--source include/have_partition.inc
+--disable_warnings
+drop database if exists explain_direct_sort_27692;
+--enable_warnings
+create database explain_direct_sort_27692;
+drop database explain_direct_sort_27692;
+create database explain_direct_sort_27692;
+
+use explain_direct_sort_27692;
+set session sequoiadb_debug_log=on;
+set session optimizer_switch='mrr=on';
+--disable_warnings
+drop table if exists t1_range,t2_hash;
+--enable_warnings
+create table t1_range(
+id int primary key,
+col1 int
+) partition by range(id)(
+partition p0 values less than(10),
+partition p1 values less than(20),
+partition p2 values less than(30),
+partition p3 values less than(40),
+partition p4 values less than(50)
+);
+insert into t1_range values(1,10),(10,20),(11,22),(15,25),(17,27),(20,30),(30,30),(40,10);
+create table t2_hash(
+id int not null,
+col1 int not null
+) partition by hash(id)
+partitions 4;
+insert into t2_hash values(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,10),(11,11),(12,12);
+
+#range分区全表扫，并带有order by
+explain select * from t1_range order by id;
+select * from t1_range order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
+explain select * from t1_range where id < 20 order by id desc;
+select * from t1_range where id < 20 order by id desc;
+--source include/query_pushdown_condition_sequoiadb.inc
+explain select * from t1_range where id < 20 order by col1;
+select * from t1_range where id < 20 order by col1;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+#指定单个分区查询，并带有order by
+explain select * from t1_range partition(p1) order by id;
+select * from t1_range partition(p1) order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+#hash全表扫
+explain select * from t2_hash;
+--sorted_result
+select * from t2_hash;
+--source include/query_pushdown_condition_sequoiadb.inc
+explain select * from t2_hash order by id;
+select * from t2_hash order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
+drop table t1_range,t2_hash;
+
+set session sequoiadb_debug_log=off;
+set session optimizer_switch=default;
+drop database explain_direct_sort_27692;
+--source include/uninstall_sequoiadb.inc
