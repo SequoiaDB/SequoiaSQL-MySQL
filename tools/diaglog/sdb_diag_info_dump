@@ -122,7 +122,7 @@ function exec_sql_with_print()
       eval "${MYSQL_EXEC_CMD_WITHOUT_DB} -s -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${filename}"
    fi
    rc=$?
-   local error=`head -n 1 "${filename}" | grep "^ERROR "`
+   local error=`tail -n 1 "${filename}" | grep "^ERROR "`
    if [[ $rc -ne 0 || "${error}" != "" ]]; then
       echo -e "${sql}\n${error}" > "${filename}"
       rc=8
@@ -732,7 +732,9 @@ function find_mapping_table()
    #find enable mapping
    IS_MAPPING=`eval "${MYSQL_EXEC_CMD_WITHOUT_DB} -s -e \"select @@sequoiadb_enable_mapping\"" \
        "2>&1" "${REMOVE_PASSWORD_WARNING}" | sed 's/^@@sequoiadb_enable_mapping//'`
-   test $? -ne 0 && echo "ERROR: Fail to check sequoiadb_enable_mapping" >&2
+   if [[ "${IS_MAPPING}" != "0" && "${IS_MAPPING}" != "1" ]]; then
+      echo "ERROR: Fail to check sequoiadb_enable_mapping" >&2
+   fi
 
    if [ "${IS_MAPPING}" == "1" ]; then
       echo "INFO: Looking for all mapping tables"
@@ -794,7 +796,7 @@ function try_connect()
       REMOVE_PASSWORD_WARNING='| grep -v "mysql: \[Warning\] Using a password on the command line interface can be insecure"'
    fi
 
-   exec_sql_with_print "select version();" "/dev/null" "without_db"
+   eval "${MYSQL_EXEC_CMD_WITHOUT_DB}" "-s" "-e" \""select version();"\" > "/dev/null"
    test $? -ne 0 && { echo "ERROR: Fail to connect the instance" >&2 && exit 2; }
    echo "INFO: Connecting the instance successfully"
 
@@ -1028,7 +1030,11 @@ function get_all_table_in_database()
    #table name cannot include '.', repalce the ' ' with '.', easy for AWK processing
    local tmp_table="`eval \"${MYSQL_EXEC_CMD} -e \\\"show tables\\G\\\"\" \
      "2>&1" "${REMOVE_PASSWORD_WARNING}" | grep -v '^*' | sed -e 's/^Tables_in_.*: //g' -e 's/ /./g'`"
-   test $? -ne 0 && { echo "ERROR: Fail to get all tables in the \"${DATABASE}\"" && return; }
+   # ERROR xxx will be convert to ERROR.
+   if [[ `echo "${tmp_table}" | tail -n 1 | grep "^ERROR."` != ""  ]]; then
+      echo "ERROR: Fail to get all tables in the \"${DATABASE}\"" && return;
+   fi
+
    if [ "${tmp_table}" == "" ]; then
       echo "INFO: There are no tables in database \"${DATABASE}\""
       return
@@ -1617,7 +1623,9 @@ function get_all_create_routine()
    
    local sql=`build_get_all_create_routine_sql "${db_tmp_name}"`
    local tmp_routine=`eval "${MYSQL_EXEC_CMD} -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" | grep -v '^*'`
-   test $? -ne 0 && { echo "ERROR: Fail to get all routines in the \"${DATABASE}\"" && return; }
+   if [[ `echo "${tmp_routine}" | tail -n 1 | grep "^ERROR "` != ""  ]]; then
+      echo "ERROR: Fail to get all routines in the \"${DATABASE}\"" && return;
+   fi
 
    if [ "${tmp_routine}" == "" ]; then
       echo "INFO: There are no routines in database \"${DATABASE}\""
