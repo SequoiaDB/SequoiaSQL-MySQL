@@ -16,7 +16,6 @@
 #ifndef SDB_CONN__H
 #define SDB_CONN__H
 
-#include "mysql/psi/mysql_file.h"
 #include "ha_sdb_sql.h"
 #include <client.hpp>
 #include <sdbConnectionPool.hpp>
@@ -26,6 +25,7 @@
 #include <mysql/plugin.h>
 #include "ha_sdb_errcode.h"
 #include "name_map.h"
+#include "mysql/psi/mysql_file.h"
 
 #if defined IS_MYSQL
 #include <my_thread_local.h>
