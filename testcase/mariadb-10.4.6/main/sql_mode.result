@@ -451,12 +451,12 @@ create table t1 (a int);
 create table t2 (a int);
 create view v1 as select a from t1;
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a` from `t1`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a` from `t1`	latin1	latin1_swedish_ci	
 SET @@SQL_MODE='ANSI_QUOTES';
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER="root"@"localhost" SQL SECURITY DEFINER VIEW "v1" AS select "t1"."a" AS "a" from "t1"	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER="root"@"localhost" SQL SECURITY DEFINER VIEW "v1" AS select "t1"."a" AS "a" from "t1"	latin1	latin1_swedish_ci	
 create view v2 as select a from t2 where a in (select a from v1);
 drop view v2, v1;
 drop table t1, t2;

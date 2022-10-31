@@ -1748,8 +1748,8 @@ values (5,90), (7,20), (1,70), (3,50), (4,10) order by 3;
 ERROR 42S22: Unknown column '3' in 'order clause'
 create view v1 as values (5), (7), (1), (3), (4) order by 1 limit 2;
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS values (5),(7),(1),(3),(4) order by 1 limit 2	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS values (5),(7),(1),(3),(4) order by 1 limit 2	latin1	latin1_swedish_ci	
 select * from v1;
 5
 1
@@ -1760,8 +1760,8 @@ create view v1 as
 union
 ( values (5), (7), (1), (3), (4) order by 1 limit 2 );
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS (values (5),(7),(1),(3),(4) limit 1,2) union (values (5),(7),(1),(3),(4) order by 1 limit 2)	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS (values (5),(7),(1),(3),(4) limit 1,2) union (values (5),(7),(1),(3),(4) order by 1 limit 2)	latin1	latin1_swedish_ci	
 select * from v1;
 5
 7

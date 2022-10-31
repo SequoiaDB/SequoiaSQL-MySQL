@@ -319,8 +319,8 @@ create view v1 as
 with t as (select a from t1 where b >= 'c') 
 select * from t2,t where t2.c=t.a;
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with t as (select `t1`.`a` AS `a` from `t1` where `t1`.`b` >= 'c')select `t2`.`c` AS `c`,`t`.`a` AS `a` from (`t2` join `t`) where `t2`.`c` = `t`.`a`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with t as (select `t1`.`a` AS `a` from `t1` where `t1`.`b` >= 'c')select `t2`.`c` AS `c`,`t`.`a` AS `a` from (`t2` join `t`) where `t2`.`c` = `t`.`a`	latin1	latin1_swedish_ci	
 select * from v1;
 c	a
 4	4
@@ -331,8 +331,8 @@ create view v2 as
 with t as (select a, count(*) from t1 where b >= 'c' group by a) 
 select * from t2,t where t2.c=t.a;
 show create view v2;
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS with t as (select `t1`.`a` AS `a`,count(0) AS `count(*)` from `t1` where `t1`.`b` >= 'c' group by `t1`.`a`)select `t2`.`c` AS `c`,`t`.`a` AS `a`,`t`.`count(*)` AS `count(*)` from (`t2` join `t`) where `t2`.`c` = `t`.`a`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS with t as (select `t1`.`a` AS `a`,count(0) AS `count(*)` from `t1` where `t1`.`b` >= 'c' group by `t1`.`a`)select `t2`.`c` AS `c`,`t`.`a` AS `a`,`t`.`count(*)` AS `count(*)` from (`t2` join `t`) where `t2`.`c` = `t`.`a`	latin1	latin1_swedish_ci	
 select * from v2;
 c	a	count(*)
 4	4	2
@@ -343,8 +343,8 @@ create view v3 as
 with t(c) as (select a from t1 where b >= 'c')
 select * from t r1 where r1.c=4;
 show create view v3;
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS with t as (select `t1`.`a` AS `c` from `t1` where `t1`.`b` >= 'c')select `r1`.`c` AS `c` from `t` `r1` where `r1`.`c` = 4	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS with t as (select `t1`.`a` AS `c` from `t1` where `t1`.`b` >= 'c')select `r1`.`c` AS `c` from `t` `r1` where `r1`.`c` = 4	latin1	latin1_swedish_ci	
 select * from v3;
 c
 4
@@ -355,8 +355,8 @@ create view v4(c,d) as
 with t(c) as (select a from t1 where b >= 'c')
 select * from t r1, t r2 where r1.c=r2.c and r2.c=4;
 show create view v4;
-View	Create View	character_set_client	collation_connection
-v4	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v4` AS with t as (select `test_cte_nonrecursive`.`t1`.`a` AS `c` from `test_cte_nonrecursive`.`t1` where `test_cte_nonrecursive`.`t1`.`b` >= 'c')select `r1`.`c` AS `c`,`r2`.`c` AS `d` from (`t` `r1` join (select `test_cte_nonrecursive`.`t1`.`a` AS `c` from `test_cte_nonrecursive`.`t1` where `test_cte_nonrecursive`.`t1`.`b` >= 'c') `r2`) where `r1`.`c` = `r2`.`c` and `r2`.`c` = 4	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v4	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v4` AS with t as (select `test_cte_nonrecursive`.`t1`.`a` AS `c` from `test_cte_nonrecursive`.`t1` where `test_cte_nonrecursive`.`t1`.`b` >= 'c')select `r1`.`c` AS `c`,`r2`.`c` AS `d` from (`t` `r1` join (select `test_cte_nonrecursive`.`t1`.`a` AS `c` from `test_cte_nonrecursive`.`t1` where `test_cte_nonrecursive`.`t1`.`b` >= 'c') `r2`) where `r1`.`c` = `r2`.`c` and `r2`.`c` = 4	latin1	latin1_swedish_ci	
 select * from v4;
 c	d
 4	4
@@ -667,8 +667,8 @@ select * from v1;
 one	two
 1	2
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with alias1 as (select 1 AS `one`), alias2 as (select 2 AS `two`)select `alias1`.`one` AS `one`,`alias2`.`two` AS `two` from (`alias1` join `alias2`)	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with alias1 as (select 1 AS `one`), alias2 as (select 2 AS `two`)select `alias1`.`one` AS `one`,`alias2`.`two` AS `two` from (`alias1` join `alias2`)	latin1	latin1_swedish_ci	
 drop view v1;
 #
 # MDEV-12440: the same CTE table is used twice
@@ -727,11 +727,11 @@ r as(select t.a from t2, t where t2.b=t.a)
 select a from t1;
 show table status;
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with t as (select `s`.`a` AS `a` from (select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test_cte_nonrecursive`.`t2` join `t`) where `test_cte_nonrecursive`.`t2`.`b` = `t`.`a`)select `r`.`a` AS `a` from `r`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with t as (select `s`.`a` AS `a` from (select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test_cte_nonrecursive`.`t2` join `t`) where `test_cte_nonrecursive`.`t2`.`b` = `t`.`a`)select `r`.`a` AS `a` from `r`	latin1	latin1_swedish_ci	
 show create view v2;
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS with t as (select `s`.`a` AS `a` from (select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test_cte_nonrecursive`.`t2` join `t`) where `test_cte_nonrecursive`.`t2`.`b` = `t`.`a`)select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS with t as (select `s`.`a` AS `a` from (select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test_cte_nonrecursive`.`t2` join `t`) where `test_cte_nonrecursive`.`t2`.`b` = `t`.`a`)select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`	latin1	latin1_swedish_ci	
 select * from v1;
 a
 2
@@ -811,8 +811,8 @@ PREPARE stmt FROM @sql_query;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 SHOW CREATE VIEW cte_test;
-View	Create View	character_set_client	collation_connection
-cte_test	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `cte_test` AS with cte1 as (select 1 AS `a`), cte2 as (select `cte1`.`a` AS `a` from `cte1`)select `cte2`.`a` AS `a` from `cte2`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+cte_test	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `cte_test` AS with cte1 as (select 1 AS `a`), cte2 as (select `cte1`.`a` AS `a` from `cte1`)select `cte2`.`a` AS `a` from `cte2`	latin1	latin1_swedish_ci	
 SELECT * FROM cte_test;
 a
 1
@@ -1018,8 +1018,8 @@ r.r_regionkey in
 (with t as (select * from region where r_regionkey <= 3)
 select r_regionkey from t where r_name <> "ASIA");
 show create view v;
-View	Create View	character_set_client	collation_connection
-v	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v` AS select `n`.`n_nationkey` AS `n_nationkey`,`n`.`n_name` AS `n_name`,`n`.`n_regionkey` AS `n_regionkey`,`r`.`r_regionkey` AS `r_regionkey`,`r`.`r_name` AS `r_name` from (`nation` `n` join `region` `r`) where `n`.`n_regionkey` = `r`.`r_regionkey` and `r`.`r_regionkey` in (with t as (select `region`.`r_regionkey` AS `r_regionkey`,`region`.`r_name` AS `r_name` from `region` where `region`.`r_regionkey` <= 3)select `t`.`r_regionkey` from `t` where `t`.`r_name` <> 'ASIA')	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v` AS select `n`.`n_nationkey` AS `n_nationkey`,`n`.`n_name` AS `n_name`,`n`.`n_regionkey` AS `n_regionkey`,`r`.`r_regionkey` AS `r_regionkey`,`r`.`r_name` AS `r_name` from (`nation` `n` join `region` `r`) where `n`.`n_regionkey` = `r`.`r_regionkey` and `r`.`r_regionkey` in (with t as (select `region`.`r_regionkey` AS `r_regionkey`,`region`.`r_name` AS `r_name` from `region` where `region`.`r_regionkey` <= 3)select `t`.`r_regionkey` from `t` where `t`.`r_name` <> 'ASIA')	latin1	latin1_swedish_ci	
 select * from v;
 n_nationkey	n_name	n_regionkey	r_regionkey	r_name
 0	ALGERIA	0	0	AFRICA

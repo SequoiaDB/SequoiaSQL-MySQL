@@ -24,16 +24,16 @@ CREATE VIEW v3 AS SELECT _koi8r'ÔÅÓÔ'|
 
 
 SHOW CREATE VIEW v1|
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'Ñ‚ÐµÑÑ‚' AS `c1`,`t1`.`ÐºÐ¾Ð»` AS `c2` from `t1`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'Ñ‚ÐµÑÑ‚' AS `c1`,`t1`.`ÐºÐ¾Ð»` AS `c2` from `t1`	utf8	utf8_general_ci	
 
 SHOW CREATE VIEW v2|
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _koi8r'ÔÅÓÔ' AS `c1`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _koi8r'ÔÅÓÔ' AS `c1`	utf8	utf8_general_ci	
 
 SHOW CREATE VIEW v3|
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _koi8r'ÔÅÓÔ' AS `Ñ‚ÐµÑÑ‚`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _koi8r'ÔÅÓÔ' AS `Ñ‚ÐµÑÑ‚`	utf8	utf8_general_ci	
 
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
@@ -75,16 +75,16 @@ set names utf8|
 
 
 SHOW CREATE VIEW v1|
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'Ñ‚ÐµÑÑ‚' AS `c1`,`t1`.`ÐºÐ¾Ð»` AS `c2` from `t1`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'Ñ‚ÐµÑÑ‚' AS `c1`,`t1`.`ÐºÐ¾Ð»` AS `c2` from `t1`	utf8	utf8_general_ci	
 
 SHOW CREATE VIEW v2|
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _koi8r'ÔÅÓÔ' AS `c1`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _koi8r'ÔÅÓÔ' AS `c1`	utf8	utf8_general_ci	
 
 SHOW CREATE VIEW v3|
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _koi8r'ÔÅÓÔ' AS `Ñ‚ÐµÑÑ‚`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _koi8r'ÔÅÓÔ' AS `Ñ‚ÐµÑÑ‚`	utf8	utf8_general_ci	
 
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
@@ -131,16 +131,16 @@ set names utf8|
 
 
 SHOW CREATE VIEW v1|
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'Ñ‚ÐµÑÑ‚' AS `c1`,`t1`.`ÐºÐ¾Ð»` AS `c2` from `t1`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'Ñ‚ÐµÑÑ‚' AS `c1`,`t1`.`ÐºÐ¾Ð»` AS `c2` from `t1`	utf8	utf8_general_ci	
 
 SHOW CREATE VIEW v2|
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _koi8r'ÔÅÓÔ' AS `c1`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _koi8r'ÔÅÓÔ' AS `c1`	utf8	utf8_general_ci	
 
 SHOW CREATE VIEW v3|
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _koi8r'ÔÅÓÔ' AS `Ñ‚ÐµÑÑ‚`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _koi8r'ÔÅÓÔ' AS `Ñ‚ÐµÑÑ‚`	utf8	utf8_general_ci	
 
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
@@ -794,6 +794,14 @@ DELIMITER ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
 
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_utf8`;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_utf8`;
+
 ---> Dumping mysqltest1 to ddl_i18n_utf8sp.mysqltest1.sql
 
 ---> Dump of mysqltest2
@@ -869,6 +877,14 @@ DELIMITER ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_utf8`;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_utf8`;
 
 ---> Dumping mysqltest2 to ddl_i18n_utf8sp.mysqltest2.sql
 
@@ -1730,6 +1746,10 @@ DELETE FROM mysqltest2_ddl_i18n_utf8.log|
 CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
 
 USE `mysqltest1_ddl_i18n_utf8`;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_utf8`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `log` (
@@ -1802,9 +1822,17 @@ DELIMITER ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
 
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_utf8`;
+
 ---> Dumping mysqltest1 to ddl_i18n_utf8triggers.mysqltest1.sql
 
 ---> Dump of mysqltest2
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_utf8`;
 
 CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
 
@@ -1880,6 +1908,10 @@ DELIMITER ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_utf8`;
 
 ---> Dumping mysqltest2 to ddl_i18n_utf8triggers.mysqltest2.sql
 
@@ -2552,6 +2584,14 @@ ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_gene
 DELIMITER ;
 /*!50106 SET TIME_ZONE= @save_time_zone */ ;
 
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_utf8`;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_utf8`;
+
 ---> Dumping mysqltest1 to ddl_i18n_utf8events.mysqltest1.sql
 
 ---> Dump of mysqltest2
@@ -2618,6 +2658,14 @@ END */ ;;
 ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
 DELIMITER ;
 /*!50106 SET TIME_ZONE= @save_time_zone */ ;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_utf8`;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_utf8`;
 
 ---> Dumping mysqltest2 to ddl_i18n_utf8events.mysqltest2.sql
 

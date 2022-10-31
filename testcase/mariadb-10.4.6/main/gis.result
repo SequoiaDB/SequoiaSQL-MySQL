@@ -1487,8 +1487,8 @@ st_astext(ST_Buffer(ST_PolygonFromText('POLYGON((3 5, 2 4, 2 5, 3 5))'), -100))
 GEOMETRYCOLLECTION EMPTY
 CREATE VIEW v1 AS SELECT POINT(1,1) AS p;
 SHOW CREATE VIEW v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select point(1,1) AS `p`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select point(1,1) AS `p`	latin1	latin1_swedish_ci	
 SELECT ASTEXT(p) FROM v1;
 ASTEXT(p)
 POINT(1 1)
@@ -1676,8 +1676,8 @@ DROP TABLE t1;
 #
 create view v1 as select AsWKT(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9))));
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select st_astext(geometrycollection(point(44,6),geometrycollection(point(3,6),point(7,9)))) AS `Name_exp_1`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select st_astext(geometrycollection(point(44,6),geometrycollection(point(3,6),point(7,9)))) AS `Name_exp_1`	latin1	latin1_swedish_ci	
 select * from v1;
 Name_exp_1
 GEOMETRYCOLLECTION(POINT(44 6),GEOMETRYCOLLECTION(POINT(3 6),POINT(7 9)))

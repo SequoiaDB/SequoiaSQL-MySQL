@@ -1254,8 +1254,8 @@ CREATE TABLE IF NOT EXISTS v1(a int, b int) SELECT id, id FROM t1;
 Warnings:
 Note	1050	Table 'v1' already exists
 SHOW CREATE TABLE v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t2`.`id` AS `id` from `t2`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t2`.`id` AS `id` from `t2`	latin1	latin1_swedish_ci	
 SELECT * FROM t2;
 id
 2

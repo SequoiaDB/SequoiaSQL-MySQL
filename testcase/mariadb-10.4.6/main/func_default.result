@@ -12,8 +12,8 @@ select * from v1;
 default(str)	default(strnull)	default(intg)	default(rel)
 def	NULL	10	3.14
 show create view v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select default(`t1`.`str`) AS `default(str)`,default(`t1`.`strnull`) AS `default(strnull)`,default(`t1`.`intg`) AS `default(intg)`,default(`t1`.`rel`) AS `default(rel)` from `t1`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select default(`t1`.`str`) AS `default(str)`,default(`t1`.`strnull`) AS `default(strnull)`,default(`t1`.`intg`) AS `default(intg)`,default(`t1`.`rel`) AS `default(rel)` from `t1`	latin1	latin1_swedish_ci	
 drop view v1;
 drop table t1;
 CREATE TABLE t1 (id int(11), s varchar(20));

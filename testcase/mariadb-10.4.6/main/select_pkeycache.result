@@ -4489,8 +4489,8 @@ CREATE TABLE t1 (f1 DECIMAL(10,2));
 INSERT INTO t1 VALUES (11.67),(17865.3),(12345678.92);
 CREATE VIEW view_t1 AS SELECT FORMAT(f1,1,'sk_SK') AS f1 FROM t1;
 SHOW CREATE VIEW view_t1;
-View	Create View	character_set_client	collation_connection
-view_t1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_t1` AS select format(`t1`.`f1`,1,'sk_SK') AS `f1` from `t1`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+view_t1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `view_t1` AS select format(`t1`.`f1`,1,'sk_SK') AS `f1` from `t1`	latin1	latin1_swedish_ci	
 SELECT * FROM view_t1;
 f1
 11,7

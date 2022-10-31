@@ -3487,15 +3487,15 @@ default(t1.pk)	default(t2.pk)	pk
 0	1	3
 0	1	4
 show create view v2;
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select default(`t1`.`pk`) AS `default(t1.pk)`,default(`t2`.`pk`) AS `default(t2.pk)`,`t1`.`pk` AS `pk` from (`t1` join `t2`)	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select default(`t1`.`pk`) AS `default(t1.pk)`,default(`t2`.`pk`) AS `default(t2.pk)`,`t1`.`pk` AS `pk` from (`t1` join `t2`)	latin1	latin1_swedish_ci	
 CREATE view v3 as SELECT default(pk) from t2;
 select * from v3;
 default(pk)
 1
 show create view v3;
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select default(`t2`.`pk`) AS `default(pk)` from `t2`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select default(`t2`.`pk`) AS `default(pk)` from `t2`	latin1	latin1_swedish_ci	
 DROP VIEW v1,v2,v3;
 DROP TABLE t1,t2;
 #

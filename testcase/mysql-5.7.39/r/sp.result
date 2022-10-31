@@ -6033,8 +6033,8 @@ INSERT INTO t1 VALUES (1),(2);
 CREATE FUNCTION metered(a INT) RETURNS INT RETURN 12;
 CREATE VIEW v1 AS SELECT test_sp.metered(a) as metered FROM t1;
 SHOW CREATE VIEW v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `test_sp`.`metered`(`t1`.`a`) AS `metered` from `t1`	utf8	utf8_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `test_sp`.`metered`(`t1`.`a`) AS `metered` from `t1`	utf8	utf8_general_ci	
 DROP VIEW v1;
 DROP FUNCTION metered;
 DROP TABLE t1;
@@ -6270,8 +6270,8 @@ return x;
 end|
 create view v1 as select 1 as one, f1() as days;
 show create view test_sp.v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `test_sp`.`v1` AS select 1 AS `one`,`f1`() AS `days`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `test_sp`.`v1` AS select 1 AS `one`,`f1`() AS `days`	latin1	latin1_swedish_ci	
 select column_name from information_schema.columns
 where table_name='v1' and table_schema='test_sp';
 column_name

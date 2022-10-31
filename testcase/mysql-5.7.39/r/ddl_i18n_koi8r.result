@@ -22,16 +22,16 @@ CREATE VIEW v3 AS SELECT _utf8'Ñ‚ÐµÑÑ‚'|
 
 
 SHOW CREATE VIEW v1|
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'ÔÅÓÔ' AS `c1`,`t1`.`ËÏÌ` AS `c2` from `t1`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'ÔÅÓÔ' AS `c1`,`t1`.`ËÏÌ` AS `c2` from `t1`	koi8r	koi8r_general_ci	
 
 SHOW CREATE VIEW v2|
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `c1`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `c1`	koi8r	koi8r_general_ci	
 
 SHOW CREATE VIEW v3|
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `ÔÅÓÔ`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `ÔÅÓÔ`	koi8r	koi8r_general_ci	
 
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
@@ -74,16 +74,16 @@ set names koi8r|
 
 
 SHOW CREATE VIEW v1|
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'ÔÅÓÔ' AS `c1`,`t1`.`ËÏÌ` AS `c2` from `t1`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'ÔÅÓÔ' AS `c1`,`t1`.`ËÏÌ` AS `c2` from `t1`	koi8r	koi8r_general_ci	
 
 SHOW CREATE VIEW v2|
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `c1`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `c1`	koi8r	koi8r_general_ci	
 
 SHOW CREATE VIEW v3|
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `ÔÅÓÔ`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `ÔÅÓÔ`	koi8r	koi8r_general_ci	
 
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
@@ -131,16 +131,16 @@ set names koi8r|
 
 
 SHOW CREATE VIEW v1|
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'ÔÅÓÔ' AS `c1`,`t1`.`ËÏÌ` AS `c2` from `t1`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select 'ÔÅÓÔ' AS `c1`,`t1`.`ËÏÌ` AS `c2` from `t1`	koi8r	koi8r_general_ci	
 
 SHOW CREATE VIEW v2|
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `c1`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `c1`	koi8r	koi8r_general_ci	
 
 SHOW CREATE VIEW v3|
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `ÔÅÓÔ`	koi8r	koi8r_general_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select _utf8'Ñ‚ÐµÑÑ‚' AS `ÔÅÓÔ`	koi8r	koi8r_general_ci	
 
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
@@ -794,6 +794,10 @@ DELIMITER ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 ALTER DATABASE `mysqltest1_ddl_i18n_koi8r` CHARACTER SET cp866 COLLATE cp866_general_ci ;
 
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_koi8r` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_koi8r`;
+
 ---> Dumping mysqltest1_ddl_i18n_koi8r to ddl_i18n_koi8r.sp.mysqltest1_ddl_i18n_koi8r.sql
 
 ---> Dump of mysqltest2_ddl_i18n_koi8r
@@ -869,6 +873,10 @@ DELIMITER ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 ALTER DATABASE `mysqltest2_ddl_i18n_koi8r` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_koi8r` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_koi8r`;
 
 ---> Dumping mysqltest2_ddl_i18n_koi8r to ddl_i18n_koi8r.sp.mysqltest2_ddl_i18n_koi8r.sql
 
@@ -1802,6 +1810,10 @@ DELIMITER ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 ALTER DATABASE `mysqltest1_ddl_i18n_koi8r` CHARACTER SET cp866 COLLATE cp866_general_ci ;
 
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_koi8r` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_koi8r`;
+
 ---> Dumping mysqltest1_ddl_i18n_koi8r to ddl_i18n_koi8r.triggers.mysqltest1_ddl_i18n_koi8r.sql
 
 ---> Dump of mysqltest2_ddl_i18n_koi8r
@@ -1880,6 +1892,10 @@ DELIMITER ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 ALTER DATABASE `mysqltest2_ddl_i18n_koi8r` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_koi8r` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_koi8r`;
 
 ---> Dumping mysqltest2_ddl_i18n_koi8r to ddl_i18n_koi8r.triggers.mysqltest2_ddl_i18n_koi8r.sql
 
@@ -2545,6 +2561,10 @@ ALTER DATABASE `mysqltest1_ddl_i18n_koi8r` CHARACTER SET cp866 COLLATE cp866_gen
 DELIMITER ;
 /*!50106 SET TIME_ZONE= @save_time_zone */ ;
 
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_koi8r` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest1_ddl_i18n_koi8r`;
+
 ---> Dumping mysqltest1_ddl_i18n_koi8r to ddl_i18n_koi8r.events.mysqltest1_ddl_i18n_koi8r.sql
 
 ---> Dump of mysqltest2_ddl_i18n_koi8r
@@ -2611,6 +2631,10 @@ END */ ;;
 ALTER DATABASE `mysqltest2_ddl_i18n_koi8r` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
 DELIMITER ;
 /*!50106 SET TIME_ZONE= @save_time_zone */ ;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_koi8r` /*!40100 DEFAULT CHARACTER SET cp866 */;
+
+USE `mysqltest2_ddl_i18n_koi8r`;
 
 ---> Dumping mysqltest2_ddl_i18n_koi8r to ddl_i18n_koi8r.events.mysqltest2_ddl_i18n_koi8r.sql
 
