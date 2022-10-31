@@ -3737,6 +3737,43 @@ error:
   goto done;
 }
 
+// SequoiaDB doesn't support hint with "$range" that has no order
+// before v3.6.1 and v5.0.4.
+bool ha_sdb::is_no_order_range_supported() {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 6) ||              // 3.x < 3.6
+      (3 == major && 6 == minor && fix < 1) ||  // 3.6.x < 3.6.1
+      (5 == major && 0 == minor && fix < 4)) {  // 5.0.x < 5.0.4
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
   using namespace bson;
   int rc = 0;
@@ -6043,7 +6080,8 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     m_index_need_sorted = true;
   }
 
-  if (is_join_bka && !sdb_bka_using_index_sort(ha_thd())) {
+  if (is_join_bka && !sdb_bka_using_index_sort(ha_thd()) &&
+      is_no_order_range_supported()) {
     m_index_need_sorted = false;
   }
 
@@ -6962,21 +7000,21 @@ int ha_sdb::info(uint flag) {
     if (thd_sql_command(thd) == SQLCOM_SELECT && sdb_is_single_table(thd) &&
         ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SORT) &&
          sdb_check_condition_pushdown_switch(thd))) {
-      bool has_filesort_pushdown = false;
+      bool has_opt_sort_pushdown = false;
       st_order *order = sdb_get_join_order_by(thd);
       st_order *group_list = sdb_get_join_group_list(thd);
-      has_filesort_pushdown =
-          (optimizer_flag(thd, OPTIMIZER_SWITCH_FILESORT_PUSHDOWN) && order &&
-           !group_list);
+      has_opt_sort_pushdown =
+          (optimizer_flag(thd, OPTIMIZER_SWITCH_OPTIMIZER_SORT_PUSHDOWN) &&
+           order && !group_list);
       // If ORDER BY + LIMIT and no index sort prune, walk on the old way to
       // ensure performance.
       SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
       const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
-      if (!thd->variables.optimizer_index_sort_prune && use_limit) {
-        has_filesort_pushdown = false;
+      if (!thd->variables.optimizer_index_sort_prune || use_limit) {
+        has_opt_sort_pushdown = false;
       }
 
-      if (!has_filesort_pushdown) {
+      if (!has_opt_sort_pushdown) {
         rc = sdb_handle_sort_condition(
             thd, table, &sdb_condition, &sdb_order, &sdb_group_list,
             direct_sort, field_order_condition, group_list_condition, false);
@@ -10178,7 +10216,8 @@ bool ha_sdb::filesort_push(const ORDER *order) {
   }
 
   // Since index inner order always exists, no filesort can be pushed down.
-  if (key_info && !thd->variables.optimizer_index_sort_prune) {
+  if (key_info && (!thd->variables.optimizer_index_sort_prune ||
+                   !is_no_order_range_supported())) {
     goto done;
   }
 

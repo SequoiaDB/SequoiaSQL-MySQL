@@ -58,7 +58,7 @@ explain format = json select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 o
 analyze select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 # "r_total_time_ms" is hard to test
 # analyze format = json select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
-set session optimizer_switch='filesort_pushdown=off';
+set session optimizer_switch='optimizer_sort_pushdown=off';
 explain select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 
 #
