@@ -7361,6 +7361,11 @@ int ha_sdb::read_current_table_diag_info_file(THD *thd, const char *file_name,
     }
   }
 
+  if (NULL == stats_str.ptr()) {
+    rc = 0;
+    goto done;
+  }
+
   rc = fromjson(stats_str.ptr(), diag_info);
   if (0 != rc) {
     goto error;
@@ -7480,13 +7485,19 @@ int ha_sdb::replace_index_stats_from_diag_file(THD *thd, KEY *key_info,
 
   // index_statistics/key_name
   if (file_name.append(SDB_FN_INDEX_STATISTICS) || file_name.append("/") ||
-      file_name.append(real_key_name)) {
+      file_name.append(real_key_name) || file_name.append(".json")) {
     rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
 
   rc = read_current_table_diag_info_file(thd, file_name.ptr(), diag_info);
   if (0 != rc) {
+    goto error;
+  }
+
+  if (diag_info.isEmpty()) {
+    rc = SDB_IXM_STAT_NOTEXIST;
+    convert_sdb_code(rc);
     goto error;
   }
 
@@ -8485,7 +8496,8 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
 
   if (NULL != sdb_get_diag_info_path(thd) &&
       0 != strlen(sdb_get_diag_info_path(thd))) {
-    if (!replace_index_stats_from_diag_file(thd, key_info, obj)) {
+      rc = replace_index_stats_from_diag_file(thd, key_info, obj);
+    if (0 == rc || SDB_IXM_STAT_NOTEXIST == get_sdb_code(rc)) {
       is_stats_replaced = true;
       s.is_substituted = true;
     }
@@ -8504,17 +8516,17 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
       rc = 0;
       goto done;
     }
+  }
 
-    if (SDB_IXM_STAT_NOTEXIST == get_sdb_code(rc)) {
-      s.sample_records = 0;
-      s.static_total_records = 0;
-      rc = 0;
-      goto done;
-    }
+  if (SDB_IXM_STAT_NOTEXIST == get_sdb_code(rc)) {
+    s.sample_records = 0;
+    s.static_total_records = 0;
+    rc = 0;
+    goto done;
+  }
 
-    if (rc != 0) {
-      goto error;
-    }
+  if (rc != 0) {
+    goto error;
   }
 
   try {
