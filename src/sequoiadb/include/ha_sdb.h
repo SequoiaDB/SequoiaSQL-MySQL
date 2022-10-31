@@ -718,6 +718,8 @@ class ha_sdb : public handler {
 
   bool is_range_supported();
 
+  bool is_no_order_range_supported();
+
   bool is_mcv_supported();
 
   int create_range_obj(bson::BSONObjBuilder &hint_builder);

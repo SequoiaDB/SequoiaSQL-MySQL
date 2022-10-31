@@ -65,40 +65,40 @@ NULL	NULL	NULL	NULL
 4	abc	abcdef	xyz
 explain select * from t1 order by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	idx_col1	5	NULL	2	
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	8	
 select * from t1 order by col1 limit 2;
 col1	col2	col3	col4
 NULL	NULL	NULL	NULL
 0	abde	xyz	def
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[2], offset[0], table[explain_direct_sort_27685.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[2], offset[0], table[explain_direct_sort_27685.t1]
 explain select * from t1 order by col2 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	idx_col2	13	NULL	2	
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	8	
 select * from t1 order by col2 limit 2;
 col1	col2	col3	col4
 NULL	NULL	NULL	NULL
 4	abc	abcdef	xyz
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[2], offset[0], table[explain_direct_sort_27685.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "" }], limit[2], offset[0], table[explain_direct_sort_27685.t1]
 explain select * from t1 order by col2 desc limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	idx_col2	13	NULL	2	
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	8	
 select * from t1 order by col2 limit 2;
 col1	col2	col3	col4
 NULL	NULL	NULL	NULL
 4	abc	abcdef	xyz
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[2], offset[0], table[explain_direct_sort_27685.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "" }], limit[2], offset[0], table[explain_direct_sort_27685.t1]
 explain select * from t1 order by col2 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	idx_col2	13	NULL	5	
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	8	
 select * from t1 order by col2 limit 2,3;
 col1	col2	col3	col4
 6	abcdef	abde	abc
 3	abd	def	defg
 0	abde	xyz	def
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[3], offset[2], table[explain_direct_sort_27685.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "" }], limit[3], offset[2], table[explain_direct_sort_27685.t1]
 explain select * from t1 order by col3 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	8	Using pushed sort (t1.col3)
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	8	
 select * from t1 order by col3 limit 2;
 col1	col2	col3	col4
 NULL	NULL	NULL	NULL
