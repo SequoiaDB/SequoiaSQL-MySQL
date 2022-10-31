@@ -26,8 +26,10 @@ partition p3 values less than(40),
 partition p4 values less than(50)
 );
 insert into t1_range values(1,30),(30,10),(10,27),(15,22),(11,20),(40,30),(20,10),(17,25);
-select * from t1_range order by id;
-select * from t1_range order by col1;
+--sorted_result
+select * from t1_range;
+--sorted_result
+select * from t1_range;
 
 create table t2_hash(
 id int not null,
@@ -35,8 +37,10 @@ col1 int not null
 ) partition by hash(id)
 partitions 4;
 insert into t2_hash values(4,6),(6,12),(3,2),(5,11),(7,9),(8,2),(2,10),(1,5),(10,1),(12,8),(9,7),(11,4);
-select * from t2_hash order by id;
-select * from t2_hash order by col1;
+--sorted_result
+select * from t2_hash;
+--sorted_result
+select * from t2_hash;
 
 #range分区全表扫，并带有order by
 explain select * from t1_range order by id;
