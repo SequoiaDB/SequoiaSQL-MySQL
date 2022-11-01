@@ -27,8 +27,8 @@ USE metasync_enable_24157;
 CREATE VIEW View1 AS SELECT * FROM Test1 WHERE AGE > 20;
 connection conn2;
 SHOW CREATE VIEW View1;
-View	Create View	character_set_client	collation_connection
-view1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `view1` AS select `test1`.`ID` AS `ID`,`test1`.`age` AS `age` from `test1` where `test1`.`age` > 20	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+view1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `view1` AS select `test1`.`ID` AS `ID`,`test1`.`age` AS `age` from `test1` where `test1`.`age` > 20	latin1	latin1_swedish_ci	
 SELECT * FROM view1;
 ID	age
 3	30

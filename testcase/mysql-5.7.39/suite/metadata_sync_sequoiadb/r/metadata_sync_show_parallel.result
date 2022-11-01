@@ -72,8 +72,8 @@ ERROR HY000: Operation SHOW CREATE USER failed for 'metadata_sync_user_23109'@'%
 create table t1(a int);
 create view v1 as select * from t1;
 show create view metadata_sync_show_parallel.v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `metadata_sync_show_parallel`.`v1` AS select `metadata_sync_show_parallel`.`t1`.`a` AS `a` from `metadata_sync_show_parallel`.`t1`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `metadata_sync_show_parallel`.`v1` AS select `metadata_sync_show_parallel`.`t1`.`a` AS `a` from `metadata_sync_show_parallel`.`t1`	latin1	latin1_swedish_ci	
 drop view v1;
 show create view metadata_sync_show_parallel.v1;
 ERROR 42S02: Table 'metadata_sync_show_parallel.v1' doesn't exist

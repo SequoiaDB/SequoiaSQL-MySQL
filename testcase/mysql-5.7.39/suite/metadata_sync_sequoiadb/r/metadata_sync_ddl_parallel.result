@@ -346,8 +346,8 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 show create view meta_sync_test.v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`))	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`))	latin1	latin1_swedish_ci	
 show create table meta_sync_test.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -356,8 +356,8 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 show create view meta_sync_test.v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`))	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`))	latin1	latin1_swedish_ci	
 drop table meta_sync_test.t1;
 drop view meta_sync_test.v1;
 drop table meta_sync_test.t2;
@@ -379,8 +379,8 @@ SELECT a FROM meta_sync_test.v1 INTO retn;
 RETURN retn;
 END//
 show create table meta_sync_test.v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t1`.`a` AS `a`,`meta_sync_test`.`t1`.`b` AS `b` from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` > 0)	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t1`.`a` AS `a`,`meta_sync_test`.`t1`.`b` AS `b` from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` > 0)	latin1	latin1_swedish_ci	
 show create function meta_sync_test.f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
@@ -464,8 +464,8 @@ return a;
 end //
 create view meta_sync_test.v1 as select * from meta_sync_test.t1 where id = meta_sync_test.f(-1);
 show create table meta_sync_test.v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t1`.`id` AS `id`,`meta_sync_test`.`t1`.`name` AS `name` from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`id` = `meta_sync_test`.`f`(-(1)))	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t1`.`id` AS `id`,`meta_sync_test`.`t1`.`name` AS `name` from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`id` = `meta_sync_test`.`f`(-(1)))	latin1	latin1_swedish_ci	
 show create function meta_sync_test.f;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f`(num int) RETURNS int(11)
@@ -499,8 +499,8 @@ t1	CREATE TABLE `t1` (
   `name` char(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 show create table meta_sync_test.v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t1`.`id` AS `id`,`meta_sync_test`.`t1`.`name` AS `name` from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`id` = `meta_sync_test`.`f`(-(1)))	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t1`.`id` AS `id`,`meta_sync_test`.`t1`.`name` AS `name` from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`id` = `meta_sync_test`.`f`(-(1)))	latin1	latin1_swedish_ci	
 show create function meta_sync_test.f;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f`(num int) RETURNS int(11)
@@ -831,8 +831,8 @@ CALL p1( @x );
 id
 2
 SHOW CREATE VIEW v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`id` AS `id` from `t1` where (`t1`.`id` > 1)	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`id` AS `id` from `t1` where (`t1`.`id` > 1)	latin1	latin1_swedish_ci	
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -859,8 +859,8 @@ language sql
 sql security definer
 comment 'alter procedure comment';
 SHOW CREATE VIEW v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v1` AS select `t1`.`id` AS `id`,`t1`.`name` AS `name` from `t1` where (`t1`.`name` is not null)	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v1` AS select `t1`.`id` AS `id`,`t1`.`name` AS `name` from `t1` where (`t1`.`name` is not null)	latin1	latin1_swedish_ci	
 SELECT * FROM v1 order by id;
 id	name
 1	zhangsan

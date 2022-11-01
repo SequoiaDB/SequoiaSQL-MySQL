@@ -17,18 +17,18 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE VIEW v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `v1` AS select 'abc' AS `a`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `v1` AS select 'abc' AS `a`	latin1	latin1_swedish_ci	
 SHOW CREATE VIEW v2;
-View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `v2` AS select `local`.`a` AS `a`,`local`.`b` AS `b`,`local`.`c` AS `c` from `t1` `local`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `v2` AS select `local`.`a` AS `a`,`local`.`b` AS `b`,`local`.`c` AS `c` from `t1` `local`	latin1	latin1_swedish_ci	
 SHOW CREATE VIEW v3;
-View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v3` AS select `local`.`a` AS `a`,`local`.`b` AS `b`,`local`.`c` AS `c` from `t1` `local`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v3	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v3` AS select `local`.`a` AS `a`,`local`.`b` AS `b`,`local`.`c` AS `c` from `t1` `local`	latin1	latin1_swedish_ci	
 ALTER ALGORITHM = MERGE DEFINER = "root"@"localhost" SQL SECURITY INVOKER VIEW v1 AS SELECT * FROM t1 local;
 SHOW CREATE VIEW v1;
-View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v1` AS select `local`.`a` AS `a`,`local`.`b` AS `b`,`local`.`c` AS `c` from `t1` `local`	latin1	latin1_swedish_ci
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v1` AS select `local`.`a` AS `a`,`local`.`b` AS `b`,`local`.`c` AS `c` from `t1` `local`	latin1	latin1_swedish_ci	
 DROP VIEW v1,v2,v3;
 DROP VIEW IF EXISTS v4;
 Warnings:
