@@ -644,6 +644,15 @@ The following options may be given as the first argument:
  value is 0 then mysqld will reserve max_connections*5 or
  max_connections + table_open_cache*2 (whichever is
  larger) number of file descriptors
+ --optimizer-index-sort-prune 
+ --optimizer-limit-pushdown-threshold[=#] 
+ The threshold to control the limit pushdown on join with
+ join buffer.The defination is: `value =
+ sort_table_records / limit_number`.The sort_table_records
+ is the records of table of ORDER BY columns. limit_number
+ is from the parameter of LIMIT clause. If the value is
+ greater or equal than threshold, the optimization is on,
+ else it is off.
  --optimizer-prune-level=# 
  Controls the heuristic(s) applied during query
  optimization to prune less-promising partial plans from
@@ -1120,10 +1129,16 @@ The following options may be given as the first argument:
  Load statistics information into cache from SequoiaDB.
  (Default: ON)
  (Defaults to on; use --skip-sequoiadb-stats-cache to disable.)
+ --sequoiadb-stats-cache-level[=#] 
+ The index statistics cache level. 1: cache the base
+ statistics; 2. cache the MCV statistics;  (Default: 2)
+ --sequoiadb-stats-flush-time-threshold[=#] 
+ Statistics refresh time threshold. Unit: hours(Default:
+ 48)
  --sequoiadb-stats-mode[=#] 
- Mode of analysis. 1: sampling analysis; 2. full data
- analysis; 3. generate default statistics; 4. load
- statistics into the cache; 5. clear cached statistics;
+ Mode of analysis. 1: sampling analysis; 2: full data
+ analysis; 3: generate default statistics; 4: load
+ statistics into the cache; 5: clear cached statistics;
  (Default: 1)
  --sequoiadb-stats-sample-num[=#] 
  Number of sample records for index statistics. (Default:
@@ -1159,6 +1174,7 @@ The following options may be given as the first argument:
  (Defaults to on; use --skip-sequoiadb-use-transaction to disable.)
  --sequoiadb-user[=name] 
  SequoiaDB authentication user. (Default: "")
+ --server-ha-dml-max-retry-count[=#] 
  --server-ha-inst-group-key[=name] 
  Instance group key used to decrypt instance group
  password. (Default: "")
@@ -1599,9 +1615,10 @@ old FALSE
 old-alter-table FALSE
 old-passwords 0
 old-style-user-limits FALSE
+optimizer-limit-pushdown-threshold 100
 optimizer-prune-level 1
 optimizer-search-depth 62
-optimizer-switch index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,prefer_ordering_index=on
+optimizer-switch index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,prefer_ordering_index=on,optimizer_sort_pushdown=on
 optimizer-trace 
 optimizer-trace-features greedy_search=on,range_optimizer=on,dynamic_range=on,repeated_subselect=on
 optimizer-trace-limit 1
@@ -1725,6 +1742,8 @@ sequoiadb-rollback-on-timeout FALSE
 sequoiadb-selector-pushdown-threshold 30
 sequoiadb-sql-push-down FALSE
 sequoiadb-stats-cache TRUE
+sequoiadb-stats-cache-level 2
+sequoiadb-stats-flush-time-threshold 0
 sequoiadb-stats-mode 1
 sequoiadb-stats-sample-num 200
 sequoiadb-stats-sample-percent 0
