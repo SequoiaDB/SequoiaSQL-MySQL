@@ -537,6 +537,9 @@ const char *sdb_thd_da_message(THD *thd);
 void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
                      bool comma);
 
+void sdb_register_debug_var(THD *thd, const char *var_name,
+                            const char *var_value);
+
 ulong sdb_thd_da_warn_count(THD *thd);
 
 KEY *sdb_get_join_tab_key_in_use(TABLE *table);
