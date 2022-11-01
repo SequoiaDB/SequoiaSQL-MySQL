@@ -840,6 +840,33 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
   append_user(thd, &all_users, &lex_user, comma, false);
 }
 
+void sdb_register_debug_var(THD *thd, const char *var_name,
+                            const char *var_value) {
+  mysql_mutex_lock(&thd->LOCK_thd_data);
+  HASH *hash = &thd->user_vars;
+  user_var_entry *entry = NULL;
+  size_t name_length = strlen(var_name);
+  Name_string name(var_name, name_length);
+  if (!(entry = (user_var_entry *)my_hash_search(hash, (uchar *)var_name,
+                                                 name_length))) {
+    if (!my_hash_inited(hash))
+      goto error; /* purecov: inspected */
+    if (!(entry = user_var_entry::create(thd, name, system_charset_info)))
+      goto error; /* purecov: inspected */
+    if (my_hash_insert(hash, (uchar *)entry)) {
+      my_free(entry); /* purecov: inspected */
+      goto error;     /* purecov: inspected */
+    }
+  }
+  entry->store(var_value, strlen(var_value), STRING_RESULT, system_charset_info,
+               DERIVATION_IMPLICIT, FALSE);
+done:
+  mysql_mutex_unlock(&thd->LOCK_thd_data);
+  return;
+error:
+  goto done; /* purecov: inspected */
+}
+
 ulong sdb_thd_da_warn_count(THD *thd) {
   return thd->get_stmt_da()->current_statement_cond_count();
 }
@@ -1590,6 +1617,18 @@ void sdb_append_user(THD *thd, String &all_users, LEX_USER &lex_user,
     append_query_string(system_charset_info, &all_users, lex_user.host.str,
                         lex_user.host.length,
                         thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES);
+  }
+}
+
+void sdb_register_debug_var(THD *thd, const char *var_name,
+                            const char *var_value) {
+  LEX_CSTRING register_var;
+  register_var.str = var_name;
+  register_var.length = strlen(var_name);
+  user_var_entry *entry = get_variable(&thd->user_vars, &register_var, true);
+  if (entry && NULL != var_value) {
+    update_hash(entry, FALSE, (void *)var_value, strlen(var_value),
+                STRING_RESULT, system_charset_info, 0);
   }
 }
 

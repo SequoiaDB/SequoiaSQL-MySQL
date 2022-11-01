@@ -44,9 +44,7 @@
 #include "debug_sync.h"
 #include "ha_sdb_util.h"
 
-#ifdef IS_MARIADB
 #include "server_ha_sql_rewrite.h"
-#endif
 #include "sql_prepare.h"
 #include "debug_sync.h"
 
@@ -244,22 +242,6 @@ void clear_udf_init_side_effect() {
   DBUG_ASSERT(NULL != sql_info);
   my_hash_reset(&sql_info->dml_checked_objects);
   my_hash_free(&sql_info->dml_checked_objects);
-}
-
-// return fixed string if it's 'create/grant/alter user' sql command
-// it may contain a plaintext string, it should not be written to any log
-static inline const char *query_without_password(THD *thd,
-                                                 ha_sql_stmt_info *sql_info) {
-  int sql_command = thd_sql_command(thd);
-  static const char *MASKED_PASSWORD_QUERY = "GRANT_CREATE_ALTER_USER_OP";
-  const char *query = sdb_thd_query(thd);
-  if (SQLCOM_CREATE_USER == sql_command || SQLCOM_ALTER_USER == sql_command ||
-      SQLCOM_GRANT == sql_command) {
-    query = MASKED_PASSWORD_QUERY;
-  } else if (sql_info->single_query) {
-    query = sql_info->single_query;
-  }
-  return query;
 }
 
 bool ha_is_executing_pending_log(THD *thd) {
@@ -4234,7 +4216,7 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   bson::BSONObj obj, hints, result, cond;
   int pending_id = 0;
   longlong write_time;
-  const char *db = "", *query = NULL;
+  const char *db = "";
   int sql_command = thd_sql_command(thd);
   String rewritten_query;
   rewritten_query.length(0);
@@ -4280,14 +4262,6 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   }
 
   switch (sql_command) {
-#ifdef IS_MYSQL
-    case SQLCOM_CREATE_USER:
-    case SQLCOM_GRANT:
-    case SQLCOM_ALTER_USER:
-      event.general_query = sdb_thd_query(thd);
-      event.general_query_length = strlen(event.general_query);
-      break;
-#endif
     case SQLCOM_CREATE_SPFUNCTION:
     case SQLCOM_CREATE_PROCEDURE:
     case SQLCOM_CREATE_EVENT:
@@ -4436,9 +4410,8 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   DBUG_ASSERT(pending_id > 0);
   sql_info->pending_sql_id = pending_id;
 
-  query = query_without_password(thd, sql_info);
-  SDB_LOG_DEBUG("HA: Writing pending log '%s' with pending ID: %d", query,
-                pending_id);
+  SDB_LOG_DEBUG("HA: Writing pending log '%s' with pending ID: %d",
+                event.general_query, pending_id);
 
   // write 'HAPendingObject'
   for (ha_table_list *table = sql_info->tables; table; table = table->next) {
@@ -4901,8 +4874,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                "be executed. Please try it later");
       goto error;
     }
-    SDB_LOG_DEBUG("HA: Metadata recover finished, start execute: %s",
-                  query_without_password(thd, sql_info));
+    SDB_LOG_DEBUG("HA: Metadata recover finished"); /* purecov: inspected */
     if (thd_killed(thd) || ha_thread.stopped) {
       rc = SDB_HA_ABORT_BY_USER;
       goto error;
@@ -4931,8 +4903,25 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         goto error;
       }
 
+      // Rewrite DCL statement with plaintext password
+      rc = ha_rewrite_query(thd, create_query);
+      if (0 != rc) {
+        /* purecov: begin inspected */
+        SDB_LOG_ERROR("HA: Failed to rewrite DCL, error: %d", rc);
+        goto error;
+        /* purecov: end */
+      }
+      if (create_query.length()) {
+        event.general_query = create_query.c_ptr_safe();
+        event.general_query_length = create_query.length();
+      }
+      DBUG_EXECUTE_IF(
+          "test_point_ha_rewritten_query",
+          sdb_register_debug_var(thd, "HA_REWRITTEN_QUERY_BEFORE_EXECUTION",
+                                 event.general_query););
+
       SDB_LOG_DEBUG("HA: At the beginning of persisting SQL: %s, thread: %p",
-                    query_without_password(thd, sql_info), thd);
+                    event.general_query, thd);
       SDB_LOG_DEBUG("HA: SQL command: %d, event: %d, subevent: %d, thread: %p",
                     sql_command, event_class, *((int *)ev), thd);
       SDB_LOG_DEBUG("HA: Start transaction for persisting SQL log");
@@ -5009,8 +4998,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   }
 
   if (need_complete(event, is_trans_on, sql_command, event_class)) {
-    SDB_LOG_DEBUG("HA: At the end of persisting SQL: %s, thread: %p",
-                  query_without_password(thd, sql_info), thd);
+    SDB_LOG_DEBUG("HA: At the end of persisting SQL, thread: %p", thd);
     sql_info->single_query = NULL;
     // simulate crash or error while writing SQL log
     if (SDB_ERROR_INJECT_CRASH("crash_while_writing_sql_log") ||
@@ -5062,22 +5050,22 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
           rc = fix_alter_event_stmt(thd, event, create_query, sql_info);
         }
 
-#ifdef IS_MARIADB
-        // mask plaintext password
-        if (0 == rc &&
-            (SQLCOM_GRANT == sql_command || SQLCOM_CREATE_USER == sql_command ||
-             SQLCOM_ALTER_USER == sql_command)) {
+        // rewrite query for DCL
+        if (0 == rc) {
           rc = ha_rewrite_query(thd, create_query);
           if (rc) {
             sql_info->sdb_conn->rollback_transaction();
             goto error;
           }
           if (create_query.length()) {
-            event.general_query = create_query.c_ptr();
+            event.general_query = create_query.c_ptr_safe();
             event.general_query_length = create_query.length();
           }
+          DBUG_EXECUTE_IF(
+              "test_point_ha_rewritten_query",
+              sdb_register_debug_var(thd, "HA_REWRITTEN_QUERY_AFTER_EXECUTION",
+                                     event.general_query););
         }
-#endif
         // backup cached state of involved objects
         save_state(sql_info);
 

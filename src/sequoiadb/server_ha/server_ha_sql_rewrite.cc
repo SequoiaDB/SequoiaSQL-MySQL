@@ -14,7 +14,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 // 'sql_class.h' can be inclued if 'MYSQL_SERVER' is defined
-#ifdef IS_MARIADB
+
 #ifndef MYSQL_SERVER
 #define MYSQL_SERVER
 #endif
@@ -25,10 +25,17 @@
 #include "sql_string.h"
 #include "sql_class.h"
 #include "server_ha_sql_rewrite.h"
-#include "lex_string.h"
 #include "sql_acl.h"
 #include "sql_show.h"
+#include "ha_sdb_errcode.h"
+#ifdef IS_MYSQL
+#ifndef EMBEDDED_LIBRARY
+#include "sql_auth_cache.h"
+#endif
+#endif
 
+#ifdef IS_MARIADB
+#include "lex_string.h"
 #define MAX_SCRAMBLE_LENGTH 1024
 
 // check if current query contains plaintext password
@@ -70,13 +77,15 @@ static int append_extra_options(THD *thd, String &rewritten_query) {
       }
 
       rewritten_query.append(STRING_WITH_LEN(" REQUIRE "));
-      if (account_options->x509_issuer.str[0]) {
+      if (account_options->x509_issuer.length &&
+          account_options->x509_issuer.str[0]) {
         ssl_options++;
         rewritten_query.append(STRING_WITH_LEN("ISSUER \'"));
         rewritten_query.append(&account_options->x509_issuer);
         rewritten_query.append('\'');
       }
-      if (account_options->x509_subject.str[0]) {
+      if (account_options->x509_subject.length &&
+          account_options->x509_subject.str[0]) {
         if (ssl_options++)
           rewritten_query.append(' ');
         rewritten_query.append(STRING_WITH_LEN("SUBJECT \'"));
@@ -85,7 +94,8 @@ static int append_extra_options(THD *thd, String &rewritten_query) {
                                system_charset_info);
         rewritten_query.append('\'');
       }
-      if (account_options->ssl_cipher.str[0]) {
+      if (account_options->ssl_cipher.length &&
+          account_options->ssl_cipher.str[0]) {
         if (ssl_options++)
           rewritten_query.append(' ');
         rewritten_query.append(STRING_WITH_LEN("CIPHER '"));
@@ -95,6 +105,11 @@ static int append_extra_options(THD *thd, String &rewritten_query) {
         rewritten_query.append('\'');
       }
     } break;
+    case SSL_TYPE_NOT_SPECIFIED:
+      break;
+    case SSL_TYPE_NONE:
+      rewritten_query.append(STRING_WITH_LEN(" REQUIRE NONE"));
+      break;
     default:
       break;
   }
@@ -149,6 +164,8 @@ static int append_extra_options(THD *thd, String &rewritten_query) {
   // append lock option
   if (ACCOUNTLOCK_LOCKED == account_options->account_locked) {
     rewritten_query.append(" ACCOUNT LOCK");
+  } else if (ACCOUNTLOCK_UNLOCKED == account_options->account_locked) {
+    rewritten_query.append(" ACCOUNT UNLOCK");
   }
 done:
   return rc;
@@ -214,6 +231,82 @@ error:
   goto done;
 }
 
+static int rewrite_grant_role(THD *thd, String &rewritten_query) {
+  int rc = SDB_ERR_OK;
+  DBUG_ENTER("rewrite_grant_role");
+  LEX *lex = thd->lex;
+  List_iterator<LEX_USER> users_list(lex->users_list);
+  LEX_USER *lex_user = users_list++;
+  if (rewritten_query.reserve(thd->query_length() + MAX_SCRAMBLE_LENGTH)) {
+    rc = ER_OUTOFMEMORY; /* purecov: inspected */
+    goto error;          /* purecov: inspected */
+  }
+
+  // append GRANT rolename TO
+  rewritten_query.append(STRING_WITH_LEN("GRANT "));
+  // the first element in lex->users_list is role
+  rewritten_query.append(lex_user->user);
+  rewritten_query.append(STRING_WITH_LEN(" TO "));
+
+  // append user and authentication options
+  while ((lex_user = users_list++)) {
+    if (FALSE == lex_user->has_auth() && 0 == lex_user->host.length) {
+      // it's a role
+      rewritten_query.append(lex_user->user);
+    } else {  // it's a user
+      add_user_parameters(&rewritten_query, lex_user);
+    }
+    rewritten_query.append(',');
+  }
+  // remove last ','
+  rewritten_query.length(rewritten_query.length() - 1);
+  // append WITH GRANT OPTION
+  if (thd->lex->with_admin_option) {
+    rewritten_query.append(" WITH ADMIN OPTION");
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done; /* purecov: inspected */
+}
+
+/* purecov: begin inspected */
+static int rewrite_grant_proxy(THD *thd, String &rewritten_query) {
+  int rc = SDB_ERR_OK;
+  DBUG_ENTER("rewrite_grant_proxy");
+  LEX *lex = thd->lex;
+  List_iterator<LEX_USER> users_list(lex->users_list);
+  LEX_USER *lex_user = users_list++;
+  if (rewritten_query.reserve(thd->query_length() + MAX_SCRAMBLE_LENGTH)) {
+    rc = ER_OUTOFMEMORY;
+    goto error;
+  }
+
+  // append GRANT PROXY ON user TO
+  rewritten_query.append(STRING_WITH_LEN("GRANT PROXY ON "));
+  rewritten_query.append(lex_user->user);
+  rewritten_query.append(STRING_WITH_LEN(" TO "));
+
+  // append user and authentication options
+  while ((lex_user = users_list++)) {
+    add_user_parameters(&rewritten_query, lex_user);
+    rewritten_query.append(',');
+  }
+
+  // remove last ','
+  rewritten_query.length(rewritten_query.length() - 1);
+
+  // append WITH GRANT OPTION
+  if (thd->lex->grant & GRANT_ACL) {
+    rewritten_query.append(" WITH GRANT OPTION");
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+/* purecov: end */
+
 /**
   Rewrite a GRANT statement.
 
@@ -227,14 +320,14 @@ static int rewrite_grant_user(THD *thd, String &rewritten_query) {
   TABLE_LIST *first_table = thd->lex->first_select_lex()->get_table_list();
   bool comma = FALSE, comma_inner = FALSE;
   List_iterator<LEX_USER> users_list(lex->users_list);
-  LEX_USER *lex_user = users_list++;
+  LEX_USER *lex_user = NULL;
   String cols(1024);
   int c = 0, rc = 0;
 
   DBUG_ENTER("rewrite_grant_user");
   if (rewritten_query.reserve(thd->query_length() + MAX_SCRAMBLE_LENGTH)) {
-    rc = ER_OUTOFMEMORY;
-    goto error;
+    rc = ER_OUTOFMEMORY; /* purecov: inspected */
+    goto error;          /* purecov: inspected */
   }
 
   rewritten_query.append(STRING_WITH_LEN("GRANT "));
@@ -302,6 +395,9 @@ static int rewrite_grant_user(THD *thd, String &rewritten_query) {
     case TYPE_ENUM_FUNCTION:
       rewritten_query.append(STRING_WITH_LEN("FUNCTION "));
       break;
+    case TYPE_ENUM_PACKAGE:
+      rewritten_query.append(STRING_WITH_LEN("PACKAGE "));
+      break;
     default:
       break;
   }
@@ -331,14 +427,20 @@ static int rewrite_grant_user(THD *thd, String &rewritten_query) {
   }
 
   rewritten_query.append(STRING_WITH_LEN(" TO "));
-  // append 'user_specifiction'
-  add_user_parameters(&rewritten_query, lex_user);
+
+  // Append parameter for all users
+  while ((lex_user = users_list++)) {
+    add_user_parameters(&rewritten_query, lex_user);
+    rewritten_query.append(',');
+  }
+  // remove last ','
+  rewritten_query.length(rewritten_query.length() - 1);
   // append 'user_options'
   append_extra_options(thd, rewritten_query);
 done:
   DBUG_RETURN(rc);
 error:
-  goto done;
+  goto done; /* purecov: inspected */
 }
 
 /**
@@ -354,17 +456,31 @@ error:
 int ha_rewrite_query(THD *thd, String &rewritten_query) {
   int rc = 0;
   int sql_command = thd_sql_command(thd);
-  bool contained_plaintext_password = need_rewrite(thd);
   DBUG_ENTER("ha_rewrite_query");
+  if (SQLCOM_GRANT != sql_command && SQLCOM_CREATE_USER != sql_command &&
+      SQLCOM_ALTER_USER != sql_command && SQLCOM_GRANT_ROLE != sql_command) {
+    DBUG_RETURN(rc);
+  }
+
+  bool contained_plaintext_password = need_rewrite(thd);
   if (contained_plaintext_password) {
+    rewritten_query.length(0);
     switch (sql_command) {
-      case SQLCOM_GRANT:
-        rewritten_query.length(0);
-        rc = rewrite_grant_user(thd, rewritten_query);
+      case SQLCOM_GRANT: {
+        if (TYPE_ENUM_PROXY == thd->lex->type) {
+          /* purecov: begin inspected */
+          rc = rewrite_grant_proxy(thd, rewritten_query);
+          /* purecov: end */
+        } else {
+          rc = rewrite_grant_user(thd, rewritten_query);
+        }
+        break;
+      }
+      case SQLCOM_GRANT_ROLE:
+        rc = rewrite_grant_role(thd, rewritten_query);
         break;
       case SQLCOM_CREATE_USER:
       case SQLCOM_ALTER_USER:
-        rewritten_query.length(0);
         rc = rewrite_create_alter_user(thd, rewritten_query);
         break;
       default:
@@ -372,5 +488,104 @@ int ha_rewrite_query(THD *thd, String &rewritten_query) {
     }
   }
   DBUG_RETURN(rc);
+}
+#else
+#ifndef EMBEDDED_LIBRARY
+// Build temporary LEX_USER List from THD::lex::user_list
+static int build_temporary_user_list(THD *thd, List<LEX_USER> &tmp_user_list) {
+  int rc = SDB_ERR_OK;
+  List_iterator<LEX_USER> user_list(thd->lex->users_list);
+  LEX_USER *tmp_lex_user = NULL, *new_lex_user = NULL;
+  mysql_mutex_lock(&acl_cache->lock);
+  while ((tmp_lex_user = user_list++)) {
+    ulong what_to_set = 0;
+    LEX_USER *lex_user = (LEX_USER *)thd->alloc(sizeof(LEX_USER));
+    if (NULL == lex_user) {
+      rc = HA_ERR_OUT_OF_MEM; /* purecov: inspected */
+      goto error;             /* purecov: inspected */
+    }
+    lex_user->alter_status = tmp_lex_user->alter_status;
+    lex_user->uses_authentication_string_clause =
+        tmp_lex_user->uses_authentication_string_clause;
+    lex_user->uses_identified_by_clause =
+        tmp_lex_user->uses_identified_by_clause;
+    lex_user->uses_identified_by_password_clause =
+        tmp_lex_user->uses_identified_by_password_clause;
+    lex_user->uses_identified_with_clause =
+        tmp_lex_user->uses_identified_with_clause;
+    if (NULL == thd->make_lex_string(&lex_user->user, tmp_lex_user->user.str,
+                                     tmp_lex_user->user.length, false) ||
+        NULL == thd->make_lex_string(&lex_user->host, tmp_lex_user->host.str,
+                                     tmp_lex_user->host.length, false) ||
+        NULL == thd->make_lex_string(&lex_user->plugin,
+                                     tmp_lex_user->plugin.str,
+                                     tmp_lex_user->plugin.length, false) ||
+        NULL == thd->make_lex_string(&lex_user->auth, tmp_lex_user->auth.str,
+                                     tmp_lex_user->auth.length, false)) {
+      rc = HA_ERR_OUT_OF_MEM; /* purecov: inspected */
+      goto error;             /* purecov: inspected */
+    }
+
+    // Rewrite LEX_USER auth
+    if (set_and_validate_user_attributes(thd, lex_user, what_to_set, true,
+                                         "DCL REWRITTEN")) {
+      rc = HA_ERR_INTERNAL_ERROR; /* purecov: inspected */
+      goto error;                 /* purecov: inspected */
+    }
+
+    if (tmp_user_list.push_back(lex_user)) {
+      rc = HA_ERR_OUT_OF_MEM; /* purecov: inspected */
+      goto error;             /* purecov: inspected */
+    }
+  }
+done:
+  mysql_mutex_unlock(&acl_cache->lock);
+  return rc;
+error:
+  goto done; /* purecov: inspected */
+}
+#endif
+
+int ha_rewrite_query(THD *thd, String &rewritten_query) {
+  int rc = SDB_ERR_OK;
+#ifndef EMBEDDED_LIBRARY
+  int sql_command = thd_sql_command(thd);
+  List<LEX_USER> users_list, saved_users_list;
+  if (SQLCOM_GRANT != sql_command && SQLCOM_CREATE_USER != sql_command &&
+      SQLCOM_ALTER_USER != sql_command) {
+    goto done;
+  }
+
+  if (thd->lex->contains_plaintext_password) {
+    rc = build_temporary_user_list(thd, users_list);
+    if (0 != rc) {
+      goto error; /* purecov: inspected */
+    }
+    saved_users_list = thd->lex->users_list;
+    thd->lex->users_list = users_list;
+    switch (sql_command) {
+      case SQLCOM_CREATE_USER:
+      case SQLCOM_ALTER_USER:
+        mysql_rewrite_create_alter_user(thd, &rewritten_query);
+        break;
+      case SQLCOM_GRANT:
+        mysql_rewrite_grant(thd, &rewritten_query);
+        break;
+      default:
+        break; /* purecov: deadcode */
+    }
+    thd->lex->users_list = saved_users_list;
+    // Reset contains_plaintext_password flag, it will be set to false in
+    // set_and_validate_user_attributes
+    thd->lex->contains_plaintext_password = true;
+  }
+#endif
+  if (0 != rc) {
+    goto error; /* purecov: inspected */
+  }
+done:
+  return rc;
+error:
+  goto done; /* purecov: inspected */
 }
 #endif
