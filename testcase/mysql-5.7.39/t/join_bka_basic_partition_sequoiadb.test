@@ -82,6 +82,7 @@ insert into bka_t1 select a+6,b+6,c+6 from bka_t1;
 insert into bka_t2 values(1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7),(8,8,8),(9,9,9),(10,10,10);
 insert into bka_t2 select a+6,b+6,c+6 from bka_t2;
 explain select bka_t1.a, bka_t1.b,bka_t1.c from bka_t1 inner join bka_t2 on bka_t1.a = bka_t2.a;
+--sorted_result
 select bka_t1.a, bka_t1.b,bka_t1.c from bka_t1 inner join bka_t2 on bka_t1.a = bka_t2.a;
 drop table bka_t1,bka_t2;
 
