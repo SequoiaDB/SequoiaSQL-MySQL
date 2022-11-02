@@ -1686,10 +1686,14 @@ function get_explain()
       fi
    done
    local get_explain_sql="explain ${REAL_QUERY}\\G"
-   echo "${get_explain_sql}" > "${sql_path}" 
-   eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${OUTPUT}/${EXPLAIN_FILENAME}" 
-   test $? -ne 0 && echo "ERROR: Fail to get explain SQL information. Please verify \
+   echo "${get_explain_sql}" > "${sql_path}"
+   eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${OUTPUT}/${EXPLAIN_FILENAME}"
+   local rc=$? 
+   local error=`tail -n 1 "${OUTPUT}/${EXPLAIN_FILENAME}" | grep "^ERROR "`
+   if [[ $rc -ne 0 || "${error}" != "" ]]; then
+      echo "ERROR: Fail to get explain SQL information. Please verify \
 \"${OUTPUT}/${EXPLAIN_FILENAME}\"" >&2
+   fi
 }
 
 function build_get_optimizer_trace_sql()
@@ -1708,8 +1712,12 @@ function get_optimizer_trace()
    local sql_path="${OUTPUT}/${QUERY_PATHNAME}/query.sql"
    echo "${get_optimizer_trace_sql}" > "${sql_path}"
    eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}"
-   test $? -ne 0 && echo "ERROR: Fail to get optimizer trace information. \
-Please verify \"${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}\""
+   local rc=$? 
+   local error=`head -n 5 "${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}" | grep "^ERROR "`
+   if [[ $rc -ne 0 || "${error}" != "" ]]; then
+      echo "ERROR: Fail to get optimizer trace information. \
+Please verify \"${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}\"" >&2
+   fi
 }
 
 function get_variables()
