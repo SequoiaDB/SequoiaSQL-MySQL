@@ -91,13 +91,13 @@ select * from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a limit 3
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #order by
-select * from (select t1.* from t1,t2 where t1.a>2) t2 order by t2.b;
+select * from (select t1.* from t1,t2 where t1.a>2) t2 order by t2.a,t2.b;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-select * from (select * from t1 where a>2) t3,t2 where t2.a=t3.a order by t2.b;
+select * from (select * from t1 where a>2) t3,t2 where t2.a=t3.a order by t2.a,t2.b;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-select * from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a order by t2.b;
+select * from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a order by t2.a,t2.b;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #group by
@@ -146,10 +146,10 @@ select * from t1 union select * from t2 order by b;
 select * from t1 where a in(select a from t2 where a=2 union select 1) order by b;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-select * from t1,t2 order by t2.b;
+select * from t1,t2 order by t1.a,t2.a,t2.b;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-select * from t1 left outer join t2 on t1.a=t2.a order by t2.b;
+select * from t1 left outer join t2 on t1.a=t2.a order by t1.b,t2.b;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 select * from t1 join t2 using(a);
