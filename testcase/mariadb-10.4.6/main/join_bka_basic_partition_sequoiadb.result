@@ -103,6 +103,16 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select bka_t1.a, bka_t1.b,bka_t1.c from bka_t1 inner join bka_t2 on bka_t1.a = bka_t2.a;
 a	b	c
 1	1	1
+10	10	10
+10	10	10
+10	10	10
+10	10	10
+11	11	11
+12	12	12
+13	13	13
+14	14	14
+15	15	15
+16	16	16
 2	2	2
 3	3	3
 4	4	4
@@ -120,16 +130,6 @@ a	b	c
 9	9	9
 9	9	9
 9	9	9
-10	10	10
-10	10	10
-10	10	10
-10	10	10
-11	11	11
-12	12	12
-13	13	13
-14	14	14
-15	15	15
-16	16	16
 drop table bka_t1,bka_t2;
 CREATE TABLE bka_t1(
 a INT NOT NULL,
