@@ -103,7 +103,15 @@ public class Select28186 extends MysqlTestBase {
         BasicBSONObject matcher = new BasicBSONObject();
         matcher.put( "Contexts.Type", "DATA" );
         DBCursor cursor = sdb.getSnapshot( 0, matcher, null, null );
-        Assert.assertFalse( cursor.hasNext() );
+        try {
+            if ( cursor.hasNext() ) {
+                Object context = cursor.getNext().get( "Contexts" );
+                System.out.println( context.toString() );
+            }
+            Assert.assertFalse( cursor.hasNext() );
+        } finally {
+            cursor.close();
+        }
     }
 
     @AfterClass
