@@ -300,14 +300,22 @@ function list_inst()
       return
    fi
 
+   # convert a.conf b.conf *.conf to "a.conf" "b.conf" "*.conf"
+   # if not convert: array=(file1 file2 *) -> array=(file1 file2 file1 file2 file3 ....(all file in current dir))
+   # if convert: array=("file1" "file2" "*"), "*" will not be explained
+   local fname_array=(`find $CONF_INST_PATH -name "*.conf" | sort | awk '{printf("\"%s\" "), $1}'`)
+   
+   local real_fname=""
    local i=0
-   find $CONF_INST_PATH -name "*.conf" | sort | while read fname
+   for fname in "${fname_array[@]}"
    do
-      . "${fname}"
+      # convert "a.conf" to a.conf
+      real_fname=`echo "${fname}" | sed 's/^"\(.*\)"$/\1/'`
+      # "${real_fname}" -> 'a.conf'
+      . "${real_fname}"
       printf "%-10s %-40s %-40s\n" $INSTNAME $SQLDATA $SQLLOG
       i=$(($i+1))
    done
-
    printf "Total: %s\n" $i
 }
 
