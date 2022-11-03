@@ -234,6 +234,7 @@ typedef struct st_pending_log_replay_thread {
   my_thread_attr_t thread_attr;
   bool stopped;
   THD *thd;
+  int executing_pending_log_id;
 } ha_pending_log_replay_thread;
 
 bool ha_is_open();

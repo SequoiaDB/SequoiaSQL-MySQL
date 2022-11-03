@@ -223,6 +223,10 @@ bool ha_is_executing_pending_log(THD *thd) {
          sdb_thd_id(thd) == sdb_thd_id(pending_log_replayer.thd);
 }
 
+static int executing_pending_log_id() {
+  return pending_log_replayer.executing_pending_log_id;
+}
+
 static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
   int rc = 0;
   bool is_hash_inited = false;
@@ -3973,6 +3977,7 @@ static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
   sql_info->pending_sql_id = 0;
   bson::BSONObjBuilder bson_builder;
   bool found_pending_object = false;
+  bool is_db_meta_op = is_db_meta_sql(thd);
 
   // get sdb connection
   rc = check_sdb_in_thd(thd, &sdb_conn, true);
@@ -4014,6 +4019,30 @@ static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
 
   for (ha_table_list *table = sql_info->tables; table; table = table->next) {
     bson_builder.reset();
+    // 1. Check pending database
+    bson_builder.append(HA_FIELD_DB, table->db_name);
+    if (!is_db_meta_op) {
+      bson_builder.append(HA_FIELD_TABLE, HA_EMPTY_STRING);
+      bson_builder.append(HA_FIELD_TYPE, HA_OPERATION_TYPE_DB);
+    }
+    cond = bson_builder.done();
+    rc = pending_object_cl.query(cond);
+    rc = rc ? rc : pending_object_cl.next(result, false);
+    if (0 == rc) {  // found pending object
+      found_pending_object = true;
+      break;
+    } else if (HA_ERR_END_OF_FILE != rc) {
+      ha_error_string(*sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
+    // reset rc for HA_ERR_END_OF_FILE error
+    rc = 0;
+    if (is_db_meta_op) {
+      continue;
+    }
+
+    // 2. Check pending object
+    bson_builder.reset();
     bson_builder.append(HA_FIELD_DB, table->db_name);
     bson_builder.append(HA_FIELD_TABLE, table->table_name);
     bson_builder.append(HA_FIELD_TYPE, table->op_type);
@@ -4022,14 +4051,6 @@ static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
     rc = rc ? rc : pending_object_cl.next(result, false);
     if (0 == rc) {  // found pending object
       found_pending_object = true;
-      if (ha_is_executing_pending_log(thd)) {
-        // get pending SQL id, used to delete current pending log
-        sql_info->pending_sql_id = result.getIntField(HA_FIELD_SQL_ID);
-        DBUG_ASSERT(sql_info->pending_sql_id > 0);
-        break;
-      } else {
-        rc = SDB_HA_PENDING_OBJECT_EXISTS;
-      }
       break;
     } else if (HA_ERR_END_OF_FILE != rc) {
       ha_error_string(*sdb_conn, rc, sql_info->err_message);
@@ -4037,6 +4058,16 @@ static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
     }
     // reset rc for HA_ERR_END_OF_FILE error
     rc = 0;
+  }
+
+  if (found_pending_object) {
+    if (ha_is_executing_pending_log(thd)) {
+      // get pending SQL id, used to delete current pending log
+      sql_info->pending_sql_id = executing_pending_log_id();
+      DBUG_ASSERT(sql_info->pending_sql_id > 0);
+    } else {
+      rc = SDB_HA_PENDING_OBJECT_EXISTS;
+    }
   }
   // cann't find releated objects for pending log thread,
   // report "log has been executed error"
@@ -4092,6 +4123,21 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   db = sdb_thd_db(thd);
   if (NULL == db) {  // set default database if it's not set
     db = HA_MYSQL_DB;
+  } else {
+    // Current database is set, check if current SQL statement is associated
+    // with current database
+    bool found_curr_db = false;
+    for (ha_table_list *table = sql_info->tables; table; table = table->next) {
+      if (0 == strcmp(db, table->db_name)) {
+        found_curr_db = true;
+        break;
+      }
+    }
+    if (!found_curr_db) {
+      // Current SQL statement has no releationship with current database, set
+      // running database to 'mysql'
+      db = HA_MYSQL_DB;
+    }
   }
 
   switch (sql_command) {

@@ -2174,7 +2174,7 @@ void *ha_replay_pending_logs(void *arg) {
   Sdb_conn &sdb_conn = pool_conn;
   Sdb_cl pending_log_cl, check_again_cl;
   bson::BSONObj order_by, result, cond, check_again_result;
-  static const int REPLAY_PENDING_LOG_LIMIT = 20;
+  static const int REPLAY_PENDING_LOG_LIMIT = 100;
   static const int WAIT_PENDING_LOG_TIMEOUT = 30;
   static const int CHECK_TIMEOUT = 60;
   static const int WAIT_RECOVER_TIMEOUT = 60;
@@ -2260,6 +2260,8 @@ void *ha_replay_pending_logs(void *arg) {
       longlong now = time(NULL);
       const char *query = result.getStringField(HA_FIELD_SQL);
       int instance_id = result.getIntField(HA_FIELD_OWNER);
+      replayer->executing_pending_log_id = result.getIntField(HA_FIELD_SQL_ID);
+      DBUG_ASSERT(replayer->executing_pending_log_id > 0);
 
       // Inject condition to let other instances perform recovery operations
       if (SDB_COND_INJECT("recover_by_other_instances") &&
