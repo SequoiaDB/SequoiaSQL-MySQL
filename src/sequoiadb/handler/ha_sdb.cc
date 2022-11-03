@@ -2194,7 +2194,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
         longlong mon = 0;
         longlong date_val = 0;
         date_val = ((Field_newdate *)field)->val_int();
-        struct tm tm_val;
+        struct tm tm_val, tmp_tm;
         tm_val.tm_sec = 0;
         tm_val.tm_min = 0;
         tm_val.tm_hour = 0;
@@ -2219,8 +2219,22 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
         tm_val.tm_wday = 0;
         tm_val.tm_yday = 0;
         tm_val.tm_isdst = 0;
+        tmp_tm = tm_val;
         time_t time_tmp = mktime(&tm_val);
-        bson::Date_t dt((longlong)(time_tmp * 1000));
+        time_t true_time_val = time_tmp;
+
+        //DST correction 
+        //if tm_isdst has changed, we use the
+        //old date to recount the seconds in dst
+        if (tm_val.tm_isdst != tmp_tm.tm_isdst) {  // maybe dst
+          tmp_tm.tm_isdst = tm_val.tm_isdst;
+          time_tmp = mktime(&tmp_tm);
+          if (tmp_tm.tm_isdst ==
+              tm_val.tm_isdst) {  // can not correct,use first val
+            true_time_val = time_tmp;
+          }
+        }
+        bson::Date_t dt((longlong)(true_time_val * 1000));
         obj_builder.appendDate(sdb_field_name(field), dt);
         break;
       }
