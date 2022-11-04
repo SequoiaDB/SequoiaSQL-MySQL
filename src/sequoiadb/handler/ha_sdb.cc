@@ -6094,15 +6094,15 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                     m_index_need_sorted = true;
                   });
 
-  if (m_index_need_sorted) {
+  if (!field_order_condition.isEmpty()) {
+    order_by = field_order_condition;
+  } else if (m_index_need_sorted) {
     rc = sdb_get_idx_order(key_info, order_by, order_direction,
                            m_secondary_sort_rowid);
     if (rc) {
       SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
       goto error;
     }
-  } else if (!field_order_condition.isEmpty()) {
-    order_by = field_order_condition;
   }
 
   rc = get_query_flag(thd_sql_command(ha_thd()), m_lock_type, flag);
