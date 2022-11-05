@@ -712,14 +712,14 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                 break;
               case HA_READ_AFTER_KEY:
                 /*start_range*/
-                if (i < 1 && eq_range_arg) {
+                if (i > 0 && eq_range_arg) {
                   /* Only if key value of start_key is equal key value of
                     end_key can break */
                   if (start_key->keypart_map == end_key->keypart_map &&
                       start_key->length == end_key->length &&
                       0 == memcmp(start_key->key, end_key->key,
                                   start_key->length)) {
-                    break;
+                    goto prepare_for_next_key_part;
                   }
                 }
                 /*Last key part of start_key or end_key*/
