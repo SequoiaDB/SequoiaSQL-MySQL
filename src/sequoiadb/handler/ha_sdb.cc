@@ -928,11 +928,10 @@ void sdb_add_tmp_join_tab(THD *thd) {
   JOIN_TAB *t = new (thd->mem_root) JOIN_TAB();
   QEP_shared *qs = new (thd->mem_root) QEP_shared();
   t->set_qs(qs);
-  join->tables++;
   t->set_join(join);
-  t->set_idx(1);
-  DBUG_ASSERT(join->best_ref[join->primary_tables] == NULL);
-  join->best_ref[join->primary_tables] = t;
+  t->set_idx(join->tables);
+  join->best_ref[join->tables] = t;
+  join->tables++;
 }
 #elif IS_MARIADB
 int sdb_append_end_condition(THD *thd, TABLE *table, bson::BSONObj &condition) {
