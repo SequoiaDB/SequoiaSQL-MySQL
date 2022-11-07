@@ -1131,7 +1131,7 @@ a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t5]
 select * from t1 where a like random_bytes(1);
 a
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select sha('abc'),sha(123);
 sha('abc')	sha(123)
 a9993e364706816aba3e25717850c26c9cd0d89d	40bd001563085fc35165329ea1ff5c5ecbdbbeef
