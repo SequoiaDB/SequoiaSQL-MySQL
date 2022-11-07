@@ -349,10 +349,19 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
   if (!join->qep_tab) {
     goto error;
   }
-  if (join->need_tmp) {
-    tab = &join->qep_tab[join->primary_tables];
-  } else {
-    tab = join->qep_tab + join->const_tables;
+
+  DBUG_ASSERT(1 == join->primary_tables);
+  for (uint i = 0; i < join->tables; ++i) {
+    QEP_TAB *qep_tab = join->qep_tab + i;
+    if (INTERNAL_TMP_TABLE == qep_tab->table()->s->tmp_table) {
+      DBUG_ASSERT(FALSE);
+      continue;
+    }
+    tab = qep_tab;
+    break;
+  }
+  if (!tab) {
+    goto error;
   }
 
   // Use JT_REF_OR_NULL.
@@ -1111,12 +1120,23 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
   QUICK_SELECT_I *quick = NULL;
   JOIN *const join = sdb_lex_first_select(thd)->join;
   JOIN_TAB *tab = NULL;
+
   if (!join->join_tab) {
     goto error;
   }
-  tab = join->join_tab + (join->tables_list ? join->const_tables : 0);
-  if (join->need_tmp) {
-    tab = tab + 1;
+
+  DBUG_ASSERT(1 == join->exec_join_tab_cnt());
+  for (uint i = 0; i < join->total_join_tab_cnt() + 1; ++i) {
+    JOIN_TAB *join_tab = join->join_tab + i;
+    if (INTERNAL_TMP_TABLE == join_tab->table->s->tmp_table) {
+      DBUG_ASSERT(FALSE);
+      continue;
+    }
+    tab = join_tab;
+    break;
+  }
+  if (!tab) {
+    goto error;
   }
 
   // Use JT_REF_OR_NULL.
