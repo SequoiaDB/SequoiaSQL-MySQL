@@ -424,30 +424,26 @@ function init_login_args()
    . $CONF_INST_PATH/${INST_NAME}.conf
 
    # get sequoiadb auth parameters
-   local conn_addrs=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_conn_addr"`
+   local conn_addrs=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_conn_addr="`
    conn_addrs=${conn_addrs#*=}
    if [ "$conn_addrs" == "" ]; then
       # set default connection address
       SDB_CONN_ADDRS="localhost:11810"
    else
-      SDB_CONN_ADDRS="${conn_addrs}"
+      SDB_CONN_ADDRS="${conn_addrs//[[:blank:]]/}"
    fi
 
-   SDB_USER=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_user"`
+   SDB_USER=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_user="`
    SDB_USER=${SDB_USER#*=}
-   test "${SDB_USER:0:1}" == '"' && SDB_USER=${SDB_USER:1:-1}
 
-   SDB_PASSWD=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_password"`
+   SDB_PASSWD=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_password="`
    SDB_PASSWD=${SDB_PASSWD#*=}
-   test "${SDB_PASSWD:0:1}" == '"' && SDB_PASSWD=${SDB_PASSWD:1:-1}
 
-   SDB_TOKEN=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_token"`
+   SDB_TOKEN=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_token="`
    SDB_TOKEN=${SDB_TOKEN#*=}
-   test "${SDB_TOKEN:0:1}" == '"' && sdb_token=${SDB_TOKEN:1:-1}
 
-   SDB_CIPHERFILE=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_cipherfile"`
+   SDB_CIPHERFILE=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_cipherfile="`
    SDB_CIPHERFILE=${SDB_CIPHERFILE#*=}
-   test "${SDB_CIPHERFILE:0:1}" == '"' && SDB_CIPHERFILE=${SDB_CIPHERFILE:1:-1}
 
    # get mysql port
    MYSQL_PORT=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*port"`
