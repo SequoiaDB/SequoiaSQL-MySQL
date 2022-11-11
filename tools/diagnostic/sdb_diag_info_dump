@@ -9,6 +9,7 @@
 #   6     no parameter
 #   7     file already exist
 #   8     command execution error
+#   9     permission denied
 
 ME=$(basename "$0")
 
@@ -71,6 +72,7 @@ TABLE_CATALOG_JSON_FILENAME="table_catalog.json"
 TABLE_STATISTICS_RESULT_FILENAME="table_statistics.result"
 TABLE_STATISTICS_JSON_FILENAME="table_statistics.json"
 INDEX_STATISTICS_PATHNAME="index_statistics"
+JSON=".json"
 
 #routine
 ROUTINE_PATHNAME="routine"
@@ -413,6 +415,7 @@ function prepare_output_dir()
 
    if [ ! -d "${OUTPUT}/${PACKAGE_PATHNAME}" ]; then
       mkdir_path "${OUTPUT}/${PACKAGE_PATHNAME}"
+      test $? -ne 0 && exit 9
    elif [[ `ls -A "${OUTPUT}/${PACKAGE_PATHNAME}" | wc -l` != "0" ]]; then
       echo "ERROR: The path \"${OUTPUT}/${PACKAGE_PATHNAME}\" already exists"
       exit 7
@@ -480,6 +483,7 @@ function get_path()
 
    # find OUTPUT path
    mkdir_path "${OUTPUT}"
+   test $? -ne 0 && exit 9
    if [[ "${dir_name:0:1}" != "/" ]]; then
       cd "$(pwd)/${OUTPUT}" && OUTPUT=`pwd`             # relative path
    else
@@ -780,6 +784,7 @@ function sdb_check_partition_table()
 
 function try_connect()
 {
+   echo "INFO: Connecting to the SQL instance"
    #try to connect mysql/mariadb
    if [[ "${HOST}" != "" && "${PORT}" != "" ]]; then
       MYSQL_EXEC_CMD_WITHOUT_DB="${SQL_INSTALL_PATH}/bin/mysql -u \"${USER}\" -h \"${HOST}\" -P \"${PORT}\""
@@ -796,9 +801,8 @@ function try_connect()
       REMOVE_PASSWORD_WARNING='| grep -v "mysql: \[Warning\] Using a password on the command line interface can be insecure"'
    fi
 
-   eval "${MYSQL_EXEC_CMD_WITHOUT_DB}" "-s" "-e" \""select version();"\" > "/dev/null"
+   eval "${MYSQL_EXEC_CMD_WITHOUT_DB}" "-s" "-e" \""select version();"\" "2>&1" > "/dev/null"
    test $? -ne 0 && { echo "ERROR: Fail to connect the instance" >&2 && exit 2; }
-   echo "INFO: Connecting the instance successfully"
 
    if [ "${DATABASE}" != "" ]; then
       local conv_db_name=`convert_special_character "${DATABASE}" "0000100"`
@@ -808,9 +812,10 @@ function try_connect()
    fi
 
    #find sdb shell path
+   echo "INFO: Connecting to the SequoiaDB"
    get_sdb_shell
    if [ $? -ne 0 ]; then
-      echo "ERROR: Fail to get sdb shell"
+      echo "ERROR: Fail to get SequoiaDB shell"
    else
       #try to connect sdb
       init_sequoiadb_conn
@@ -818,12 +823,11 @@ function try_connect()
          echo "ERROR: Failed to connect SequoiaDB"
          IS_SDB_CONNECTED=1
       else
-         echo "INFO: Connecting the SDB successfully"
          IS_SDB_CONNECTED=0
       fi
    fi
    if [ "${IS_SDB_CONNECTED}" == "1" ]; then
-      echo "ERROR: Information on the SDB side will not be collected"
+      echo "ERROR: Information on the SequoiaDB side will not be collected"
    fi
    #remove empty file sdbbp.log
    rm -f "${OUTPUT}/empty_dir/sdbbp.log"
@@ -885,10 +889,9 @@ function get_diaginfo()
 
    #query
    if [ "${QUERY}" != "" ]; then
-      echo "INFO: Getting query's explain and optimizer trace information"
+      echo "INFO: Getting query explain and optimizer trace information"
       get_explain
       get_optimizer_trace
-      echo "QUERY information is collected"
    fi
 
    if [[ "${#DATABASE_ARRAY[@]}" -gt 0 ]]; then
@@ -923,13 +926,12 @@ function get_diaginfo()
                #${DATABASE_ROUTINE_ARRAY[j+1]} -> routine_name
                echo "INFO: Getting routine \
 \"${DATABASE_ROUTINE_ARRAY[j]}.${DATABASE_ROUTINE_ARRAY[j+1]}\" \
-structure and index information from MySQL"
+structure information from SQL"
                get_create_routine "${DATABASE_ROUTINE_ARRAY[j]}" "${DATABASE_ROUTINE_ARRAY[j+1]}"
             } &
             done
             wait
          done
-         echo "ROUTINE information is collected"
       fi
       if [[ "${#DATABASE_TABLE_ARRAY[@]}" -gt 0 ]]; then
          local thread_batch=`expr $THREAD_COUNT \* 2`
@@ -955,7 +957,6 @@ structure and index information from SQL side"
             done
             wait
          done
-         echo "SQL side TABLE information is collected"
 
          for ((j=0;j<${#DATABASE_TABLE_ARRAY[@]};j+=2))
          do
@@ -963,7 +964,7 @@ structure and index information from SQL side"
             if [[ $? -ne 0 && "${IS_SDB_CONNECTED}" == "0" ]]; then
                echo "INFO: Getting table \
 \"${DATABASE_TABLE_ARRAY[j]}.${DATABASE_TABLE_ARRAY[j+1]}\" \
-structure and index information from SDB side"
+structure and index information from SequoiaDB side"
 
                get_sdb_table_information "${DATABASE_TABLE_ARRAY[j]}" \
                "${DATABASE_TABLE_ARRAY[j+1]}"
@@ -971,13 +972,12 @@ structure and index information from SDB side"
                "${DATABASE_TABLE_ARRAY[j+1]}"
             fi
          done
-         echo "SDB side TABLE information is collected"
       fi
    fi
 
    if [[ ${#DATABASE_TABLE_PARTITION_ARRAY[@]} -gt 0 && "${IS_SDB_CONNECTED}" == "0" ]]; then
       local count=${#DATABASE_TABLE_PARTITION_ARRAY[@]}
-      echo "INFO: Getting table partition from SDB"
+      echo "INFO: Getting table partition from SequoiaDB"
       for ((i=0;i<$count;i+=3))
       do
          #db1 t1 p0 db1 t1 p1
@@ -986,13 +986,12 @@ structure and index information from SDB side"
          get_sdb_table_index_information "${DATABASE_TABLE_PARTITION_ARRAY[i]}" \
          "${DATABASE_TABLE_PARTITION_ARRAY[i+1]}" "${DATABASE_TABLE_PARTITION_ARRAY[i+2]}"
       done
-      echo "SDB side TABLE PARTITION information is collected"
    fi
 
    if [[ "${IS_MAPPING}" == "1" 
          && ${#MAPPING_DATABASE_TABLE_PARTITION_ARRAY[@]} -gt 0 
          && "${IS_SDB_CONNECTED}" == "0" ]]; then
-      echo "INFO: Getting mapping table information from SDB"
+      echo "INFO: Getting mapping table information from SequoiaDB"
       local count=${#MAPPING_DATABASE_TABLE_PARTITION_ARRAY[@]}
       for ((i=1; i<$count; i+=4))
       do
@@ -1010,7 +1009,6 @@ structure and index information from SDB side"
          get_sdb_table_index_information "${cs_name}" "${cl_name}" \
             "${database_name}/${table_name}/${partition_name}" "mapping"
       done
-      echo "SDB side MAPPING TABLE information is collected"
    fi
 
    #environment
@@ -1022,7 +1020,6 @@ fi
    get_variables
    get_status
    get_engine
-   echo "ENVIRONMENT information is collected"
 }
 
 function get_all_table_in_database()
@@ -1048,7 +1045,7 @@ function get_all_table_in_database()
       ALL_TABLES_IN_DATABASE_ARRAY[${#ALL_TABLES_IN_DATABASE_ARRAY[@]}]="`echo "${table}" \
          | sed -e 's/^\"//' -e 's/\"$//' -e 's/\./ /g'`"
    done
-   printf "Table count in \"${DATABASE}\": %s\n" ${#ALL_TABLES_IN_DATABASE_ARRAY[@]}
+   printf "INFO: Table count in \"${DATABASE}\": %s\n" ${#ALL_TABLES_IN_DATABASE_ARRAY[@]}
 }
 
 function build_get_create_table_sql()
@@ -1080,7 +1077,7 @@ function get_create_table()
    exec_sql_with_print "${get_create_table_sql}" "${file_path}/${TABLE_CATALOG_SQL_FILENAME}"
    test $? -ne 0 && tail -n +2 "${file_path}/${TABLE_CATALOG_SQL_FILENAME}" \
       && echo "ERROR: Fail to get create table \
-\"${db_name}.${tb_name}\", please verify \"${file_path}/${TABLE_CATALOG_SQL_FILENAME}\"" \
+\"${db_name}.${tb_name}\". Please verify \"${file_path}/${TABLE_CATALOG_SQL_FILENAME}\"" \
       && return 1
    sed -i -e 's/^.*[ ]*\(CREATE TABLE `.*\)/\1/' -e '1,2d' "${file_path}/${TABLE_CATALOG_SQL_FILENAME}"
    local check_file=`head -n 1 "${file_path}/${TABLE_CATALOG_SQL_FILENAME}"`
@@ -1104,7 +1101,6 @@ function get_all_create_table()
       done
       wait
    done
-   echo "CREATE TABLE information is collected"
 }
 
 function build_get_table_statistics_sql()
@@ -1134,8 +1130,8 @@ function get_table_statistics()
 
    get_table_statistics_sql="${sql}"
    exec_sql_with_print "${get_table_statistics_sql}" "${file_path}/${TABLE_STATISTICS_RESULT_FILENAME}"
-   test $? -ne 0 && echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" statistics, \
-please verify \"${file_path}/${TABLE_CATALOG_SQL_FILENAME}\"" \
+   test $? -ne 0 && echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" statistics. \
+Please verify \"${file_path}/${TABLE_CATALOG_SQL_FILENAME}\"" \
    && return 1
 
    if [ `cat "${file_path}/${TABLE_STATISTICS_RESULT_FILENAME}" | wc -l` == "0" ]; then
@@ -1162,7 +1158,6 @@ function get_all_table_statistics()
       done
       wait
    done
-   echo "TABLE STATISTICS information is collected"
 }
 
 function build_get_create_database_sql()
@@ -1189,8 +1184,8 @@ function get_create_database()
       get_create_database_sql="${sql}"
       exec_sql_with_print "${get_create_database_sql}" \
          "${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}" "without_db"
-      test $? -ne 0 && echo "ERROR: Fail to get create database \"${dbname}\", \
-please verify \"${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}\"" \
+      test $? -ne 0 && echo "ERROR: Fail to get create database \"${dbname}\". \
+Please verify \"${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}\"" \
       && continue
       sed -i -e 's/^Create Database: //' -e '1,2d' \
          "${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}"
@@ -1227,7 +1222,7 @@ EOF
 function get_sdb_table_detail_js()
 {
 cat << EOF
-db.getCS("${1}").getCL("${2}").getDetail()
+db.getCS("${1}").getCL("${2}").getDetail();
 EOF
 }
 
@@ -1254,7 +1249,7 @@ function get_sdb_table_partition_information()
    #remove 'Return x row(s).'
    echo "${sdb_table_catalog}" | sed '$d' > "${file_path}/${TABLE_CATALOG_JSON_FILENAME}" 2>&1
    test $? -ne 0 && echo "ERROR: Fail to get partiton \
-\"${db_name}.${cl_full_name}\" catalog from sdb, please verify \
+\"${db_name}.${cl_full_name}\" catalog from SequoiaDB. Please verify \
 \"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\"" >&2
 
    sdb_js=`get_sdb_table_detail_js "${db_name}" "${cl_full_name}"`
@@ -1263,7 +1258,7 @@ function get_sdb_table_partition_information()
    mkdir_path "${file_path}"
    echo "${sdb_table_detail}" | sed '$d' > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}" 2>&1
    test $? -ne 0 && echo "ERROR: Fail to get partition \
-\"${db_name}.${cl_full_name}\" detail from sdb, please verify \
+\"${db_name}.${cl_full_name}\" detail from SequoiaDB. Please verify \
 \"${file_path}/${TABLE_STATISTICS_JSON_FILENAME}\"" >&2
 }
 
@@ -1306,7 +1301,7 @@ function get_sdb_table_information()
    echo "${sdb_table_catalog}" | \
       sed '$d'  > "${file_path}/${TABLE_CATALOG_JSON_FILENAME}" 2>&1
    test $? -ne 0 && echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" \
-catalog from sdb, please verify \"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\"" >&2
+catalog from SequoiaDB. Please verify \"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\"" >&2
 
    # not mapping table
    if [ "${full_table_name}" == "" ]; then
@@ -1329,16 +1324,19 @@ catalog from sdb, please verify \"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\""
       fi
    fi
 
+   "${SDB_SHELL}" -s "jsonFormat(false)"
    sdb_js=`get_sdb_table_detail_js "${db_name}" "${tb_tmp_name}"`
    local sdb_table_detail=`"${SDB_SHELL}" -s "${sdb_js}"`
+   "${SDB_SHELL}" -s "jsonFormat(true)"
    check_sdb_error
    
    if [[ $? -ne 0 ]]; then
       echo "${sdb_table_detail}" > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}"
       echo "ERROR: Fail to get create table \
-\"${db_name}.${tb_name}\" detail from sdb, please verify \
+\"${db_name}.${tb_name}\" detail from SequoiaDB. Please verify \
 \"${file_path}/${TABLE_STATISTICS_JSON_FILENAME}\"" >&2
    else
+      # remove Return x rows
       echo "${sdb_table_detail}" \
          | sed '$d' > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}"
    fi
@@ -1346,12 +1344,11 @@ catalog from sdb, please verify \"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\""
 
 function get_sdb_all_table_information()
 {
-   echo "INFO: Getting catalog and detail information for all tables from SDB"
+   echo "INFO: Getting catalog and detail information for all tables from SequoiaDB"
    for table in "${ALL_TABLES_IN_DATABASE_ARRAY[@]}"
    do
       get_sdb_table_information "${DATABASE}" "${table}"
    done
-   echo "SDB side TABLE information is collected"
 }
 
 function get_sdb_table_index_list_js()
@@ -1420,7 +1417,7 @@ function get_sdb_table_index_information()
    rc=$?
 
    test $rc -ne 0 && echo "ERROR: Fail to get \
-\"${db_name}.${tb_name}\" index list from sdb"
+\"${db_name}.${tb_name}\" index list from SequoiaDB"
    local sdb_table_index_array=(`echo "${sdb_table_index_list[*]}" \
       | grep '^[ ]*"name": "' | grep -v ' "$id",$' | sed 's/^[ ]*"name": \(.*\),$/\1/g'`)
    if [ ${#sdb_table_index_array[@]} -eq 0 ]; then
@@ -1437,36 +1434,43 @@ function get_sdb_table_index_information()
    for index in "${sdb_table_index_array[@]}"
    do
       index_tmp_name=`echo "${index}" | sed 's/^"\(.*\)"$/\1/'`
+      index_real_name=`convert_special_character "${index_tmp_name}" "0000010"`
 
       if [ "${SDB_HAVE_GETINDEXSTAT}" == "0" ]; then
          sdb_js=`get_sdb_table_index_js "${db_name}" "${cl_real_name}" "${index_tmp_name}"`
-         sdb_table_index=`"${SDB_SHELL}" -s "${sdb_js}"`
+         "${SDB_SHELL}" -s "${sdb_js}" > "${file_path}/${index_real_name}${JSON}" 2>&1
          rc=$?
          error=$("${SDB_SHELL}" -s "getLastErrObj()")
          if [ "${error}" != "" ]; then
+            echo "${error}"
             if [[ `echo "${error}" | grep "getIndexStat is not a function"` != "" ]]; then
                SDB_HAVE_GETINDEXSTAT=1
-               echo "ERROR: Index information on the SDB side will not be collected"
+               echo "ERROR: Index information on the SequoiaDB side will not be collected"
+               return 8
+            elif [[ `echo "${error}" | grep "Index statistics do not exist"` != "" ]]; then
+               SDB_HAVE_GETINDEXSTAT=1
+               echo "WARNING: Table \"${db_name}.${tb_name}\" index statistics do not exist. \
+Suggest doing 'ANALYZE TABLE ${db_name}.${tb_name};' and dump again"
             fi
-            echo "${error}"
+            cat /dev/null > "${file_path}/${index_real_name}${JSON}"
          fi
+      else
+         cat /dev/null > "${file_path}/${index_real_name}${JSON}"
       fi
 
-      index_real_name=`convert_special_character "${index_tmp_name}" "0000010"`
-      echo "${sdb_table_index}" > "${file_path}/${index_real_name}"
+      SDB_HAVE_GETINDEXSTAT=0
       test $rc -ne 0 && echo "ERROR: Fail to get \"${db_name}.${tb_name}\" \
-index ${idnex} information from sdb, please verify \"${file_path}\""
+index information from SequoiaDB."
    done
 }
 
 function get_sdb_all_table_index_information()
 {
-   echo "INFO: Getting all indexes information for all tables from SDB"
+   echo "INFO: Getting all indexes information for all tables from SequoiaDB"
    for table in "${ALL_TABLES_IN_DATABASE_ARRAY[@]}"
    do
       get_sdb_table_index_information "${DATABASE}" "${table}"
    done
-   echo "SDB side TABLE INDEX information is collected"
 }
 
 function build_get_create_routine_sql()
@@ -1508,8 +1512,8 @@ function get_create_routine()
       eval "${get_create_routine_sql}" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${file_path}/${type}_${ROUTINES_FILENAME}"
       error=`tail -n 1 "${file_path}/${type}_${ROUTINES_FILENAME}"`
       if [ "${error%% *}" == "ERROR" ]; then
-         echo "ERROR: Fail to get create ${type} \"${routine_name}\", \
-please verify \"${file_path}/${type}_${ROUTINES_FILENAME}\""
+         echo "ERROR: Fail to get create ${type} \"${routine_name}\". \
+Please verify \"${file_path}/${type}_${ROUTINES_FILENAME}\""
       else
          rows=`cat "${file_path}/${type}_${ROUTINES_FILENAME}" | wc -l`
          # delete the first,second and last three lines
@@ -1536,8 +1540,8 @@ please verify \"${file_path}/${type}_${ROUTINES_FILENAME}\""
          if [ "${error}" == "ERROR 1305 (42000) at line 2: FUNCTION ${routine_name} does not exist" ]; then
             is_func="FALSE"
          else
-            echo "ERROR: Fail to get create function \"${routine_name}\", \
-please verify \"${file_path}/function_${ROUTINES_FILENAME}\""
+            echo "ERROR: Fail to get create function \"${routine_name}\". \
+Please verify \"${file_path}/function_${ROUTINES_FILENAME}\""
          fi
       else
          sed -i '1,2d' "${file_path}/function_${ROUTINES_FILENAME}"
@@ -1553,8 +1557,8 @@ please verify \"${file_path}/function_${ROUTINES_FILENAME}\""
          if [ "${error}" == "ERROR 1305 (42000) at line 2: PROCEDURE ${routine_name} does not exist" ]; then
             is_proc="FALSE"
          else
-            echo "ERROR: Fail to get create procedure \"${routine_name}\", \
-please verify \"${file_path}/procedure_${ROUTINES_FILENAME}\""
+            echo "ERROR: Fail to get create procedure \"${routine_name}\". \
+Please verify \"${file_path}/procedure_${ROUTINES_FILENAME}\""
          fi
       else
          sed -i '1,2d' "${file_path}/procedure_${ROUTINES_FILENAME}"
@@ -1661,7 +1665,6 @@ function get_all_create_routine()
          wait
       done
    fi
-   echo "ROUTINE information is collected"
 }
 
 function get_explain()
@@ -1688,9 +1691,9 @@ function get_explain()
       fi
    done
    local get_explain_sql="explain ${REAL_QUERY}\\G"
-   echo "${get_explain_sql}" > "${sql_path}" 
-   eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${OUTPUT}/${EXPLAIN_FILENAME}" 
-   local rc=$?
+   echo "${get_explain_sql}" > "${sql_path}"
+   eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${OUTPUT}/${EXPLAIN_FILENAME}"
+   local rc=$? 
    local error=`tail -n 1 "${OUTPUT}/${EXPLAIN_FILENAME}" | grep "^ERROR "`
    if [[ $rc -ne 0 || "${error}" != "" ]]; then
       echo "ERROR: Fail to get explain SQL information. Please verify \
@@ -1714,7 +1717,7 @@ function get_optimizer_trace()
    local sql_path="${OUTPUT}/${QUERY_PATHNAME}/query.sql"
    echo "${get_optimizer_trace_sql}" > "${sql_path}"
    eval "cat \"${sql_path}\" | ${MYSQL_EXEC_CMD} -s" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}"
-   local rc=$?
+   local rc=$? 
    local error=`head -n 5 "${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}" | grep "^ERROR "`
    if [[ $rc -ne 0 || "${error}" != "" ]]; then
       echo "ERROR: Fail to get optimizer trace information. \
@@ -1726,7 +1729,7 @@ function get_variables()
 {
    local get_variables_sql="show variables"
    exec_sql_with_print "${get_variables_sql}" "${OUTPUT}/${VARIABLES_FILENAME}" "without_db"
-   test $? -ne 0 && echo "ERROR: Fail to get variables, please verify \
+   test $? -ne 0 && echo "ERROR: Fail to get variables. Please verify \
 \"${OUTPUT}/${VARIABLES_FILENAME}\""
 }
 
@@ -1734,7 +1737,7 @@ function get_status()
 {
    local get_status_sql="show status\\G"
    exec_sql_with_print "${get_status_sql}" "${OUTPUT}/${STATUS_FILENAME}" "without_db"
-   test $? -ne 0 && echo "ERROR: Fail to get status, please verify \
+   test $? -ne 0 && echo "ERROR: Fail to get status. Please verify \
 \"${OUTPUT}/${STATUS_FILENAME}\""
 }
 
@@ -1742,7 +1745,7 @@ function get_engine()
 {
    local get_engine_sql="show engines\\G"
    exec_sql_with_print "${get_engine_sql}" "${OUTPUT}/${ENGINE_FILENAME}" "without_db"
-   test $? -ne 0 && echo "ERROR: Fail to get engine, please verify \
+   test $? -ne 0 && echo "ERROR: Fail to get engine. Please verify \
 \"${OUTPUT}/${ENGINE_FILENAME}\"" && return 1
    local result=`cat "${OUTPUT}/${ENGINE_FILENAME}" \
      | grep "SequoiaDB storage engine" \
@@ -1755,7 +1758,7 @@ function get_sdb_remote_version()
    local sdb_version=`"${SDB_SHELL}" --version`
    local rc=$?
    echo "${sdb_version}" > "${OUTPUT}/${VERSION_FILENAME}" 2>&1
-   test $rc -ne 0 && echo "ERROR: Fail to get version, please verify \
+   test $rc -ne 0 && echo "ERROR: Fail to get version. Please verify \
 \"${OUTPUT}/${VERSION_FILENAME}\""
 }
 
@@ -1765,7 +1768,7 @@ function get_sdb_list_groups()
    check_sdb_error
    local rc=$?
    echo "${sdb_list_groups}" > "${OUTPUT}/${GROUP_FILENAME}" 2>&1
-   test $rc -ne 0 && echo "ERROR: Fail to get sdb groups, please verify \
+   test $rc -ne 0 && echo "ERROR: Fail to get SequoiaDB groups. Please verify \
 \"${OUTPUT}/${GROUP_FILENAME}\"" && return
    #remove 'Return x row(s).'
    sed -i '$d' "${OUTPUT}/${GROUP_FILENAME}"
@@ -1780,6 +1783,7 @@ function compress_tar_gz()
    cd "${OUTPUT}/.."
    tar -zcf "${PACKAGE_PATHNAME}.tar.gz" "${PACKAGE_PATHNAME}" >&2
    test $? -ne 0 && { echo "ERROR: Fail to create \"${PACKAGE_PATHNAME}.tar.gz\"" >&2 && exit 5; }
+   rm -rf "${PACKAGE_PATHNAME}"
 }
 
 function show_help()
@@ -1883,7 +1887,6 @@ if [ "$*" != "" ]; then
    exit 1
 fi
 
-echo "Catalog Simulation Tool is running ......"
 START_TIME=`date +%s`
 
 #check parameter
