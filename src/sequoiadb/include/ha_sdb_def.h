@@ -242,6 +242,10 @@
 #define SDB_FIELD_VERSION "Version"
 #define SDB_FIELD_ALTER "Alter"
 
+#define SDB_FN_CATALOG "catalog"
+#define SDB_FN_INDEX_STATISTICS "index_statistics"
+#define SDB_FN_TABLE_STATISTICS_JSON "table_statistics.json"
+
 #define SDB_PART_SEP "#P#"
 #define SDB_SUB_PART_SEP "#SP#"
 // Partition name suffixes, including "#TMP#" and "#REN#"

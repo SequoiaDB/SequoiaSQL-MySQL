@@ -31,6 +31,7 @@ static const char *SDB_USER_DFT = "";
 static const char *SDB_PASSWORD_DFT = "";
 static const char *SDB_DEFAULT_TOKEN = "";
 static const char *SDB_DEFAULT_CIPHERFILE = "~/sequoiadb/passwd";
+static const char *SDB_DEFAULT_DIAG_INFO_PATH = "";
 static const my_bool SDB_USE_PARTITION_DFT = TRUE;
 static const my_bool SDB_DEBUG_LOG_DFT = FALSE;
 static const my_bool SDB_DEFAULT_USE_BULK_INSERT = TRUE;
@@ -533,6 +534,14 @@ static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
                         /* 统计信息刷新时间阈值, 范围[0, 720]，单位：小时。*/,
                         NULL, NULL, 0, 0, 720, 1);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_STR(
+    diag_info_path,
+    PLUGIN_VAR_NOCMDARG | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
+    "Path to the table and index statistics replacement file. (Default: \"\")"
+    /*表及索引统计信息替换文件的路径。*/,
+    NULL, NULL, SDB_DEFAULT_DIAG_INFO_PATH);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -572,6 +581,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(mapping_unit_size),
     MYSQL_SYSVAR(mapping_unit_count),
     MYSQL_SYSVAR(stats_flush_time_threshold),
+    MYSQL_SYSVAR(diag_info_path),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -788,4 +798,8 @@ sdb_index_stat_level sdb_get_stats_cache_level(THD *thd) {
 
 int sdb_stats_flush_time_threshold(THD *thd) {
   return THDVAR(thd, stats_flush_time_threshold);
+}
+
+char *sdb_get_diag_info_path(THD *thd) {
+  return THDVAR(thd, diag_info_path);
 }

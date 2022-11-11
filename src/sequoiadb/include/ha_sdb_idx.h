@@ -34,6 +34,7 @@ struct Sdb_index_stat {
   ha_rows static_total_records;
   uint version;
   sdb_index_stat_level level;
+  bool is_substituted;
 
   int init(KEY *arg_key, uint arg_version);
 
@@ -48,6 +49,7 @@ struct Sdb_index_stat {
     static_total_records = ~(ha_rows)0;
     version = 0;
     level = SDB_STATS_LVL_BASE;
+    is_substituted = false;
   }
 
   virtual ~Sdb_index_stat() { fini(); }

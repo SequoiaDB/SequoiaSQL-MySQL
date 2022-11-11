@@ -350,6 +350,8 @@ install(PROGRAMS "${CMAKE_SOURCE_DIR}/tools/sdbfk/sdb_fk_notify.sh"
         DESTINATION "tools/sdbfk")
 install(FILES "${CMAKE_SOURCE_DIR}/tools/sdbfk/README.md"
         DESTINATION "tools/sdbfk")
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/tools/diagnostic/sdb_diag_info_dump"
+        DESTINATION "tools/diagnostic")
 
 
 execute_process( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
