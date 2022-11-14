@@ -11,5 +11,6 @@ WantedBy=multi-user.target
 Type=simple
 User=XXXX
 Environment="LD_LIBRARY_PATH=/opt/sequoiasql/mysql/lib"
+LimitNOFILE=65535
 ExecStart=/opt/sequoiasql/mysql/bin/sequoiasql-mysql-daemon
 ExecStop=/opt/sequoiasql/mysql/bin/sequoiasql-mysql-daemon --stop --with-inst
