@@ -9687,7 +9687,7 @@ id	field3
 set session sequoiadb_optimizer_options = "direct_count,direct_delete,direct_update,direct_limit";
 EXPLAIN SELECT field4 FROM t1 ORDER BY field4;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	10	100.00	Using pushed sort (`query_pushdown_test_sequoiadb`.`t1`.`field4`); Using filesort
+1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	10	100.00	Using pushed sort (`query_pushdown_test_sequoiadb`.`t1`.`field4`)
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`field4` AS `field4` from `query_pushdown_test_sequoiadb`.`t1` order by `query_pushdown_test_sequoiadb`.`t1`.`field4`
 SELECT field4 FROM t1 ORDER BY field4;
