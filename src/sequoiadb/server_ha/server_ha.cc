@@ -403,23 +403,27 @@ static bool is_db_meta_sql(THD *thd) {
 
 // check if current SQL statement has 'temporary' flag
 // only for create/drop table
-static inline bool has_temporary_table_flag(THD *thd) {
-  bool is_temp_table_op = false;
+static inline bool create_or_drop_only_temporary_table(THD *thd) {
+  bool only_temp_table_op = false;
   int sql_command = thd_sql_command(thd);
-  is_temp_table_op = (SQLCOM_CREATE_TABLE == sql_command) &&
-                     (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE);
+  if ((SQLCOM_CREATE_TABLE == sql_command) &&
+      (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE)) {
+    // We also check objects for SQL statement like
+    // 'CREATE TABLE xxx AS SELECT/LIKE ...'
+    only_temp_table_op = (NULL == thd->lex->query_tables->next_global);
+  }
 #ifdef IS_MYSQL
-  is_temp_table_op |=
+  only_temp_table_op |=
       (SQLCOM_DROP_TABLE == sql_command && thd->lex->drop_temporary);
 #else
   if (SQLCOM_DROP_TABLE == sql_command ||
       SQLCOM_CREATE_SEQUENCE == sql_command ||
       SQLCOM_DROP_SEQUENCE == sql_command) {
-    is_temp_table_op |=
+    only_temp_table_op |=
         (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE);
   }
 #endif
-  return is_temp_table_op;
+  return only_temp_table_op;
 }
 
 // add 'S' lock for an object
@@ -1417,6 +1421,11 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   Sdb_conn &lock_conn = pool_conn;
   Sdb_conn *lock_conn_ptr = NULL;
 
+  if ((SQLCOM_CREATE_TABLE == sql_command) &&
+      (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE)) {
+    goto done;
+  }
+
   oom = general_query.append(event.general_query, event.general_query_length);
   oom |= general_query.append('\0');
   if (oom) {
@@ -2162,9 +2171,12 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
                             || SQLCOM_CREATE_SEQUENCE == sql_command
 #endif
                             )) {
-        // create temporary table cann't be here, first table must be
-        // a normal table if it's "create table" statement
-        ha_tbl_list->is_temporary_table = false;
+        // Set 'is_temporary_table' flag for the first table
+        if (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE) {
+          ha_tbl_list->is_temporary_table = true;
+        } else {
+          ha_tbl_list->is_temporary_table = false;
+        }
       }
       ha_tbl_list->next = NULL;
       if (!sql_info->tables) {
@@ -4120,6 +4132,12 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
     goto done;
   }
 
+  // Do not write pending log for "CREATE TEMPORARY TABLE t1 AS/LIKE tt1"
+  if (SQLCOM_CREATE_TABLE == sql_command &&
+      thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE) {
+    goto done;
+  }
+
   db = sdb_thd_db(thd);
   if (NULL == db) {  // set default database if it's not set
     db = HA_MYSQL_DB;
@@ -4621,7 +4639,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   // 3. mysql service is starting;
   // 4. SQL statement has 'temporary' flag, eg: 'create temporary table'
   if (!thd || !ha_thread.is_open || opt_bootstrap || !mysqld_server_started ||
-      has_temporary_table_flag(thd) ||
+      create_or_drop_only_temporary_table(thd) ||
       (ha_thread.thd && sdb_thd_id(thd) == sdb_thd_id(ha_thread.thd))) {
     goto done;
   }
@@ -4876,7 +4894,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     try {
       if (can_write_sql_log(thd, sql_info, event.general_error_code)) {
         // rebuild create table SQL statement if necessary
-        if (SQLCOM_CREATE_TABLE == sql_command) {
+        if (SQLCOM_CREATE_TABLE == sql_command &&
+            (!(thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE))) {
           rc = fix_create_table_stmt(thd, event_class, event, create_query);
         }
         // rebuild 'create function/procedure/trigger/event' statement
