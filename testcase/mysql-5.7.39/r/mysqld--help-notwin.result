@@ -644,7 +644,6 @@ The following options may be given as the first argument:
  value is 0 then mysqld will reserve max_connections*5 or
  max_connections + table_open_cache*2 (whichever is
  larger) number of file descriptors
- --optimizer-index-sort-prune 
  --optimizer-limit-pushdown-threshold[=#] 
  The threshold to control the limit pushdown on join with
  join buffer.The defination is: `value =
@@ -1174,7 +1173,6 @@ The following options may be given as the first argument:
  (Defaults to on; use --skip-sequoiadb-use-transaction to disable.)
  --sequoiadb-user[=name] 
  SequoiaDB authentication user. (Default: "")
- --server-ha-dml-max-retry-count[=#] 
  --server-ha-inst-group-key[=name] 
  Instance group key used to decrypt instance group
  password. (Default: "")
