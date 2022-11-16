@@ -1743,6 +1743,15 @@ static int get_sql_objects_for_dcl(THD *thd, ha_sql_stmt_info *sql_info) {
     }
     ha_tbl_node->db_name = HA_MYSQL_DB;
     ha_tbl_node->table_name = lex_user->user.str;
+#ifdef IS_MYSQL
+    // fix BUG SEQUOIASQLMAINSTREAM-1577
+    // ALTER USER USER() IDENTIFIED BY 'XXXX' is not supported in MariaDB
+    if (SQLCOM_ALTER_USER == sql_command &&
+        1 == thd->lex->users_list.elements &&  // Make sure only one user
+        NULL == ha_tbl_node->table_name) {
+      ha_tbl_node->table_name = thd->m_main_security_ctx.user().str;
+    }
+#endif
     ha_tbl_node->op_type = HA_OPERATION_TYPE_DCL;
     ha_tbl_node->is_temporary_table = false;
     ha_tbl_node->next = NULL;
