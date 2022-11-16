@@ -55,7 +55,17 @@ collation_server=utf8mb4_bin\n
 lower_case_table_names=1\n
 # The threshold control the limit pushdown on first table which is block-based joined. 'value=rows/limit', the rows is the estimate of rows to the first table with ORDER BY column,
 # limit is the value in LIMIT clause. If the value is greater or equal than threshold, the limit can pushdown.
-# optimizer_limit_pushdown_threshold = 100
+# optimizer_limit_pushdown_threshold = 100\n
+# Parameter that controls TCP keepalive, system dependent default is used.\
+Total time = tcp_keepalive_time + (tcp_keepalive_interval * tcp_keepalive_probes)\n
+# The interval, in seconds, between when successive keep-alive packets are sent\
+if no acknowledgement is received.
+# tcp_keepalive_interval=0\n
+# Timeout, in milliseconds, with no activity until the first TCP keep-alive packet is sent.
+# tcp_keepalive_time=0\n
+# The number of unacknowledged probes to send before considering the connection dead and \
+notifying the application layer.
+# tcp_keepalive_probes=0
 '''
 
 MY_CNF_DEFAULT_STORAGE = "\ndefault_storage_engine=SequoiaDB\n"
