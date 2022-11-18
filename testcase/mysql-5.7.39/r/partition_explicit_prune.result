@@ -982,5 +982,17 @@ CREATE TABLE t1 (a INT) PARTITION BY HASH (a) PARTITIONS 3;
 CREATE TABLE t2 LIKE t1 PARTITION (p0, p2);
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'PARTITION (p0, p2)' at line 1
 DROP TABLE t1;
+create table list1(id int,a varchar(10)) engine=sequoiadb
+partition by list (`id`)
+(
+partition `id1` values in (1) engine=sequoiadb,
+partition `id2` values in (2) engine=sequoiadb,
+partition `id3` values in (3) engine=sequoiadb
+);
+create table key1(id int) engine=sequoiadb
+partition by key (`id`)
+partitions 256;
+select * from list1 partition (id1) a join key1 b on a.id=b.id;
+id	a	id
 DROP DATABASE test_partition_explicit_prune;
 SET @@default_storage_engine = @old_default_storage_engine;
