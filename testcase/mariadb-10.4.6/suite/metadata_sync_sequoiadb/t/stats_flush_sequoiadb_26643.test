@@ -1,3 +1,6 @@
+--source include/have_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
+
 set session sequoiadb_support_mode = ""; 
 
 --disable_warnings
@@ -32,3 +35,5 @@ drop database db_26643;
 
 set session sequoiadb_support_mode = default;
 --source include/uninstall_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
+
