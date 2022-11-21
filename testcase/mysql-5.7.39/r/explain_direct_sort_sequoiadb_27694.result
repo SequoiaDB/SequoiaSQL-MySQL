@@ -52,7 +52,7 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 3 } }], selector[{}], order_by[{ "col1": -1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27694.t1]
 explain select * from v3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	6	100.00	Using where with pushed condition (`explain_direct_sort_27694`.`t1`.`col1` > 3); Using MRR; Using filesort
+1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	6	100.00	Using where with pushed condition (`explain_direct_sort_27694`.`t1`.`col1` > 3); Using MRR; Using pushed sort (`explain_direct_sort_27694`.`t1`.`col3` desc)
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27694`.`t1`.`col1` AS `col1`,`explain_direct_sort_27694`.`t1`.`col2` AS `col2`,`explain_direct_sort_27694`.`t1`.`col3` AS `col3`,`explain_direct_sort_27694`.`t1`.`col4` AS `col4` from `explain_direct_sort_27694`.`t1` where (`explain_direct_sort_27694`.`t1`.`col1` > 3) order by `explain_direct_sort_27694`.`t1`.`col3` desc
 select * from v3;
@@ -60,7 +60,7 @@ col1	col2	col3	col4
 6	xyz	xyz	xyz
 5	defg	defg	defg
 4	def	def	def
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 3 } }], selector[{}], order_by[{}], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27694.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 3 } }], selector[{}], order_by[{ "col3": -1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27694.t1]
 explain select * from v4 where col1 > 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	8	33.33	Using where
