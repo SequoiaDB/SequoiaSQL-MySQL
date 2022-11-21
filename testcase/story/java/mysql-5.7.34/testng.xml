@@ -36,6 +36,11 @@
             <package name="com.sequoiasql.mysql"/>
         </packages>
     </test>
+    <test name="normaltest" parallel="classes" thread-count="1">
+        <packages>
+            <package name="com.sequoiasql.session"/>
+        </packages>
+    </test>
 
 </suite>
     
