@@ -39,6 +39,7 @@
     <test name="normaltest" parallel="classes" thread-count="1">
         <packages>
             <package name="com.sequoiasql.ddlserial"/>
+            <package name="com.sequoiasql.session"/>
         </packages>
     </test>
 
