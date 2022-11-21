@@ -69,6 +69,10 @@ select * from t1 where col2 = 'abd' order by col1,col2;
 explain select * from t1 where col2 = 'abd' order by col1 desc,col2 desc;
 select * from t1 where col2 = 'abd' order by col1 desc,col2 desc;
 --source include/query_pushdown_condition_sequoiadb.inc
+# SEQUOIASQLMAINSTREAM-1579
+# explain select * from t1 where col1 = 1 order by col3;
+# select * from t1 where col1 = 1 order by col3;
+# --source include/query_pushdown_condition_sequoiadb.inc
 
 #访问类型为ref_or_null
 explain select * from t1 where col1 = 1 or col1 is null;
@@ -93,6 +97,9 @@ select * from t1 where col1 > 1 and col1 < 5 order by col1;
 --source include/query_pushdown_condition_sequoiadb.inc
 explain select * from t1 where col1 > 1 and col1 < 5 order by col1 desc;
 select * from t1 where col1 > 1 and col1 < 5 order by col1 desc;
+--source include/query_pushdown_condition_sequoiadb.inc
+explain select * from t1 where col1 > 1 and col1 < 5 order by col3;
+select * from t1 where col1 > 1 and col1 < 5 order by col3;
 --source include/query_pushdown_condition_sequoiadb.inc
 explain select * from t1 where col2 > 'abc' and col2 < 'def';
 select * from t1 where col2 > 'abc' and col2 < 'def';
@@ -168,6 +175,9 @@ select col2 from t1 order by col2;
 --source include/query_pushdown_condition_sequoiadb.inc
 explain select col2 from t1 order by col2 desc;
 select col2 from t1 order by col2 desc;
+--source include/query_pushdown_condition_sequoiadb.inc
+explain select col1, col2 from t1 order by col2;
+select col1, col2 from t1 order by col2;
 --source include/query_pushdown_condition_sequoiadb.inc
 drop table t1,t3,t4;
 

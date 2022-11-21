@@ -14997,7 +14997,7 @@ a	b
 -3	-3
 -2	-2
 -3	-1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 0 } }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 0 } }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a <0 group by b;
 a	b
 -3	-3
@@ -15021,7 +15021,7 @@ a	b
 -3	-3
 -2	-2
 -3	-1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 0 } }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 0 } }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a <0 group by b;
 a	b
 -3	-3
