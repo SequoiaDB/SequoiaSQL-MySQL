@@ -37,6 +37,7 @@ dec $count;
 commit;
 --enable_query_log
 select count(*) from t2;
+--sorted_result
 select * from t2;
 drop table t2;
 
