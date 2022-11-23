@@ -62,8 +62,8 @@ dec $count;
 commit;
 --enable_query_log
 select count(*) from t3;
-select * from t3;
 --sorted_result
+select * from t3;
 drop table t3;
 
 eval create table t4 (a time not null, primary key(a)) engine=$engine 
