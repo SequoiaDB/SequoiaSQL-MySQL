@@ -6,9 +6,11 @@ partition pa3 max_rows=30 min_rows=4,
 partition pa4 max_rows=40 min_rows=2);
 show create table t1;
 insert into t1 values ('21:21:21'), ('12:10:30'), ('03:03:03'), ('23:59');
+--sorted_result
 select * from t1;
 select * from t1 where a=030303;
 delete from t1 where a=030303;
+--sorted_result
 select * from t1;
 drop table t1;
 
@@ -16,9 +18,11 @@ eval create table t2 (a time not null, primary key(a)) engine=$engine
 partition by key (a) partitions 12;
 show create table t2;
 insert into t2 values ('0:1:1'), ('10:11:12'), ('13:14:15'), ('14:15:16');
+--sorted_result
 select * from t2;
 select * from t2 where a='13:14:15';
 delete from t2 where a='13:14:15';
+--sorted_result
 select * from t2;
 delete from t2;
 let $count=59;
@@ -30,6 +34,7 @@ eval insert into t2 values (000100+$count);
 dec $count;
 }
 select count(*) from t2;
+--sorted_result
 select * from t2;
 drop table t2;
 
@@ -50,6 +55,7 @@ eval insert into t3 values (100000+$count);
 dec $count;
 }
 select count(*) from t3;
+--sorted_result
 select * from t3;
 drop table t3;
 
@@ -70,5 +76,6 @@ eval insert into t4 values (100000+$count);
 dec $count;
 }
 select count(*) from t4;
+--sorted_result
 select * from t4;
 drop table t4;

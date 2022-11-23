@@ -6,9 +6,11 @@ partition pa3 max_rows=30 min_rows=4,
 partition pa4 max_rows=40 min_rows=2);
 show create table t1;
 insert into t1 values ('1975-01-01'), ('2020-12-31'), ('1980-10-14'), ('2000-06-15');
+--sorted_result
 select * from t1;
 select * from t1 where a=19801014;
 delete from t1 where a=19801014;
+--sorted_result
 select * from t1;
 drop table t1;
 
@@ -16,9 +18,11 @@ eval create table t2 (a date not null, primary key(a)) engine=$engine
 partition by key (a) partitions 12;
 show create table t2;
 insert into t2 values ('1975-01-01'), ('2020-12-31'), ('1980-10-14'), ('2000-06-15');
+--sorted_result
 select * from t2;
 select * from t2 where a='1980-10-14';
 delete from t2 where a='1980-10-14';
+--sorted_result
 select * from t2;
 delete from t2;
 let $count=28;
@@ -33,6 +37,7 @@ dec $count;
 }
 #--enable_query_log
 select count(*) from t2;
+--sorted_result
 select * from t2;
 drop table t2;
 
@@ -53,6 +58,7 @@ eval insert into t3 values (adddate(19700101,interval $count-1 month));
 dec $count;
 }
 select count(*) from t3;
+--sorted_result
 select * from t3;
 drop table t3;
 
@@ -73,5 +79,6 @@ eval insert into t4 values (adddate(19700101,interval $count-1 month));
 dec $count;
 }
 select count(*) from t4;
+--sorted_result
 select * from t4;
 drop table t4;
