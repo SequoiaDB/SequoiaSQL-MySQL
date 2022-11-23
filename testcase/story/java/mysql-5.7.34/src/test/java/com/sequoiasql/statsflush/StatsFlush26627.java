@@ -61,6 +61,12 @@ public class StatsFlush26627 extends MysqlTestBase {
         String tbName2 = "tb_26627_2";
         int num = 10000001;
         int changeNum = 500001;
+        if ( jdbc1.query( "select version();" ).toString()
+                .contains( "debug" ) ) {
+            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+            num = 1001;
+            changeNum = 51;
+        }
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -111,11 +117,8 @@ public class StatsFlush26627 extends MysqlTestBase {
         // 变化的数据量大于10%，查看实例2中查询表tbName1的访问计划跟实例1的相同
         jdbc1.update(
                 "delete from " + tbName1 + " where id<=" + changeNum + ";" );
-
-        // 等待统计信息在另一个实例中refresh
-        Thread.sleep( 4000 );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain ) );
+        // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
+        StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain );
 
         // 检查此时查询返回的结果的正确性
         List< String > expCount = new ArrayList<>();
@@ -135,6 +138,7 @@ public class StatsFlush26627 extends MysqlTestBase {
             jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
+            jdbc1.update( "set debug = default;" );
             jdbc1.update(
                     "set sequoiadb_stats_flush_time_threshold = default" );
             sdb.close();

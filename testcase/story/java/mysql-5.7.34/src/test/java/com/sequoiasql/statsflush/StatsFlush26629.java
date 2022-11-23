@@ -61,6 +61,12 @@ public class StatsFlush26629 extends MysqlTestBase {
         String tbName2 = "tb_26629_2";
         int num = 100000001;
         int changeNum = 250001;
+        if ( jdbc1.query( "select version();" ).toString()
+                .contains( "debug" ) ) {
+            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+            num = 1001;
+            changeNum = 26;
+        }
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -113,10 +119,8 @@ public class StatsFlush26629 extends MysqlTestBase {
         // 变化的数据量大于50但小于数据总量的10%
         jdbc1.update(
                 "delete from " + tbName1 + " where id<= " + changeNum + ";" );
-
         // 等待统计信息在另一个实例中refresh
         Thread.sleep( 4000 );
-        //
         // 此時实例1中查询表tbName1的访问计划改变
         explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain,
                 1 );
@@ -144,6 +148,7 @@ public class StatsFlush26629 extends MysqlTestBase {
             jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
+            jdbc1.update( "set debug = default;" );
             jdbc1.update(
                     "set sequoiadb_stats_flush_time_threshold = default" );
             sdb.close();

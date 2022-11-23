@@ -63,6 +63,11 @@ public class StatsFlush26632 extends MysqlTestBase {
         String tbName4 = "tb_26632_4";
         int num = 600;
         int changeNum = 250000;
+        if ( jdbc1.query( "select version();" ).toString()
+                .contains( "debug" ) ) {
+            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+            changeNum = 25;
+        }
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -120,24 +125,19 @@ public class StatsFlush26632 extends MysqlTestBase {
         // 用户做analyze操作
         jdbc1.update( "analyze table " + tbName1 + ";" );
         jdbc1.update( "analyze table " + tbName2 + ";" );
-        Thread.sleep( 4000 );
-        // 此时两个实例查出的查询计划一致
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain1 ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain1 ) );
+        // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
+        StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain1 );
 
         // 其中一个实例做delete、insert混合操作累计变化的数据量即将达到自动清理条件，接近50w（debug包为50）
-        StatsFlushUtils.insertData( jdbc1, tbName3, changeNum-1 );
+        StatsFlushUtils.insertData( jdbc1, tbName3, changeNum - 1 );
         jdbc1.update(
-                "delete from " + tbName3 + " where id<=" + changeNum  + ";" );
+                "delete from " + tbName3 + " where id<=" + changeNum + ";" );
 
         // 用户做flush操作
         jdbc1.update( "flush table " + tbName3 + ";" );
         jdbc1.update( "flush table " + tbName4 + ";" );
-        Thread.sleep( 4000 );
-
-        // 此时两个实例查出的查询计划一致
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain2 ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain2 ) );
+        // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
+        StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain2 );
 
         // 检查查询返回的结果的正确性
         List< String > expCount = new ArrayList<>();
@@ -161,6 +161,7 @@ public class StatsFlush26632 extends MysqlTestBase {
             jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
+            jdbc1.update( "set debug = default;" );
             jdbc1.update(
                     "set sequoiadb_stats_flush_time_threshold = default" );
             sdb.close();

@@ -63,6 +63,12 @@ public class StatsFlush26630 extends MysqlTestBase {
         String tbName4 = "tb_26630_4";
         int num = 500002;
         int changeNum = 500001;
+        if ( jdbc1.query( "select version();" ).toString()
+                .contains( "debug" ) ) {
+            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+            num = 502;
+            changeNum = 51;
+        }
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -123,20 +129,16 @@ public class StatsFlush26630 extends MysqlTestBase {
         // 其中一个实例对表tbName1做delete操作变化的数据量大于50，查看实例2中查询表tbName1的访问计划跟实例1的相同
         jdbc1.update(
                 "delete from " + tbName1 + " where id<=" + changeNum + ";" );
-        // 等待缓存信息同步到实例2
-        Thread.sleep( 4000 );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain1 ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain1 ) );
+        // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
+        StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain1 );
         explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain1,
                 1 );
         Assert.assertEquals( explainInfo1[ 2 ], "alias2" );
 
         // 其中一个实例对表tbName3做insert操作变化的数据量大于50，查看实例2中查询表tbName1的访问计划跟实例1的相同
         StatsFlushUtils.insertData( jdbc1, tbName3, changeNum );
-        // 等待缓存信息同步到实例2 相关问题单：SEQUOIASQLMAINSTREAM-1424
-        Thread.sleep( 4000 );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain2 ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain2 ) );
+        // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
+        StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain2 );
         explainInfo2 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain2,
                 1 );
         Assert.assertEquals( explainInfo2[ 2 ], "alias3" );
@@ -168,6 +170,7 @@ public class StatsFlush26630 extends MysqlTestBase {
             jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
+            jdbc1.update( "set debug = default;" );
             jdbc1.update(
                     "set sequoiadb_stats_flush_time_threshold = default" );
             sdb.close();

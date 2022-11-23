@@ -35,6 +35,10 @@ public class StatsFlush26636 extends MysqlTestBase {
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc2 = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
+            if ( !jdbc1.query( "select version();" ).toString()
+                    .contains( "debug" ) ) {
+                throw new SkipException( "package is release skip testcase" );
+            }
             if ( sdb.isCollectionSpaceExist( dbName ) ) {
                 sdb.dropCollectionSpace( dbName );
             }
@@ -138,11 +142,8 @@ public class StatsFlush26636 extends MysqlTestBase {
         jdbc1.query( "select * from " + tbName1 + " where id>10 and id<20;" );
         jdbc1.update( "analyze table " + tbName1 + ";" );
         jdbc1.update( "analyze table " + tbName2 + ";" );
-
-        // 此时两个实例查出对表tbName1的查询计划一致
-        Thread.sleep( 4000 );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain1 ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain1 ) );
+        // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
+        StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain1 );
 
         // 在实例1中向表tbName3插入数据，使实例1中查询表tbName3的访问计划改变
         StatsFlushUtils.insertData( jdbc1, tbName3, changNum );
@@ -158,11 +159,8 @@ public class StatsFlush26636 extends MysqlTestBase {
         jdbc1.query( "select * from " + tbName3 + " where id>10 and id<20;" );
         jdbc1.update( "flush table " + tbName3 + ";" );
         jdbc1.update( "flush table " + tbName4 + ";" );
-
-        // 此时两个实例查出的查询计划一致
-        Thread.sleep( 4000 );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain2 ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain2 ) );
+        // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
+        StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain2 );
 
         // 检查查询返回的结果的正确性
         List< String > expCount = new ArrayList<>();
@@ -186,7 +184,7 @@ public class StatsFlush26636 extends MysqlTestBase {
             jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
-            jdbc1.update( "set debug=\"\";" );
+            jdbc1.update( "set debug = default;" );
             jdbc1.update(
                     "set sequoiadb_stats_flush_time_threshold = default" );
             sdb.close();

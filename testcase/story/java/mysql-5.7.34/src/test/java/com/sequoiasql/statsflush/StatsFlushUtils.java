@@ -5,6 +5,7 @@ import com.sequoiasql.testcommon.MysqlTestBase;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeoutException;
 
 public class StatsFlushUtils extends MysqlTestBase {
     public static String[] getLineOfExplain( JdbcInterface jdbc, String sql,
@@ -27,5 +28,24 @@ public class StatsFlushUtils extends MysqlTestBase {
         }
         sql = sql + ";";
         jdbc.update( sql );
+    }
+
+    public static void checkExplain( JdbcInterface jdbc1, JdbcInterface jdbc2,
+            String queryExplain )
+            throws TimeoutException, InterruptedException, SQLException {
+        int retry = 0;
+        ArrayList< String > explain1 = getExplain( jdbc1, queryExplain );
+        ArrayList< String > explain2 = getExplain( jdbc2, queryExplain );
+        while ( !explain1.toString().equals( explain2.toString() ) ) {
+            // 计时超过预期时间后两个实例查到的访问计划还没有统一则抛异常
+            retry = retry + 1;
+            if ( retry > 3 ) {
+                throw new TimeoutException( "retry timed out." );
+            }
+            // HAPendingLog的记录没有被完全清除则休眠4s再进入下一次循环
+            Thread.sleep( 4000 );
+            explain1 = getExplain( jdbc1, queryExplain );
+            explain2 = getExplain( jdbc2, queryExplain );
+        }
     }
 }

@@ -61,6 +61,11 @@ public class StatsFlush26631 extends MysqlTestBase {
         String tbName2 = "tb_26631_2";
         int num = 600;
         int changeNum = 500001;
+        if ( jdbc1.query( "select version();" ).toString()
+                .contains( "debug" ) ) {
+            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+            changeNum = 51;
+        }
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -131,6 +136,7 @@ public class StatsFlush26631 extends MysqlTestBase {
             jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
+            jdbc1.update( "set debug = default;" );
             jdbc1.update(
                     "set sequoiadb_stats_flush_time_threshold = default" );
             sdb.close();

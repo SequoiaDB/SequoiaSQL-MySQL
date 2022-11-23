@@ -35,6 +35,10 @@ public class StatsFlush26634 extends MysqlTestBase {
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc2 = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
+            if ( !jdbc1.query( "select version();" ).toString()
+                    .contains( "debug" ) ) {
+                throw new SkipException( "package is release skip testcase" );
+            }
             if ( sdb.isCollectionSpaceExist( dbName ) ) {
                 sdb.dropCollectionSpace( dbName );
             }
@@ -60,7 +64,7 @@ public class StatsFlush26634 extends MysqlTestBase {
         String tbName1 = "tb_26634_1";
         String tbName2 = "tb_26634_2";
         int num = 600;
-        int changNum = 5;
+        int changeNum = 5;
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -95,7 +99,7 @@ public class StatsFlush26634 extends MysqlTestBase {
         Assert.assertEquals( explainInfo1[ 2 ], "alias2" );
 
         // 在实例1中向表tbName1插入数据，使实例1中查询表tbName1的访问计划改变
-        StatsFlushUtils.insertData( jdbc1, tbName1, changNum );
+        StatsFlushUtils.insertData( jdbc1, tbName1, changeNum );
         explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain,
                 1 );
         Assert.assertEquals( explainInfo1[ 2 ], "alias3" );
@@ -119,9 +123,8 @@ public class StatsFlush26634 extends MysqlTestBase {
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
 
         // 两次crud操作间隔大于sequoiadb_stats_flush_time_threshold，触发统计信息清理，两个实例下查出的查询计划相同
-        Thread.sleep( 8000 );
         jdbc1.query( "select * from " + tbName1 + " where id>10 and id<20;" );
-        Thread.sleep( 4000 );
+        StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain );
 
         // 检查查询返回的结果的正确性
         List< String > expCount = new ArrayList<>();
@@ -129,7 +132,7 @@ public class StatsFlush26634 extends MysqlTestBase {
                 .query( "select count(*) from " + tbName1 + ";" );
         List< String > actCount2 = jdbc2
                 .query( "select count(*) from " + tbName1 + ";" );
-        expCount.add( String.valueOf( num + changNum ) );
+        expCount.add( String.valueOf( num + changeNum ) );
         Assert.assertEquals( actCount1, expCount );
         Assert.assertEquals( actCount2, expCount );
         Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain ),
@@ -143,7 +146,7 @@ public class StatsFlush26634 extends MysqlTestBase {
             jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
-            jdbc1.update( "set debug=\"\";" );
+            jdbc1.update( "set debug = default;" );
             jdbc1.update(
                     "set sequoiadb_stats_flush_time_threshold = default" );
             sdb.close();
