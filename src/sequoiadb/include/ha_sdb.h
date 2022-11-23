@@ -569,11 +569,27 @@ class ha_sdb : public handler {
 
   int update_stats(THD *thd, bool do_read_stat);
 
+  bool is_cl_statistics_supported(Sdb_conn *connection);
+
+  int get_cl_statistics(const char *cs_name, const char *cl_name,
+                        Sdb_statistics &stats,
+                        Mapping_context *mapping_ctx = NULL);
+
+  int get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
+                                 Sdb_statistics &stats,
+                                 Mapping_context *mapping_ctx = NULL);
+
+  int get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
+                               Sdb_statistics &stats,
+                               Mapping_context *mapping_ctx = NULL);
+
+  int get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats);
+
   int read_current_table_diag_info_file(THD *thd, const char *file_name,
                                         bson::BSONObj &diag_info);
 
-  int build_and_open_diag_info_file(THD *thd, const char *file_name,
-                                    File &file);
+  int build_diag_file_absolute_path(THD *thd, const char *file_name,
+                                    String &absolute_file_path);
 
   int replace_table_stats_from_diag_file(THD *thd);
 

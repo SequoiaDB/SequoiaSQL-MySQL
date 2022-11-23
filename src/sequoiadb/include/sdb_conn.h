@@ -40,6 +40,7 @@ class Sdb_seq;
 class Sdb_statistics;
 
 class Stat_cursor;
+static const int STATS_BSON_MAX_SIZE = 4096;
 
 class Sdb_session_attrs {
  public:
@@ -257,8 +258,6 @@ class Sdb_conn {
 
   virtual ~Sdb_conn();
 
-  int get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats);
-
   int connect();
 
   int reconnect();
@@ -321,10 +320,6 @@ class Sdb_conn {
   int drop_seq(const char *cs_name, const char *table_name,
                Mapping_context *mapping_ctx = NULL);
 #endif
-
-  int get_cl_statistics(const char *cs_name, const char *cl_name,
-                        Sdb_statistics &stats,
-                        Mapping_context *mapping_ctx = NULL);
 
   int list(int list_type, const bson::BSONObj &condition = SDB_EMPTY_BSON,
            const bson::BSONObj &selected = SDB_EMPTY_BSON,
@@ -433,8 +428,6 @@ class Sdb_conn {
     fix = fix_ver;
   }
 
-  bool is_cl_statistics_supported();
-
   int execute(const char *sql);
 
   int next(bson::BSONObj &obj, my_bool get_owned) {
@@ -487,14 +480,6 @@ class Sdb_conn {
 
  protected:
   int retry(boost::function<int()> func);
-
-  int get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
-                                 Sdb_statistics &stats,
-                                 Mapping_context *mapping_ctx = NULL);
-
-  int get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
-                               Sdb_statistics &stats,
-                               Mapping_context *mapping_ctx = NULL);
 
   virtual int get_connection() = 0;
 
@@ -583,6 +568,7 @@ class Stat_cursor {
  public:
   Stat_cursor() {}
   virtual ~Stat_cursor() {}
+  virtual int open() = 0;
   virtual int next(bson::BSONObj &obj, bool getOwned) = 0;
   virtual int close() = 0;
 };
@@ -592,38 +578,77 @@ class Sdb_stat_cursor : public Stat_cursor {
   Sdb_stat_cursor() : m_cursor() {}
   ~Sdb_stat_cursor() {}
 
+  void init(Sdb_cl *cl, int (Sdb_cl::*func)(sdbclient::sdbCursor &cur)) {
+    m_cl = cl;
+    m_func = func;
+  }
+
+  int open() { return (m_cl->*m_func)(m_cursor); }
+
   int next(bson::BSONObj &obj, bool getOwned) {
     return m_cursor.next(obj, getOwned);
   }
 
   int close() { return m_cursor.close(); }
 
-  sdbclient::sdbCursor &get_m_cursor() { return m_cursor; }
-
  private:
   sdbclient::sdbCursor m_cursor;
+  Sdb_cl *m_cl;
+  int (Sdb_cl::*m_func)(sdbclient::sdbCursor &cur);
 };
 
 class Replaced_stat_cursor : public Stat_cursor {
  public:
-  Replaced_stat_cursor(MYSQL_FILE *file) { m_file = file; }
-  ~Replaced_stat_cursor() {}
+  Replaced_stat_cursor() {}
+  ~Replaced_stat_cursor() {
+    if (NULL != absolute_file_path) {
+      free(absolute_file_path);
+      absolute_file_path = NULL;
+    }
+  }
+
+  int init(const char *path) {
+    int rc = 0;
+    absolute_file_path = (char *)calloc(strlen(path) + 1, 1);
+    if (NULL == absolute_file_path) {
+      rc = HA_ERR_OUT_OF_MEM;
+    } else {
+      memcpy(absolute_file_path, path, strlen(path));
+    }
+    return rc;
+  }
+
+  int open() {
+    int rc = 0;
+    m_file = mysql_file_fopen(key_file_loadfile, absolute_file_path,
+                              O_RDONLY | O_SHARE, MYF(0));
+    if (NULL == m_file) {
+      // statistics for this table may not be collected
+      // mysql_file_fopen will not update errno
+      rc = HA_ERR_INTERNAL_ERROR;
+    }
+    return rc;
+  }
 
   int next(bson::BSONObj &obj, bool getOwned) {
     char *res = 0;
     int rc = 0;
-    char str[4096] = {0};
+    char str[STATS_BSON_MAX_SIZE] = {0};
 
-    res = mysql_file_fgets(str, 4096, m_file);
+    if (NULL == m_file) {
+      rc = HA_ERR_INTERNAL_ERROR;
+      goto error;
+    }
+
+    res = mysql_file_fgets(str, STATS_BSON_MAX_SIZE, m_file);
     if (0 == res) {
-#ifdef IS_MYSQL
-      rc = my_errno();
-#elif IS_MARIADB
-      rc = my_errno;
-#endif
+      // mysql_file_fgets will not update errno
       if (0 == strlen(str)) {
+        // ignore read end of file
         rc = HA_ERR_END_OF_FILE;
+        goto done;
       }
+      rc = HA_ERR_INTERNAL_ERROR;
       goto error;
     }
 
@@ -638,10 +663,17 @@ class Replaced_stat_cursor : public Stat_cursor {
     goto done;
   }
 
-  int close() { return mysql_file_fclose(m_file, MYF(0)); }
+  int close() {
+    int rc = 0;
+    if (NULL != m_file) {
+      rc = mysql_file_fclose(m_file, MYF(0));
+    }
+    return rc;
+  }
 
  private:
   MYSQL_FILE *m_file;
+  char *absolute_file_path;
 };
 
 #endif

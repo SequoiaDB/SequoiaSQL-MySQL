@@ -259,7 +259,6 @@
 #define SDB_FIELD_VERSION "Version"
 #define SDB_FIELD_ALTER "Alter"
 
-#define SDB_FN_DIAGINFO "diaginfo"
 #define SDB_FN_CATALOG "catalog"
 #define SDB_FN_INDEX_STATISTICS "index_statistics"
 #define SDB_FN_TABLE_STATISTICS_JSON "table_statistics.json"

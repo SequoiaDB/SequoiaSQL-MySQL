@@ -9,6 +9,7 @@
 #   6     no parameter
 #   7     file already exist
 #   8     command execution error
+#   9     permission denied
 
 ME=$(basename "$0")
 
@@ -414,6 +415,7 @@ function prepare_output_dir()
 
    if [ ! -d "${OUTPUT}/${PACKAGE_PATHNAME}" ]; then
       mkdir_path "${OUTPUT}/${PACKAGE_PATHNAME}"
+      test $? -ne 0 && exit 9
    elif [[ `ls -A "${OUTPUT}/${PACKAGE_PATHNAME}" | wc -l` != "0" ]]; then
       echo "ERROR: The path \"${OUTPUT}/${PACKAGE_PATHNAME}\" already exists"
       exit 7
@@ -481,6 +483,7 @@ function get_path()
 
    # find OUTPUT path
    mkdir_path "${OUTPUT}"
+   test $? -ne 0 && exit 9
    if [[ "${dir_name:0:1}" != "/" ]]; then
       cd "$(pwd)/${OUTPUT}" && OUTPUT=`pwd`             # relative path
    else
@@ -798,7 +801,7 @@ function try_connect()
       REMOVE_PASSWORD_WARNING='| grep -v "mysql: \[Warning\] Using a password on the command line interface can be insecure"'
    fi
 
-   eval "${MYSQL_EXEC_CMD_WITHOUT_DB}" "-s" "-e" \""select version();"\" > "/dev/null"
+   eval "${MYSQL_EXEC_CMD_WITHOUT_DB}" "-s" "-e" \""select version();"\" "2>&1" > "/dev/null"
    test $? -ne 0 && { echo "ERROR: Fail to connect the instance" >&2 && exit 2; }
 
    if [ "${DATABASE}" != "" ]; then
@@ -1042,7 +1045,7 @@ function get_all_table_in_database()
       ALL_TABLES_IN_DATABASE_ARRAY[${#ALL_TABLES_IN_DATABASE_ARRAY[@]}]="`echo "${table}" \
          | sed -e 's/^\"//' -e 's/\"$//' -e 's/\./ /g'`"
    done
-   printf "Table count in \"${DATABASE}\": %s\n" ${#ALL_TABLES_IN_DATABASE_ARRAY[@]}
+   printf "INFO: Table count in \"${DATABASE}\": %s\n" ${#ALL_TABLES_IN_DATABASE_ARRAY[@]}
 }
 
 function build_get_create_table_sql()
@@ -1443,6 +1446,7 @@ function get_sdb_table_index_information()
             if [[ `echo "${error}" | grep "getIndexStat is not a function"` != "" ]]; then
                SDB_HAVE_GETINDEXSTAT=1
                echo "ERROR: Index information on the SequoiaDB side will not be collected"
+               return 8
             elif [[ `echo "${error}" | grep "Index statistics do not exist"` != "" ]]; then
                SDB_HAVE_GETINDEXSTAT=1
                echo "WARNING: Table \"${db_name}.${tb_name}\" index statistics do not exist. \
@@ -1454,8 +1458,9 @@ Suggest doing 'ANALYZE TABLE ${db_name}.${tb_name};' and dump again"
          cat /dev/null > "${file_path}/${index_real_name}${JSON}"
       fi
 
+      SDB_HAVE_GETINDEXSTAT=0
       test $rc -ne 0 && echo "ERROR: Fail to get \"${db_name}.${tb_name}\" \
-index ${idnex} information from SequoiaDB. Please verify \"${file_path}/${index_real_name}${JSON}\""
+index information from SequoiaDB."
    done
 }
 
