@@ -6,7 +6,7 @@
 --disable_warnings
 drop database if exists create_materialized_view_sequoiadb;
 --enable_warnings
-create database create_materialized_view_sequoiadb;
+create database create_materialized_view_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
 use create_materialized_view_sequoiadb;
 
 create table t1(a int);
