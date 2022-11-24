@@ -3,11 +3,13 @@ package com.sequoiasql.ddlserial;
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 import com.sequoiasql.testcommon.*;
+import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -54,7 +56,14 @@ public class DDL28093 extends MysqlTestBase {
                 + "'@'localhost' IDENTIFIED BY 'u1_pwd';";
         String grantUser = "grant all privileges on *.* to " + userName
                 + "@'%' identified by 'u1_pwd';";
-        DDLUtils.checkJdbcUpdateResult( jdbc, createUser, 1396 );
+        try {
+            jdbc.update( createUser );
+            Assert.fail( "expected fail but success" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1396 && e.getErrorCode() != 1105 ) {
+                throw e;
+            }
+        }
         // 检查pendinglong是否被完全清除
         String instanceGroupName = MetaDataMappingUtils.getInstGroupName( sdb,
                 MysqlTestBase.mysql1 );
