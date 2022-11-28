@@ -119,7 +119,7 @@ function exec_sql_with_print()
    local rc=0
 
    if [ "${without_db}" == "" ]; then
-      eval "${MYSQL_EXEC_CMD} -s -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${filename}" 
+      eval "${MYSQL_EXEC_CMD} -s -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${filename}"
    else
       eval "${MYSQL_EXEC_CMD_WITHOUT_DB} -s -e \"${sql}\"" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${filename}"
    fi
@@ -1075,9 +1075,8 @@ function get_create_table()
    mkdir_path "${file_path}"
    get_create_table_sql=`build_get_create_table_sql "${db_tmp_name}" "${tb_tmp_name}"`
    exec_sql_with_print "${get_create_table_sql}" "${file_path}/${TABLE_CATALOG_SQL_FILENAME}"
-   test $? -ne 0 && tail -n +2 "${file_path}/${TABLE_CATALOG_SQL_FILENAME}" \
-      && echo "ERROR: Fail to get create table \
-\"${db_name}.${tb_name}\". Please verify \"${file_path}/${TABLE_CATALOG_SQL_FILENAME}\"" \
+   test $? -ne 0 && echo "ERROR: Fail to get create table \"${db_name}.${tb_name}\"." \
+      && tail -n +2 "${file_path}/${TABLE_CATALOG_SQL_FILENAME}" \
       && return 1
    sed -i -e 's/^.*[ ]*\(CREATE TABLE `.*\)/\1/' -e '1,2d' "${file_path}/${TABLE_CATALOG_SQL_FILENAME}"
    local check_file=`head -n 1 "${file_path}/${TABLE_CATALOG_SQL_FILENAME}"`
@@ -1130,14 +1129,21 @@ function get_table_statistics()
 
    get_table_statistics_sql="${sql}"
    exec_sql_with_print "${get_table_statistics_sql}" "${file_path}/${TABLE_STATISTICS_RESULT_FILENAME}"
-   test $? -ne 0 && echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" statistics. \
-Please verify \"${file_path}/${TABLE_CATALOG_SQL_FILENAME}\"" \
-   && return 1
 
-   if [ `cat "${file_path}/${TABLE_STATISTICS_RESULT_FILENAME}" | wc -l` == "0" ]; then
-      echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" statistics, \
-this table does not exist"
-      return 1
+   if [ $? -ne 0 ]; then
+      if [ `tail -n 1 "${file_path}/${TABLE_STATISTICS_RESULT_FILENAME}" | grep -v "^ *$" | wc -l` == "0" ]; then
+         echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" statistics, this table does not exist"
+         return 1
+      else
+         echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" statistics." \
+            && tail -n 1 "${file_path}/${TABLE_STATISTICS_RESULT_FILENAME}" \
+            && return 1
+      fi
+   else
+      if [ `cat "${file_path}/${TABLE_STATISTICS_RESULT_FILENAME}" | wc -l` == "0" ]; then
+         echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" statistics, this table does not exist"
+         return 1
+      fi
    fi
 
    sed -i '1,2d' "${file_path}/${TABLE_STATISTICS_RESULT_FILENAME}"
@@ -1184,9 +1190,9 @@ function get_create_database()
       get_create_database_sql="${sql}"
       exec_sql_with_print "${get_create_database_sql}" \
          "${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}" "without_db"
-      test $? -ne 0 && echo "ERROR: Fail to get create database \"${dbname}\". \
-Please verify \"${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}\"" \
-      && continue
+      test $? -ne 0 && echo "ERROR: Fail to get create database \"${dbname}\"." \
+         && cat "${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}" | grep "^ERROR " \
+         && continue
       sed -i -e 's/^Create Database: //' -e '1,2d' \
          "${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}"
       check_file=`head -n 1 "${file_path}/${db_path}/${DATABASE_CATALOG_SQL_FILENAME}"`
@@ -1234,6 +1240,8 @@ function get_sdb_table_partition_information()
    local cl_full_name=""
    local file_path=""
    local tb_path=`convert_special_character "${tb_name}" "0000001"`
+   local rc=0
+
    if [ "${4}" != "mapping" ]; then
       cl_full_name="${tb_name}#P#${partition_name}"
       file_path="${OUTPUT}/${CATALOG_PATHNAME}/${db_name}/${tb_path}/${partition_name}"
@@ -1244,22 +1252,25 @@ function get_sdb_table_partition_information()
 
    local sdb_js=`get_sdb_table_catalog_js "${db_name}" "${cl_full_name}"`
    local sdb_table_catalog=`"${SDB_SHELL}" -s "${sdb_js}"`
+   rc=$?
    mkdir_path "${file_path}"
 
-   #remove 'Return x row(s).'
-   echo "${sdb_table_catalog}" | sed '$d' > "${file_path}/${TABLE_CATALOG_JSON_FILENAME}" 2>&1
-   test $? -ne 0 && echo "ERROR: Fail to get partiton \
-\"${db_name}.${cl_full_name}\" catalog from SequoiaDB. Please verify \
-\"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\"" >&2
+   if [ "${sdb_table_catalog}" != "" ]; then
+      #remove 'Return x row(s).'
+      echo "${sdb_table_catalog}" | sed '$d' > "${file_path}/${TABLE_CATALOG_JSON_FILENAME}" 2>&1
+      test $rc -ne 0 && echo "ERROR: Fail to get partiton \"${db_name}.${cl_full_name}\" catalog from SequoiaDB." \
+      && cat "${file_path}/${TABLE_CATALOG_JSON_FILENAME}"
+   else
+      echo "ERROR: Fail to get partiton \"${db_name}.${cl_full_name}\" catalog from SequoiaDB."
+   fi
 
    sdb_js=`get_sdb_table_detail_js "${db_name}" "${cl_full_name}"`
    local sdb_table_detail=`"${SDB_SHELL}" -s "${sdb_js}"`
-   rc=$?
+   check_sdb_error
+   test $? -ne 0 && echo "ERROR: Fail to get partition \"${db_name}.${cl_full_name}\" detail from SequoiaDB."
    mkdir_path "${file_path}"
    echo "${sdb_table_detail}" | sed '$d' > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}" 2>&1
-   test $? -ne 0 && echo "ERROR: Fail to get partition \
-\"${db_name}.${cl_full_name}\" detail from SequoiaDB. Please verify \
-\"${file_path}/${TABLE_STATISTICS_JSON_FILENAME}\"" >&2
+
 }
 
 function get_sdb_table_information()
@@ -1297,11 +1308,14 @@ function get_sdb_table_information()
       fi
    fi
 
-   # remove 'Return x row(s).'
-   echo "${sdb_table_catalog}" | \
-      sed '$d'  > "${file_path}/${TABLE_CATALOG_JSON_FILENAME}" 2>&1
-   test $? -ne 0 && echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" \
-catalog from SequoiaDB. Please verify \"${file_path}/${TABLE_CATALOG_JSON_FILENAME}\"" >&2
+   if [ "${sdb_table_catalog}" != "" ]; then
+      # remove 'Return x row(s).'
+      echo "${sdb_table_catalog}" | sed '$d'  > "${file_path}/${TABLE_CATALOG_JSON_FILENAME}" 2>&1
+      test $rc -ne 0 && echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" catalog from SequoiaDB." \
+      && cat "${file_path}/${TABLE_CATALOG_JSON_FILENAME}"
+   else
+      echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" catalog from SequoiaDB."
+   fi
 
    # not mapping table
    if [ "${full_table_name}" == "" ]; then
@@ -1332,9 +1346,7 @@ catalog from SequoiaDB. Please verify \"${file_path}/${TABLE_CATALOG_JSON_FILENA
    
    if [[ $? -ne 0 ]]; then
       echo "${sdb_table_detail}" > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}"
-      echo "ERROR: Fail to get create table \
-\"${db_name}.${tb_name}\" detail from SequoiaDB. Please verify \
-\"${file_path}/${TABLE_STATISTICS_JSON_FILENAME}\"" >&2
+      echo "ERROR: Fail to get create table \"${db_name}.${tb_name}\" detail from SequoiaDB."
    else
       # remove Return x rows
       echo "${sdb_table_detail}" \
@@ -1375,6 +1387,10 @@ function get_sdb_table_index_information()
    local file_path=""
    local sdb_js=""
    local cl_real_name=""
+
+   if [ "${SDB_HAVE_GETINDEXSTAT}" == "1" ]; then
+      return 8
+   fi
 
    if [ "${cl_name}" == "" ] ; then
       #normal table
@@ -1444,24 +1460,37 @@ function get_sdb_table_index_information()
          if [ "${error}" != "" ]; then
             echo "${error}"
             if [[ `echo "${error}" | grep "getIndexStat is not a function"` != "" ]]; then
+               # skip this get index function
                SDB_HAVE_GETINDEXSTAT=1
                echo "ERROR: Index information on the SequoiaDB side will not be collected"
                return 8
             elif [[ `echo "${error}" | grep "Index statistics do not exist"` != "" ]]; then
+               # skip this loop
                SDB_HAVE_GETINDEXSTAT=1
-               echo "WARNING: Table \"${db_name}.${tb_name}\" index statistics do not exist. \
+               if [[ "${mapping_name}" == "" && "${cl_name}" != "" ]]; then
+                  # partiton table
+                  echo "WARNING: Table \"${db_name}.${cl_real_name}\" index statistics do not exist. \
 Suggest doing 'ANALYZE TABLE ${db_name}.${tb_name};' and dump again"
+               else
+                  # normal table
+                  echo "WARNING: Table \"${db_name}.${tb_name}\" index statistics do not exist. \
+Suggest doing 'ANALYZE TABLE ${db_name}.${tb_name};' and dump again"
+               fi
             fi
             cat /dev/null > "${file_path}/${index_real_name}${JSON}"
          fi
       else
          cat /dev/null > "${file_path}/${index_real_name}${JSON}"
       fi
-
-      SDB_HAVE_GETINDEXSTAT=0
-      test $rc -ne 0 && echo "ERROR: Fail to get \"${db_name}.${tb_name}\" \
-index information from SequoiaDB."
    done
+   SDB_HAVE_GETINDEXSTAT=0
+   if [[ "${mapping_name}" == "" && "${cl_name}" != "" ]]; then
+      # partiton table
+      test $rc -ne 0 && echo "ERROR: Fail to get \"${db_name}.${cl_real_name}\" index information from SequoiaDB."
+   else
+      # normal table
+      test $rc -ne 0 && echo "ERROR: Fail to get \"${db_name}.${tb_name}\" index information from SequoiaDB."
+   fi
 }
 
 function get_sdb_all_table_index_information()
@@ -1512,8 +1541,8 @@ function get_create_routine()
       eval "${get_create_routine_sql}" "2>&1" "${REMOVE_PASSWORD_WARNING}" > "${file_path}/${type}_${ROUTINES_FILENAME}"
       error=`tail -n 1 "${file_path}/${type}_${ROUTINES_FILENAME}"`
       if [ "${error%% *}" == "ERROR" ]; then
-         echo "ERROR: Fail to get create ${type} \"${routine_name}\". \
-Please verify \"${file_path}/${type}_${ROUTINES_FILENAME}\""
+         echo "ERROR: Fail to get create ${type} \"${routine_name}\"."
+         tail -n 1 "${file_path}/${type}_${ROUTINES_FILENAME}"
       else
          rows=`cat "${file_path}/${type}_${ROUTINES_FILENAME}" | wc -l`
          # delete the first,second and last three lines
@@ -1540,8 +1569,8 @@ Please verify \"${file_path}/${type}_${ROUTINES_FILENAME}\""
          if [ "${error}" == "ERROR 1305 (42000) at line 2: FUNCTION ${routine_name} does not exist" ]; then
             is_func="FALSE"
          else
-            echo "ERROR: Fail to get create function \"${routine_name}\". \
-Please verify \"${file_path}/function_${ROUTINES_FILENAME}\""
+            echo "ERROR: Fail to get create function \"${routine_name}\"."
+            tail -n 1 "${file_path}/function_${ROUTINES_FILENAME}"
          fi
       else
          sed -i '1,2d' "${file_path}/function_${ROUTINES_FILENAME}"
@@ -1557,8 +1586,8 @@ Please verify \"${file_path}/function_${ROUTINES_FILENAME}\""
          if [ "${error}" == "ERROR 1305 (42000) at line 2: PROCEDURE ${routine_name} does not exist" ]; then
             is_proc="FALSE"
          else
-            echo "ERROR: Fail to get create procedure \"${routine_name}\". \
-Please verify \"${file_path}/procedure_${ROUTINES_FILENAME}\""
+            echo "ERROR: Fail to get create procedure \"${routine_name}\"."
+            tail -n 1 "${file_path}/procedure_${ROUTINES_FILENAME}"
          fi
       else
          sed -i '1,2d' "${file_path}/procedure_${ROUTINES_FILENAME}"
@@ -1696,8 +1725,8 @@ function get_explain()
    local rc=$? 
    local error=`tail -n 1 "${OUTPUT}/${EXPLAIN_FILENAME}" | grep "^ERROR "`
    if [[ $rc -ne 0 || "${error}" != "" ]]; then
-      echo "ERROR: Fail to get explain SQL information. Please verify \
-\"${OUTPUT}/${EXPLAIN_FILENAME}\"" >&2
+      echo "ERROR: Fail to get explain SQL information."
+      cat "${OUTPUT}/${EXPLAIN_FILENAME}"
    fi
 }
 
@@ -1720,8 +1749,8 @@ function get_optimizer_trace()
    local rc=$? 
    local error=`head -n 5 "${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}" | grep "^ERROR "`
    if [[ $rc -ne 0 || "${error}" != "" ]]; then
-      echo "ERROR: Fail to get optimizer trace information. \
-Please verify \"${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}\"" >&2
+      echo "ERROR: Fail to get optimizer trace information."
+      cat "${OUTPUT}/${OPTIMIZER_TRACE_FILENAME}"
    fi
 }
 
@@ -1729,24 +1758,24 @@ function get_variables()
 {
    local get_variables_sql="show variables"
    exec_sql_with_print "${get_variables_sql}" "${OUTPUT}/${VARIABLES_FILENAME}" "without_db"
-   test $? -ne 0 && echo "ERROR: Fail to get variables. Please verify \
-\"${OUTPUT}/${VARIABLES_FILENAME}\""
+   test $? -ne 0 && echo "ERROR: Fail to get variables." \
+   && cat "${OUTPUT}/${VARIABLES_FILENAME}" | grep "^ERROR "
 }
 
 function get_status()
 {
    local get_status_sql="show status\\G"
    exec_sql_with_print "${get_status_sql}" "${OUTPUT}/${STATUS_FILENAME}" "without_db"
-   test $? -ne 0 && echo "ERROR: Fail to get status. Please verify \
-\"${OUTPUT}/${STATUS_FILENAME}\""
+   test $? -ne 0 && echo "ERROR: Fail to get status." \
+   && cat "${OUTPUT}/${STATUS_FILENAME}" | grep "^ERROR "
 }
 
 function get_engine()
 {
    local get_engine_sql="show engines\\G"
    exec_sql_with_print "${get_engine_sql}" "${OUTPUT}/${ENGINE_FILENAME}" "without_db"
-   test $? -ne 0 && echo "ERROR: Fail to get engine. Please verify \
-\"${OUTPUT}/${ENGINE_FILENAME}\"" && return 1
+   test $? -ne 0 && echo "ERROR: Fail to get engine." \
+   && cat "${OUTPUT}/${ENGINE_FILENAME}" | grep "^ERROR " && return 1
    local result=`cat "${OUTPUT}/${ENGINE_FILENAME}" \
      | grep "SequoiaDB storage engine" \
      | sed 's/^[ ]*Comment: //'` 
@@ -1755,21 +1784,23 @@ function get_engine()
 
 function get_sdb_remote_version()
 {
-   local sdb_version=`"${SDB_SHELL}" --version`
+   local sdb_version=""
+   sdb_version=`"${SDB_SHELL}" --version 2>&1`
    local rc=$?
    echo "${sdb_version}" > "${OUTPUT}/${VERSION_FILENAME}" 2>&1
-   test $rc -ne 0 && echo "ERROR: Fail to get version. Please verify \
-\"${OUTPUT}/${VERSION_FILENAME}\""
+   test $rc -ne 0 && echo "ERROR: Fail to get version." \
+   && cat "${OUTPUT}/${VERSION_FILENAME}"
 }
 
 function get_sdb_list_groups()
 {
-   local sdb_list_groups=`"${SDB_SHELL}" -s "db.list(SDB_LIST_GROUPS)"`
-   check_sdb_error
+   local sdb_list_groups=""
+   sdb_list_groups=`"${SDB_SHELL}" -s "db.list(SDB_LIST_GROUPS)"`
    local rc=$?
+   test $rc -eq 0 && check_sdb_error && rc=$?
    echo "${sdb_list_groups}" > "${OUTPUT}/${GROUP_FILENAME}" 2>&1
-   test $rc -ne 0 && echo "ERROR: Fail to get SequoiaDB groups. Please verify \
-\"${OUTPUT}/${GROUP_FILENAME}\"" && return
+   test $rc -ne 0 && echo "ERROR: Fail to get SequoiaDB groups." \
+   && cat "${OUTPUT}/${GROUP_FILENAME}" && return 8
    #remove 'Return x row(s).'
    sed -i '$d' "${OUTPUT}/${GROUP_FILENAME}"
 }
