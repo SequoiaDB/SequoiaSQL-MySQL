@@ -686,7 +686,6 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
     for (uint i = 0; i <= 1; i++) {
       const KEY_PART_INFO *key_part;
       bool ignore_text_key = false;
-      bool is_prefix_index = false;
 
       if (ranges[i] == NULL) {
         continue;

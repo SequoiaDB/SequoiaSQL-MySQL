@@ -1181,6 +1181,35 @@ bool sdb_is_fixed_len_type(Field *field) {
   return is_fixed_len_type;
 }
 
+int get_user_var_int(const char *name, long long int *value, int *null_value) {
+#ifdef IS_MYSQL
+  my_bool null_val = false;
+#elif IS_MARIADB
+  bool null_val = false;
+#endif
+  int rc = SDB_OK;
+  THD *thd = current_thd;
+
+  /* Protects thd->user_vars. */
+  mysql_mutex_lock(&thd->LOCK_thd_data);
+
+  user_var_entry *entry = (user_var_entry *)my_hash_search(
+      &thd->user_vars, (uchar *)name, strlen(name));
+  if (!entry) {
+    mysql_mutex_unlock(&thd->LOCK_thd_data);
+    rc = 1;
+    goto error;
+  }
+  *value = entry->val_int(&null_val);
+  if (null_value)
+    *null_value = null_val; /* purecov: inspected */ /* do not care */
+  mysql_mutex_unlock(&thd->LOCK_thd_data);
+done:
+  return rc;
+error:
+  goto done;
+}
+
 // Get the version of remote SequoiaDB cluster.
 int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
                     bool use_cached) {
@@ -1189,6 +1218,20 @@ int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
   static int cached_fix = 0;
 
   int rc = 0;
+
+  DBUG_EXECUTE_IF("sdb_inject_version", {
+    long long int inject_major = 0;
+    long long int inject_minor = 0;
+    long long int inject_fix = 0;
+    get_user_var_int("sdb_major_version", &inject_major, NULL);
+    get_user_var_int("sdb_minor_version", &inject_minor, NULL);
+    get_user_var_int("sdb_fix_version", &inject_fix, NULL);
+    major = inject_major;
+    minor = inject_minor;
+    fix = inject_fix;
+    goto done;
+  });
+
   conn.get_version(major, minor, fix);
   /*SequoiaDB version is great equal than 3.2.8, no need to get from snapshot.*/
   if (0 != major) {

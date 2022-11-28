@@ -290,6 +290,24 @@ class ha_sdb : public handler {
   */
   int end_bulk_insert();
 
+  /**
+   @brief
+    Check whether the SequoiaDB support the NoTrans attribute or not.
+  */
+  int is_non_trans_table_supported(Sdb_conn *connection, bool &supported);
+
+  /**
+   @brief
+    Check the NoTrans attribute of collection on the SequoiaDB.
+  */
+  int is_non_trans_table(Sdb_conn *conn, char *db_name, char *table_name,
+                         bool &non_trans_table, Mapping_context *mapping_ctx);
+  /**
+   @brief
+    Check the NoTrans attribute of slow_log/general_log tables on SequoiaDB.
+  */
+  int check_log_tables();
+
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
     skip it and and MySQL will treat it as not implemented.
@@ -446,6 +464,10 @@ class ha_sdb : public handler {
   int info(uint);
 
   int extra(enum ha_extra_function operation);
+
+  bool is_slow_log_table();
+
+  bool is_general_log_table();
 
   int external_lock(THD *thd, int lock_type);
 

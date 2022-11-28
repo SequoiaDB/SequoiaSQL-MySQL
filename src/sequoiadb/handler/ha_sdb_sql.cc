@@ -892,7 +892,16 @@ KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
 bool sdb_field_default_values_is_null(const Create_field *definition) {
   return (NULL == definition->def);
 }
+bool is_slow_log_on() {
+  return opt_slow_log;
+}
+
+bool is_general_log_on() {
+  return opt_general_log;
+}
+
 #elif defined IS_MARIADB
+
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
                          size_t pre_alloc_size MY_ATTRIBUTE((unused))) {
@@ -1701,4 +1710,13 @@ KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
 bool sdb_field_default_values_is_null(const Create_field *definition) {
   return (NULL == definition->default_value);
 }
+
+bool is_slow_log_on() {
+  return global_system_variables.sql_log_slow;
+}
+
+bool is_general_log_on() {
+  return opt_log;
+}
+
 #endif
