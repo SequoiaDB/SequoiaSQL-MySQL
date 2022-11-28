@@ -838,10 +838,12 @@ error:
   goto done;
 }
 
-bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
-                             sdb_join_type type) {
-  SELECT_LEX *const select_lex = sdb_lex_first_select(thd);
-  JOIN *const join = select_lex->join;
+bool ha_sdb::can_push_down_limit(sdb_join_type type) {
+  bool rs = true;
+  SELECT_LEX *const select_lex = sdb_get_cur_select_by_table(table);
+  JOIN *const join = select_lex ? select_lex->join : NULL;
+  DBUG_ENTER("ha_sdb::can_push_down_limit");
+
   /* if the following conditions are included, cannot pushdown limit:
      1. HAVING condition.
      2. WHERE condition but not pushdowned.
@@ -852,17 +854,20 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
         t1'.
      7. has a GROUP BY clause and/or one or more aggregate functions.
      8. join type is QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT.
+     9. Current query block is in a correlated subquery or contains recursive
+        tables.
   */
-  const bool use_where_condition = sdb_where_condition(thd);
-  const bool use_having_condition = sdb_having_condition(thd);
+  const bool use_where_condition = sdb_where_condition(select_lex);
+  const bool use_having_condition = sdb_having_condition(select_lex);
   const bool where_cond_push =
       use_where_condition && (SDB_COND_SUPPORTED == sdb_condition->status ||
                               SDB_COND_UNCALLED == sdb_condition->status);
-  const bool use_filesort = sdb_use_filesort(thd);
-  const bool use_distinct = sdb_use_distinct(thd);
-  const bool calc_found_rows = sdb_calc_found_rows(thd);
+  const bool use_filesort = sdb_use_filesort(join);
+  const bool use_distinct = sdb_use_distinct(select_lex);
+  const bool calc_found_rows = sdb_calc_found_rows(join);
   bool use_group_and_agg_func = false;
-  if (join->sort_and_group && !join->tmp_table_param.precomputed_group_by) {
+  if (join && join->sort_and_group &&
+      !join->tmp_table_param.precomputed_group_by) {
     use_group_and_agg_func = true;
   }
   const bool use_index_merge_and =
@@ -870,40 +875,47 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
               SDB_JOIN_INDEX_MERGE_SORT_INTERSECT == type
           ? true
           : false;
+  const bool is_recursive_table = sdb_is_recursive_table(table);
+  const bool is_correlated = sdb_correlated_subquery_for_cur_select(table);
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       use_distinct || calc_found_rows || use_group_and_agg_func ||
-      use_filesort || use_index_merge_and) {
-    return false;
+      use_filesort || use_index_merge_and || is_recursive_table ||
+      is_correlated) {
+    rs = false;
+    goto error;
   }
-  return true;
+
+done:
+  DBUG_RETURN(rs);
+error:
+  goto done;
 }
 
-int sdb_handle_sort_condition(THD *thd, TABLE *table,
-                              ha_sdb_cond_ctx **sdb_condition,
-                              st_order **sdb_order, st_order **sdb_group_list,
-                              bool &direct_sort,
-                              bson::BSONObj &field_order_condition,
-                              bson::BSONObj &group_list_condition,
-                              bool check_order_by_only) {
-  DBUG_ENTER("sdb_handle_sort_condition");
+int ha_sdb::handle_sort_condition(bool check_order_by_only) {
   int rc = SDB_OK;
   Field *field = NULL;
   bson::BSONObj tmp_obj;
   st_order *order = NULL;
   st_order *group_list = NULL;
-  JOIN *join = sdb_lex_first_select(thd)->join;
+  SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+  JOIN *join = select_lex ? select_lex->join : NULL;
   bson::BSONObjBuilder builder_order(96);
   bson::BSONObjBuilder builder_id(96);
   bson::BSONObjBuilder builder_id_field(builder_id.subobjStart("_id"));
   bson::BSONObjBuilder builder_group_list(96);
   bson::BSONObjBuilder builder_selector_field(96);
-  const bool use_having_condition = sdb_having_condition(thd);
-  const bool use_distinct = sdb_use_distinct(thd);
+  const bool use_having_condition = sdb_having_condition(select_lex);
+  const bool use_distinct = sdb_use_distinct(select_lex);
+  const bool is_recursive_table = sdb_is_recursive_table(table);
+  const bool is_correlated = sdb_correlated_subquery_for_cur_select(table);
+  DBUG_ENTER("ha_sdb::handle_sort_condition");
 
-  if (!(*sdb_condition) || !join || use_having_condition || use_distinct) {
+  if (!select_lex || !join || !sdb_condition || use_having_condition ||
+      use_distinct || is_recursive_table || is_correlated) {
     goto done;
   }
+
   /*
     The old way to pushdown order requires the table scan access plan, so that
     when user force to use the index scan, the order should not be pushed.
@@ -913,20 +925,17 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
     goto done;
   }
 
-  if (sdb_where_condition(thd)) {
-    (*sdb_condition)->type = ha_sdb_cond_ctx::WHERE_COND;
-    sdb_parse_condtion(sdb_where_condition(thd), *sdb_condition);
-    if ((*sdb_condition)->sub_sel) {
-      goto done;
-    }
+  if (sdb_where_condition(select_lex)) {
+    sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
+    sdb_parse_condtion(sdb_where_condition(select_lex), sdb_condition);
   }
 #ifdef IS_MARIADB
   if (join->select_lex->window_specs.elements > 0) {
     goto done;
   }
 #endif
-  order = sdb_get_join_order_by(thd);
-  group_list = sdb_get_join_group_list(thd);
+  order = sdb_get_join_order_by(join);
+  group_list = sdb_get_join_group_list(join);
 
   try {
     if (order && (check_order_by_only ? !group_list : true)) {
@@ -950,9 +959,9 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
         order = order->next;
       }
       field_order_condition = builder_order.obj();
-      *sdb_order = sdb_get_join_order_by(thd);
+      sdb_order = sdb_get_join_order_by(join);
       if (!check_order_by_only) {
-        sdb_set_join_order_by(thd, NULL);
+        sdb_set_join_order_by(join, NULL);
       }
       direct_sort = true;
     }
@@ -1024,8 +1033,8 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
       }
       group_list_condition = builder_selector_field.obj();
 
-      *sdb_group_list = sdb_get_join_group_list(thd);
-      sdb_set_join_group_list(thd, NULL, false);
+      sdb_group_list = sdb_get_join_group_list(join);
+      sdb_set_join_group_list(join, NULL, false);
       direct_sort = true;
     }
   }
@@ -1038,7 +1047,7 @@ done:
   DBUG_RETURN(rc);
 error:
   if (direct_sort) {
-    sdb_set_join_order_by(thd, *sdb_order);
+    sdb_set_join_order_by(join, sdb_order);
     sdb_order = NULL;
     field_order_condition = SDB_EMPTY_BSON;
     direct_sort = false;
@@ -1112,8 +1121,13 @@ error:
 }
 
 #ifdef IS_MYSQL
-void sdb_add_tmp_join_tab(THD *thd) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
+void sdb_add_tmp_join_tab(THD *thd, TABLE *table) {
+  SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+  JOIN *join = select_lex ? select_lex->join : NULL;
+
+  if (!select_lex || !join) {
+    return; /* purecov: inspected */
+  }
   JOIN_TAB *t = new (thd->mem_root) JOIN_TAB();
   QEP_shared *qs = new (thd->mem_root) QEP_shared();
   t->set_qs(qs);
@@ -3188,7 +3202,8 @@ int ha_sdb::check_log_tables() {
       SDB_PRINT_ERROR(HA_ERR_UNSUPPORTED,
                       "The log table[%s.%s] based on the SequoiaDB engine not "
                       "support low version of SequoiaDB. Please upgrade the "
-                      "SequoiaDB to the version which supports NoTrans attribute on collection.",
+                      "SequoiaDB to the version which supports NoTrans "
+                      "attribute on collection.",
                       db_name, table_name);
       goto error;
     }
@@ -3205,7 +3220,8 @@ int ha_sdb::check_log_tables() {
     if (!non_trans_table) {
       rc = HA_ERR_INTERNAL_ERROR;
       SDB_PRINT_ERROR(HA_ERR_INTERNAL_ERROR,
-                      "The table[%s.%s] on SequoiaDB should have NoTrans attribute on SequoiaDB.",
+                      "The table[%s.%s] on SequoiaDB should have NoTrans "
+                      "attribute on SequoiaDB.",
                       db_name, table_name);
       goto error;
     }
@@ -4117,8 +4133,12 @@ error:
 /**
   return true if the query plan can be resolved by 1 json api query request.
 */
-bool ha_sdb::is_in_one_query() {
-  sdb_join_type type = sdb_get_join_type(ha_thd());
+bool ha_sdb::is_in_one_query_for_cur_select() {
+  SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+  if (!select_lex) {
+    return false; /* purecov: inspected */
+  }
+  sdb_join_type type = sdb_get_join_type(select_lex->join);
   switch (type) {
     case SDB_JOIN_UNKNOWN: {
       return true;
@@ -5289,7 +5309,7 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
   SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
   ORDER *order = select_lex->order_list.first;
   const bool using_limit =
-      sdb_lex_unit(ha_thd())->select_limit_cnt != HA_POS_ERROR;
+      select_lex->explicit_limit && select_lex->get_limit() != HA_POS_ERROR;
   TABLE_LIST *const table_list = select_lex->get_table_list();
   bool using_vers_sys = false;
   bool using_period = false;
@@ -5320,9 +5340,9 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
     }
   }
 
-  if (sdb_where_condition(ha_thd())) {
+  if (sdb_where_condition(select_lex)) {
     sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
-    sdb_parse_condtion(sdb_where_condition(ha_thd()), sdb_condition);
+    sdb_parse_condtion(sdb_where_condition(select_lex), sdb_condition);
   }
 
   if ((SDB_COND_UNCALLED == sdb_condition->status &&
@@ -5383,9 +5403,11 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
   DBUG_ENTER("ha_sdb::optimize_delete()");
   bool optimizer_delete = false;
   bool has_triggers = false;
-  SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
+  SELECT_LEX_UNIT *const unit = sdb_lex_first_unit(ha_thd());
   SELECT_LEX *const select = unit->first_select();
-  const bool using_limit = unit->select_limit_cnt != HA_POS_ERROR;
+  const bool using_limit =
+      select ? select->explicit_limit && select->get_limit() != HA_POS_ERROR
+             : false;
   bool using_vers_sys = false;
   bool using_period = false;
   ORDER *order = select->order_list.first;
@@ -5405,9 +5427,9 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
     goto done;
   }
 
-  if (sdb_where_condition(ha_thd())) {
+  if (sdb_where_condition(select)) {
     sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
-    sdb_parse_condtion(sdb_where_condition(ha_thd()), sdb_condition);
+    sdb_parse_condtion(sdb_where_condition(select), sdb_condition);
   }
 
   if ((SDB_COND_UNCALLED == sdb_condition->status &&
@@ -5467,27 +5489,36 @@ done:
 int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   DBUG_ENTER("ha_sdb::optimize_count()");
   int rc = SDB_ERR_OK;
+  THD *thd = ha_thd();
   bson::BSONObjBuilder count_cond_blder;
-  SELECT_LEX *const select = sdb_lex_first_select(ha_thd());
-  JOIN *join = select->join;
-  ORDER *order = sdb_get_join_order_by(ha_thd());
-  ORDER *group = sdb_get_join_group_list(ha_thd());
+  SELECT_LEX *const select = sdb_get_cur_select_by_table(table);
+  JOIN *join = select ? select->join : NULL;
+  ORDER *order = sdb_get_join_order_by(join);
+  ORDER *group = sdb_get_join_group_list(join);
   bool only_one_func = join && (join->tmp_table_param.sum_func_count == 1);
   bool optimize_with_materialization =
-      sdb_optimizer_switch_flag(ha_thd(), OPTIMIZER_SWITCH_MATERIALIZATION);
+      sdb_optimizer_switch_flag(thd, OPTIMIZER_SWITCH_MATERIALIZATION);
   bool using_hint_range = (IDX_COND_USING_RANGE == m_method ||
                            IDX_COND_USING_RANGE_EQUAL == m_method ||
                            IDX_COND_USING_RANGE_EQUAL_MAYBE_NULL == m_method)
                               ? true
                               : false;
+  bool is_recursive_table = sdb_is_recursive_table(table);
+  bool is_correlated = sdb_correlated_subquery_for_cur_select(table);
+
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   count_query = false;
   try {
-    if (only_one_func && sdb_is_single_table(ha_thd()) && !order && !group &&
-        optimize_with_materialization && !using_hint_range) {
-      if (is_in_one_query() && (SDB_COND_UNCALLED == sdb_condition->status ||
-                                SDB_COND_SUPPORTED == sdb_condition->status)) {
+    if (only_one_func && select && !order && !group &&
+        optimize_with_materialization && !using_hint_range &&
+        !is_recursive_table && !is_correlated &&
+        (sdb_is_single_table(thd) ||
+         (sdb_cls_pushdown_expand(thd) &&
+          sdb_is_single_table_in_cur_select(thd, select)))) {
+      if (is_in_one_query_for_cur_select() &&
+          (SDB_COND_UNCALLED == sdb_condition->status ||
+           SDB_COND_SUPPORTED == sdb_condition->status)) {
         List_iterator<Item> li(select->item_list);
         Item *item;
         while ((item = li++)) {
@@ -5661,14 +5692,17 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   DBUG_ASSERT(NULL != thd_sdb);
 
-  if (thd_sql_command(thd) == SQLCOM_SELECT) {
+  if (SQLCOM_SELECT == thd_sql_command(thd) ||
+      SQLCOM_INSERT_SELECT == thd_sql_command(thd) ||
+      SQLCOM_REPLACE_SELECT == thd_sql_command(thd)) {
+    SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
     rc = build_selector(selector);
     if (SDB_ERR_OK != rc) {
       goto error;
     }
 
     if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT) &&
-        !table->const_table) {
+        !table->const_table && select_lex && select_lex->join) {
       rc = optimize_count(condition, read_one_record);
       if (SDB_ERR_OK == rc && count_query) {
         rc = collection->get_count(total_count, condition, hint);
@@ -5680,7 +5714,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
         if (read_one_record) {
           num_to_return = 1;
         } else {
-          sdb_lex_first_select(ha_thd())->join->first_record = 1;
+          select_lex->join->first_record = 1;
           first_read = false;
           num_to_return = 0;
         }
@@ -6240,11 +6274,12 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   bool direct_op = false;
   bool use_multi_down = false;  // Mark whether conditions are batched down
   int flag = 0;
+  THD *thd = ha_thd();
   KEY *key_info = table->key_info + active_index;
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(thd));
   DBUG_ASSERT(NULL != key_info);
   DBUG_ASSERT(NULL != sdb_key_name(key_info));
   DBUG_ASSERT(NULL != thd_sdb);
@@ -6254,8 +6289,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
-  if (!sdb_is_single_table(ha_thd()) ||
-      !ha_thd()->variables.optimizer_index_sort_prune ||
+  if (!sdb_is_single_table(thd) || !thd->variables.optimizer_index_sort_prune ||
       sdb_index_contain_part_key(key_info)) {
     m_index_need_sorted = true;
   }
@@ -6280,7 +6314,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
   }
 
-  rc = get_query_flag(thd_sql_command(ha_thd()), m_lock_type, flag);
+  rc = get_query_flag(thd_sql_command(thd), m_lock_type, flag);
   if (rc != 0) {
     goto error;
   }
@@ -6288,14 +6322,14 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   try {
     if (hint_builder) {
       hint_builder->append("", sdb_key_name(key_info));
-      sdb_build_clientinfo(ha_thd(), *hint_builder);
+      sdb_build_clientinfo(thd, *hint_builder);
       hint = hint_builder->obj();
     }
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to index read one for table:%s.%s, exception:%s", db_name,
       table_name, e.what());
-  if (sdb_check_condition_pushdown_switch(ha_thd())) {
+  if (sdb_check_condition_pushdown_switch(thd)) {
     rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                            direct_op);
   }
@@ -6303,8 +6337,8 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
-  if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
-       thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
+  if ((thd_sql_command(thd) == SQLCOM_UPDATE ||
+       thd_sql_command(thd) == SQLCOM_DELETE) &&
       thd_sdb->get_auto_commit()) {
     rc = autocommit_statement(direct_op);
     if (rc) {
@@ -6316,16 +6350,23 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     rc = collection->query_and_remove(condition, selector, order_by, hint, 0,
                                       num_to_return, flag);
   } else {
-    SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
-    SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
-    const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+    SELECT_LEX *const select_lex = sdb_get_cur_select_by_table(table);
+    const bool use_limit = select_lex
+                               ? select_lex->explicit_limit &&
+                                     select_lex->get_limit() != HA_POS_ERROR
+                               : false;
     sdb_join_type type = SDB_JOIN_UNKNOWN;
-    if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
-        sdb_is_single_table(ha_thd()) &&
-        ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_LIMIT) &&
-         sdb_check_condition_pushdown_switch(ha_thd()))) {
-      type = sdb_get_join_type(ha_thd());
-      if (sdb_can_push_down_limit(ha_thd(), sdb_condition, type)) {
+    if ((SQLCOM_SELECT == thd_sql_command(thd) ||
+         SQLCOM_INSERT_SELECT == thd_sql_command(thd) ||
+         SQLCOM_REPLACE_SELECT == thd_sql_command(thd)) &&
+        select_lex && use_limit &&
+        ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_LIMIT) &&
+         sdb_check_condition_pushdown_switch(thd)) &&
+        (sdb_is_single_table(thd) ||
+         (sdb_cls_pushdown_expand(thd) &&
+          sdb_is_single_table_in_cur_select(thd, select_lex)))) {
+      type = sdb_get_join_type(select_lex->join);
+      if (can_push_down_limit(type)) {
         // org_num_to_return/org_num_to_skip keep the initial value for easy
         // printing debug log.
         org_num_to_return = num_to_return = select_lex->get_limit();
@@ -6333,12 +6374,12 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
           org_num_to_skip = num_to_skip = select_lex->get_offset();
           // Handle scenarios where conditions are batched down, like
           // 'MULTI_RANGE/INDEX_MERGE/JT_REF_OR_NULL'.
-          if (!is_in_one_query()) {
+          if (!is_in_one_query_for_cur_select()) {
             use_multi_down = true;
             num_to_return += num_to_skip;
             num_to_skip = 0;
           } else {
-            unit->offset_limit_cnt = 0;
+            select_lex->master_unit()->offset_limit_cnt = 0;
           }
         }
       }
@@ -6718,8 +6759,8 @@ int ha_sdb::cur_row(uchar *buf) {
        'select a, count(b) from table_name where ... '.
     */
     Item *field = NULL;
-    LEX *const lex = ha_thd()->lex;
-    List_iterator<Item> li(sdb_lex_all_fields(lex));
+    SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+    List_iterator<Item> li(sdb_lex_all_fields(select_lex));
     while ((field = li++)) {
       Item::Type real_type = field->real_item()->type();
       if (real_type == Item::SUM_FUNC_ITEM) {
@@ -6821,7 +6862,8 @@ int ha_sdb::rnd_next(uchar *buf) {
   ha_rows num_to_skip = 0;
   ha_rows num_to_return = -1;
   bool direct_op = false;
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  THD *thd = ha_thd();
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
   try {
     bson::BSONObj rule;
@@ -6831,32 +6873,32 @@ int ha_sdb::rnd_next(uchar *buf) {
     bson::BSONObj hint = SDB_EMPTY_BSON;
     bson::BSONObjBuilder builder;
 
-    if (sdb_execute_only_in_mysql(ha_thd())) {
+    if (sdb_execute_only_in_mysql(thd)) {
       rc = HA_ERR_END_OF_FILE;
       table->status = STATUS_NOT_FOUND;
       goto error;
     }
     DBUG_ASSERT(NULL != collection);
-    DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+    DBUG_ASSERT(collection->thread_id() == sdb_thd_id(thd));
     DBUG_ASSERT(NULL != thd_sdb);
     sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
     if (first_read) {
-      if (ha_thd()->variables.sdb_sql_pushdown &&
-          THD::PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
-          ha_thd()->sdb_sql_push_down_query_string.length) {
+      if (thd->variables.sdb_sql_pushdown &&
+          THD::PREPARE_STEP == thd->sdb_sql_exec_step &&
+          thd->sdb_sql_push_down_query_string.length) {
         const char *hj_sql = NULL;
         Sdb_conn *conn = NULL;
 
-        hj_sql = ha_thd()->sdb_sql_push_down_query_string.str;
-        ha_thd()->sdb_sql_exec_step = THD::EXEC_STEP;
-        rc = check_sdb_in_thd(ha_thd(), &conn, true);
+        hj_sql = thd->sdb_sql_push_down_query_string.str;
+        thd->sdb_sql_exec_step = THD::EXEC_STEP;
+        rc = check_sdb_in_thd(thd, &conn, true);
         if (0 != rc) {
           goto error;
         }
 
         DBUG_ASSERT(NULL != db_name);
         DBUG_ASSERT(strlen(table_name) != 0);
-        THD_STAGE_INFO(ha_thd(), stage_exec_sql_in_sdb);
+        THD_STAGE_INFO(thd, stage_exec_sql_in_sdb);
         try {
           rc = conn->execute(hj_sql);
           SDB_LOG_DEBUG("SQL pushed down to sdb:%s, rc:%d, table:%s.%s", hj_sql,
@@ -6875,7 +6917,7 @@ int ha_sdb::rnd_next(uchar *buf) {
         SDB_EXCEPTION_CATCHER(
             rc, "Failed to read next for table:%s.%s, exception:%s", db_name,
             table_name, e.what());
-        THD_STAGE_INFO(ha_thd(), stage_exec_fetch_data_in_sdb);
+        THD_STAGE_INFO(thd, stage_exec_fetch_data_in_sdb);
         ha_statistic_increment(&SSV::ha_read_rnd_next_count);
         rc = obj_to_row(cur_rec, buf);
         if (rc != 0) {
@@ -6887,9 +6929,9 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
 
 #ifdef IS_MARIADB
-      if (table->versioned() && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
-                                 SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
-        rc = sdb_append_end_condition(ha_thd(), table, pushed_condition);
+      if (table->versioned() && (SQLCOM_DELETE == thd_sql_command(thd) ||
+                                 SQLCOM_UPDATE == thd_sql_command(thd))) {
+        rc = sdb_append_end_condition(thd, table, pushed_condition);
         if (rc) {
           goto error;
         }
@@ -6915,29 +6957,34 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
 
       {
-        rc = get_query_flag(thd_sql_command(ha_thd()), m_lock_type, flag);
+        rc = get_query_flag(thd_sql_command(thd), m_lock_type, flag);
         if (rc != 0) {
           goto error;
         }
-        SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
-        SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
-        const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+        SELECT_LEX *const select_lex = sdb_get_cur_select_by_table(table);
+        const bool use_limit = select_lex
+                                   ? select_lex->explicit_limit &&
+                                         select_lex->get_limit() != HA_POS_ERROR
+                                   : false;
         try {
           /*table scan with sort and limit can push hint({"":""}) to SequoiaDB
             to prefer to index scan when 'select * from tbl order by a limit
             ??'.*/
-          if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
-              !order_by.isEmpty() && sdb_is_single_table(ha_thd())) {
+          if ((SQLCOM_SELECT == thd_sql_command(thd) ||
+               SQLCOM_INSERT_SELECT == thd_sql_command(thd) ||
+               SQLCOM_REPLACE_SELECT == thd_sql_command(thd)) &&
+              select_lex && use_limit && !order_by.isEmpty() &&
+              sdb_is_single_table_in_cur_select(thd, select_lex)) {
             builder.append("", "");
           }
 
-          sdb_build_clientinfo(ha_thd(), builder);
+          sdb_build_clientinfo(thd, builder);
           hint = builder.obj();
         }
         SDB_EXCEPTION_CATCHER(
             rc, "Failed to read next for table:%s.%s, exception:%s", db_name,
             table_name, e.what());
-        if (sdb_check_condition_pushdown_switch(ha_thd())) {
+        if (sdb_check_condition_pushdown_switch(thd)) {
           rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                                  direct_op);
         }
@@ -6945,8 +6992,8 @@ int ha_sdb::rnd_next(uchar *buf) {
           goto error;
         }
 
-        if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
-             thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
+        if ((thd_sql_command(thd) == SQLCOM_UPDATE ||
+             thd_sql_command(thd) == SQLCOM_DELETE) &&
             thd_sdb->get_auto_commit()) {
           rc = autocommit_statement(direct_op);
           if (rc) {
@@ -6958,17 +7005,20 @@ int ha_sdb::rnd_next(uchar *buf) {
           rc = collection->query_and_remove(condition, selector, order_by, hint,
                                             0, num_to_return, flag);
         } else {
-          if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
-              sdb_is_single_table(ha_thd()) &&
-              ((sdb_get_optimizer_options(ha_thd()) &
-                SDB_OPTIMIZER_OPTION_LIMIT) &&
-               sdb_check_condition_pushdown_switch(ha_thd()))) {
-            if (sdb_can_push_down_limit(ha_thd(), sdb_condition,
-                                        SDB_JOIN_UNKNOWN)) {
+          if ((SQLCOM_SELECT == thd_sql_command(thd) ||
+               SQLCOM_INSERT_SELECT == thd_sql_command(thd) ||
+               SQLCOM_REPLACE_SELECT == thd_sql_command(thd)) &&
+              select_lex && use_limit &&
+              ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_LIMIT) &&
+               sdb_check_condition_pushdown_switch(thd)) &&
+              (sdb_is_single_table(thd) ||
+               (sdb_cls_pushdown_expand(thd) &&
+                sdb_is_single_table_in_cur_select(thd, select_lex)))) {
+            if (can_push_down_limit(SDB_JOIN_UNKNOWN)) {
               num_to_return = select_lex->get_limit();
               if (select_lex->offset_limit) {
                 num_to_skip = select_lex->get_offset();
-                unit->offset_limit_cnt = 0;
+                select_lex->master_unit()->offset_limit_cnt = 0;
               }
             }
           }
@@ -7142,6 +7192,7 @@ int ha_sdb::info(uint flag) {
   int rc = 0;
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
+  SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
 
   if (sdb_execute_only_in_mysql(thd)) {
     if (flag & HA_STATUS_VARIABLE) {
@@ -7172,27 +7223,40 @@ int ha_sdb::info(uint flag) {
 #endif
 
   if (first_info) {
-    if (thd_sql_command(thd) == SQLCOM_SELECT && sdb_is_single_table(thd) &&
-        ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SORT) &&
-         sdb_check_condition_pushdown_switch(thd))) {
-      bool has_opt_sort_pushdown = false;
-      st_order *order = sdb_get_join_order_by(thd);
-      st_order *group_list = sdb_get_join_group_list(thd);
-      has_opt_sort_pushdown =
-          (optimizer_flag(thd, OPTIMIZER_SWITCH_OPTIMIZER_SORT_PUSHDOWN) &&
-           order && !group_list);
-      // If ORDER BY + LIMIT and no index sort prune, walk on the old way to
-      // ensure performance.
-      SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
-      const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
-      if (!thd->variables.optimizer_index_sort_prune || use_limit) {
-        has_opt_sort_pushdown = false;
-      }
+    SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+    const bool use_limit = select_lex
+                               ? select_lex->explicit_limit &&
+                                     select_lex->get_limit() != HA_POS_ERROR
+                               : false;
+    if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SORT) &&
+        sdb_check_condition_pushdown_switch(thd) && select_lex) {
+      if (SQLCOM_SELECT == thd_sql_command(thd) && sdb_is_single_table(thd)) {
+        bool has_opt_sort_pushdown = false;
+        st_order *order = sdb_get_join_order_by(select_lex->join);
+        st_order *group_list = sdb_get_join_group_list(select_lex->join);
+        has_opt_sort_pushdown =
+            (optimizer_flag(thd, OPTIMIZER_SWITCH_OPTIMIZER_SORT_PUSHDOWN) &&
+             order && !group_list);
+        /*
+          If ORDER BY + LIMIT and no index sort prune, walk on the old way to
+          ensure performance.
+        */
+        if (!thd->variables.optimizer_index_sort_prune || use_limit) {
+          has_opt_sort_pushdown = false;
+        }
 
-      if (!has_opt_sort_pushdown) {
-        rc = sdb_handle_sort_condition(
-            thd, table, &sdb_condition, &sdb_order, &sdb_group_list,
-            direct_sort, field_order_condition, group_list_condition, false);
+        if (!has_opt_sort_pushdown) {
+          rc = handle_sort_condition(false);
+          if (rc) {
+            goto error; /* purecov: inspected */
+          }
+        }
+      } else if ((SQLCOM_SELECT == thd_sql_command(thd) ||
+                  SQLCOM_INSERT_SELECT == thd_sql_command(thd) ||
+                  SQLCOM_REPLACE_SELECT == thd_sql_command(thd)) &&
+                 sdb_cls_pushdown_expand(thd) && use_limit &&
+                 sdb_is_single_table_in_cur_select(thd, select_lex)) {
+        rc = handle_sort_condition(false);
         if (rc) {
           goto error;
         }
@@ -7255,7 +7319,8 @@ int ha_sdb::info(uint flag) {
       }
 
       // statistics are needed when multi-table joining
-      if (!sdb_is_single_table(thd)) {
+      if (select_lex &&
+          !sdb_is_single_table_in_cur_select(ha_thd(), select_lex)) {
         int tmp_rc = ensure_stats(thd, i);
         if (tmp_rc) {
           SDB_LOG_WARNING("Failed to load index statistics, rc: %d", tmp_rc);
@@ -9746,6 +9811,7 @@ error:
 }
 
 double ha_sdb::scan_time() {
+  SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
   DBUG_ENTER("ha_sdb::scan_time");
   if (direct_sort) {
     /*direct sort will clear the const keys and pass over the
@@ -9753,7 +9819,9 @@ double ha_sdb::scan_time() {
       so the m_use_default_impl need to use default impl in case of direct_sort.
     */
     m_use_default_impl = true;
-    sdb_clear_const_keys(ha_thd());
+    if (select_lex) {
+      sdb_clear_const_keys(select_lex->join);
+    }
   }
 
   double res = rows2double(share->stat.total_index_pages);
@@ -10635,6 +10703,8 @@ error:
 const Item *ha_sdb::cond_push(const Item *cond) {
   DBUG_ENTER("ha_sdb::cond_push()");
   const Item *remain_cond = cond;
+  SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+  JOIN *join = select_lex ? select_lex->join : NULL;
 
   // we can handle the condition which only involved current table,
   // can't handle conditions which involved other tables
@@ -10670,25 +10740,26 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     sdb_condition->status = SDB_COND_UNSUPPORTED;
   }
 
-  if (direct_sort && (SDB_COND_SUPPORTED != sdb_condition->status ||
-                      sdb_use_JT_REF_OR_NULL(ha_thd(), table))) {
-    if ((!sdb_get_join_order_by(ha_thd()) && sdb_order) ||
-        (!sdb_get_join_group_list(ha_thd()) && sdb_group_list)) {
+  if (direct_sort && select_lex && join &&
+      (SDB_COND_SUPPORTED != sdb_condition->status ||
+       sdb_use_JT_REF_OR_NULL(join, table))) {
+    if ((!sdb_get_join_order_by(join) && sdb_order) ||
+        (!sdb_get_join_group_list(join) && sdb_group_list)) {
       direct_sort = false;
       field_order_condition = SDB_EMPTY_BSON;
       group_list_condition = SDB_EMPTY_BSON;
     }
     if (sdb_order) {
-      sdb_set_join_order_by(ha_thd(), sdb_order);
+      sdb_set_join_order_by(join, sdb_order);
       sdb_order = NULL;
     }
     if (sdb_group_list) {
 #ifdef IS_MYSQL
       // Since we removed the group list in 'ha_sdb::info', sql layer does't
       // create join_tab for grouping. So we need to manually create join_tab.
-      sdb_add_tmp_join_tab(ha_thd());
+      sdb_add_tmp_join_tab(ha_thd(), table);
 #endif
-      sdb_set_join_group_list(ha_thd(), sdb_group_list, true);
+      sdb_set_join_group_list(join, sdb_group_list, true);
       sdb_group_list = NULL;
     }
   }
@@ -10726,6 +10797,7 @@ bool ha_sdb::filesort_push(const ORDER *order) {
   bool rs = true;
   THD *thd = ha_thd();
   KEY *key_info = NULL;
+  SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
   /*
     The order can be pushdown when
     1) It is a SELECT statement. Because others statements are not considered.
@@ -10738,8 +10810,8 @@ bool ha_sdb::filesort_push(const ORDER *order) {
        as prefix index. It rely on index inner order.
   */
   if (!(thd_sql_command(thd) == SQLCOM_SELECT &&  // 1)
-        sdb_is_single_table(thd) &&               // 2)
-        is_in_one_query())) {                     // 3)
+        sdb_is_single_table(ha_thd()) &&          // 2)
+        is_in_one_query_for_cur_select())) {      // 3)
     goto done;
   }
 
@@ -10749,9 +10821,9 @@ bool ha_sdb::filesort_push(const ORDER *order) {
     goto done;
   }
 
-  if (sdb_where_condition(thd)) {
+  if (sdb_where_condition(select_lex)) {
     sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
-    sdb_parse_condtion(sdb_where_condition(thd), sdb_condition);
+    sdb_parse_condtion(sdb_where_condition(select_lex), sdb_condition);
   }
 
   if ((SDB_COND_UNCALLED == sdb_condition->status &&
@@ -10774,14 +10846,11 @@ bool ha_sdb::filesort_push(const ORDER *order) {
     goto done;
   }
 
-  if (0 == sdb_handle_sort_condition(thd, table, &sdb_condition, &sdb_order,
-                                     &sdb_group_list, direct_sort,
-                                     field_order_condition,
-                                     group_list_condition, true) &&
-      direct_sort) {
+  if (0 == handle_sort_condition(true) && direct_sort) {
     rs = false;
     goto done;
   }
+
 done:
   return rs;
 }

@@ -263,8 +263,14 @@ SELECT_LEX *sdb_lex_current_select(THD *thd) {
   return thd->lex->current_select();
 }
 
-List_iterator<Item> sdb_lex_all_fields(LEX *const lex) {
-  return lex->current_select()->all_fields;
+List_iterator<Item> sdb_lex_all_fields(SELECT_LEX *select_lex) {
+  if (!select_lex) {
+    /* purecov: begin inspected */
+    List_iterator<Item> it;
+    return it;
+    /* purecov: end */
+  }
+  return select_lex->all_fields;
 }
 
 bool sdb_is_insert_single_value(THD *thd) {
@@ -284,7 +290,7 @@ List<Item> *sdb_update_values_list(THD *thd) {
   return &sql_cmd_update->update_value_list;
 }
 
-SELECT_LEX_UNIT *sdb_lex_unit(THD *thd) {
+SELECT_LEX_UNIT *sdb_lex_first_unit(THD *thd) {
   return thd->lex->unit;
 }
 
@@ -300,25 +306,39 @@ bool sdb_is_view(struct TABLE_LIST *table_list) {
   return table_list->is_view();
 }
 
-Item *sdb_where_condition(THD *thd) {
-  return sdb_lex_first_select(thd)->where_cond();
+Item *sdb_where_condition(SELECT_LEX *select_lex) {
+  if (!select_lex) {
+    return NULL; /* purecov: inspected */
+  }
+  return select_lex->where_cond();
 }
 
-Item *sdb_having_condition(THD *thd) {
-  return sdb_lex_first_select(thd)->having_cond();
+Item *sdb_having_condition(SELECT_LEX *select_lex) {
+  if (!select_lex) {
+    return NULL; /* purecov: inspected */
+  }
+  return select_lex->having_cond();
 }
 
-bool sdb_use_distinct(THD *thd) {
-  return sdb_lex_first_select(thd)->is_distinct();
+bool sdb_use_distinct(SELECT_LEX *select_lex) {
+  if (!select_lex) {
+    return false; /* purecov: inspected */
+  }
+  return select_lex->is_distinct();
 }
 
-bool sdb_calc_found_rows(THD *thd) {
-  return sdb_lex_first_select(thd)->join->calc_found_rows;
+bool sdb_calc_found_rows(JOIN *join) {
+  if (!join) {
+    return false; /* purecov: inspected */
+  }
+  return join->calc_found_rows;
 }
 
-bool sdb_use_filesort(THD *thd) {
-  JOIN *const join = sdb_lex_first_select(thd)->join;
+bool sdb_use_filesort(JOIN *join) {
   QEP_TAB *tab = NULL;
+  if (!join) {
+    return false; /* purecov: inspected */
+  }
   if (!join->qep_tab) {
     return false;
   }
@@ -330,8 +350,7 @@ bool sdb_use_filesort(THD *thd) {
   return tab->filesort;
 }
 
-bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
-  JOIN *const join = sdb_lex_first_select(thd)->join;
+bool sdb_use_JT_REF_OR_NULL(JOIN *join, const TABLE *table) {
   if (!join) {
     return false;
   }
@@ -341,12 +360,14 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
   return JT_REF_OR_NULL == tab->type();
 }
 
-sdb_join_type sdb_get_join_type(THD *thd) {
+sdb_join_type sdb_get_join_type(JOIN *join) {
   sdb_join_type type = SDB_JOIN_UNKNOWN;
   QEP_TAB *tab = NULL;
   QUICK_SELECT_I *quick = NULL;
-  JOIN *const join = sdb_lex_first_select(thd)->join;
 
+  if (!join) {
+    goto error; /* purecov: inspected */
+  }
   if (!join->qep_tab) {
     goto error;
   }
@@ -462,44 +483,37 @@ done:
   return index_cover;
 }
 
-void sdb_clear_const_keys(THD *thd) {
-  JOIN *const join = sdb_lex_first_select(thd)->join;
+void sdb_clear_const_keys(JOIN *join) {
   if (join && join->join_tab) {
     join->join_tab->const_keys.clear_all();
   }
 }
 
-st_order *sdb_get_join_order_by(THD *thd) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
+st_order *sdb_get_join_order_by(JOIN *join) {
   if (!join) {
     return NULL;
   }
   return join->order.order;
 }
 
-void sdb_set_join_order_by(THD *thd, st_order *order) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
-  if (!join) {
-    return;
+void sdb_set_join_order_by(JOIN *join, st_order *order) {
+  if (join) {
+    join->order.order = order;
   }
-  join->order.order = order;
 }
 
-st_order *sdb_get_join_group_list(THD *thd) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
+st_order *sdb_get_join_group_list(JOIN *join) {
   if (!join) {
     return NULL;
   }
   return join->group_list;
 }
 
-void sdb_set_join_group_list(THD *thd, st_order *group_list, bool grouped) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
-  if (!join) {
-    return;
+void sdb_set_join_group_list(JOIN *join, st_order *group_list, bool grouped) {
+  if (join) {
+    join->group_list.order = group_list;
+    join->grouped = grouped;
   }
-  join->group_list.order = group_list;
-  join->grouped = grouped;
 }
 
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag) {
@@ -757,6 +771,20 @@ const char *sdb_get_table_alias(TABLE *table) {
 
 const char *sdb_get_change_column(const Create_field *def) {
   return def->change;
+}
+
+bool sdb_is_recursive_table(TABLE *table) {
+  return false;
+}
+
+bool sdb_correlated_subquery_for_cur_select(TABLE *table) {
+  SELECT_LEX *select_lex = NULL;
+
+  if (!table || !table->pos_in_table_list) {
+    return false; /* purecov: inspected */
+  }
+  select_lex = table->pos_in_table_list->select_lex;
+  return select_lex && select_lex->is_dependent();
 }
 
 uint sdb_partition_flags() {
@@ -1051,8 +1079,14 @@ SELECT_LEX *sdb_lex_current_select(THD *thd) {
   return thd->lex->current_select;
 }
 
-List_iterator<Item> sdb_lex_all_fields(LEX *const lex) {
-  return lex->current_select->item_list;
+List_iterator<Item> sdb_lex_all_fields(SELECT_LEX *select_lex) {
+  if (!select_lex) {
+    /* purecov: begin inspected */
+    List_iterator<Item> it;
+    return it;
+    /* purecov: end */
+  }
+  return select_lex->item_list;
 }
 
 bool sdb_is_insert_single_value(THD *thd) {
@@ -1067,7 +1101,7 @@ List<Item> *sdb_update_values_list(THD *thd) {
   return &thd->lex->value_list;
 }
 
-SELECT_LEX_UNIT *sdb_lex_unit(THD *thd) {
+SELECT_LEX_UNIT *sdb_lex_first_unit(THD *thd) {
   return &thd->lex->unit;
 }
 
@@ -1085,24 +1119,38 @@ bool sdb_is_view(struct TABLE_LIST *table_list) {
   return table_list->view == NULL ? false : true;
 }
 
-Item *sdb_where_condition(THD *thd) {
-  return sdb_lex_first_select(thd)->where;
+Item *sdb_where_condition(SELECT_LEX *select_lex) {
+  if (!select_lex) {
+    return NULL; /* purecov: inspected */
+  }
+  return select_lex->where;
 }
 
-Item *sdb_having_condition(THD *thd) {
-  return sdb_lex_first_select(thd)->having;
+Item *sdb_having_condition(SELECT_LEX *select_lex) {
+  if (!select_lex) {
+    return NULL; /* purecov: inspected */
+  }
+  return select_lex->having;
 }
 
-bool sdb_use_distinct(THD *thd) {
-  return sdb_lex_first_select(thd)->options & SELECT_DISTINCT;
+bool sdb_use_distinct(SELECT_LEX *select_lex) {
+  if (!select_lex) {
+    return false; /* purecov: inspected */
+  }
+  return select_lex->options & SELECT_DISTINCT;
 }
 
-bool sdb_calc_found_rows(THD *thd) {
-  return sdb_lex_first_select(thd)->join->select_options & OPTION_FOUND_ROWS;
+bool sdb_calc_found_rows(JOIN *join) {
+  if (!join) {
+    return false; /* purecov: inspected */
+  }
+  return join->select_options & OPTION_FOUND_ROWS;
 }
 
-bool sdb_use_filesort(THD *thd) {
-  JOIN *const join = sdb_lex_first_select(thd)->join;
+bool sdb_use_filesort(JOIN *join) {
+  if (!join) {
+    return false; /* purecov: inspected */
+  }
   if (!join->join_tab) {
     return false;
   }
@@ -1113,14 +1161,14 @@ bool sdb_use_filesort(THD *thd) {
   return tab->filesort;
 }
 
-bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
+bool sdb_use_JT_REF_OR_NULL(JOIN *join, const TABLE *table) {
   JOIN_TAB *tab = NULL;
-  const JOIN *join = sdb_lex_first_select(thd)->join;
   bool join_two_phase_optimization = true;
+
   if (!join) {
     return false;
   }
-  if (!sdb_lex_first_select(thd)->pushdown_select &&
+  if (!join->select_lex->pushdown_select &&
       join->optimization_state == JOIN::OPTIMIZATION_PHASE_1_DONE) {
     join_two_phase_optimization = true;
   }
@@ -1130,13 +1178,15 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
   return JT_REF_OR_NULL == tab->type;
 }
 
-sdb_join_type sdb_get_join_type(THD *thd) {
+sdb_join_type sdb_get_join_type(JOIN *join) {
   sdb_join_type type = SDB_JOIN_UNKNOWN;
   SQL_SELECT *select = NULL;
   QUICK_SELECT_I *quick = NULL;
-  JOIN *const join = sdb_lex_first_select(thd)->join;
   JOIN_TAB *tab = NULL;
 
+  if (!join) {
+    goto error; /* purecov: inspected */
+  }
   if (!join->join_tab) {
     goto error;
   }
@@ -1273,44 +1323,37 @@ done:
   return index_cover;
 }
 
-void sdb_clear_const_keys(THD *thd) {
-  JOIN *const join = sdb_lex_first_select(thd)->join;
+void sdb_clear_const_keys(JOIN *join) {
   if (join && join->best_ref[0]) {
     join->best_ref[0]->const_keys.clear_all();
   }
 }
 
-st_order *sdb_get_join_order_by(THD *thd) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
+st_order *sdb_get_join_order_by(JOIN *join) {
   if (!join) {
     return NULL;
   }
   return join->order;
 }
 
-void sdb_set_join_order_by(THD *thd, st_order *order) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
-  if (!join) {
-    return;
+void sdb_set_join_order_by(JOIN *join, st_order *order) {
+  if (join) {
+    join->order = order;
   }
-  join->order = order;
 }
 
-st_order *sdb_get_join_group_list(THD *thd) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
+st_order *sdb_get_join_group_list(JOIN *join) {
   if (!join) {
     return NULL;
   }
   return join->group_list;
 }
 
-void sdb_set_join_group_list(THD *thd, st_order *group_list, bool grouped) {
-  JOIN *join = sdb_lex_first_select(thd)->join;
-  if (!join) {
-    return;
+void sdb_set_join_group_list(JOIN *join, st_order *group_list, bool grouped) {
+  if (join) {
+    join->group_list = group_list;
+    join->group = grouped;
   }
-  join->group_list = group_list;
-  join->group = grouped;
 }
 
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag) {
@@ -1554,6 +1597,27 @@ const char *sdb_get_table_alias(TABLE *table) {
 
 const char *sdb_get_change_column(const Create_field *def) {
   return def->change.str;
+}
+
+bool sdb_is_recursive_table(TABLE *table) {
+  TABLE_LIST *table_list = NULL;
+
+  if (!table) {
+    return false; /* purecov: inspected */
+  }
+  table_list = table->pos_in_table_list;
+  return table_list && (table_list->is_recursive_with_table() ||
+                        table_list->is_with_table_recursive_reference());
+}
+
+bool sdb_correlated_subquery_for_cur_select(TABLE *table) {
+  SELECT_LEX *select_lex = NULL;
+
+  if (!table || !table->pos_in_table_list) {
+    return false; /* purecov: inspected */
+  }
+  select_lex = table->pos_in_table_list->select_lex;
+  return select_lex && select_lex->is_correlated;
 }
 
 uint sdb_partition_flags() {

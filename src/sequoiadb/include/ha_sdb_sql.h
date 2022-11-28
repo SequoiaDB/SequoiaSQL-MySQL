@@ -316,37 +316,13 @@ SELECT_LEX *sdb_lex_first_select(THD *thd);
 
 List<Item> *sdb_update_values_list(THD *thd);
 
-SELECT_LEX_UNIT *sdb_lex_unit(THD *thd);
+SELECT_LEX_UNIT *sdb_lex_first_unit(THD *thd);
 
 bool sdb_lex_ignore(THD *thd);
 
 bool sdb_is_view(struct TABLE_LIST *table_list);
 
-Item *sdb_where_condition(THD *thd);
-
-Item *sdb_having_condition(THD *thd);
-
-bool sdb_use_distinct(THD *thd);
-
-bool sdb_calc_found_rows(THD *thd);
-
-bool sdb_use_filesort(THD *thd);
-
-bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table);
-
-sdb_join_type sdb_get_join_type(THD *thd);
-
 bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index);
-
-void sdb_clear_const_keys(THD *thd);
-
-st_order *sdb_get_join_order_by(THD *thd);
-
-void sdb_set_join_order_by(THD *thd, st_order *order);
-
-st_order *sdb_get_join_group_list(THD *thd);
-
-void sdb_set_join_group_list(THD *thd, st_order *group_list, bool grouped);
 
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag);
 
@@ -365,6 +341,32 @@ bool sdb_is_transaction_stmt(THD *thd, bool all);
 bool sdb_check_condition_pushdown_switch(THD *thd);
 
 bool sdb_is_single_table(THD *thd);
+
+// About SELECT_LEX
+Item *sdb_where_condition(SELECT_LEX *select_lex);
+
+Item *sdb_having_condition(SELECT_LEX *select_lex);
+
+bool sdb_use_distinct(SELECT_LEX *select_lex);
+
+// About JOIN
+st_order *sdb_get_join_order_by(JOIN *join);
+
+st_order *sdb_get_join_group_list(JOIN *join);
+
+void sdb_set_join_order_by(JOIN *join, st_order *order);
+
+void sdb_set_join_group_list(JOIN *join, st_order *group_list, bool grouped);
+
+bool sdb_calc_found_rows(JOIN *join);
+
+bool sdb_use_filesort(JOIN *join);
+
+bool sdb_use_JT_REF_OR_NULL(JOIN *join, const TABLE *table);
+
+sdb_join_type sdb_get_join_type(JOIN *join);
+
+void sdb_clear_const_keys(JOIN *join);
 
 // About Field
 const char *sdb_field_name(const Field *f);
@@ -451,7 +453,7 @@ bool sdb_datetime_to_timeval(THD *thd, const MYSQL_TIME *ltime,
 void sdb_decimal_to_string(uint mask, const my_decimal *d, uint fixed_prec,
                            uint fixed_dec, char filler, String *str);
 
-List_iterator<Item> sdb_lex_all_fields(LEX *const lex);
+List_iterator<Item> sdb_lex_all_fields(SELECT_LEX *select_lex);
 
 uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
                                bool stay_quiet);
@@ -475,6 +477,10 @@ uint sdb_tables_in_join(JOIN *join);
 const char *sdb_get_table_alias(TABLE *table);
 
 const char *sdb_get_change_column(const Create_field *def);
+
+bool sdb_is_recursive_table(TABLE *table);
+
+bool sdb_correlated_subquery_for_cur_select(TABLE *table);
 
 // About partition
 uint sdb_partition_flags();

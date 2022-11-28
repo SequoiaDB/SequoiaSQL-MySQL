@@ -550,6 +550,15 @@ static MYSQL_THDVAR_BOOL(
     "(Default: OFF)"
     /* 字符型类型字段是否在 range 索引扫描时忽略右边界索引条件。*/,
     NULL, NULL, FALSE);
+
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    cls_pushdown_expand, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Expand 'direct_count', 'direct_limit' and 'direct_sort' pushdown. "
+    "(Default: ON)"
+    /* SequoiaDB 优化选项开关，以决定是否扩展 count、limit、sort 下压。*/,
+    NULL, NULL, TRUE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -591,6 +600,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(stats_flush_time_threshold),
     MYSQL_SYSVAR(diag_info_path),
     MYSQL_SYSVAR(lossy_end_range),
+    MYSQL_SYSVAR(cls_pushdown_expand),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -815,4 +825,8 @@ char *sdb_get_diag_info_path(THD *thd) {
 
 int sdb_lossy_end_range(THD *thd) {
   return THDVAR(thd, lossy_end_range);
+}
+
+int sdb_cls_pushdown_expand(THD *thd) {
+  return THDVAR(thd, cls_pushdown_expand);
 }
