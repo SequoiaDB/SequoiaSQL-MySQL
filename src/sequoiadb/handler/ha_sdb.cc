@@ -1847,6 +1847,11 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto done;
   }
 
+  rc = check_log_tables();
+  if (SDB_OK != rc) {
+    goto error;
+  }
+
 #ifdef IS_MARIADB
   if (table->versioned() && TABLE_TYPE_UNDEFINE == share->table_type) {
     bson::BSONObj obj;
@@ -3034,6 +3039,183 @@ int ha_sdb::get_deleted_rows(bson::BSONObj &result, ulonglong *deleted) {
   return rc;
 }
 
+int ha_sdb::is_non_trans_table_supported(Sdb_conn *connection,
+                                         bool &supported) {
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+
+  supported = false;
+  if (NULL == connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
+  rc = sdb_get_version(*connection, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 6) ||              // 3.x < 3.6
+      (5 == major && 0 == minor && fix < 3)) {  // 5.0.x < 5.0.3
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return rc;
+error:
+  convert_sdb_code(rc);
+  supported = false;
+  goto done;
+}
+
+int ha_sdb::is_non_trans_table(Sdb_conn *conn, char *db_name, char *table_name,
+                               bool &non_trans_table,
+                               Mapping_context *mapping_ctx) {
+  int rc = SDB_ERR_OK;
+  sdbclient::sdbCursor cursor;
+  bson::BSONObj obj;
+  bson::BSONElement ele;
+  Sdb_cl cl;
+
+  non_trans_table = false;
+  DBUG_ASSERT(NULL != conn);
+  DBUG_ASSERT(NULL != db_name);
+  DBUG_ASSERT(strlength(table_name) != 0);
+
+  rc = conn->get_cl(db_name, table_name, cl, false, mapping_ctx);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  rc = cl.get_detail(cursor);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  try {
+    while (!(rc = cursor.next(obj, false))) {
+      // Reject SequoiaDB in standalone mode. It's not supported yet.
+      if (obj.getField(SDB_FIELD_UNIQUEID).numberLong() <= 0) {
+        rc = SDB_RTN_COORD_ONLY;
+        break;
+      }
+      bson::BSONObjIterator it(obj.getField(SDB_FIELD_DETAILS).Obj());
+      if (!it.more()) {
+        continue;
+      }
+      bson::BSONObj detail = it.next().Obj();
+      ele = detail.getField(SDB_FIELD_ATTRIBUTE);
+      if (bson::EOO == ele.type()) {
+        non_trans_table = false;
+        goto done;
+      }
+      DBUG_EXECUTE_IF("ha_sdb_is_non_trans_table_throw_bad_alloc",
+                      { throw std::bad_alloc(); }  // out-of-memory
+      );
+      DBUG_EXECUTE_IF("ha_sdb_is_non_trans_table_throw_exception",
+                      { throw std::exception(); }  // exception
+      );
+      String attribute_desc;
+      String no_trans_key_words;
+      no_trans_key_words.set(SDB_CL_ATTR_NO_TRANS, strlen(SDB_CL_ATTR_NO_TRANS),
+                             &my_charset_bin);
+      attribute_desc.set(ele.valuestrsafe(), strlen(ele.valuestrsafe()),
+                         &my_charset_bin);
+      /*Since currently only simple collection support NoTrans*/
+      if (-1 != attribute_desc.strstr(no_trans_key_words)) {
+        non_trans_table = true;
+      } else {
+        /*If main cl support NoTrans later, break check even one sub cl has
+         * NoTrans.*/
+        non_trans_table = false;
+        break;
+      }
+    }
+  } catch (std::bad_alloc &e) {
+    rc = SDB_ERR_OOM;
+    convert_sdb_code(rc);
+    SDB_PRINT_ERROR(rc,
+                    "Failed to check NoTrans attribute of "
+                    "collection[%s.%s], exception:%s.",
+                    db_name, table_name, e.what());
+    goto error;
+  } catch (std::exception &e) {
+    rc = SDB_ERR_BUILD_BSON;
+    convert_sdb_code(rc);
+    SDB_PRINT_ERROR(rc,
+                    "Failed to check NoTrans attribute "
+                    "of collection[%s.%s], exception:%s.",
+                    db_name, table_name, e.what());
+    goto error;
+  }
+
+done:
+  if (SDB_DMS_EOC == rc) {
+    rc = SDB_ERR_OK;
+  }
+  return rc;
+error:
+  convert_sdb_code(rc);
+  goto done;
+}
+
+int ha_sdb::check_log_tables() {
+  int rc = SDB_OK;
+  bool no_trans_supported = false;
+  if (is_slow_log_table() || is_general_log_table()) {
+    bool non_trans_table = false;
+    Sdb_conn *connection = NULL;
+    rc = check_sdb_in_thd(ha_thd(), &connection, true);
+    if (0 != rc) {
+      goto error;
+    }
+
+    rc = is_non_trans_table_supported(connection, no_trans_supported);
+    if (SDB_OK != rc) {
+      SDB_PRINT_ERROR(rc,
+                      "Failed to check whether the log table[%s.%s] based on "
+                      "the SequoiaDB engine support NoTrans attribute or not, "
+                      "rc:%d.",
+                      db_name, table_name, rc);
+      goto error;
+    }
+    if (!no_trans_supported) {
+      rc = HA_ERR_UNSUPPORTED;
+      SDB_PRINT_ERROR(HA_ERR_UNSUPPORTED,
+                      "The log table[%s.%s] based on the SequoiaDB engine not "
+                      "support low version of SequoiaDB. Please upgrade the "
+                      "SequoiaDB to the version which supports NoTrans attribute on collection.",
+                      db_name, table_name);
+      goto error;
+    }
+    DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
+    rc = is_non_trans_table(connection, db_name, table_name, non_trans_table,
+                            &tbl_ctx_impl);
+    if (SDB_OK != rc) {
+      SDB_PRINT_ERROR(
+          HA_ERR_INTERNAL_ERROR,
+          "Failed to check the NoTrans attribute of table[%s.%s], rc:%d",
+          db_name, table_name, rc);
+      goto error;
+    }
+    if (!non_trans_table) {
+      rc = HA_ERR_INTERNAL_ERROR;
+      SDB_PRINT_ERROR(HA_ERR_INTERNAL_ERROR,
+                      "The table[%s.%s] on SequoiaDB should have NoTrans attribute on SequoiaDB.",
+                      db_name, table_name);
+      goto error;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int ha_sdb::write_row(uchar *buf) {
   int rc = 0;
   THD *thd = ha_thd();
@@ -3059,7 +3241,6 @@ int ha_sdb::write_row(uchar *buf) {
   }
 
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(thd));
-
   // Handle statement `SET INSERT_ID = <number>;`
   forced = thd->auto_inc_intervals_forced.get_next();
   if (forced != NULL) {
@@ -8277,6 +8458,45 @@ error:
   goto done;
 }
 
+bool ha_sdb::is_slow_log_table() {
+  /* If slow_query_log(Global) is not turned on, mysql.slow_log(even sequoiadb)
+     will be treated as normal table.*/
+  if (!is_slow_log_on()) {
+    return false;
+  }
+
+  if (strlen(db_name) != MYSQL_SCHEMA_NAME.length ||
+      0 != strcmp(db_name, MYSQL_SCHEMA_NAME.str)) {
+    return false;
+  }
+
+  if (strlen(table_name) != SLOW_LOG_NAME.length ||
+      0 != strcmp(table_name, SLOW_LOG_NAME.str)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool ha_sdb::is_general_log_table() {
+  /* If slow_query_log(Global) is not turned on, mysql.slow_log(even sequoiadb)
+     will be treated as normal table.*/
+  if (!is_general_log_on()) {
+    return false;
+  }
+
+  if (strlen(db_name) != MYSQL_SCHEMA_NAME.length ||
+      0 != strcmp(db_name, MYSQL_SCHEMA_NAME.str)) {
+    return false;
+  }
+
+  if (strlen(table_name) != GENERAL_LOG_NAME.length ||
+      0 != strcmp(table_name, GENERAL_LOG_NAME.str)) {
+    return false;
+  }
+  return true;
+}
+
 int ha_sdb::external_lock(THD *thd, int lock_type) {
   DBUG_ENTER("ha_sdb::external_lock");
 
@@ -8287,8 +8507,16 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
   if (0 != rc) {
     goto error;
   }
-
+  DBUG_PRINT("info", ("db name:%s, table name:%s, lock type:%d", db_name,
+                      table_name, lock_type));
   thd_sdb = thd_get_thd_sdb(thd);
+  /* In the case of using SequoiaDB engine table for slow log or general log,
+   * should never start transaction for statement.
+   */
+  if (is_slow_log_table() || is_general_log_table()) {
+    goto done;
+  }
+
   if (F_UNLCK != lock_type) {
     rc = start_statement(thd, thd_sdb->lock_count++);
     if (0 != rc) {
