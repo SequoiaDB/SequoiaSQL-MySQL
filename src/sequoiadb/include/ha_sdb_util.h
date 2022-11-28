@@ -176,6 +176,10 @@ int sdb_bson_element_to_field(const bson::BSONElement elem, Field *field,
 int sdb_build_recycle_bin_option(Sdb_conn &sdb_conn, bson::BSONObj &options,
                                  bool skip_recycle_bin = false);
 
+SELECT_LEX *sdb_get_cur_select_by_table(TABLE *table);
+
+bool sdb_is_single_table_in_cur_select(THD *thd, SELECT_LEX *select_lex);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

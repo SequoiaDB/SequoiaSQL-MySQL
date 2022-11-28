@@ -1647,3 +1647,25 @@ done:
 error:
   goto done;
 }
+
+bool sdb_is_single_table_in_cur_select(THD *thd, SELECT_LEX *select_lex) {
+  if (!thd || !select_lex) {
+    return false; /* purecov: inspected */
+  }
+
+  if (SQLCOM_SELECT == thd_sql_command(thd) ||
+      SQLCOM_INSERT_SELECT == thd_sql_command(thd) ||
+      SQLCOM_REPLACE_SELECT == thd_sql_command(thd)) {
+    return 1 == select_lex->join_list->elements &&
+           !((TABLE_LIST *)select_lex->join_list->head())->nested_join;
+  } else {
+    return 1 == select_lex->table_list.elements;
+  }
+}
+
+SELECT_LEX *sdb_get_cur_select_by_table(TABLE *table) {
+  if (!table || !table->pos_in_table_list) {
+    return NULL; /* purecov: inspected */
+  }
+  return table->pos_in_table_list->select_lex;
+}

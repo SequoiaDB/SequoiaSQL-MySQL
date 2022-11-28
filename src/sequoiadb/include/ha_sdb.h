@@ -519,6 +519,10 @@ class ha_sdb : public handler {
 
   bool filesort_push(const ORDER *order);
 
+  bool can_push_down_limit(sdb_join_type type);
+
+  int handle_sort_condition(bool check_order_by_only);
+
   void handle_sdb_error(int error, myf errflag);
 
   int check(THD *thd, HA_CHECK_OPT *check_opt) { return 0; }
@@ -768,7 +772,7 @@ class ha_sdb : public handler {
       TABLE *altered_table, Alter_inplace_info *ha_alter_info,
       ha_sdb_alter_ctx *ctx);
 
-  bool is_in_one_query();
+  bool is_in_one_query_for_cur_select();
 
  private:
   // swap table if swap_table is true
