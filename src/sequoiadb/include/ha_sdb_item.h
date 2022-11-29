@@ -177,14 +177,17 @@ class Sdb_func_bin_op : public Sdb_func_item {
 
 class Sdb_func_cmp : public Sdb_func_bin_op {
  public:
-  Sdb_func_cmp();
-  ~Sdb_func_cmp();
+  Sdb_func_cmp() : is_cmp_field(false){};
+  ~Sdb_func_cmp() { is_cmp_field = false; };
 
   virtual int to_bson(bson::BSONObj &obj);
   int to_bson_with_child(bson::BSONObj &obj);
   virtual const char *name() = 0;
   virtual const char *inverse_name() = 0;
   virtual Item_func::Functype type() = 0;
+
+ protected:
+  bool is_cmp_field;
 };
 
 class Sdb_func_eq : public Sdb_func_cmp {
@@ -197,6 +200,21 @@ class Sdb_func_eq : public Sdb_func_cmp {
   virtual Item_func::Functype type() { return func_item->functype(); }
 
  private:
+  Item_func *func_item;
+};
+
+class Sdb_func_equal : public Sdb_func_cmp {
+ public:
+  Sdb_func_equal(Item_func *item) : func_item(item){};
+  ~Sdb_func_equal(){};
+
+  virtual int to_bson(bson::BSONObj &obj);
+  virtual const char *name() { return "$et"; }
+  virtual const char *inverse_name() { return "$et"; }
+  virtual Item_func::Functype type() { return func_item->functype(); }
+
+ private:
+  int append_isnull_obj(bson::BSONObj &obj);
   Item_func *func_item;
 };
 

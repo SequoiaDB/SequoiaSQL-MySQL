@@ -281,9 +281,12 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
       item = new Sdb_or_item();
       break;
     }
-    case Item_func::EQ_FUNC:
-    case Item_func::EQUAL_FUNC: {
+    case Item_func::EQ_FUNC: {
       item = new Sdb_func_eq(cond_item);
+      break;
+    }
+    case Item_func::EQUAL_FUNC: {
+      item = new Sdb_func_equal(cond_item);
       break;
     }
     case Item_func::NE_FUNC: {

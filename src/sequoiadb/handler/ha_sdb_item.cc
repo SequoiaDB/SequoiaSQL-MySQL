@@ -876,10 +876,6 @@ Sdb_func_bin_op::Sdb_func_bin_op() {
 
 Sdb_func_bin_op::~Sdb_func_bin_op() {}
 
-Sdb_func_cmp::Sdb_func_cmp() {}
-
-Sdb_func_cmp::~Sdb_func_cmp() {}
-
 int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
   DBUG_ENTER("Sdb_func_cmp::to_bson_with_child()");
   int rc = SDB_ERR_OK;
@@ -1114,11 +1110,11 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
   DBUG_ENTER("Sdb_func_cmp::to_bson()");
   int rc = SDB_ERR_OK;
   bool inverse = FALSE;
-  bool cmp_with_field = FALSE;
   Item *item_tmp = NULL, *item_val = NULL;
   Item_field *item_field = NULL;
   const char *name_tmp = NULL;
   bson::BSONObj obj_tmp;
+  List_iterator<Item> para_iter(para_list);
 
   if (!is_finished || para_list.elements != para_num_max) {
     rc = SDB_ERR_COND_INCOMPLETED;
@@ -1134,8 +1130,7 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
       goto done;
     }
 
-    while (!para_list.is_empty()) {
-      item_tmp = para_list.pop();
+    while ((item_tmp = para_iter++) != NULL) {
       if (Item::FIELD_ITEM != item_tmp->type() || item_tmp->const_item()) {
         if (NULL == item_field) {
           inverse = TRUE;
@@ -1164,7 +1159,7 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
             goto error;
           }
           item_val = item_tmp;
-          cmp_with_field = TRUE;
+          is_cmp_field = TRUE;
         } else {
           item_field = (Item_field *)item_tmp;
         }
@@ -1177,7 +1172,7 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
       name_tmp = this->name();
     }
 
-    if (cmp_with_field) {
+    if (is_cmp_field) {
       Field *l_field = item_field->field;
       Field *r_field = ((Item_field *)item_val)->field;
       enum_field_types l_real_type = l_field->real_type();
@@ -1314,6 +1309,111 @@ error:
   if (SDB_ERR_OVF == rc) {
     rc = SDB_ERR_COND_PART_UNSUPPORTED;
   }
+  goto done;
+}
+
+int Sdb_func_equal::to_bson(bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+
+  // equal don't support field <=> exp()
+  if (l_child != NULL || r_child != NULL) {
+    rc = SDB_ERR_COND_UNSUPPORTED;
+    goto error;
+  }
+
+  if (!is_finished || para_list.elements != para_num_max) {
+    rc = SDB_ERR_COND_INCOMPLETED;
+    goto error;
+  }
+
+  rc = Sdb_func_cmp::to_bson(obj);
+  if (rc) {
+    goto error;
+  }
+
+  if (is_cmp_field) {
+    rc = append_isnull_obj(obj);
+    if (rc) {
+      goto error;
+    }
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_func_equal::append_isnull_obj(bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  Item_field *left_val = NULL;
+  Item_field *right_val = NULL;
+  Item *item_tmp = NULL;
+  List_iterator<Item> para_iter(para_list);
+  int para_count = 0;
+
+  while ((item_tmp = para_iter++) != NULL) {
+    para_count++;
+    if (!left_val) {
+      left_val = (Item_field *)item_tmp;
+    } else {
+      right_val = (Item_field *)item_tmp;
+    }
+  }
+  DBUG_ASSERT(para_count == 2);
+
+  // if field is not maybe null, don't use $isnull, return
+  if (!left_val->field->real_maybe_null() ||
+      !right_val->field->real_maybe_null()) {
+    goto done;
+  }
+
+  try {
+    bson::BSONObjBuilder builder;
+    bson::BSONArrayBuilder or_builder(builder.subarrayStart("$or"));
+
+    if (obj.isEmpty()) {
+      /* purecov: begin tested*/
+      rc = SDB_ERR_COND_PART_UNSUPPORTED;
+      goto error;
+      /* purecov: end*/
+    }
+
+    or_builder.append(obj);
+
+    bson::BSONObjBuilder isnull_obj_builder(or_builder.subobjStart());
+    bson::BSONArrayBuilder field_builder(
+        isnull_obj_builder.subarrayStart("$and"));
+
+    bson::BSONObjBuilder left_obj_builder(field_builder.subobjStart());
+    bson::BSONObjBuilder start_obj(
+        left_obj_builder.subobjStart(sdb_item_field_name(left_val)));
+    start_obj.append("$isnull", 1);
+    start_obj.done();
+    left_obj_builder.done();
+
+    bson::BSONObjBuilder right_obj_builder(field_builder.subobjStart());
+    bson::BSONObjBuilder end_obj(
+        right_obj_builder.subobjStart(sdb_item_field_name(right_val)));
+    end_obj.append("$isnull", 1);
+    end_obj.done();
+    right_obj_builder.done();
+
+    field_builder.done();
+    isnull_obj_builder.done();
+    or_builder.done();
+
+    obj = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(/*purecov: inspected*/
+                        rc,
+                        "Failed to build BSON for item '<=>', db_name:%s, "
+                        "table_name:%s,exception:%s",
+                        right_val->field->table->s->db.str,
+                        right_val->field->table->s->table_name.str, e.what());
+done:
+  return rc;
+error:
   goto done;
 }
 
