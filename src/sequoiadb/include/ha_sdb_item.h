@@ -54,7 +54,7 @@ class Sdb_logic_item : public Sdb_item {
     obj_num_min = 1;
   }
 
-  int rebuild_bson(bson::BSONObj &obj);
+  virtual int rebuild_bson(bson::BSONObj &obj);
   virtual int push_sdb_item(Sdb_item *cond_item);
   virtual int push_item(Item *cond_item);
   virtual int to_bson(bson::BSONObj &obj);
@@ -85,6 +85,17 @@ class Sdb_or_item : public Sdb_logic_item {
 
   virtual Item_func::Functype type() { return Item_func::COND_OR_FUNC; }
   virtual const char *name() { return "$or"; }
+};
+
+class Sdb_not_item : public Sdb_logic_item {
+ public:
+  Sdb_not_item() {}
+  virtual ~Sdb_not_item() {}
+
+  virtual int push_sdb_item(Sdb_item *cond_item);
+  virtual int rebuild_bson(bson::BSONObj &obj) { return 0; }
+  virtual Item_func::Functype type() { return Item_func::NOT_FUNC; }
+  virtual const char *name() { return "$not"; }
 };
 
 class Sdb_func_item : public Sdb_item {

@@ -406,11 +406,13 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
 select * from t1 where a like (123 not regexp '^1') order by a;
 a
 0
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
 select * from t2 where a like ((a) not regexp '^a');
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t2]
