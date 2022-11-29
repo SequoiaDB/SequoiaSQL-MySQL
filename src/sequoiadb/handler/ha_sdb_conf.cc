@@ -568,6 +568,14 @@ static MYSQL_THDVAR_BOOL(
     /* SequoiaDB 优化选项开关，以决定是否扩展 count、limit、sort 下压。*/,
     NULL, NULL, TRUE);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(support_cond_not,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+                         "Whether support push SequoiaDB $not matcher down."
+                         "(Default: ON)"
+                         /* 是否支持匹配符 $not 的下压 */,
+                         NULL, NULL, TRUE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -611,6 +619,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(bka_remove_orderby),
     MYSQL_SYSVAR(lossy_end_range),
     MYSQL_SYSVAR(cls_pushdown_expand),
+    MYSQL_SYSVAR(support_cond_not),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -843,4 +852,8 @@ int sdb_lossy_end_range(THD *thd) {
 
 int sdb_cls_pushdown_expand(THD *thd) {
   return THDVAR(thd, cls_pushdown_expand);
+}
+
+bool sdb_support_cond_not(THD *thd) {
+  return THDVAR(thd, support_cond_not);
 }

@@ -211,6 +211,12 @@ error:
   goto done;
 }
 
+int Sdb_not_item::push_sdb_item(Sdb_item *cond_item) {
+  int rc = Sdb_logic_item::push_sdb_item(cond_item);
+  is_finished = true;
+  return rc;
+}
+
 Sdb_func_item::Sdb_func_item()
     : para_num_cur(0),
       para_num_max(1),
@@ -1598,6 +1604,20 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
         obj = regex_builder.obj();
       }
     }
+#ifdef IS_MARIADB
+    if (like_item->get_negated()) {
+      if (sdb_support_cond_not(current_thd)) {
+        bson::BSONObjBuilder not_builder;
+        bson::BSONArrayBuilder arr_builder(not_builder.subarrayStart("$not"));
+        arr_builder.append(obj);
+        arr_builder.done();
+        obj = not_builder.obj();
+      } else {
+        rc = SDB_ERR_COND_UNSUPPORTED;
+        goto error;
+      }
+    }
+#endif
     bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
   }
 

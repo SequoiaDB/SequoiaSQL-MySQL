@@ -9941,7 +9941,7 @@ id	t	dt
 SELECT * FROM t1 WHERE NOT (id >= 2 AND t LIKE 'to%' OR dt < '2009-09-09 23:59:59');
 id	t	dt
 -2	bo	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$lt": 2 } }, { "$not": [ { "$and": [ { "t": { "$gte": "to" } }, { "t": { "$lt": "toÿ" } } ] } ] } ] }, { "dt": { "$gte": "2009-09-09 23:59:59" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE NOT (id >= 2 OR t != 'foo' AND dt > '2009-09-09 23:59:59');
 id	t	dt
 -1	op	1999-04-04 08:08:08
@@ -10006,7 +10006,7 @@ id	vc	d
 100	bar	2006-07-07
 2	sz	2001-03-03
 6	fail	2001-12-12
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$lte": 1 } }, { "$not": [ { "vc": { "$regex": "^.*o.*$", "$options": "s" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE YEAR(d) >= 2010 OR vc < 'ok';
 id	vc	d
 -10	success	2018-11-11
@@ -10102,7 +10102,7 @@ id	t	tm	dt
 2	sz	10:10:10	2001-03-03 10:10:10
 4	fail	12:13:14	2010-08-08 23:59:59
 8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$not": [ { "$and": [ { "t": { "$gte": "to" } }, { "t": { "$lt": "toÿ" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE id > 2 AND SUBSTRING(t,1,2) >= 'bo' AND DATE(dt) <= '2010-10-10' AND tm >= '10:10:10';
 id	t	tm	dt
 4	fail	12:13:14	2010-08-08 23:59:59
@@ -10260,7 +10260,7 @@ id	t	tm	dt
 2	sz	10:10:10	2001-03-03 10:10:10
 4	fail	12:13:14	2010-08-08 23:59:59
 8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$gte": 100 } }, { "$not": [ { "$and": [ { "t": { "$gte": "to" } }, { "t": { "$lt": "toÿ" } } ] } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE NOT (NOT (tm NOT IN ('00:00:00','23:00:00','23:59:59') AND t <= 'foo'));
 id	t	tm	dt
 -2	bo	13:14:15	2001-12-12 22:22:00

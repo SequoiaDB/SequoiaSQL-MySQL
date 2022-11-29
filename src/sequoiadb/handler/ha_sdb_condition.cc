@@ -107,6 +107,14 @@ done:
 }
 
 void ha_sdb_cond_ctx::pop() {
+  if (sdb_support_cond_not(current_thd)) {
+    return pop_v2();
+  } else {
+    return pop_v1();
+  }
+}
+
+void ha_sdb_cond_ctx::pop_v1() {
   DBUG_ENTER("ha_sdb_cond_ctx::pop()");
   int rc = SDB_ERR_OK;
   Sdb_item *item_tmp = NULL;
@@ -143,11 +151,48 @@ error:
   goto done;
 }
 
+void ha_sdb_cond_ctx::pop_v2() {
+  DBUG_ENTER("ha_sdb_cond_ctx::pop()");
+  int rc = SDB_ERR_OK;
+  Sdb_item *item_tmp = NULL;
+
+  if (!keep_on() || !item_list.elements) {
+    goto done;
+  }
+
+  while (item_list.elements) {
+    DBUG_ASSERT(cur_item != NULL);
+
+    item_tmp = cur_item;
+    cur_item = item_list.pop();
+    rc = cur_item->push_sdb_item(item_tmp);
+    update_stat(rc);
+    if (cur_item->finished()) {
+      pop();
+    }
+    if (0 != rc) {
+      delete item_tmp;
+      item_tmp = NULL;
+      goto error;
+    }
+    break;
+  }
+
+done:
+  DBUG_VOID_RETURN;
+error:
+  goto done;
+}
+
 void ha_sdb_cond_ctx::update_stat(int rc) {
   DBUG_ENTER("ha_sdb_cond_ctx::update_stat()");
   List<Sdb_item> tmp_list = item_list;
   Sdb_item *item_tmp = NULL;
   if (SDB_ERR_OK == rc) {
+    if (Item_func::NOT_FUNC == cur_item->type() &&
+        SDB_COND_PART_SUPPORTED == status) {
+      status = SDB_COND_UNSUPPORTED;
+    }
     goto done;
   }
 
@@ -281,6 +326,14 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
       item = new Sdb_or_item();
       break;
     }
+    case Item_func::NOT_FUNC: {
+      if (sdb_support_cond_not(current_thd)) {
+        item = new Sdb_not_item();
+      } else {
+        item = new Sdb_func_unkown(cond_item);
+      }
+      break;
+    }
     case Item_func::EQ_FUNC: {
       item = new Sdb_func_eq(cond_item);
       break;
@@ -327,13 +380,6 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
       break;
     }
     case Item_func::LIKE_FUNC: {
-#ifdef IS_MARIADB
-      // "not like" not supported.
-      if (((Item_func_like *)cond_item)->get_negated()) {
-        item = new Sdb_func_unkown(cond_item);
-        break;
-      }
-#endif
       item = new Sdb_func_like((Item_func_like *)cond_item);
       break;
     }
@@ -342,8 +388,10 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
       break;
     }
   }
-  item->pushed_cond_set = &pushed_cond_set;
-  DBUG_PRINT("ha_sdb:info", ("create new item name:%s", item->name()));
+  if (item) {
+    item->pushed_cond_set = &pushed_cond_set;
+    DBUG_PRINT("ha_sdb:info", ("create new item name:%s", item->name()));
+  }
   DBUG_RETURN(item);
 }
 

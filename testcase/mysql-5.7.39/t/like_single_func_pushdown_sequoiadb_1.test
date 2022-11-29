@@ -276,9 +276,9 @@ select * from t2 where a like make_set((a),'a','b','c','d');
 select 'bread' not regexp '^c',123 not regexp '^1';
 insert into t1 values(('bread' not regexp '^c')),((123 not regexp '^1'));
 select * from t1 where a like ('bread' not regexp '^c') order by a;
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 select * from t1 where a like (123 not regexp '^1') order by a;
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 select * from t2 where a like ((a) not regexp '^a');
 --source include/query_pushdown_condition_sequoiadb.inc
 

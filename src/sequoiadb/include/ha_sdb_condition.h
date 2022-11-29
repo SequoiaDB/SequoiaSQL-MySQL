@@ -76,6 +76,10 @@ class ha_sdb_cond_ctx : public Sql_alloc {
 
   void pop();
 
+  void pop_v1();
+
+  void pop_v2();
+
   void pop_all();
 
   void clear();
