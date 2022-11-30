@@ -11174,6 +11174,23 @@ done:
   DBUG_VOID_RETURN;
 }
 
+uint ha_sdb::get_engine_optim_flag() {
+  uint flag = 0;
+  if (direct_sort) {
+    SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+    JOIN *join = select_lex ? select_lex->join : NULL;
+    if (join) {
+      if (sdb_order && !sdb_get_join_order_by(join)) {
+        flag |= ENGINE_OPTIM_DIRECT_ORDER_BY;
+      }
+      if (sdb_group_list && !sdb_get_join_group_list(join)) {
+        flag |= ENGINE_OPTIM_DIRECT_GROUP_BY;
+      }
+    }
+  }
+  return flag;
+}
+
 static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
                                    MEM_ROOT *mem_root) {
   handler *file = NULL;

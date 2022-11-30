@@ -832,6 +832,8 @@ class ha_sdb_part_wrapper : public ha_partition {
     ha_partition::print_error(error, errflag);
   }
 
+  uint get_engine_optim_flag() { return m_file[0]->get_engine_optim_flag(); }
+
  private:
   void reset_part_state(THD* thd);
 
