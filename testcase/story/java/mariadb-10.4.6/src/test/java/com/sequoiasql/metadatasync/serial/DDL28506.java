@@ -1,13 +1,14 @@
-package com.sequoiasql.ddlserial;
-
+package com.sequoiasql.metadatasync.serial;
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 import com.sequoiasql.testcommon.*;
+import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -27,11 +28,6 @@ public class DDL28506 extends MysqlTestBase {
     @BeforeClass
     public void setUp() throws Exception {
         try {
-            // 暂时屏蔽该测试点，待问题解决后开放：SEQUOIASQLMAINSTREAM-1544
-            if ( true ) {
-                throw new SkipException(
-                        "current test exists bug,skip the testcase" );
-            }
             sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
             if ( CommLib.isStandAlone( sdb ) ) {
                 throw new SkipException( "is standalone skip testcase" );
@@ -57,13 +53,19 @@ public class DDL28506 extends MysqlTestBase {
         jdbc.update(
                 "set session transaction isolation level READ COMMITTED;" );
         // 模拟携带密码Create、grant user 时异常
-        // 暂时屏蔽该测试点，待问题解决后开放：SEQUOIASQLMAINSTREAM-1544
-        // jdbc.update( "set debug=\"d,fail_while_writing_sql_log\";" );
+        jdbc.update( "set debug=\"d,fail_while_writing_sql_log\";" );
         String createUser = "CREATE USER '" + userName
                 + "'@'localhost' IDENTIFIED BY 'u1_pwd';";
         String grantUser = "grant all privileges on *.* to " + userName
                 + "@'%' identified by 'u1_pwd';";
-        DDLUtils.checkJdbcUpdateResult( jdbc, createUser, 1105 );
+        try {
+            jdbc.update( createUser );
+            Assert.fail( "expected fail but success" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1396 && e.getErrorCode() != 1105 ) {
+                throw e;
+            }
+        }
         // 检查pendinglong是否被完全清除
         String instanceGroupName = MetaDataMappingUtils.getInstGroupName( sdb,
                 MysqlTestBase.mysql1 );

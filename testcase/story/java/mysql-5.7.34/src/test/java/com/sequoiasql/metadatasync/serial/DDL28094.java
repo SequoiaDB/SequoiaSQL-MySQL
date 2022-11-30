@@ -1,4 +1,4 @@
-package com.sequoiasql.ddlserial;
+package com.sequoiasql.metadatasync.serial;
 
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
@@ -9,6 +9,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.swing.text.DefaultFormatter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,6 @@ public class DDL28094 extends MysqlTestBase {
                 sdb.close();
             if ( jdbc != null )
                 jdbc.close();
-            throw e;
         }
     }
 
@@ -63,7 +63,6 @@ public class DDL28094 extends MysqlTestBase {
         }
         // 创建库和表
         String tbName = "tb_28094";
-        String ip = sdb.getIP();
         jdbc.update( "create database " + dbName + ";" );
         jdbc.update( "use " + dbName + ";" );
         jdbc.update( "create table " + tbName + "(a int, b int, c int);" );
@@ -85,36 +84,38 @@ public class DDL28094 extends MysqlTestBase {
         jdbc.update( "create view " + viewName5 + " as select * from " + tbName
                 + "; " );
 
-        // 模拟drop server、view,alter table等相关操作时异常
+        // 模拟drop server、tablespace、alter table等相关操作时异常
         jdbc.update( "set debug=\"d,fail_while_writing_sql_log\";" );
         String alterTableAddKey = "alter table " + tbName
                 + " add unique key(a);";
         DDLUtils.checkJdbcUpdateResult( jdbc, alterTableAddKey, 1105 );
+        String ip = sdb.getIP();
         String createServer = "CREATE SERVER test_server1 FOREIGN DATA WRAPPER mysql OPTIONS (USER 'sdbadmin', HOST '"
                 + ip + "', DATABASE '" + dbName + "');";
         DDLUtils.checkJdbcUpdateResult( jdbc, createServer, 1105 );
         String dropServer = "drop server test_server2;";
         DDLUtils.checkJdbcUpdateResult( jdbc, dropServer, 1477 );
-
+        String dropTableSpace = "drop tablespace ts1;";
+        DDLUtils.checkJdbcUpdateResult( jdbc, dropTableSpace, 1478 );
         String dropView1 = "drop view " + viewName1 + ";";
         DDLUtils.checkJdbcUpdateResult( jdbc, dropView1, 1105 );
         String dropView2 = "drop view " + viewName2 + "," + viewName3 + ";";
         DDLUtils.checkJdbcUpdateResult( jdbc, dropView2, 1105 );
         String dropView3 = "drop view " + viewName4 + ",test_v," + viewName5
                 + ";";
-        DDLUtils.checkJdbcUpdateResult( jdbc, dropView3, 4092 );
+        DDLUtils.checkJdbcUpdateResult( jdbc, dropView3, 1051 );
 
+        // 检查pendinglong是否被完全清除
         String instanceGroupName = MetaDataMappingUtils.getInstGroupName( sdb,
                 MysqlTestBase.mysql1 );
-        // 检查pendinglong是否被完全清除
         DDLUtils.checkPendingInfoIsCleared( sdb, instanceGroupName );
 
-        // 由于drop view和drop view if exists连续执行会冲突，
-        // 因此这里等drop view的PendingLog的记录清除后再执行drop view if exists
+        // 由于alterTableAddKey和alterTableDisableKey连续执行会冲突，
+        // 因此这里等alterTableAddKey的PendingLog的记录清除后再执行alterTableDisableKey
+        // 同理，drop view和drop view if exists连续执行也会冲突
         String alterTableDisableKey = "alter table " + tbName
                 + " disable keys; ";
         DDLUtils.checkJdbcUpdateResult( jdbc, alterTableDisableKey, 1105 );
-
         String dropViewIfExists1 = "drop view if exists " + viewName1 + ";";
         DDLUtils.checkJdbcUpdateResult( jdbc, dropViewIfExists1, 1105 );
         String dropViewIfExists2 = "drop view if exists " + viewName2 + ","
@@ -123,16 +124,13 @@ public class DDL28094 extends MysqlTestBase {
         String dropViewIfExists3 = "drop view if exists " + viewName4
                 + ",test_v," + viewName5 + ";";
         DDLUtils.checkJdbcUpdateResult( jdbc, dropViewIfExists3, 1105 );
-
         // 检查pendinglong是否被完全清除
         DDLUtils.checkPendingInfoIsCleared( sdb, instanceGroupName );
 
-        // 将fail_while_writing_sql_log关闭，执行CREATE LOGFILE GROUP，预期成功
+        // 将fail_while_writing_sql_log关闭，执行CREATE LOGFILE GROUP，预期失败
         jdbc.update( "set debug= default;" );
-        jdbc.update(
-                "CREATE LOGFILE GROUP test_logfile1 ADD UNDOFILE 'undo.dat' INITIAL_SIZE = 10M;" );
-        jdbc.update( "drop LOGFILE GROUP test_logfile1 engine = SequoiaDB ;" );
-        jdbc.update( "drop server test_server1;" );
+        String createLogFile = "CREATE LOGFILE GROUP test_logfile1 ADD UNDOFILE 'undo.dat' INITIAL_SIZE = 10M;";
+        DDLUtils.checkJdbcUpdateResult( jdbc, createLogFile, 1478 );
 
         // 检查表结构正确性
         List< String > act1 = jdbc.query( "show create table " + tbName + ";" );
@@ -154,6 +152,7 @@ public class DDL28094 extends MysqlTestBase {
         exp2.add( "2|2|2" );
         exp2.add( "3|3|3" );
         Assert.assertEquals( act2, exp2 );
+
         // 检查视图是否已删除
         List< String > tableStatus = jdbc.query( "show table status;" );
         Assert.assertFalse( tableStatus.contains( viewName1 ) );
@@ -162,7 +161,7 @@ public class DDL28094 extends MysqlTestBase {
         Assert.assertFalse( tableStatus.contains( viewName4 ) );
         Assert.assertFalse( tableStatus.contains( viewName5 ) );
 
-        // 验证使用pendinglog恢复后sequence和view是否能正常创建
+        // 验证使用pendinglog恢复后view是否能正常创建
         jdbc.update( "create view " + viewName1 + " as select * from " + tbName
                 + "; " );
     }
@@ -170,6 +169,7 @@ public class DDL28094 extends MysqlTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
+            jdbc.update( "drop server test_server1;" );
             jdbc.dropDatabase( dbName );
         } finally {
             jdbc.close();

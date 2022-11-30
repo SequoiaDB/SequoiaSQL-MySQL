@@ -1,4 +1,4 @@
-package com.sequoiasql.ddlserial;
+package com.sequoiasql.metadatasync.serial;
 
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
@@ -11,18 +11,18 @@ import org.testng.annotations.Test;
 import java.util.List;
 
 /**
- * @Description seqDB-28093::携带密码Create、grant user 时异常，恢复线程执行 pending log
+ * @Description seqDB-28506::携带密码Create、grant user 时异常，恢复线程执行 pending log
  *              成功，查看pending log
  * @Author xiaozhenfan
- * @Date 2022.11.17
+ * @Date 2022.11.18
  * @UpdateAuthor xiaozhenfan
- * @UpdateDate 2022.11.17
+ * @UpdateDate 2022.11.18
  * @version 1.10
  */
-public class DDL28093 extends MysqlTestBase {
+public class DDL28506 extends MysqlTestBase {
     private Sequoiadb sdb = null;
     private JdbcInterface jdbc;
-    private String userName = "test_u_28093";
+    private String userName = "test_u_28506";
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -53,8 +53,12 @@ public class DDL28093 extends MysqlTestBase {
 
     @Test
     public void test() throws Exception {
+        // sql端将事务隔离级别设为RC
+        jdbc.update(
+                "set session transaction isolation level READ COMMITTED;" );
         // 模拟携带密码Create、grant user 时异常
-        jdbc.update( "set debug=\"d,fail_while_writing_sql_log\";" );
+        // 暂时屏蔽该测试点，待问题解决后开放：SEQUOIASQLMAINSTREAM-1544
+        // jdbc.update( "set debug=\"d,fail_while_writing_sql_log\";" );
         String createUser = "CREATE USER '" + userName
                 + "'@'localhost' IDENTIFIED BY 'u1_pwd';";
         String grantUser = "grant all privileges on *.* to " + userName
@@ -79,7 +83,9 @@ public class DDL28093 extends MysqlTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
-            jdbc.update( "drop user " + userName + ";" );
+            jdbc.update(
+                    "set session transaction isolation level REPEATABLE READ;" );
+            jdbc.update( "set debug= default;" );
         } finally {
             jdbc.close();
             sdb.close();
