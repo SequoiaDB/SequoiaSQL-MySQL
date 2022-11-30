@@ -42,7 +42,7 @@ a	b
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from (select * from t1 where a>2) t2 group by a;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from (select * from t1 where a>2) t2 group by a order by a limit 3;
 a	b
 3	3
@@ -51,7 +51,7 @@ a	b
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2) t2 group by a order by a limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 select * from (select * from t1 where a>2) t2 group by concat(a,"") order by a limit 3;
 a	b
 3	3
@@ -134,7 +134,7 @@ a	b
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 4 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from v1 group by a;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+1	SIMPLE	t2	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from v1 group by a order by a limit 3;
 a	b
 6	6
@@ -143,7 +143,7 @@ a	b
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 4 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from v1 group by a order by a limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+1	SIMPLE	t2	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 select * from v1 group by concat(a,"") order by a limit 3;
 a	b
 6	6
@@ -161,7 +161,7 @@ a	b
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 4 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from v1 where b>rand() group by a order by a limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+1	SIMPLE	t2	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t2 where a>1) select * from t;
 a	b
 2	2
@@ -212,7 +212,7 @@ a	b
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 1 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain with t as (select * from t2 where a>1) select * from t group by a;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+1	SIMPLE	t2	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 with t as (select * from t2 where a>1) select * from t group by a order by a limit 3;
 a	b
 2	2
@@ -221,7 +221,7 @@ a	b
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 1 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain with t as (select * from t2 where a>1) select * from t group by a order by a limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+1	SIMPLE	t2	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t2 where a>1) select * from t where b>rand() group by a order by a limit 3;
 a	b
 2	2
@@ -230,7 +230,7 @@ a	b
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 1 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain with t as (select * from t2 where a>1) select * from t where b>rand() group by a order by a limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+1	SIMPLE	t2	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t2 where a>1) select * from t group by concat(a,"") order by a limit 3;
 a	b
 2	2
@@ -292,7 +292,7 @@ a	b
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 a	b
 10	10
@@ -302,7 +302,7 @@ a	b
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 1
 1
@@ -1015,7 +1015,7 @@ count(*)
 explain select count(*) from (select * from t1 where a>2 group by a order by a limit 3) t2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 select count(*) from (select * from t1 where a>2 order by a DESC limit 3) t2;
 count(*)
 3
@@ -1023,7 +1023,7 @@ count(*)
 explain select count(*) from (select * from t1 where a>2 order by a DESC limit 3) t2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 select count(*) from (select 1 from t1 where a>2 limit 3) t2;
 count(*)
 3
@@ -1061,7 +1061,7 @@ a	b
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 a	b
 10	10
@@ -1071,7 +1071,7 @@ a	b
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 1
 1
@@ -1115,7 +1115,7 @@ a	b
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 order by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 select * from (select * from t1 where a>2 order by a DESC limit 3) t2 order by b DESC;
 a	b
 10	10
@@ -1125,7 +1125,7 @@ a	b
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 order by b DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 select * from (select 1 from t1 where a>2 limit 3) t2 order by 1 DESC;
 1
 1
@@ -1168,7 +1168,7 @@ a	b
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 group by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 select * from (select * from t1 where a>2 order by a DESC limit 3) t2 group by b;
 a	b
 9	NULL
@@ -1178,7 +1178,7 @@ a	b
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 group by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 select * from (select 1 from t1 where a>2 limit 3) t2 group by 1;
 1
 1

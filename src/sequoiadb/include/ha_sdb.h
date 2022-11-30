@@ -531,6 +531,8 @@ class ha_sdb : public handler {
 
   int optimize(THD *thd, HA_CHECK_OPT *check_opt) { return 0; }
 
+  uint get_engine_optim_flag();
+
  protected:
   int ensure_collection(THD *thd);
 
