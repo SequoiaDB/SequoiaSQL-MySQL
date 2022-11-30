@@ -3,6 +3,7 @@ package com.sequoiasql.metadatasync.serial;
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.testcommon.JdbcInterface;
 import com.sequoiasql.testcommon.MysqlTestBase;
+import org.bson.BasicBSONObject;
 import org.testng.Assert;
 
 import java.sql.SQLException;
@@ -45,6 +46,40 @@ public class DDLUtils extends MysqlTestBase {
             }
             // HAPendingLog的记录没有被完全清除则休眠5s再进入下一次循环
             Thread.sleep( 5000 );
+        }
+    }
+
+    public static void fillRecycleBin( Sequoiadb sdb, JdbcInterface jdbc,
+                                       String dbName ) throws SQLException {
+        sdb.getRecycleBin().dropAll( null );
+        sdb.getRecycleBin().alter( new BasicBSONObject( "AutoDrop", false ) );
+        sdb.getRecycleBin().alter( new BasicBSONObject( "MaxItemNum", 3 ) );
+        jdbc.update( "use " + dbName + ";" );
+        jdbc.update( "create table t1(id int)" );
+        jdbc.update( "create table t2(id int)" );
+        jdbc.update( "create table t3(id int)" );
+        jdbc.update( "drop table t1,t2,t3 ;" );
+
+        // 验证回收站是否已被填满，预期有三条记录
+        Assert.assertEquals( sdb.getRecycleBin().getCount( null ), 3 );
+    }
+
+    public static void restoreRecycleBinConf( Sequoiadb sdb ) {
+        sdb.getRecycleBin().alter( new BasicBSONObject( "AutoDrop", true ) );
+        sdb.getRecycleBin().alter( new BasicBSONObject( "MaxItemNum", 100 ) );
+    }
+
+    public static void checkRecycleBin( Sequoiadb sdb ) {
+        sdb.getRecycleBin().dropAll( null );
+        if ( !sdb.getRecycleBin().getDetail().get( "AutoDrop" )
+                .equals( true ) ) {
+            sdb.getRecycleBin()
+                    .alter( new BasicBSONObject( "AutoDrop", true ) );
+        }
+        if ( !sdb.getRecycleBin().getDetail().get( "MaxItemNum" )
+                .equals( 100 ) ) {
+            sdb.getRecycleBin()
+                    .alter( new BasicBSONObject( "MaxItemNum", 100 ) );
         }
     }
 }
