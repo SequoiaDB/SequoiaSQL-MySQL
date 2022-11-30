@@ -36,10 +36,5 @@
             <package name="com.sequoiasql.metadatamapping"/>
         </packages>
     </test>
-    <test name="synctest" parallel="classes" thread-count="1">
-        <packages>
-            <package name="com.sequoiasql.metadata.sync"/>
-        </packages>
-    </test>
     
 </suite>

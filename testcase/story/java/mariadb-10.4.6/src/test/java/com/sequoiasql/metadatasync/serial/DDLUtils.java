@@ -1,4 +1,4 @@
-package com.sequoiasql.ddlserial;
+package com.sequoiasql.metadatasync.serial;
 
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.testcommon.JdbcInterface;
@@ -6,6 +6,7 @@ import com.sequoiasql.testcommon.MysqlTestBase;
 import org.testng.Assert;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 public class DDLUtils extends MysqlTestBase {
