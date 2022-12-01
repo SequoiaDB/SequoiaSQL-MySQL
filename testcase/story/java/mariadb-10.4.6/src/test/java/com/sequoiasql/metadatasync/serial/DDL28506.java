@@ -1,4 +1,5 @@
 package com.sequoiasql.metadatasync.serial;
+
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 import com.sequoiasql.testcommon.*;
