@@ -38,7 +38,7 @@ insert into bka_t2 values(1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7)
 insert into bka_t2 select a+10,b+10,c+10 from bka_t2;
 explain select bka_t1.a, bka_t1.b,bka_t1.c from bka_t1 inner join bka_t2 on bka_t1.a = bka_t2.a order by bka_t1.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	bka_t1	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	ALL	idx_a	NULL	NULL	NULL	10	100.00	Using temporary; Using filesort
+1	SIMPLE	bka_t1	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	ALL	idx_a	NULL	NULL	NULL	20	100.00	Using temporary; Using filesort
 1	SIMPLE	bka_t2	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	ref	idx_a	idx_a	4	join_bka_basic_partition_sequoiadb.bka_t1.a	2	100.00	Using index; Using join buffer (Batched Key Access)
 Warnings:
 Note	1003	/* select#1 */ select `join_bka_basic_partition_sequoiadb`.`bka_t1`.`a` AS `a`,`join_bka_basic_partition_sequoiadb`.`bka_t1`.`b` AS `b`,`join_bka_basic_partition_sequoiadb`.`bka_t1`.`c` AS `c` from `join_bka_basic_partition_sequoiadb`.`bka_t1` join `join_bka_basic_partition_sequoiadb`.`bka_t2` where (`join_bka_basic_partition_sequoiadb`.`bka_t2`.`a` = `join_bka_basic_partition_sequoiadb`.`bka_t1`.`a`) order by `join_bka_basic_partition_sequoiadb`.`bka_t1`.`a`
@@ -99,7 +99,7 @@ insert into bka_t2 values(1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7)
 insert into bka_t2 select a+6,b+6,c+6 from bka_t2;
 explain select bka_t1.a, bka_t1.b,bka_t1.c from bka_t1 inner join bka_t2 on bka_t1.a = bka_t2.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	bka_t1	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	ALL	idx_a	NULL	NULL	NULL	10	100.00	NULL
+1	SIMPLE	bka_t1	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	ALL	idx_a	NULL	NULL	NULL	20	100.00	NULL
 1	SIMPLE	bka_t2	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	ref	idx_a	idx_a	4	join_bka_basic_partition_sequoiadb.bka_t1.a	2	100.00	Using index; Using join buffer (Batched Key Access)
 Warnings:
 Note	1003	/* select#1 */ select `join_bka_basic_partition_sequoiadb`.`bka_t1`.`a` AS `a`,`join_bka_basic_partition_sequoiadb`.`bka_t1`.`b` AS `b`,`join_bka_basic_partition_sequoiadb`.`bka_t1`.`c` AS `c` from `join_bka_basic_partition_sequoiadb`.`bka_t1` join `join_bka_basic_partition_sequoiadb`.`bka_t2` where (`join_bka_basic_partition_sequoiadb`.`bka_t2`.`a` = `join_bka_basic_partition_sequoiadb`.`bka_t1`.`a`)

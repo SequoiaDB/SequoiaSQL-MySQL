@@ -267,7 +267,7 @@ a	b
 3	3
 4	4
 6	6
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
@@ -287,27 +287,27 @@ a	b
 3	3
 4	4
 6	6
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 a	b
 10	10
 9	NULL
 8	8
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 1
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
@@ -498,7 +498,7 @@ a	b	(select a from t2 limit 1)
 1	1	1
 2	2	1
 3	3	1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[1], offset[0], table[db_28276.t2]
 explain select *,(select a from t2 limit 1) from t1 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	10	
@@ -579,7 +579,7 @@ NULL	5	1
 8	8	1
 9	NULL	1
 10	10	1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[1], offset[0], table[db_28276.t2]
 explain select *,(select a from t2 limit 1) from t1 order by a,b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	10	Using filesort
@@ -776,7 +776,7 @@ NULL	5	1
 6	6	1
 8	8	1
 10	10	1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[1], offset[0], table[db_28276.t2]
 explain select *,(select a from t2 limit 1) from t1 group by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	10	Using temporary; Using filesort
@@ -994,7 +994,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select count(*) from (select * from t1 where a>2 limit 3) t2;
 count(*)
 3
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2 limit 3) t2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
@@ -1010,23 +1010,23 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select count(*) from (select * from t1 where a>2 group by a order by a limit 3) t2;
 count(*)
 3
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select count(*) from (select * from t1 where a>2 group by a order by a limit 3) t2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select count(*) from (select * from t1 where a>2 order by a DESC limit 3) t2;
 count(*)
 3
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2 order by a DESC limit 3) t2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select count(*) from (select 1 from t1 where a>2 limit 3) t2;
 count(*)
 3
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select count(*) from (select 1 from t1 where a>2 limit 3) t2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
@@ -1036,7 +1036,7 @@ a	b
 3	3
 4	4
 6	6
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
@@ -1056,27 +1056,27 @@ a	b
 3	3
 4	4
 6	6
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 a	b
 10	10
 9	NULL
 8	8
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 1
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
@@ -1086,7 +1086,7 @@ a	b
 3	3
 4	4
 6	6
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 limit 3) t2 order by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
@@ -1110,27 +1110,27 @@ a	b
 3	3
 4	4
 6	6
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 order by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select * from (select * from t1 where a>2 order by a DESC limit 3) t2 order by b DESC;
 a	b
 10	10
 8	8
 9	NULL
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 order by b DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select * from (select 1 from t1 where a>2 limit 3) t2 order by 1 DESC;
 1
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 limit 3) t2 order by 1 DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
@@ -1140,7 +1140,7 @@ a	b
 3	3
 4	4
 6	6
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 limit 3) t2 group by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
@@ -1163,25 +1163,25 @@ a	b
 3	3
 4	4
 6	6
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 group by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select * from (select * from t1 where a>2 order by a DESC limit 3) t2 group by b;
 a	b
 9	NULL
 8	8
 10	10
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 group by b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	10	Using where with pushed condition
 select * from (select 1 from t1 where a>2 limit 3) t2 group by 1;
 1
 1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 limit 3) t2 group by 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
@@ -1223,7 +1223,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select count(*),(select a from t2 limit 1) from t1;
 count(*)	(select a from t2 limit 1)
 10	1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[1], offset[0], table[db_28276.t2]
 explain select count(*),(select a from t2 limit 1) from t1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	10	
