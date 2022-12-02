@@ -4407,6 +4407,7 @@ error:
 bool ha_is_ddl_ignorable_error(uint sql_errno) {
   bool can_ignore = false;
   switch (sql_errno) {
+    case ER_DUP_INDEX:
     case ER_DB_DROP_EXISTS:
     case ER_BAD_TABLE_ERROR:
     case ER_TABLE_EXISTS_ERROR:
