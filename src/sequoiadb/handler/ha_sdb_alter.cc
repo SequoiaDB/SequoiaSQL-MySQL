@@ -2735,7 +2735,7 @@ static const enum SDB_FIELD_CHECK_RULES
         /*[0]: simple collection*/
         /*Attribute, AttributeDesc, AutoIncrement, AutoSplit, CataInfo,
            CompressionType*/
-        {NEEDED, NEEDED, NEEDED, UNEXPECTED, NEEDED, NEEDED,
+        {NEEDED, NEEDED, NEEDED, IGNORE, NEEDED, NEEDED,
          /*CompressionTypeDesc, DataSourceID, EnsureShardingIndex, IsMainCL,
             LobShardingKeyFormat*/
          NEEDED, UNEXPECTED, UNEXPECTED, UNEXPECTED, UNEXPECTED,
@@ -2757,7 +2757,7 @@ static const enum SDB_FIELD_CHECK_RULES
         /*[2]: range partition collection.*/
         /*Attribute, AttributeDesc, AutoIncrement, AutoSplit, CataInfo,
            CompressionType*/
-        {NEEDED, NEEDED, NEEDED, UNEXPECTED, NEEDED, NEEDED,
+        {NEEDED, NEEDED, NEEDED, IGNORE, NEEDED, NEEDED,
          /*CompressionTypeDesc, DataSourceID, EnsureShardingIndex, IsMainCL,
             LobShardingKeyFormat*/
          NEEDED, UNEXPECTED, NEEDED, NEEDED, UNEXPECTED,
@@ -2893,10 +2893,20 @@ bool Sdb_collection_info::compare_cl(Sdb_collection_info &right,
     bson::BSONElement ele1 = options.getField(SDB_CL_OPTION_FIELDS[i]);
     if (!ele1.eoo()) {
       compare_options_blder1.append(ele1);
+    } else if (0 == strcmp(SDB_FIELD_AUTO_SPLIT, SDB_CL_OPTION_FIELDS[i])) {
+      /*
+        Without AutoSplit is the same as AutoSplit:false specified explicitly.
+        Only compare AutoSplit in Hash partition cl.
+        Ignore comparing AutoSplit in range partition cl or simple cl.
+      */
+      compare_options_blder1.appendBool(SDB_FIELD_AUTO_SPLIT, false);
     }
+
     bson::BSONElement ele2 = right.options.getField(SDB_CL_OPTION_FIELDS[i]);
     if (!ele2.eoo()) {
       compare_options_blder2.append(ele2);
+    } else if (0 == strcmp(SDB_FIELD_AUTO_SPLIT, SDB_CL_OPTION_FIELDS[i])) {
+      compare_options_blder2.appendBool(SDB_FIELD_AUTO_SPLIT, false);
     }
   }
   obj1 = compare_options_blder1.obj();
