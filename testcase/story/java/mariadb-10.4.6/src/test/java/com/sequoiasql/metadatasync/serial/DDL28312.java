@@ -31,10 +31,10 @@ public class DDL28312 extends MysqlTestBase {
             if ( CommLib.isStandAlone( sdb ) ) {
                 throw new SkipException( "is standalone skip testcase" );
             }
+            DDLUtils.checkRecycleBin( sdb );
             if ( sdb.isCollectionSpaceExist( dbName ) ) {
                 sdb.dropCollectionSpace( dbName );
             }
-            DDLUtils.checkRecycleBin( sdb );
             jdbc = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc.dropDatabase( dbName );
@@ -45,7 +45,7 @@ public class DDL28312 extends MysqlTestBase {
         }
     }
 
-    @Test
+    @Test(enabled = false) // SEQUOIASQLMAINSTREAM-1597
     public void test() throws Exception {
         // 构造回收站已满的场景
         jdbc.update( "create database " + dbName + ";" );
