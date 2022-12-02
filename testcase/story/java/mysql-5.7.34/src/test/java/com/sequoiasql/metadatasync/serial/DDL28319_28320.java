@@ -33,13 +33,13 @@ public class DDL28319_28320 extends MysqlTestBase {
             if ( CommLib.isStandAlone( sdb ) ) {
                 throw new SkipException( "is standalone skip testcase" );
             }
+            DDLUtils.checkRecycleBin( sdb );
             if ( sdb.isCollectionSpaceExist( dbName1 ) ) {
                 sdb.dropCollectionSpace( dbName1 );
             }
             if ( sdb.isCollectionSpaceExist( dbName2 ) ) {
                 sdb.dropCollectionSpace( dbName2 );
             }
-            DDLUtils.checkRecycleBin( sdb );
             jdbc = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc.dropDatabase( dbName1 );

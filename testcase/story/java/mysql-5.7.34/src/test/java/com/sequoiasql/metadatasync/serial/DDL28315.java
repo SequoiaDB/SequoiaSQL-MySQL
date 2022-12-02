@@ -30,10 +30,10 @@ public class DDL28315 extends MysqlTestBase {
             if ( CommLib.isStandAlone( sdb ) ) {
                 throw new SkipException( "is standalone skip testcase" );
             }
+            DDLUtils.checkRecycleBin( sdb );
             if ( sdb.isCollectionSpaceExist( dbName ) ) {
                 sdb.dropCollectionSpace( dbName );
             }
-            DDLUtils.checkRecycleBin( sdb );
             jdbc = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc.dropDatabase( dbName );
