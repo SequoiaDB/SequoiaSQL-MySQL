@@ -5346,7 +5346,7 @@ id	a	b
 7	 hello	 hello
 8	 HELLO	 HELLO
 9	hello1	hello1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": { "$field": "b" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "a": { "$et": { "$field": "b" } } }, { "$and": [ { "a": { "$isnull": 1 } }, { "b": { "$isnull": 1 } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
 id	a	b
 1	hello	hello
@@ -6264,7 +6264,7 @@ id	a	b
 7	 HELLO	 HELLO
 8	 HELLO	 HELLO
 9	hello1	hello1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": { "$field": "b" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "a": { "$et": { "$field": "b" } } }, { "$and": [ { "a": { "$isnull": 1 } }, { "b": { "$isnull": 1 } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
 id	a	b
 1	hello	hello
