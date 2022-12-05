@@ -1956,7 +1956,10 @@ int ha_sdb::reset() {
   DBUG_PRINT("info", ("table name %s, handler %p", table_name, this));
 
   Sdb_conn *connection = NULL;
-  if (0 == check_sdb_in_thd(ha_thd(), &connection, false)) {
+  THD *thd = ha_thd();
+  // mariadb && mysql clean up cache tables in shutting down
+  // and it will no to use 'thd'
+  if (thd && (0 == check_sdb_in_thd(thd, &connection, false))) {
     connection->clear_error_message();
   }
 
