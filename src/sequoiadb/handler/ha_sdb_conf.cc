@@ -576,6 +576,14 @@ static MYSQL_THDVAR_BOOL(support_cond_not,
                          /* 是否支持匹配符 $not 的下压 */,
                          NULL, NULL, TRUE);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    build_sort_cond_on_runtime, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Whether build sort condition on runtime. "
+    "(Default: ON)"
+    /* 是否在 runtime 层构建排序条件(包括order by、group by)。*/,
+    NULL, NULL, TRUE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -620,6 +628,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(lossy_end_range),
     MYSQL_SYSVAR(cls_pushdown_expand),
     MYSQL_SYSVAR(support_cond_not),
+    MYSQL_SYSVAR(build_sort_cond_on_runtime),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -856,4 +865,8 @@ int sdb_cls_pushdown_expand(THD *thd) {
 
 bool sdb_support_cond_not(THD *thd) {
   return THDVAR(thd, support_cond_not);
+}
+
+bool sdb_build_sort_cond_on_runtime(THD *thd) {
+  return THDVAR(thd, build_sort_cond_on_runtime);
 }

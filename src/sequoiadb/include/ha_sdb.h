@@ -774,6 +774,8 @@ class ha_sdb : public handler {
 
   bool is_in_one_query_for_cur_select();
 
+  int build_sort_condition();
+
  private:
   // swap table if swap_table is true
   int rename_or_swap_table(const char *from, const char *to, bool swap_table);
