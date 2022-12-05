@@ -1741,7 +1741,10 @@ int ha_sdb::reset() {
     thd_sdb->part_del_ren_ctx = NULL;
   }
 #endif
-  if (0 == check_sdb_in_thd(ha_thd(), &connection, false)) {
+  THD *thd = ha_thd();
+  // mariadb && mysql clean up cache tables in shutting down
+  // and it will no to use 'thd'
+  if (thd && (0 == check_sdb_in_thd(thd, &connection, false))) {
     connection->clear_error_message();
   }
 
