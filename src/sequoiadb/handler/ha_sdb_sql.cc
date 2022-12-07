@@ -31,6 +31,17 @@
 #include <sql_partition.h>
 #endif
 
+#ifdef IS_MYSQL
+bool key_buf_cmp(KEY *key_info, uint used_key_parts, const uchar *key1,
+                 const uchar *key2) {
+  uint key_length = 0;
+  for (uint i = 0; i < used_key_parts; ++i) {
+    key_length += key_info->key_part[i].store_length;
+  }
+  return key_cmp2(key_info->key_part, key1, key_length, key2, key_length);
+}
+#endif
+
 #ifdef IS_MARIADB
 void repoint_field_to_record(TABLE *table, uchar *old_rec, uchar *new_rec) {
   Field **fields = table->field;

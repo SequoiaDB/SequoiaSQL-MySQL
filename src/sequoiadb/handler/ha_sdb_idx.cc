@@ -28,6 +28,8 @@
 #include "ha_sdb_util.h"
 #include "ha_sdb_sql.h"
 #include "sql_table.h"
+#include "my_bit.h"
+#include "key.h"
 
 #define SDB_ROUND(x, min, max) (SDB_MIN(SDB_MAX((x), (min)), (max)))
 
@@ -730,8 +732,9 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                     end_key can break */
                   if (start_key->keypart_map == end_key->keypart_map &&
                       start_key->length == end_key->length &&
-                      0 == memcmp(start_key->key, end_key->key,
-                                  start_key->length)) {
+                      0 == key_buf_cmp(key_info,
+                                       my_bit_log2(start_key->keypart_map + 1),
+                                       start_key->key, end_key->key)) {
                     goto prepare_for_next_key_part;
                   }
                 }
@@ -783,8 +786,9 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                 can break */
               if (start_key->keypart_map == end_key->keypart_map &&
                   start_key->length == end_key->length &&
-                  0 ==
-                      memcmp(start_key->key, end_key->key, start_key->length)) {
+                  0 == key_buf_cmp(key_info,
+                                   my_bit_log2(start_key->keypart_map + 1),
+                                   start_key->key, end_key->key)) {
                 break;
               }
             }
