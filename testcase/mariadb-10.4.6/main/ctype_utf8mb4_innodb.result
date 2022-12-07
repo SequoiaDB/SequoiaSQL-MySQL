@@ -1349,7 +1349,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM (SELECT a FROM t1 GROUP BY a) AS t2;
 COUNT(*)
-1
+2
 drop table t1;
 create table t1(a char(10)) default charset utf8mb4 engine SequoiaDB;
 insert into t1 values ('123'), ('456');

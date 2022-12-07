@@ -57,14 +57,14 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 3 } }], selector[{}], order_by[{ "col3": -1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27694.t1]
 explain select * from v4 where col1 > 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using where
-2	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	8	Using where
+2	DERIVED	t1	ALL	idx_col1,idx_col12	NULL	NULL	NULL	8	Using where with pushed condition
 select * from v4 where col1 > 3;
 col1	col2	col3	col4
 4	def	def	def
 5	defg	defg	defg
 6	xyz	xyz	xyz
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 3 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27694.t1]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 3 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain with tmp as (select * from t1 where col2 in('abc','abd','def')) select * from tmp where tmp.col1 > 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	idx_col1,idx_col2,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition; Using MRR
