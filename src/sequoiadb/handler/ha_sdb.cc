@@ -676,11 +676,13 @@ error:
 
 bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
                              sdb_join_type type) {
+  bool direct_limit = false;
   SELECT_LEX *const select_lex = sdb_lex_first_select(thd);
   JOIN *const join = select_lex->join;
   /* if the following conditions are included, cannot pushdown limit:
      1. HAVING condition.
-     2. WHERE condition but not pushdowned.
+     2. WHERE condition but not pushdowned, WHERE condition has
+        non-deterministic function like rand().
      3. GROUP BY lists.
      4. ORDER BY lists with filesort.
      5. contains DISTINCT.
@@ -710,9 +712,20 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       use_distinct || calc_found_rows || use_group_and_agg_func ||
       use_filesort || use_index_merge_and) {
-    return false;
+    direct_limit = false;
+    goto done;
   }
-  return true;
+
+  if (sdb_where_condition(thd) &&
+      (sdb_where_condition(thd)->used_tables() & RAND_TABLE_BIT)) {
+    direct_limit = false;
+    goto done;
+  }
+
+  direct_limit = true;
+
+done:
+  return direct_limit;
 }
 
 int sdb_handle_sort_condition(THD *thd, TABLE *table,
