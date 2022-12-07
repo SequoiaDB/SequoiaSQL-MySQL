@@ -7240,10 +7240,10 @@ int ha_sdb::info(uint flag) {
                                : false;
     if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SORT) &&
         sdb_check_condition_pushdown_switch(thd) && select_lex) {
+      st_order *order = sdb_get_join_order_by(select_lex->join);
+      st_order *group_list = sdb_get_join_group_list(select_lex->join);
       if (SQLCOM_SELECT == thd_sql_command(thd) && sdb_is_single_table(thd)) {
         bool has_opt_sort_pushdown = false;
-        st_order *order = sdb_get_join_order_by(select_lex->join);
-        st_order *group_list = sdb_get_join_group_list(select_lex->join);
         has_opt_sort_pushdown =
             (optimizer_flag(thd, OPTIMIZER_SWITCH_OPTIMIZER_SORT_PUSHDOWN) &&
              order && !group_list);
@@ -7264,7 +7264,8 @@ int ha_sdb::info(uint flag) {
       } else if ((SQLCOM_SELECT == thd_sql_command(thd) ||
                   SQLCOM_INSERT_SELECT == thd_sql_command(thd) ||
                   SQLCOM_REPLACE_SELECT == thd_sql_command(thd)) &&
-                 sdb_cls_pushdown_expand(thd) && use_limit &&
+                 sdb_cls_pushdown_expand(thd) &&
+                 (group_list || (order && use_limit)) &&
                  sdb_is_single_table_in_cur_select(thd, select_lex)) {
         rc = handle_sort_condition(false);
         if (rc) {
