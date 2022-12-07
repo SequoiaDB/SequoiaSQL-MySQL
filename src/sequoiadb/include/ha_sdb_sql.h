@@ -142,6 +142,9 @@ typedef char *range_id_t;
 #define PLUGIN_VAR_INVISIBLE 0
 #endif
 
+// Functions similar as MariaDB
+bool key_buf_cmp(KEY *key_info, uint used_key_parts, const uchar *key1,
+                 const uchar *key2);
 #endif
 
 #define SDB_ERROR_INJECT_CRASH(code) \
