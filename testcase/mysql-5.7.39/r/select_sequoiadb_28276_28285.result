@@ -184,7 +184,8 @@ select * from v1 where b>rand() group by a order by a limit 3;
 a	b
 6	6
 8	8
-[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 4 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+10	10
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 4 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from v1 where b>rand() group by a order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	10	11.11	Using where with pushed condition (`db_28276`.`t2`.`a` > 4)

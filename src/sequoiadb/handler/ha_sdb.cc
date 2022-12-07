@@ -846,7 +846,8 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
 
   /* if the following conditions are included, cannot pushdown limit:
      1. HAVING condition.
-     2. WHERE condition but not pushdowned.
+     2. WHERE condition but not pushdowned, WHERE condition has
+        non-deterministic function like rand().
      3. GROUP BY lists.
      4. ORDER BY lists with filesort.
      5. contains DISTINCT.
@@ -884,6 +885,12 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
       is_correlated) {
     rs = false;
     goto error;
+  }
+
+  if (sdb_where_condition(select_lex) &&
+      (sdb_where_condition(select_lex)->used_tables() & RAND_TABLE_BIT)) {
+    rs = false;
+    goto done;
   }
 
 done:
