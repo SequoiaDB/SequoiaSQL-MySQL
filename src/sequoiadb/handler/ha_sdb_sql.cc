@@ -303,16 +303,19 @@ bool sdb_calc_found_rows(THD *thd) {
 
 bool sdb_use_filesort(THD *thd) {
   JOIN *const join = sdb_lex_first_select(thd)->join;
-  QEP_TAB *tab = NULL;
+  bool use_filesort = false;
   if (!join->qep_tab) {
-    return false;
+    goto done; /* purecov: inspected */
   }
-  if (join->need_tmp) {
-    tab = &join->qep_tab[join->primary_tables];
-  } else {
-    tab = join->qep_tab + join->const_tables;
+  for (uint i = 0; i < join->tables; ++i) {
+    QEP_TAB *tab = join->qep_tab + i;
+    if (tab && tab->filesort) {
+      use_filesort = true;
+      break;
+    }
   }
-  return tab->filesort;
+done:
+  return use_filesort;
 }
 
 bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
@@ -1031,14 +1034,19 @@ bool sdb_calc_found_rows(THD *thd) {
 
 bool sdb_use_filesort(THD *thd) {
   JOIN *const join = sdb_lex_first_select(thd)->join;
+  bool use_filesort = false;
   if (!join->join_tab) {
-    return false;
+    goto done; /* purecov: inspected */
   }
-  JOIN_TAB *tab = join->join_tab + (join->tables_list ? join->const_tables : 0);
-  if (join->need_tmp) {
-    tab = tab + 1;
+  for (uint i = 0; i < join->total_join_tab_cnt() + 1; ++i) {
+    JOIN_TAB *tab = join->join_tab + i;
+    if (tab && tab->filesort) {
+      use_filesort = true;
+      break;
+    }
   }
-  return tab->filesort;
+done:
+  return use_filesort;
 }
 
 bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
