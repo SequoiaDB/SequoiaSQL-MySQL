@@ -5,6 +5,7 @@
 
 # connect to conn1, clear servers in the beginning
 connection conn1;
+set server_ha_wait_sync_timeout = 10;
 --disable_warnings
 DROP SERVER IF EXISTS metasync_s1;
 DROP SERVER IF EXISTS metasync_s2;

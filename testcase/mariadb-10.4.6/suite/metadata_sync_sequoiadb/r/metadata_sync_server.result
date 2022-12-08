@@ -1,4 +1,5 @@
 connection conn1;
+set server_ha_wait_sync_timeout = 10;
 DROP SERVER IF EXISTS metasync_s1;
 DROP SERVER IF EXISTS metasync_s2;
 connection conn2;
