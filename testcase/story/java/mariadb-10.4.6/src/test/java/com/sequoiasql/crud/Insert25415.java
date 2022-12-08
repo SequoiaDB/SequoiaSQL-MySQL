@@ -24,7 +24,8 @@ import com.sequoiasql.testcommon.JdbcWarpperType;
 import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
- * @Description seqDB-25415:RC事务且autocommit=1，并发insert into ... on duplicate key操作相同key
+ * @Description seqDB-25415:RC事务且autocommit=1，并发insert into ... on duplicate
+ *              key操作相同key
  * @Author xiaozhenfan
  * @Date 2022.03.04
  * @UpdateAuthor xiaozhenfan
@@ -38,6 +39,7 @@ public class Insert25415 extends MysqlTestBase {
     private String tbName = "tb_25415";
     private Sequoiadb sdb = null;
     private int num = 5000;
+    private boolean runSucess = false;
 
     @BeforeClass
     private void setUp() throws Exception {
@@ -203,7 +205,7 @@ public class Insert25415 extends MysqlTestBase {
         InsertThread thread4 = null;
         for ( int i = 0; i < groups; i++ ) {
             // 创建线程执行器
-            es = new ThreadExecutor();
+            es = new ThreadExecutor( 300000 );
             thread1 = new InsertThread( sql1 );
             thread2 = new InsertThread( sql2 );
             thread3 = new InsertThread( sql3 );
@@ -214,12 +216,15 @@ public class Insert25415 extends MysqlTestBase {
             es.addWorker( thread4 );
             es.run();
         }
+        runSucess = true;
     }
 
     @AfterClass
     public void tearDown() throws Exception {
         try {
-            jdbc.dropDatabase( dbName );
+            if ( runSucess ) {
+                jdbc.dropDatabase( dbName );
+            }
         } finally {
             jdbc.setAutoCommit( false );
             jdbc.setTransactionIsolatrion( 2 );
