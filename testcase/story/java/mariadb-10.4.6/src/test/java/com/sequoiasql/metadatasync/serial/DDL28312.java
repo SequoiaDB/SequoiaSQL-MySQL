@@ -110,6 +110,7 @@ public class DDL28312 extends MysqlTestBase {
     public void tearDown() throws Exception {
         try {
             jdbc.update( "set session default_tmp_storage_engine = default;" );
+            DDLUtils.restoreRecycleBinConf( sdb );
             jdbc.dropDatabase( dbName );
         } finally {
             DDLUtils.restoreRecycleBinConf( sdb );
