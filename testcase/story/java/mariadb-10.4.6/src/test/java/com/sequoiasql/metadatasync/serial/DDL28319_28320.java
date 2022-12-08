@@ -141,6 +141,7 @@ public class DDL28319_28320 extends MysqlTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
+            DDLUtils.restoreRecycleBinConf( sdb );
             jdbc.dropDatabase( dbName1 );
             jdbc.dropDatabase( dbName2 );
         } finally {
