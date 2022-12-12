@@ -126,7 +126,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	r_rows	filtered	r_f
 set session optimizer_switch='optimizer_sort_pushdown=off';
 explain select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	9	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 create procedure p1()
 begin
 select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
