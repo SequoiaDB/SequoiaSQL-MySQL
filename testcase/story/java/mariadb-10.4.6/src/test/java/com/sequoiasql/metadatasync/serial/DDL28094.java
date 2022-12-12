@@ -142,8 +142,7 @@ public class DDL28094 extends MysqlTestBase {
                 + "  `b` int(11) DEFAULT NULL,\n"
                 + "  `c` int(11) DEFAULT NULL,\n" + "  UNIQUE KEY `a` (`a`)\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );
-        // 暂时屏蔽该测试点，待问题解决后开放：SEQUOIASQLMAINSTREAM-1585
-        // Assert.assertEquals( act1, exp1 );
+        Assert.assertEquals( act1, exp1 );
 
         // 插入数据，再检查数据正确性
         jdbc.update(
