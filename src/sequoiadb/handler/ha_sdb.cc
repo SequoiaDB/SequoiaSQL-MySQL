@@ -674,8 +674,8 @@ error:
   goto done;
 }
 
-bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
-                             sdb_join_type type) {
+bool ha_sdb::can_push_down_limit(sdb_join_type type) {
+  THD *thd = ha_thd();
   bool direct_limit = false;
   SELECT_LEX *const select_lex = sdb_lex_first_select(thd);
   JOIN *const join = select_lex->join;
@@ -710,8 +710,8 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
           : false;
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
-      use_distinct || calc_found_rows || use_group_and_agg_func ||
-      use_filesort || use_index_merge_and) {
+      (m_use_group && !direct_sort) || use_distinct || calc_found_rows ||
+      use_group_and_agg_func || use_filesort || use_index_merge_and) {
     direct_limit = false;
     goto done;
   }
@@ -1526,6 +1526,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_use_default_impl = false;
   m_use_position = false;
   m_null_rejecting = false;
+  m_use_group = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1819,6 +1820,7 @@ int ha_sdb::reset() {
   is_join_bka = false;
   key_parts = 0;
   m_null_rejecting = false;
+  m_use_group = false;
   DBUG_RETURN(0);
 }
 
@@ -5160,7 +5162,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
         ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_LIMIT) &&
          sdb_check_condition_pushdown_switch(ha_thd()))) {
       type = sdb_get_join_type(ha_thd(), mrr_iter);
-      if (sdb_can_push_down_limit(ha_thd(), sdb_condition, type)) {
+      if (can_push_down_limit(type)) {
         // org_num_to_return/org_num_to_skip keep the initial value for easy
         // printing debug log.
         org_num_to_return = num_to_return = select_lex->get_limit();
@@ -5816,8 +5818,7 @@ int ha_sdb::rnd_next(uchar *buf) {
               ((sdb_get_optimizer_options(ha_thd()) &
                 SDB_OPTIMIZER_OPTION_LIMIT) &&
                sdb_check_condition_pushdown_switch(ha_thd()))) {
-            if (sdb_can_push_down_limit(ha_thd(), sdb_condition,
-                                        SDB_JOIN_UNKNOWN)) {
+            if (can_push_down_limit(SDB_JOIN_UNKNOWN)) {
               num_to_return = select_lex->get_limit();
               if (select_lex->offset_limit) {
                 num_to_skip = select_lex->get_offset();
@@ -6021,6 +6022,7 @@ int ha_sdb::info(uint flag) {
 #endif
 
   if (first_info) {
+    m_use_group = sdb_get_join_group_list(ha_thd());
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT &&
         sdb_is_single_table(ha_thd()) &&
         ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_SORT) &&

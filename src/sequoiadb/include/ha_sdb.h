@@ -470,6 +470,8 @@ class ha_sdb : public handler {
 
   Item *idx_cond_push(uint keyno, Item *idx_cond);
 
+  bool can_push_down_limit(sdb_join_type type);
+
   void handle_sdb_error(int error, myf errflag);
 
   int check(THD *thd, HA_CHECK_OPT *check_opt) { return 0; }
@@ -757,5 +759,6 @@ class ha_sdb : public handler {
   uint key_parts;
 #endif
   bool m_null_rejecting;
+  bool m_use_group;
 };
 #endif
