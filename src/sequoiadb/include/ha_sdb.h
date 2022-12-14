@@ -844,5 +844,6 @@ class ha_sdb : public handler {
   sdb_batched_keys_ranges m_batched_keys_ranges;
   bool m_null_rejecting;
   bool m_index_need_sorted;
+  bool m_use_group;
 };
 #endif
