@@ -880,9 +880,9 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
   const bool is_correlated = sdb_correlated_subquery_for_cur_select(table);
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
-      use_distinct || calc_found_rows || use_group_and_agg_func ||
-      use_filesort || use_index_merge_and || is_recursive_table ||
-      is_correlated) {
+      (m_use_group && !direct_sort) || use_distinct || calc_found_rows ||
+      use_group_and_agg_func || use_filesort || use_index_merge_and ||
+      is_recursive_table || is_correlated) {
     rs = false;
     goto error;
   }
@@ -1730,6 +1730,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_use_position = false;
   m_null_rejecting = false;
   m_index_need_sorted = true;
+  m_use_group = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -2028,6 +2029,7 @@ int ha_sdb::reset() {
   m_method = IDX_COND_INVALID;
   m_null_rejecting = false;
   m_index_need_sorted = true;
+  m_use_group = false;
   DBUG_RETURN(0);
 }
 
@@ -7238,6 +7240,9 @@ int ha_sdb::info(uint flag) {
                                ? select_lex->explicit_limit &&
                                      select_lex->get_limit() != HA_POS_ERROR
                                : false;
+    m_use_group =
+        select_lex ? (sdb_get_join_group_list(select_lex->join) ? true : false)
+                   : false;
     if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SORT) &&
         sdb_check_condition_pushdown_switch(thd) && select_lex) {
       st_order *order = sdb_get_join_order_by(select_lex->join);
