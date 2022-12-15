@@ -810,6 +810,28 @@ function start_all()
    test $total_cnt != $succ_cnt && exit 7
 }
 
+function inst_stopped_check()
+{
+   #check
+   local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
+   wait_for_process "stop" "$pid" "$pid_file"
+   local rc=$?
+   if [ "$NEED_PRINTSCREEN" == true ]; then
+      end_line=`cat $CTL_LOG | wc -l`
+   fi
+   if [ "$NEED_PRINTSCREEN" == true ]; then
+      `cat $CTL_LOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
+   fi
+   if [ $rc == 0 ]
+   then
+      echo "ok"
+      return 0
+   else
+      echo "ERROR: Failed to stop instance. The log files in $CTL_LOG may give you some hint of what went wrong." >&2
+      return 4;
+   fi
+}
+
 function stop_inst()
 {
    local inst=$1
@@ -840,23 +862,17 @@ function stop_inst()
    exec_cmd "kill $pid"
    
    #check
-   local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
-   wait_for_process "stop" "$pid" "$pid_file"
-   local rc=$?
-   if [ "$NEED_PRINTSCREEN" == true ]; then
-      end_line=`cat $CTL_LOG | wc -l`
+   inst_stopped_check
+   if [ $? != 0 -a "${FORCE_OP}" == true ]; then
+     #In the case of "--force", If failed to "kill $pid" for PROCESS_WAIT_TIME,
+     #then "kill -9 $pid" "$SQLLOG", nn some case server will failed to
+     #close_connections() when some client's connection state still be
+     #TIME_WAIT/CLOSE_WAIT/FIN_WAIT2
+     exec_cmd "kill -9 $pid"
+     #check again
+     inst_stopped_check
    fi
-   if [ "$NEED_PRINTSCREEN" == true ]; then
-      `cat $CTL_LOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
-   fi
-   if [ $rc == 0 ]
-   then 
-      echo "ok"
-      return 0
-   else 
-      echo "ERROR: Failed to stop instance. The log files in $CTL_LOG may give you some hint of what went wrong." >&2
-      return 4;
-   fi
+   return $?
 }
 
 function stop_all()
@@ -1319,8 +1335,8 @@ function build_help()
    echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
    echo "  ${ME} start      <INSTNAME>                           [--print]"
    echo "  ${ME} startall                                        [--print]"
-   echo "  ${ME} stop       <INSTNAME>                           [--print]"
-   echo "  ${ME} stopall                                         [--print]"
+   echo "  ${ME} stop       <INSTNAME> [--force]                 [--print]"
+   echo "  ${ME} stopall    [--force]                            [--print]"
    echo "  ${ME} restart    <INSTNAME>                           [--print]"
    echo "  ${ME} status     [INSTNAME]"
    echo "  ${ME} join       <INSTANCE> <-g INST_GROUP_NAME> [-k INST_GROUP_KEY] [--force]"
