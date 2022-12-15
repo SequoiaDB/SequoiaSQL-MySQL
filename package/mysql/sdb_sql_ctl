@@ -826,7 +826,7 @@ function start_all()
    test $total_cnt != $succ_cnt && exit 7
 }
 
-function inst_stoped_check()
+function inst_stopped_check()
 {
    #check
    local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
@@ -878,14 +878,15 @@ function stop_inst()
    exec_cmd "kill $pid"
    
    #check
-   inst_stoped_check
-   if [ $? != 0 ]; then
-     #Failed to "kill $pid" for PROCESS_WAIT_TIME, then "kill -9 $pid" "$SQLLOG"
-     #In some case server will failed to close_connections() when some client's
-     #connection state still be TIME_WAIT/CLOSE_WAIT/FIN_WAIT2
+   inst_stopped_check
+   if [ $? != 0 -a "${FORCE_OP}" == true ]; then
+     #In the case of "--force", If failed to "kill $pid" for PROCESS_WAIT_TIME,
+     #then "kill -9 $pid" "$SQLLOG", nn some case server will failed to
+     #close_connections() when some client's connection state still be
+     #TIME_WAIT/CLOSE_WAIT/FIN_WAIT2
      exec_cmd "kill -9 $pid"
      #check again
-     inst_stoped_check
+     inst_stopped_check
    fi
    return $?
 }
@@ -1355,8 +1356,8 @@ function build_help()
    echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
    echo "  ${ME} start      <INSTNAME>                           [--print]"
    echo "  ${ME} startall                                        [--print]"
-   echo "  ${ME} stop       <INSTNAME>                           [--print]"
-   echo "  ${ME} stopall                                         [--print]"
+   echo "  ${ME} stop       <INSTNAME> [--force]                 [--print]"
+   echo "  ${ME} stopall    [--force]                            [--print]"
    echo "  ${ME} restart    <INSTNAME>                           [--print]"
    echo "  ${ME} status     [INSTNAME]"
    echo "  ${ME} join       <INSTANCE> <-g INST_GROUP_NAME> [-k INST_GROUP_KEY] [--force]"
