@@ -749,9 +749,7 @@ class ha_sdb_part_wrapper : public ha_partition {
   THD* get_thd() const { return ha_thd(); }
 
   int read_range_first(const key_range* start_key, const key_range* end_key,
-                       bool eq_range, bool sorted) {
-    return m_file[0]->read_range_first(start_key, end_key, eq_range, sorted);
-  }
+                       bool eq_range_arg, bool sorted);
 
   int multi_range_read_init(RANGE_SEQ_IF* seq, void* seq_init_param,
                             uint n_ranges, uint mrr_mode, HANDLER_BUFFER* buf) {

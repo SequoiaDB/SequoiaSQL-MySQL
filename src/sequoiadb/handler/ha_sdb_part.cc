@@ -1420,6 +1420,15 @@ const COND *ha_sdb_part_wrapper::cond_push(const COND *cond) {
   return res_cond;
 }
 
+int ha_sdb_part_wrapper::read_range_first(const key_range *start_key,
+                                          const key_range *end_key,
+                                          bool eq_range_arg, bool sorted) {
+  eq_range = eq_range_arg;
+  set_end_range(end_key);
+  range_key_part = table->key_info[active_index].key_part;
+  return m_file[0]->read_range_first(start_key, end_key, eq_range, sorted);
+}
+
 int ha_sdb_part_wrapper::close(void) {
   free_partition_bitmaps();
   m_handler_status = handler_closed;
