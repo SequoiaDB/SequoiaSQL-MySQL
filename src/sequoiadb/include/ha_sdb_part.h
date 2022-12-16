@@ -822,6 +822,8 @@ class ha_sdb_part_wrapper : public ha_partition {
     ha_partition::print_error(error, errflag);
   }
 
+  double scan_time() { return m_file[0]->scan_time(); }
+
  private:
   void reset_part_state(THD* thd);
 
