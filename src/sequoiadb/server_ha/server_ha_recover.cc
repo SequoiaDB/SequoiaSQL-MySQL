@@ -423,8 +423,10 @@ error:
 static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
                                   bson::BSONObj &config_obj) {
   int rc = 0;
-  const char *user = NULL, *host = NULL, *plugin = NULL;
-  const char *iv = NULL, *auth_str = NULL;
+  // MY_ATTRIBUTE((unused)) is for remove release compile warnings
+  const char *user = NULL, *host MY_ATTRIBUTE((unused)) = NULL;
+  const char *plugin MY_ATTRIBUTE((unused)) = NULL;
+  const char *iv = NULL, *auth_str MY_ATTRIBUTE((unused)) = NULL;
   const char *cipher_password = NULL, *md5_password = NULL;
   char sql_str[HA_BUF_LEN] = {0};
 
