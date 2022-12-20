@@ -931,13 +931,13 @@ function change_configure_online()
 function build_auth_string()
 {
    # get instance group user from configuration file
-   local sdb_user=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_user"`
+   local sdb_user=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_user="`
    sdb_user=${sdb_user#*=}
-   test "${sdb_user:0:1}" == '"' && sdb_user=${sdb_user:1:-1}
 
    # get coord address
-   local sdb_host=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_conn_addr"`
+   local sdb_host=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_conn_addr="`
    sdb_host=${sdb_host#*=}
+   sdb_host=${sdb_host//[[:blank:]]/}
    if [ "$sdb_host" == "" ]; then
       sdb_host="localhost:11810"
    fi
@@ -947,21 +947,18 @@ function build_auth_string()
    #if user exists
    if [ "$sdb_user" ]; then
       # get instance group password from configuration file
-      local sdb_password=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_password"`
+      local sdb_password=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_password="`
       sdb_password=${sdb_password#*=}
-      test "${sdb_password:0:1}" == '"' && sdb_password=${sdb_password:1:-1}
 
       if [ "$sdb_password" ]; then
          connection_str="--host=$sdb_host --user=$sdb_user --password=$sdb_password"
       else
          # get cipherfile from configuration file
-         local sdb_cipherfile=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_cipherfile"`
+         local sdb_cipherfile=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_cipherfile="`
          sdb_cipherfile=${sdb_cipherfile#*=}
-         test "${sdb_cipherfile:0:1}" == '"' && sdb_cipherfile=${sdb_cipherfile:1:-1}
 
-         local sdb_token=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_token"`
+         local sdb_token=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--sequoiadb_token="`
          sdb_token=${sdb_token#*=}
-         test "${sdb_token:0:1}" == '"' && sdb_token=${sdb_token:1:-1}
 
          local cipherfile=""
          test "$sdb_cipherfile" == "" || cipherfile="--file $sdb_cipherfile"
@@ -986,9 +983,8 @@ function clear_inst_configuration()
       fi
 
       # get instance group name from configuration file
-      local inst_group_name=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*server_ha_inst_group_name"`
+      local inst_group_name=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--server_ha_inst_group_name="`
       inst_group_name=${inst_group_name#*=}
-      test "${inst_group_name:0:1}" == '"' && inst_group_name=${inst_group_name:1:-1}
 
       if [ "$inst_group_name" ]; then
          local connection_str=`build_auth_string`
@@ -1052,9 +1048,8 @@ function join_inst_group()
    fi
 
    # get instance group name from configuration file
-   local inst_group_name=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*server_ha_inst_group_name"`
+   local inst_group_name=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--server_ha_inst_group_name="`
    inst_group_name=${inst_group_name#*=}
-   test "${inst_group_name:0:1}" == '"' && inst_group_name=${inst_group_name:1:-1}
 
    # check if current instance exists in instance group
    if [ "$inst_group_name" != "" -a "$inst_group_name" == "$INST_GROUP_NAME" ]; then
@@ -1118,9 +1113,8 @@ function leave_inst_group()
    fi
 
    # get instance group name from configuration file
-   local inst_group_name=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*server_ha_inst_group_name"`
+   local inst_group_name=`$BIN_PATH/my_print_defaults -c $SQLDATA/auto.cnf mysqld | grep "^--server_ha_inst_group_name="`
    inst_group_name=${inst_group_name#*=}
-   test "${inst_group_name:0:1}" == '"' && inst_group_name=${inst_group_name:1:-1}
 
    # check if the target instance group exists
    local connection_str=`build_auth_string`
