@@ -491,7 +491,7 @@ NULL	6
 [Note] SequoiaDB: Query message: condition[{ "idx_col1": { "$lt": 10 } }], selector[{}], order_by[{ "idx_col1": 1 }], hint[{ "": "idx1" }], limit[-1], offset[0], table[explain_direct_sort_27684.t1]
 explain select idx_col1, sum(col4) from t1 where idx_col1 < 10 group by idx_col2 with rollup;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	idx1,idx2,idx1_2	idx1	5	NULL	15	100.00	Using where with pushed condition (`explain_direct_sort_27684`.`t1`.`idx_col1` < 10); Using MRR; Using filesort
+1	SIMPLE	t1	NULL	range	idx1,idx2,idx1_2	idx1	5	NULL	15	100.00	Using where with pushed condition (`explain_direct_sort_27684`.`t1`.`idx_col1` < 10); Using filesort
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27684`.`t1`.`idx_col1` AS `idx_col1`,sum(`explain_direct_sort_27684`.`t1`.`col4`) AS `sum(col4)` from `explain_direct_sort_27684`.`t1` where (`explain_direct_sort_27684`.`t1`.`idx_col1` < 10) group by `explain_direct_sort_27684`.`t1`.`idx_col2` with rollup
 select idx_col1, sum(col4) from t1 where idx_col1 < 10 group by idx_col2 with rollup;

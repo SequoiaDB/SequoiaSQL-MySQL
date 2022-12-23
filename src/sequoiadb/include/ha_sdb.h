@@ -380,22 +380,58 @@ class ha_sdb : public handler {
   */
   int index_last(uchar *buf);
 
+  // TODO: so many function shouldn't be public!
   ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
                                 uint key_parts, uint *bufsz, uint *flags,
                                 Cost_estimate *cost);
 
+  ha_rows multi_range_read_info_v1(uint keyno, uint n_ranges, uint n_rows,
+                                   uint key_parts, uint *bufsz, uint *flags,
+                                   Cost_estimate *cost);
+
+  ha_rows multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
+                                   uint key_parts, uint *bufsz, uint *flags,
+                                   Cost_estimate *cost);
+
   ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
                                 uint *bufsz, uint *flags, Cost_estimate *cost);
+
+  ha_rows multi_range_read_info_v1(uint keyno, uint n_ranges, uint n_rows,
+                                   uint *bufsz, uint *flags,
+                                   Cost_estimate *cost);
+
+  ha_rows multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
+                                   uint *bufsz, uint *flags,
+                                   Cost_estimate *cost);
 
   bool sdb_can_push_in_from_range(uint keyno, KEY_MULTI_RANGE *cur_range);
 
   bool choose_mrr_impl(uint keyno, uint *bufsz, uint *flags,
                        Cost_estimate *cost, bool reset_cost);
 
+  sdb_idx_access_method choose_idx_access_method(
+      uint keyno, uint n_ranges, RANGE_SEQ_IF *seq, void *seq_init_param,
+      uint *bufsz, uint *flags, Cost_estimate *cost, bool reset_cost);
+
+  sdb_idx_access_method choose_idx_access_method(uint keyno, RANGE_SEQ_IF *seq,
+                                                 void *seq_init_param,
+                                                 uint n_ranges_arg);
+
   ha_rows multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
                                       void *seq_init_param, uint n_ranges_arg,
                                       uint *bufsz, uint *flags,
                                       Cost_estimate *cost);
+
+  ha_rows multi_range_read_info_const_v1(uint keyno, RANGE_SEQ_IF *seq,
+                                         void *seq_init_param,
+                                         uint n_ranges_arg, uint *bufsz,
+                                         uint *flags, Cost_estimate *cost);
+
+  ha_rows multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
+                                         void *seq_init_param,
+                                         uint n_ranges_arg, uint *bufsz,
+                                         uint *flags, Cost_estimate *cost);
+
   int multi_range_read_explain_info(uint mrr_mode, char *str, size_t size);
 
   int multi_range_read_next_first();
@@ -404,6 +440,12 @@ class ha_sdb : public handler {
 
   int multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
                             uint n_ranges, uint mode, HANDLER_BUFFER *buf);
+
+  int multi_range_read_init_v1(RANGE_SEQ_IF *seq, void *seq_init_param,
+                               uint n_ranges, uint mode, HANDLER_BUFFER *buf);
+
+  int multi_range_read_init_v2(RANGE_SEQ_IF *seq, void *seq_init_param,
+                               uint n_ranges, uint mode, HANDLER_BUFFER *buf);
 
   int multi_range_read_next(range_id_t *range_info);
 
@@ -837,11 +879,12 @@ class ha_sdb : public handler {
   void *m_seq_init_param;
   bool m_use_default_impl;
   bool m_last_range_obj_is_full; /* range bson obj is full or not. */
-  sdb_index_cond_methods m_method;
   bool m_use_position;
   sdb_batched_keys_ranges m_batched_keys_ranges;
   bool m_null_rejecting;
   bool m_index_need_sorted;
   bool m_use_group;
+  sdb_idx_access_method *m_idx_access_method_array;
+  sdb_idx_access_method m_method;
 };
 #endif

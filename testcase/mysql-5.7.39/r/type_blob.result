@@ -565,6 +565,7 @@ insert into t1 (txt) values('Ford');
 select * from t1 where txt='Chevy' or txt='Chevy ' or txt='Ford';
 id	txt
 1	Chevy
+2	Chevy 
 4	Ford
 select * from t1 where txt='Chevy' or txt='Chevy ';
 id	txt
@@ -573,6 +574,7 @@ id	txt
 select * from t1 where txt='Chevy' or txt='Chevy ' or txt=' Chevy';
 id	txt
 1	Chevy
+2	Chevy 
 select * from t1 where txt in ('Chevy ','Chevy');
 id	txt
 1	Chevy

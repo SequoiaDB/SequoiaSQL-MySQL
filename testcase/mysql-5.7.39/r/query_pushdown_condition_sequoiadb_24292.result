@@ -28,7 +28,7 @@ a	b	c
 1	1	1
 2	2	2
 3	3	3
-[Note] SequoiaDB: Query message: condition[{ "c": { "$in": [ "1", "2", "3" ] } }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[-1], offset[0], table[query_pushdown_condition_sequoiadb_24292.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "c": { "$in": [ "1", "2", "3" ] } }, { "c": { "$gte": "3" } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[-1], offset[0], table[query_pushdown_condition_sequoiadb_24292.t1]
 SELECT * FROM t1 FORCE INDEX(ab) WHERE a IS NULL OR a = 0 OR a = 1;
 a	b	c
 NULL	NULL	NULL

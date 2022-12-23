@@ -105,6 +105,7 @@ char *sdb_get_diag_info_path(THD *thd);
 int sdb_lossy_end_range(THD *thd);
 int sdb_cls_pushdown_expand(THD *thd);
 bool sdb_support_cond_not(THD *thd);
+bool sdb_choose_all_in_mrr_info(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;

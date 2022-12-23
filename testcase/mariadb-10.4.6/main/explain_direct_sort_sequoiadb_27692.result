@@ -98,7 +98,7 @@ id	col1
 [Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$lt": 20 } }], selector[{}], order_by[{ "id": -1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_direct_sort_27692.t1_range]
 explain select * from t1_range where id < 20 order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1_range	range	PRIMARY	PRIMARY	4	NULL	2	Using where with pushed condition; Using MRR; Using pushed sort (t1_range.col1)
+1	SIMPLE	t1_range	range	PRIMARY	PRIMARY	4	NULL	2	Using where with pushed condition; Using pushed sort (t1_range.col1)
 select * from t1_range where id < 20 order by col1;
 id	col1
 11	20

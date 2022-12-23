@@ -9,7 +9,7 @@ create table t1(a int,b int,key union_ab5(a,b));
 insert into t1 values(0,1),(1,1),(1,2),(1,3),(1,null),(2,null),(2,1),(2,2),(3,2),(3,3),(4,3),(4,null),(null,1),(null,4),(null,null);
 explain select * from t1 where a<2 or (a=1 and b>1 and b<3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)))
 select * from t1 where a<2 or (a=1 and b>1 and b<3);
@@ -22,7 +22,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 2 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<2 or (a=1 and b>=1 and b<3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)))
 select * from t1 where a<2 or (a=1 and b>=1 and b<3);
@@ -35,7 +35,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 2 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<2 or (a=1 and b>1 and b<=3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)))
 select * from t1 where a<2 or (a=1 and b>1 and b<=3);
@@ -48,7 +48,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 2 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<2 or (a=1 and b>=1 and b<=3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)))
 select * from t1 where a<2 or (a=1 and b>=1 and b<=3);
@@ -61,7 +61,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 2 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<=2 or (a=1 and b>1 and b<3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)))
 select * from t1 where a<=2 or (a=1 and b>1 and b<3);
@@ -77,7 +77,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lte": 2 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<=2 or (a=1 and b>=1 and b<3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)))
 select * from t1 where a<=2 or (a=1 and b>=1 and b<3);
@@ -93,7 +93,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lte": 2 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<=2 or (a=1 and b>1 and b<=3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)))
 select * from t1 where a<=2 or (a=1 and b>1 and b<=3);
@@ -109,7 +109,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lte": 2 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<=2 or (a=1 and b>=1 and b<=3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)))
 select * from t1 where a<=2 or (a=1 and b>=1 and b<=3);
@@ -125,7 +125,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lte": 2 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<2 or a is null or (a=1 and b>1 and b<3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)))
 select * from t1 where a<2 or a is null or (a=1 and b>1 and b<3);
@@ -141,7 +141,7 @@ NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lt": 2 } }, { "a": { "$isnull": 1 } }, { "$and": [ { "a": { "$et": 1 } }, { "b": { "$gt": 1 } }, { "b": { "$lt": 3 } } ] } ] }, { "$or": [ { "a": { "$isnull": 1 } }, { "a": { "$lt": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<2 or a is null or (a=1 and b>=1 and b<3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)))
 select * from t1 where a<2 or a is null or (a=1 and b>=1 and b<3);
@@ -157,7 +157,7 @@ NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lt": 2 } }, { "a": { "$isnull": 1 } }, { "$and": [ { "a": { "$et": 1 } }, { "b": { "$gte": 1 } }, { "b": { "$lt": 3 } } ] } ] }, { "$or": [ { "a": { "$isnull": 1 } }, { "a": { "$lt": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<2 or a is null or (a=1 and b>1 and b<=3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)))
 select * from t1 where a<2 or a is null or (a=1 and b>1 and b<=3);
@@ -173,7 +173,7 @@ NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lt": 2 } }, { "a": { "$isnull": 1 } }, { "$and": [ { "a": { "$et": 1 } }, { "b": { "$gt": 1 } }, { "b": { "$lte": 3 } } ] } ] }, { "$or": [ { "a": { "$isnull": 1 } }, { "a": { "$lt": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<2 or a is null or (a=1 and b>=1 and b<=3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` < 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)))
 select * from t1 where a<2 or a is null or (a=1 and b>=1 and b<=3);
@@ -189,7 +189,7 @@ NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lt": 2 } }, { "a": { "$isnull": 1 } }, { "$and": [ { "a": { "$et": 1 } }, { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] } ] }, { "$or": [ { "a": { "$isnull": 1 } }, { "a": { "$lt": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<=2 or a is null or (a=1 and b>1 and b<3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)))
 select * from t1 where a<=2 or a is null or (a=1 and b>1 and b<3);
@@ -208,7 +208,7 @@ NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lte": 2 } }, { "a": { "$isnull": 1 } }, { "$and": [ { "a": { "$et": 1 } }, { "b": { "$gt": 1 } }, { "b": { "$lt": 3 } } ] } ] }, { "$or": [ { "a": { "$isnull": 1 } }, { "a": { "$lte": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<=2 or a is null or (a=1 and b>=1 and b<3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)))
 select * from t1 where a<=2 or a is null or (a=1 and b>=1 and b<3);
@@ -227,7 +227,7 @@ NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lte": 2 } }, { "a": { "$isnull": 1 } }, { "$and": [ { "a": { "$et": 1 } }, { "b": { "$gte": 1 } }, { "b": { "$lt": 3 } } ] } ] }, { "$or": [ { "a": { "$isnull": 1 } }, { "a": { "$lte": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<=2 or a is null or (a=1 and b>1 and b<=3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)))
 select * from t1 where a<=2 or a is null or (a=1 and b>1 and b<=3);
@@ -246,7 +246,7 @@ NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lte": 2 } }, { "a": { "$isnull": 1 } }, { "$and": [ { "a": { "$et": 1 } }, { "b": { "$gt": 1 } }, { "b": { "$lte": 3 } } ] } ] }, { "$or": [ { "a": { "$isnull": 1 } }, { "a": { "$lte": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a<=2 or a is null or (a=1 and b>=1 and b<=3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	4	100.00	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` <= 2) or isnull(`multi_field_query_optimize_25669`.`t1`.`a`) or ((`multi_field_query_optimize_25669`.`t1`.`a` = 1) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)))
 select * from t1 where a<=2 or a is null or (a=1 and b>=1 and b<=3);
@@ -265,7 +265,7 @@ NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lte": 2 } }, { "a": { "$isnull": 1 } }, { "$and": [ { "a": { "$et": 1 } }, { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] } ] }, { "$or": [ { "a": { "$isnull": 1 } }, { "a": { "$lte": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a>2 and b>1 and b<3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	11	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	11	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))
 select * from t1 where a>2 and b>1 and b<3;
@@ -274,7 +274,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 2 } }, { "b": { "$gt": 1 } }, { "b": { "$lt": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a>2 and b>=1 and b<3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	11	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	11	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))
 select * from t1 where a>2 and b>=1 and b<3;
@@ -283,7 +283,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 2 } }, { "b": { "$gte": 1 } }, { "b": { "$lt": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a>2 and b>1 and b<=3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	11	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	11	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))
 select * from t1 where a>2 and b>1 and b<=3;
@@ -294,7 +294,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 2 } }, { "b": { "$gt": 1 } }, { "b": { "$lte": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a>2 and b>=1 and b<=3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	11	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	5	NULL	11	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` > 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))
 select * from t1 where a>2 and b>=1 and b<=3;
@@ -305,7 +305,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 2 } }, { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a>=2 and b>1 and b<3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	10	NULL	8	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	10	NULL	8	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))
 select * from t1 where a>=2 and b>1 and b<3;
@@ -315,7 +315,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "a": { "$gte": 2 } }, { "b": { "$gt": 1 } }, { "b": { "$lt": 3 } } ] }, { "a": { "$gte": 2 }, "b": { "$gt": 1 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a>=2 and b>=1 and b<3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	10	NULL	8	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	10	NULL	8	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` < 3))
 select * from t1 where a>=2 and b>=1 and b<3;
@@ -326,7 +326,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "a": { "$gte": 2 } }, { "b": { "$gte": 1 } }, { "b": { "$lt": 3 } } ] }, { "a": { "$gte": 2 }, "b": { "$gte": 1 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a>=2 and b>1 and b<=3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	10	NULL	8	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	10	NULL	8	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` > 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))
 select * from t1 where a>=2 and b>1 and b<=3;
@@ -338,7 +338,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "a": { "$gte": 2 } }, { "b": { "$gt": 1 } }, { "b": { "$lte": 3 } } ] }, { "a": { "$gte": 2 }, "b": { "$gt": 1 } } ] }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "union_ab5" }], limit[-1], offset[0], table[multi_field_query_optimize_25669.t1]
 explain select * from t1 where a>=2 and b>=1 and b<=3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	10	NULL	8	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)); Using MRR; Using index
+1	SIMPLE	t1	NULL	range	union_ab5	union_ab5	10	NULL	8	11.11	Using where with pushed condition ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3)); Using index
 Warnings:
 Note	1003	/* select#1 */ select `multi_field_query_optimize_25669`.`t1`.`a` AS `a`,`multi_field_query_optimize_25669`.`t1`.`b` AS `b` from `multi_field_query_optimize_25669`.`t1` where ((`multi_field_query_optimize_25669`.`t1`.`a` >= 2) and (`multi_field_query_optimize_25669`.`t1`.`b` >= 1) and (`multi_field_query_optimize_25669`.`t1`.`b` <= 3))
 select * from t1 where a>=2 and b>=1 and b<=3;

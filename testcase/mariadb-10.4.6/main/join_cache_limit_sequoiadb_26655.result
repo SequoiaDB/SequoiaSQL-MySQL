@@ -152,7 +152,7 @@ col1	col2	col1	col2	col1	col2
 4	5	4	3	4	3
 4	5	4	3	4	5
 4	5	4	5	4	3
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 8, 9 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	9	Using temporary; Using filesort
@@ -170,7 +170,7 @@ col1	col2	col1	col2	col1	col2
 4	5	4	3	4	3
 4	5	4	3	4	5
 4	5	4	5	4	3
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 8, 9 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t3 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -273,7 +273,7 @@ col1	col2	col1	col2	col1	col2
 21	23	21	22	21	10
 21	23	21	22	21	22
 21	24	21	10	21	10
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 29 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 28, 29 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	42	Using temporary; Using filesort
@@ -291,7 +291,7 @@ col1	col2	col1	col2	col1	col2
 21	23	21	22	21	10
 21	23	21	22	21	22
 21	24	21	10	21	10
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 29 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 28, 29 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t3 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra

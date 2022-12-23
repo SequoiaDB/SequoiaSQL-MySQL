@@ -1732,11 +1732,12 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   sdb_group_list = NULL;
   m_use_default_impl = false;
   m_last_range_obj_is_full = false;
-  m_method = IDX_COND_INVALID;
+  m_method = IDX_ACCESS_UNKNOWN;
   m_use_position = false;
   m_null_rejecting = false;
   m_index_need_sorted = true;
   m_use_group = false;
+  m_idx_access_method_array = NULL;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1751,6 +1752,11 @@ ha_sdb::~ha_sdb() {
   if (sdb_condition) {
     delete sdb_condition;
     sdb_condition = NULL;
+  }
+  // Code for safety
+  if (m_idx_access_method_array) {
+    my_free(m_idx_access_method_array); /* purecov: deadcode */
+    m_idx_access_method_array = NULL;   /* purecov: deadcode */
   }
 
   DBUG_VOID_RETURN;
@@ -1919,6 +1925,18 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
 
+  m_idx_access_method_array = (sdb_idx_access_method *)sdb_my_malloc(
+      PSI_INSTRUMENT_ME, table->s->keys * sizeof(sdb_idx_access_method),
+      MYF(0));
+  if (!m_idx_access_method_array) {
+    rc = HA_ERR_OUT_OF_MEM; /* purecov: inspected */
+    goto error;             /* purecov: inspected */
+  }
+
+  for (uint i = 0; i < table->s->keys; ++i) {
+    m_idx_access_method_array[i] = IDX_ACCESS_UNKNOWN;
+  }
+
 done:
   DBUG_RETURN(rc);
 error:
@@ -1962,6 +1980,10 @@ int ha_sdb::close(void) {
   m_bson_element_cache.release();
 
   tbl_ctx_impl.reset();
+  if (m_idx_access_method_array) {
+    my_free(m_idx_access_method_array);
+    m_idx_access_method_array = NULL;
+  }
   DBUG_RETURN(0);
 }
 
@@ -2032,10 +2054,15 @@ int ha_sdb::reset() {
   key_parts = 0;
 #endif
   m_last_range_obj_is_full = false;
-  m_method = IDX_COND_INVALID;
+  m_method = IDX_ACCESS_UNKNOWN;
   m_null_rejecting = false;
   m_index_need_sorted = true;
   m_use_group = false;
+  if (m_idx_access_method_array) {
+    for (uint i = 0; i < table->s->keys; ++i) {
+      m_idx_access_method_array[i] = IDX_ACCESS_UNKNOWN;
+    }
+  }
   DBUG_RETURN(0);
 }
 
@@ -4074,7 +4101,7 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
       prefix_num = SDB_MAX(my_count_bits(mrr_cur_range.start_key.keypart_map),
                            my_count_bits(mrr_cur_range.end_key.keypart_map));
 
-      if (IDX_COND_USING_RANGE_EQUAL == m_method) {
+      if (IDX_ACCESS_USING_RANGE_EQUAL == m_method) {
         BSONObjBuilder sub_equal_range_blder(value_arr.subobjStart());
         build_single_equal_range(sub_equal_range_blder, start_cond_idx);
       } else {
@@ -4085,10 +4112,10 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
         incld_sub_arr.append(end_incld);
         /*Build the start range from start_cond_idx.*/
         BSONObjBuilder sub_arr_start_blder(value_sub_arr.subobjStart());
-        if (IDX_COND_USING_RANGE == m_method) {
+        if (IDX_ACCESS_USING_RANGE == m_method) {
           build_single_range(sub_arr_start_blder, start_cond_idx, mrr_cur_range,
                              start_incld, key_parts, prefix_num, true);
-        } else if (IDX_COND_USING_RANGE_EQUAL_MAYBE_NULL == m_method) {
+        } else if (IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL == m_method) {
           build_single_equal_with_null_range(sub_arr_start_blder,
                                              start_cond_idx, true,
                                              mrr_cur_range.start_key.flag);
@@ -4105,10 +4132,10 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
         prefix_num_arr.append(prefix_num);
         /*Build the end range from start_cond_idx.*/
         BSONObjBuilder sub_arr_end_blder(value_sub_arr.subobjStart());
-        if (IDX_COND_USING_RANGE == m_method) {
+        if (IDX_ACCESS_USING_RANGE == m_method) {
           build_single_range(sub_arr_end_blder, end_cond_idx, mrr_cur_range,
                              end_incld, key_parts, prefix_num, false);
-        } else if (IDX_COND_USING_RANGE_EQUAL_MAYBE_NULL == m_method) {
+        } else if (IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL == m_method) {
           build_single_equal_with_null_range(sub_arr_end_blder, start_cond_idx,
                                              false,
                                              mrr_cur_range.start_key.flag);
@@ -4119,7 +4146,7 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
         incld_sub_arr.done();
       }
     }
-    if (IDX_COND_USING_RANGE_EQUAL != m_method) {
+    if (IDX_ACCESS_USING_RANGE_EQUAL != m_method) {
       prefix_num_arr.done();
       incld_arr.done();
       idx_val_incld = idx_val_incld_blder.obj();
@@ -4130,8 +4157,8 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
     BSONObjBuilder sub_obj_blder(hint_builder.subobjStart(SDB_IDX_RANGE));
     sub_obj_blder.append(
         SDB_IDX_RANGE_IS_ALL_EQUAL,
-        (IDX_COND_USING_RANGE_EQUAL == m_method) ? true : false);
-    if (IDX_COND_USING_RANGE_EQUAL != m_method) {
+        (IDX_ACCESS_USING_RANGE_EQUAL == m_method) ? true : false);
+    if (IDX_ACCESS_USING_RANGE_EQUAL != m_method) {
       sub_obj_blder.appendElements(idx_val_incld);
       sub_obj_blder.appendElements(pre_num);
     } else {
@@ -4162,7 +4189,12 @@ bool ha_sdb::is_in_one_query_for_cur_select() {
       return true;
     }
     case SDB_JOIN_MULTI_RANGE: {
-      return (ranges_in_seq <= 1 || !m_use_default_impl);
+      if (sdb_choose_all_in_mrr_info(ha_thd())) {
+        DBUG_ASSERT(m_method != IDX_ACCESS_UNKNOWN);
+        return (ranges_in_seq <= 1 || m_method != IDX_ACCESS_DEFAULT);
+      } else {
+        return (ranges_in_seq <= 1 || !m_use_default_impl);
+      }
     }
     case SDB_JOIN_REF_OR_NULL:
     case SDB_JOIN_INDEX_MERGE_ROR_INTERSECT:
@@ -4327,11 +4359,56 @@ done:
   return default_impl;
 }
 
+/**
+  Choose the MRR implementation method and set the related flags, cost info.
+  @retval the implementation method of multi range read
+*/
+sdb_idx_access_method ha_sdb::choose_idx_access_method(
+    uint keyno, uint n_ranges, RANGE_SEQ_IF *seq, void *seq_init_param,
+    uint *bufsz, uint *flags, Cost_estimate *cost, bool reset_cost) {
+  sdb_idx_access_method method = IDX_ACCESS_DEFAULT;
+  /*
+    Always don't guarantee the order, even if it is default implementation.
+    If the order is necessary, SQL compiler would tell us.
+  */
+  *flags &= ~SDB_HA_MRR_SUPPORT_SORRTED;
+
+  method = choose_idx_access_method(keyno, seq, seq_init_param, n_ranges);
+  if (IDX_ACCESS_DEFAULT == method) {
+    *flags |= HA_MRR_USE_DEFAULT_IMPL;
+  } else {
+    /*
+      Note that if method is IDX_ACCESS_UNKNOWN, it should be ref or BKA access.
+      They always can be handled by $in or $Range. So HA_MRR_USE_DEFAULT_IMPL
+      flag should be removed, too.
+    */
+    *flags &= ~HA_MRR_USE_DEFAULT_IMPL;
+  }
+
+  *bufsz = 0; /* We do not use the buf mixed.*/
+  if (reset_cost) {
+    cost->reset();
+  }
+  return method;
+}
+
 #ifdef IS_MARIADB
 /* MariaDB inherited*/
 ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
                                       uint key_parts, uint *bufsz, uint *flags,
                                       Cost_estimate *cost) {
+  if (sdb_choose_all_in_mrr_info(ha_thd())) {
+    return multi_range_read_info_v2(keyno, n_ranges, n_rows, key_parts, bufsz,
+                                    flags, cost);
+  } else {
+    return multi_range_read_info_v1(keyno, n_ranges, n_rows, key_parts, bufsz,
+                                    flags, cost);
+  }
+}
+
+ha_rows ha_sdb::multi_range_read_info_v1(uint keyno, uint n_ranges, uint n_rows,
+                                         uint key_parts, uint *bufsz,
+                                         uint *flags, Cost_estimate *cost) {
   ha_rows rows = 0;
   rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, key_parts,
                                         bufsz, flags, cost);
@@ -4345,10 +4422,40 @@ ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
   return 0;
 }
 
+ha_rows ha_sdb::multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
+                                         uint key_parts, uint *bufsz,
+                                         uint *flags, Cost_estimate *cost) {
+  ha_rows rows = 0;
+  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
+
+  rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, key_parts,
+                                        bufsz, flags, cost);
+  DBUG_ASSERT(!rows);
+  *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
+  method = choose_idx_access_method(keyno, n_ranges, NULL, NULL, bufsz, flags,
+                                    cost, true);
+  m_idx_access_method_array[keyno] = method;
+  return 0;
+}
+
 ha_rows ha_sdb::multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
                                             void *seq_init_param,
                                             uint n_ranges_arg, uint *bufsz,
                                             uint *flags, Cost_estimate *cost) {
+  if (sdb_choose_all_in_mrr_info(ha_thd())) {
+    return multi_range_read_info_const_v2(keyno, seq, seq_init_param,
+                                          n_ranges_arg, bufsz, flags, cost);
+  } else {
+    return multi_range_read_info_const_v1(keyno, seq, seq_init_param,
+                                          n_ranges_arg, bufsz, flags, cost);
+  }
+}
+
+ha_rows ha_sdb::multi_range_read_info_const_v1(uint keyno, RANGE_SEQ_IF *seq,
+                                               void *seq_init_param,
+                                               uint n_ranges_arg, uint *bufsz,
+                                               uint *flags,
+                                               Cost_estimate *cost) {
   ha_rows rows = 0;
   range_seq_t seq_it;
   KEY_MULTI_RANGE range;
@@ -4386,6 +4493,47 @@ error:
   goto done;
 }
 
+ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
+                                               void *seq_init_param,
+                                               uint n_ranges_arg, uint *bufsz,
+                                               uint *flags,
+                                               Cost_estimate *cost) {
+  ha_rows rows = 0;
+  range_seq_t seq_it;
+  KEY_MULTI_RANGE range;
+  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
+
+  /*
+    n_ranges_arg is 0 if the caller can't efficiently determine it,
+    then we have to count it ourselves.
+  */
+  if (0 == n_ranges_arg) {
+    seq_it = seq->init(seq_init_param, 0, 0);
+    ranges_in_seq = 0;
+    while (!seq->next(seq_it, &range)) {
+      ranges_in_seq += 1;
+    }
+  } else {
+    ranges_in_seq = n_ranges_arg; /* purecov: inspected */
+  }
+
+  /* Get cost/flags/mem_usage of default MRR implementation */
+  rows = handler::multi_range_read_info_const(keyno, seq, seq_init_param,
+                                              n_ranges_arg, bufsz, flags, cost);
+  if (HA_POS_ERROR == rows) {
+    goto error;
+  }
+
+  *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
+  method = choose_idx_access_method(keyno, ranges_in_seq, seq, seq_init_param,
+                                    bufsz, flags, cost, false);
+  m_idx_access_method_array[keyno] = method;
+done:
+  return rows;
+error:
+  goto done;
+}
+
 int ha_sdb::multi_range_read_explain_info(uint mrr_mode, char *str,
                                           size_t size) {
   const static char *use_mrr = "Using MRR";
@@ -4404,11 +4552,23 @@ int ha_sdb::multi_range_read_explain_info(uint mrr_mode, char *str,
 ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
                                       uint *bufsz, uint *flags,
                                       Cost_estimate *cost) {
+  if (sdb_choose_all_in_mrr_info(ha_thd())) {
+    return multi_range_read_info_v2(keyno, n_ranges, n_rows, bufsz, flags,
+                                    cost);
+  } else {
+    return multi_range_read_info_v1(keyno, n_ranges, n_rows, bufsz, flags,
+                                    cost);
+  }
+}
+
+ha_rows ha_sdb::multi_range_read_info_v1(uint keyno, uint n_ranges, uint n_rows,
+                                         uint *bufsz, uint *flags,
+                                         Cost_estimate *cost) {
   ha_rows rows = 0;
 
   /* Get cost/flags/mem_usage of default MRR implementation */
   rows =
-      handler::multi_range_read_info(keyno, n_ranges, rows, bufsz, flags, cost);
+      handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags, cost);
   assert(!rows);
 
   if (choose_mrr_impl(keyno, bufsz, flags, cost, true)) {
@@ -4420,10 +4580,41 @@ ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
   return 0;
 }
 
+ha_rows ha_sdb::multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
+                                         uint *bufsz, uint *flags,
+                                         Cost_estimate *cost) {
+  ha_rows rows = 0;
+  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
+
+  /* Get cost/flags/mem_usage of default MRR implementation */
+  rows =
+      handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags, cost);
+  assert(!rows);
+
+  method = choose_idx_access_method(keyno, n_rows, NULL, NULL, bufsz, flags,
+                                    cost, true);
+  m_idx_access_method_array[keyno] = method;
+  return 0;
+}
+
 ha_rows ha_sdb::multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
                                             void *seq_init_param,
                                             uint n_ranges_arg, uint *bufsz,
                                             uint *flags, Cost_estimate *cost) {
+  if (sdb_choose_all_in_mrr_info(ha_thd())) {
+    return multi_range_read_info_const_v2(keyno, seq, seq_init_param,
+                                          n_ranges_arg, bufsz, flags, cost);
+  } else {
+    return multi_range_read_info_const_v1(keyno, seq, seq_init_param,
+                                          n_ranges_arg, bufsz, flags, cost);
+  }
+}
+
+ha_rows ha_sdb::multi_range_read_info_const_v1(uint keyno, RANGE_SEQ_IF *seq,
+                                               void *seq_init_param,
+                                               uint n_ranges_arg, uint *bufsz,
+                                               uint *flags,
+                                               Cost_estimate *cost) {
   ha_rows rows = 0;
   uint def_flags = *flags;
   uint def_bufsz = *bufsz;
@@ -4449,6 +4640,48 @@ ha_rows ha_sdb::multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
     m_use_default_impl = false;
     DBUG_PRINT("info", ("Sdb Batched Keys access implementation choosen"));
   }
+done:
+  return rows;
+error:
+  goto done;
+}
+
+ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
+                                               void *seq_init_param,
+                                               uint n_ranges_arg, uint *bufsz,
+                                               uint *flags,
+                                               Cost_estimate *cost) {
+  ha_rows rows = 0;
+  uint def_flags = *flags;
+  uint def_bufsz = *bufsz;
+  range_seq_t seq_it;
+  KEY_MULTI_RANGE range;
+  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
+
+  /*
+    n_ranges_arg is 0 if the caller can't efficiently determine it,
+    then we have to count it ourselves.
+  */
+  if (0 == n_ranges_arg) {
+    seq_it = seq->init(seq_init_param, 0, 0);
+    ranges_in_seq = 0;
+    while (!seq->next(seq_it, &range)) {
+      ranges_in_seq += 1;
+    }
+  } else {
+    ranges_in_seq = n_ranges_arg; /* purecov: inspected */
+  }
+
+  /* Get cost/flags/mem_usage of default MRR implementation */
+  rows = handler::multi_range_read_info_const(
+      keyno, seq, seq_init_param, n_ranges_arg, &def_bufsz, &def_flags, cost);
+  if (HA_POS_ERROR == rows) {
+    goto error;
+  }
+
+  method = choose_idx_access_method(keyno, ranges_in_seq, seq, seq_init_param,
+                                    bufsz, flags, cost, false);
+  m_idx_access_method_array[keyno] = method;
 done:
   return rows;
 error:
@@ -4563,22 +4796,189 @@ void ha_sdb::choose_index_condition_methods() {
   }
 
   if (can_pushdown_in) {
-    m_method = IDX_COND_USING_IN;
+    m_method = IDX_ACCESS_USING_IN;
     goto done;
   }
 
   if (all_range_equal) {
-    m_method = maybe_null ? IDX_COND_USING_RANGE_EQUAL_MAYBE_NULL
-                          : IDX_COND_USING_RANGE_EQUAL;
+    m_method = maybe_null ? IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL
+                          : IDX_ACCESS_USING_RANGE_EQUAL;
   }
 
 done:
   return;
 }
 
+/**
+  Choose the SequoiaDB index access method for MRR.
+  @retval the implementation method of multi range read. The value may be
+  + IDX_ACCESS_UNKNOWN
+    Cannot find out how to implement the MRR. Because the exact range cannot
+    be known yet. Such as BKA join.
+
+  + IDX_ACCESS_USING_IN
+    Use $in, see the condition at sdb_can_push_in_from_range.
+
+  + IDX_ACCESS_USING_RANGE
+    Use $Range if
+    - $in is not applicable;
+    - $Range feature is supported by SDB;
+    - This is a SELECT command;
+
+  + IDX_ACCESS_USING_RANGE_EQUAL
+    Use $Range for all NOT NULL equality ranges if
+    - $Range is applicable;
+    - All Ranges are equality;
+    - All Ranges are not NULL;
+
+  + IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL
+    Similar as IDX_ACCESS_USING_RANGE_EQUAL but NULL is permitted.
+
+  + IDX_ACCESS_DEFAULT
+    Use the default implementation of sql layer. Use it if
+    - OPTIMIZER_SWITCH_MRR is OFF;
+    - Only 1 range;
+    - Others method cannot be applied;
+*/
+sdb_idx_access_method ha_sdb::choose_idx_access_method(uint keyno,
+                                                       RANGE_SEQ_IF *seq,
+                                                       void *seq_init_param,
+                                                       uint n_ranges_arg) {
+  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
+  uint i = 0;
+  range_seq_t seq_it;
+  KEY_MULTI_RANGE cur_range;
+  bool can_pushdown_in = true;
+  bool all_range_equal = true;
+  bool maybe_null = false;
+  uint key_parts = 0;
+  const uchar *key_ptr = NULL;
+  KEY *key_info = table->key_info + keyno;
+  const KEY_PART_INFO *key_part = key_info->key_part;
+  TABLE_REF *table_ref = get_table_ref(table);
+
+  bool mrr_on = false;
+  bool force_mrr_by_hints = false;
+  bool key_use_parital_cols = false;
+
+#ifdef IS_MYSQL
+  mrr_on = hint_key_state(ha_thd(), table, keyno, MRR_HINT_ENUM,
+                          OPTIMIZER_SWITCH_MRR);
+  force_mrr_by_hints =
+      hint_key_state(ha_thd(), table, keyno, MRR_HINT_ENUM, 0) ||
+      hint_table_state(ha_thd(), table, BKA_HINT_ENUM, 0);
+  key_use_parital_cols = key_uses_partial_cols(table, keyno);
+#elif IS_MARIADB
+  mrr_on = optimizer_flag(ha_thd(), OPTIMIZER_SWITCH_MRR);
+  key_use_parital_cols = key_uses_partial_cols(table_share, keyno);
+#endif
+  if (!(mrr_on || force_mrr_by_hints) || key_use_parital_cols) {
+    method = IDX_ACCESS_DEFAULT;
+    goto done;
+  }
+
+  /* Default implementation performance is quite enough for one range */
+  if (n_ranges_arg <= 1) {
+    method = IDX_ACCESS_DEFAULT;
+    goto done;
+  }
+
+  /*
+    We don't know what values they will be. So just return unknown. And at
+    ::multi_range_read_init() we will get this info, and then we will choose
+    method again.
+  */
+  if (!seq || !seq_init_param) {
+    method = IDX_ACCESS_UNKNOWN;
+    goto done;
+  }
+
+  /* IDX_ACCESS_USING_RANGE is default because it can do everything. */
+  method = IDX_ACCESS_USING_RANGE;
+
+  if (is_join_bka) {
+    DBUG_ASSERT(table_ref);
+    key_parts = table_ref->key_parts;
+  } else {
+    key_parts = key_info->user_defined_key_parts;
+  }
+
+  seq_it = seq->init(seq_init_param, n_ranges_arg, /* unused */ 0);
+
+  while (!(seq->next(seq_it, &cur_range))) {
+    if (can_pushdown_in &&
+        (can_pushdown_in = sdb_can_push_in_from_range(keyno, &cur_range))) {
+      continue;
+    }
+    /*
+      (1): if m_all_equal = false by prevous range, no need to check again.
+      (2): m_all_equal = false if the range is not EQ_RANGE or UNIQUE_RANGE.
+      (3): is null should create range using 'IndexValue[{},{}]' instead of
+      'isAllEqual:1' because 'is null' is from '$minKey' to 'NULL'.
+    */
+    if (all_range_equal &&  //(1)
+        (cur_range.range_flag & UNIQUE_RANGE ||
+         cur_range.range_flag & EQ_RANGE)  //(2)
+    ) {
+    } else {
+      all_range_equal = false;
+    }
+    //(3)
+    if (all_range_equal && !maybe_null) {
+      for (i = 0, key_part = key_info->key_part,
+          key_ptr = cur_range.start_key.key;
+           i <
+           SDB_MIN(key_parts, my_count_bits(cur_range.start_key.keypart_map));
+           i++, key_part++) {
+        if (key_part->null_bit && *key_ptr) {
+          maybe_null = true;
+          break;
+        }
+        key_ptr += key_part->store_length;
+      }
+    }
+  }
+
+  if (can_pushdown_in) {
+    method = IDX_ACCESS_USING_IN;
+    goto done;
+  }
+
+  if (all_range_equal) {
+    method = maybe_null ? IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL
+                        : IDX_ACCESS_USING_RANGE_EQUAL;
+  }
+
+  if (!is_range_supported() && IDX_ACCESS_USING_IN != method) {
+    method = IDX_ACCESS_DEFAULT;
+  }
+
+  /*Only select can use $range to opimize multi range.*/
+  if (!(SQLCOM_SELECT == thd_sql_command(ha_thd()) ||
+        SQLCOM_INSERT_SELECT == thd_sql_command(ha_thd())) &&
+      method != IDX_ACCESS_USING_IN) {
+    method = IDX_ACCESS_DEFAULT;
+  }
+
+done:
+  DBUG_PRINT("info", ("Chosen MRR implementation method: %s",
+                      sdb_idx_access_method2str(method)));
+  return method;
+}
+
 int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
                                   uint n_ranges, uint mode,
                                   HANDLER_BUFFER *buf) {
+  if (sdb_choose_all_in_mrr_info(ha_thd())) {
+    return multi_range_read_init_v2(seq, seq_init_param, n_ranges, mode, buf);
+  } else {
+    return multi_range_read_init_v1(seq, seq_init_param, n_ranges, mode, buf);
+  }
+}
+
+int ha_sdb::multi_range_read_init_v1(RANGE_SEQ_IF *seq, void *seq_init_param,
+                                     uint n_ranges, uint mode,
+                                     HANDLER_BUFFER *buf) {
   DBUG_ENTER("ha_sdb::multi_range_read_init()");
   int rc = 0;
   uint bufsz = 0;
@@ -4614,9 +5014,9 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
     goto done;
   }
 
-  m_method = IDX_COND_USING_RANGE;
+  m_method = IDX_ACCESS_USING_RANGE;
   choose_index_condition_methods();
-  if (!is_range_supported() && IDX_COND_USING_IN != m_method) {
+  if (!is_range_supported() && IDX_ACCESS_USING_IN != m_method) {
     m_use_default_impl = true;
     goto done;
   }
@@ -4656,7 +5056,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   /*Only select can use $range to opimize multi range.*/
   if (!(SQLCOM_SELECT == thd_sql_command(ha_thd()) ||
         SQLCOM_INSERT_SELECT == thd_sql_command(ha_thd())) &&
-      m_method != IDX_COND_USING_IN) {
+      m_method != IDX_ACCESS_USING_IN) {
     m_use_default_impl = true;
     goto done;
   }
@@ -4666,6 +5066,120 @@ done:
   DBUG_RETURN(rc);
 error:
   goto done;
+}
+
+int ha_sdb::multi_range_read_init_v2(RANGE_SEQ_IF *seq, void *seq_init_param,
+                                     uint n_ranges, uint mode,
+                                     HANDLER_BUFFER *buf) {
+  DBUG_ENTER("ha_sdb::multi_range_read_init()");
+  int rc = 0;
+  bool is_mrr_assoc = false;
+  uint key_length = 0;
+  KEY *key_info = table->key_info + active_index;
+  const KEY_PART_INFO *key_part = key_info->key_part;
+  is_mrr_assoc = !MY_TEST(mode & HA_MRR_NO_ASSOCIATION);
+  m_index_need_sorted = MY_TEST(mode & HA_MRR_SORTED);
+
+  m_null_rejecting = false;
+  rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
+  if (SDB_OK != rc) {
+    goto error; /* purecov: inspected */
+  }
+
+  mrr_funcs = *seq;
+  ranges_in_seq = n_ranges;
+  m_mode = mode;
+  m_seq_init_param = seq_init_param;
+
+  /*
+    Here ignore the HA_MRR_USE_DEFAULT_IMPL flag. Because to reduce the index
+    sort, the way to check index sort is like:
+    1. At multi_range_read_info_const() we return no HA_MRR_SORTED, to check
+       whether sql layer need the sorted output. Generally no HA_MRR_SORTED
+       means always cannot output result in order, but in fact SDB can.
+    2. SQL layer consider SequoiaDB MRR as not able to output sorted. When
+       SQL layer really need the sort, it would add HA_MRR_USE_DEFAULT_IMPL
+       flag so that the result can be sorted.
+    3. At here, since we have chosen the method at info phase, the result we
+       chosen again must be the same. So do nothing.
+    However, we can check whether the result is the same again for safety.
+  */
+  {
+    sdb_idx_access_method info_result = m_idx_access_method_array[active_index];
+    if (info_result != IDX_ACCESS_UNKNOWN) {
+      sdb_idx_access_method init_result =
+          choose_idx_access_method(active_index, seq, seq_init_param, n_ranges);
+      assert(info_result == init_result);
+    }
+  }
+
+  /*
+    Sometimes method is unknown because the multi_range_read_info[_const]()
+    cannot choose the right method, or even not called. So we have to do choose
+    here.
+
+    1. The method cannot be chosen. Such as BKA join, it call this function in
+       sequence like that:
+       a) call multi_range_read_info to evaluate the cost.
+       b) call multi_range_read_init when read the 1th batch.
+       c) call multi_range_read_init when read the 2nd batch.
+       d) ...
+       The values do not exist at planning phase, and are variable.
+
+    2. The method has never been chosen. Sometimes MRR (QUICK_RANGE_SELECT) is
+       made by runtime to help others, so that the multi_range_read_info[_const]
+       has never called by optimizer. Such as the group min max and index merge
+       plan would make MRR inside to help their scan.
+  */
+  m_method = m_idx_access_method_array[active_index];
+  if (IDX_ACCESS_UNKNOWN == m_method) {
+    m_method =
+        choose_idx_access_method(active_index, seq, seq_init_param, n_ranges);
+    DBUG_ASSERT(m_method != IDX_ACCESS_UNKNOWN);
+  }
+
+  first_read = true;
+  if (is_join_bka) {
+    sdb_batched_keys_ranges *ranges = &m_batched_keys_ranges;
+    /* BKA join, deinit in multi_range_read_init when be called in every time
+       the join_buffer is full. No need to free the keys buf to check if can
+       reuse it or not. */
+    if (!ranges->initialized()) {
+      for (uint i = 0; i < key_info->user_defined_key_parts; i++, key_part++) {
+        key_length += key_part->length;
+      }
+      rc =
+          ranges->init(table, active_index, is_mrr_assoc, n_ranges, key_length);
+      if (SDB_OK != rc) {
+        /* purecov: begin inspected */
+        SDB_PRINT_ERROR(rc,
+                        "Failed to init batched keys read bufs for "
+                        "table:%s.%s, rc:%d",
+                        db_name, table_name, rc);
+        goto error;
+        /* purecov: end */
+      }
+    } else if (ranges->need_expand(n_ranges)) {
+      rc = ranges->expand_buf(n_ranges);
+      if (SDB_OK != rc) {
+        /* purecov: begin inspected */
+        SDB_PRINT_ERROR(rc,
+                        "Failed to expand batched keys read bufs for "
+                        "table:%s.%s, rc:%d",
+                        db_name, table_name, rc);
+        goto error;
+        /* purecov: end */
+      }
+    } else {
+      ranges->reuse_buf(n_ranges);
+    }
+  }
+
+done:
+  mrr_iter = seq->init(seq_init_param, n_ranges, mode);
+  DBUG_RETURN(rc);
+error:
+  goto done; /* purecov: inspected */
 }
 
 int ha_sdb::multi_range_read_next_first() {
@@ -4680,7 +5194,7 @@ int ha_sdb::multi_range_read_next_first() {
     hint_builder.reset();
   }
 
-  if (IDX_COND_USING_IN == m_method) {
+  if (IDX_ACCESS_USING_IN == m_method) {
     // if ALL is equal and single column
     rc = create_condition_in_for_mrr(condition_idx);
   } else {
@@ -4728,12 +5242,17 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
   DBUG_ENTER("ha_sdb::multi_range_read_next()");
   int rc = 0;
   sdb_key_range_info *cur_range = NULL;
+
   // add for self test to prefer range scan,
   DBUG_EXECUTE_IF(
       "test_for_prefer_range",
       if (SQLCOM_SELECT == thd_sql_command(ha_thd())) m_use_default_impl = 0;);
 
-  if (m_use_default_impl) {
+  bool use_default = sdb_choose_all_in_mrr_info(ha_thd())
+                         ? (IDX_ACCESS_DEFAULT == m_method)
+                         : m_use_default_impl;
+
+  if (use_default) {
     rc = handler::multi_range_read_next(range_info);
     goto done;
   }
@@ -5517,9 +6036,9 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   bool only_one_func = join && (join->tmp_table_param.sum_func_count == 1);
   bool optimize_with_materialization =
       sdb_optimizer_switch_flag(thd, OPTIMIZER_SWITCH_MATERIALIZATION);
-  bool using_hint_range = (IDX_COND_USING_RANGE == m_method ||
-                           IDX_COND_USING_RANGE_EQUAL == m_method ||
-                           IDX_COND_USING_RANGE_EQUAL_MAYBE_NULL == m_method)
+  bool using_hint_range = (IDX_ACCESS_USING_RANGE == m_method ||
+                           IDX_ACCESS_USING_RANGE_EQUAL == m_method ||
+                           IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL == m_method)
                               ? true
                               : false;
   bool is_recursive_table = sdb_is_recursive_table(table);
@@ -9844,11 +10363,29 @@ double ha_sdb::scan_time() {
   SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
   DBUG_ENTER("ha_sdb::scan_time");
   if (direct_sort) {
-    /*direct sort will clear the const keys and pass over the
-      multi_range_read_info_const, which will determined the m_use_default_impl,
-      so the m_use_default_impl need to use default impl in case of direct_sort.
+    /*
+      Direct sort will clear the const keys and pass over the
+      multi_range_read_info_const, which will determined the m_method,
+      so the m_method need to unknown impl in case of direct_sort.
+      When m_method is unknown, multi_range_read_init would choose again.
+      e.g.:
+      ```
+      SELECT * FROM t1 WHERE a=3 OR a IS NULL ORDER BY a LIMIT 1 OFFSET 1;
+      ```
+      1. We are going to do direct_sort, so const keys are removed.
+      2. No multi_range_read_info_const called, Since keys are removed.
+      3. direct_sort cannot be done, because access method is ref_or_null.
+      4. ref_or_null in filesort will be convert to a QUICK_RANGE_SELECT,
+         because filesort cannot keep the TABLE_REF structure.
+      5. Now, this QUICK_RANGE_SELECT call the multi_range_read_init without
+         multi_range_read_info_const.
+      6. Here we set m_method as unknown, leads to multi_range_read_init choose
     */
-    m_use_default_impl = true;
+    if (sdb_choose_all_in_mrr_info(ha_thd())) {
+      m_method = IDX_ACCESS_UNKNOWN;
+    } else {
+      m_use_default_impl = true;
+    }
     if (select_lex) {
       sdb_clear_const_keys(select_lex->join);
     }
@@ -10719,9 +11256,9 @@ int ha_sdb::get_query_flag(const uint sql_command, enum thr_lock_type lock_type,
     query_flag |= QUERY_FOR_UPDATE;
   }
 
-  if (m_use_position || IDX_COND_USING_RANGE == m_method ||
-      IDX_COND_USING_RANGE_EQUAL == m_method ||
-      IDX_COND_USING_RANGE_EQUAL_MAYBE_NULL == m_method) {
+  if (m_use_position || IDX_ACCESS_USING_RANGE == m_method ||
+      IDX_ACCESS_USING_RANGE_EQUAL == m_method ||
+      IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL == m_method) {
     query_flag |= QUERY_FORCE_HINT;
   }
 done:
@@ -10838,10 +11375,11 @@ bool ha_sdb::filesort_push(const ORDER *order) {
        distributed sort.
     5) No expanded index search, which is to reslove some string problem, such
        as prefix index. It rely on index inner order.
+    6) No index search with hint $Range. Because $Range requires the sort of
+       using index.
   */
   if (!(thd_sql_command(thd) == SQLCOM_SELECT &&  // 1)
-        sdb_is_single_table(ha_thd()) &&          // 2)
-        is_in_one_query_for_cur_select())) {      // 3)
+        sdb_is_single_table(ha_thd()))) {         // 2)
     goto done;
   }
 
@@ -10873,6 +11411,21 @@ bool ha_sdb::filesort_push(const ORDER *order) {
   // Since index inner order always exists, no filesort can be pushed down.
   if (key_info && (!thd->variables.optimizer_index_sort_prune ||
                    !is_no_order_range_supported())) {
+    goto done;
+  }
+
+  // 6)
+  if (key_info) {
+    m_method = m_idx_access_method_array[key_info - table->key_info];
+    if (IDX_ACCESS_USING_RANGE == m_method ||
+        IDX_ACCESS_USING_RANGE_EQUAL == m_method ||
+        IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL == m_method) {
+      goto done;
+    }
+  }
+
+  // 3)
+  if (!is_in_one_query_for_cur_select()) {
     goto done;
   }
 

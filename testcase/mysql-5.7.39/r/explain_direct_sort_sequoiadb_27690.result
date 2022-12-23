@@ -106,7 +106,7 @@ NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 0 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27690`.`t1`.`col1` between 1 and 3); Using MRR
+1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27690`.`t1`.`col1` between 1 and 3)
 1	SIMPLE	t2	NULL	ref	idx_col1,idx_col12	idx_col1	5	explain_direct_sort_27690.t1.col1	2	100.00	NULL
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` on((`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`)) where (`explain_direct_sort_27690`.`t1`.`col1` between 1 and 3)
@@ -307,7 +307,7 @@ NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 < 3 order by t1.col1 desc ,t2.col2 desc limit 1,2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27690`.`t1`.`col1` < 3); Using MRR; Using temporary; Using filesort
+1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27690`.`t1`.`col1` < 3); Using temporary; Using filesort
 1	SIMPLE	t2	NULL	ref	idx_col1,idx_col2,idx_col12	idx_col1	5	explain_direct_sort_27690.t1.col1	2	100.00	Using where
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` on(((`explain_direct_sort_27690`.`t2`.`col2` = `explain_direct_sort_27690`.`t1`.`col2`) and (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`))) where (`explain_direct_sort_27690`.`t1`.`col1` < 3) order by `explain_direct_sort_27690`.`t1`.`col1` desc,`explain_direct_sort_27690`.`t2`.`col2` desc limit 1,2

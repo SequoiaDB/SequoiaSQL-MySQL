@@ -22,15 +22,41 @@
 #include "sdb_cl.h"
 #include "ha_sdb_conf.h"
 
-typedef enum sdb_index_cond_methods {
-  IDX_COND_USING_IN = 1,      /* Using $in to do index search. */
-  IDX_COND_USING_RANGE,       /* Using $range in hint when do index search. */
-  IDX_COND_USING_RANGE_EQUAL, /* Using $range with isAllEqual = true when do
+typedef enum sdb_idx_access_method {
+  IDX_ACCESS_DEFAULT = 1,       /* Using default implementation of mysql. */
+  IDX_ACCESS_USING_IN,          /* Using $in to do index search. */
+  IDX_ACCESS_USING_RANGE,       /* Using $range in hint when do index search. */
+  IDX_ACCESS_USING_RANGE_EQUAL, /* Using $range with isAllEqual = true when do
                                  index search. */
-  IDX_COND_USING_RANGE_EQUAL_MAYBE_NULL, /* Using $range with isALLEqual = false
-                                            cause the key_part maybe null.*/
-  IDX_COND_INVALID = -1                  /* Invalid enumeration. */
-} sdb_index_cond_methods;
+  IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL, /* Using $range with isALLEqual =
+                                            false cause the key_part maybe
+                                            null.*/
+  IDX_ACCESS_UNKNOWN = -1                  /* Unknown */
+} sdb_idx_access_method;
+
+inline const char *sdb_idx_access_method2str(sdb_idx_access_method method) {
+  const char *str = "";
+  switch (method) {
+    case IDX_ACCESS_DEFAULT: {
+      str = "default";
+    }
+    case IDX_ACCESS_USING_IN: {
+      str = "using $in";
+    }
+    case IDX_ACCESS_USING_RANGE: {
+      str = "using $Range";
+    }
+    case IDX_ACCESS_USING_RANGE_EQUAL: {
+      str = "using $Range for all equal";
+    }
+    case IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL: {
+      str = "using $Range for all equal(maybe null)";
+    }
+    case IDX_ACCESS_UNKNOWN:
+    default: { str = "unknown"; }
+  }
+  return str;
+}
 
 const static uint16 NULL_BITS = 1;
 
