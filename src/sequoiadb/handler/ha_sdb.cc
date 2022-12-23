@@ -753,6 +753,13 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
       use_force_index) {
     goto done;
   }
+
+  /*Cannot direct_sort when WHERE clause has non-determined func like rand().*/
+  if (sdb_where_condition(thd) &&
+      (sdb_where_condition(thd)->used_tables() & RAND_TABLE_BIT)) {
+    goto done;
+  }
+
   if (sdb_where_condition(thd)) {
     (*sdb_condition)->type = ha_sdb_cond_ctx::WHERE_COND;
     sdb_parse_condtion(sdb_where_condition(thd), *sdb_condition);
@@ -4303,6 +4310,7 @@ done:
     7 count not support expresion.
     8 not enable optimize_with_materialization.
     9 just use one count function.
+    10. WHERE condition does not have non-deterministic function like rand().
 
 
   RETURN
@@ -4325,6 +4333,14 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   try {
     if (only_one_func && sdb_is_single_table(ha_thd()) && !order && !group &&
         optimize_with_materialization) {
+      /*Cannot direct_count when WHERE clause has non-determined func like
+       * rand().*/
+      if (sdb_where_condition(ha_thd()) &&
+          (sdb_where_condition(ha_thd())->used_tables() & RAND_TABLE_BIT)) {
+        count_query = false;
+        goto done;
+      }
+
       sdb_join_type cur_type = sdb_get_join_type(ha_thd(), mrr_iter);
       if ((SDB_JOIN_UNKNOWN == cur_type ||
            (SDB_JOIN_MULTI_RANGE == cur_type && !m_use_default_impl)) &&
