@@ -932,6 +932,12 @@ int ha_sdb::handle_sort_condition(bool check_order_by_only) {
     goto done;
   }
 
+  /*Cannot direct_sort when WHERE clause has non-determined func like rand().*/
+  if (sdb_where_condition(select_lex) &&
+      (sdb_where_condition(select_lex)->used_tables() & RAND_TABLE_BIT)) {
+    goto done;
+  }
+
   if (sdb_where_condition(select_lex)) {
     sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
     sdb_parse_condtion(sdb_where_condition(select_lex), sdb_condition);
@@ -5535,6 +5541,7 @@ done:
     7 count not support expresion.
     8 not enable optimize_with_materialization.
     9 just use one count function.
+    10 WHERE clause does not have non-determined func like rand()
 
 
   RETURN
@@ -5570,6 +5577,13 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
         (sdb_is_single_table(thd) ||
          (sdb_cls_pushdown_expand(thd) &&
           sdb_is_single_table_in_cur_select(thd, select)))) {
+      /*WHERE clause has non-determined func like rand().*/
+      if (sdb_where_condition(select) &&
+          (sdb_where_condition(select)->used_tables() & RAND_TABLE_BIT)) {
+        count_query = false;
+        goto done;
+      }
+
       if (is_in_one_query_for_cur_select() &&
           (SDB_COND_UNCALLED == sdb_condition->status ||
            SDB_COND_SUPPORTED == sdb_condition->status)) {
