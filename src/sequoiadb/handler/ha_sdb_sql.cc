@@ -925,7 +925,11 @@ KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
                ((qep_tab->type() == JT_REF ||
                  qep_tab->type() == JT_REF_OR_NULL) &&
                 qep_tab->quick())) {
-      key_info = table->key_info + qep_tab->quick()->index;
+      uint index = qep_tab->quick()->index;
+      // MAX_KEY means using several indexes, we don't handle this scenario.
+      if (index != MAX_KEY) {
+        key_info = table->key_info + index;
+      }
     }
   }
   return key_info;
@@ -1784,7 +1788,11 @@ KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
     } else if (join_tab->ref.key_parts) {
       key_info = table->key_info + join_tab->ref.key;
     } else if (join_tab->select && join_tab->select->quick) {
-      key_info = table->key_info + join_tab->select->quick->index;
+      uint index = join_tab->select->quick->index;
+      // MAX_KEY means using several indexes, we don't handle this scenario.
+      if (index != MAX_KEY) {
+        key_info = table->key_info + index;
+      }
     }
   }
   return key_info;

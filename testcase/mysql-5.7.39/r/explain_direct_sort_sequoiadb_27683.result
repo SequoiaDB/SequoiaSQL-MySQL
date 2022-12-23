@@ -121,7 +121,7 @@ NULL	NULL	NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col1": { "$et": 1 } }, { "col1": { "$isnull": 1 } } ] }], selector[{}], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 1 }, { "1": 1 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27683.t1]
 explain select * from t1 where col1 > 1 and col1 < 5;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition ((`explain_direct_sort_27683`.`t1`.`col1` > 1) and (`explain_direct_sort_27683`.`t1`.`col1` < 5)); Using MRR
+1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition ((`explain_direct_sort_27683`.`t1`.`col1` > 1) and (`explain_direct_sort_27683`.`t1`.`col1` < 5))
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27683`.`t1`.`col1` AS `col1`,`explain_direct_sort_27683`.`t1`.`col2` AS `col2`,`explain_direct_sort_27683`.`t1`.`col3` AS `col3`,`explain_direct_sort_27683`.`t1`.`col4` AS `col4` from `explain_direct_sort_27683`.`t1` where ((`explain_direct_sort_27683`.`t1`.`col1` > 1) and (`explain_direct_sort_27683`.`t1`.`col1` < 5))
 select * from t1 where col1 > 1 and col1 < 5;
@@ -154,7 +154,7 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 1 } }, { "col1": { "$lt": 5 } } ] }], selector[{}], order_by[{ "col1": -1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27683.t1]
 explain select * from t1 where col1 > 1 and col1 < 5 order by col3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition ((`explain_direct_sort_27683`.`t1`.`col1` > 1) and (`explain_direct_sort_27683`.`t1`.`col1` < 5)); Using MRR; Using pushed sort (`explain_direct_sort_27683`.`t1`.`col3`)
+1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition ((`explain_direct_sort_27683`.`t1`.`col1` > 1) and (`explain_direct_sort_27683`.`t1`.`col1` < 5)); Using pushed sort (`explain_direct_sort_27683`.`t1`.`col3`)
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27683`.`t1`.`col1` AS `col1`,`explain_direct_sort_27683`.`t1`.`col2` AS `col2`,`explain_direct_sort_27683`.`t1`.`col3` AS `col3`,`explain_direct_sort_27683`.`t1`.`col4` AS `col4` from `explain_direct_sort_27683`.`t1` where ((`explain_direct_sort_27683`.`t1`.`col1` > 1) and (`explain_direct_sort_27683`.`t1`.`col1` < 5)) order by `explain_direct_sort_27683`.`t1`.`col3`
 select * from t1 where col1 > 1 and col1 < 5 order by col3;
@@ -165,7 +165,7 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 1 } }, { "col1": { "$lt": 5 } } ] }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27683.t1]
 explain select * from t1 where col2 > 'abc' and col2 < 'def';
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	idx_col2	idx_col2	13	NULL	2	100.00	Using where with pushed condition ((`explain_direct_sort_27683`.`t1`.`col2` > 'abc') and (`explain_direct_sort_27683`.`t1`.`col2` < 'def')); Using MRR
+1	SIMPLE	t1	NULL	range	idx_col2	idx_col2	13	NULL	2	100.00	Using where with pushed condition ((`explain_direct_sort_27683`.`t1`.`col2` > 'abc') and (`explain_direct_sort_27683`.`t1`.`col2` < 'def'))
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27683`.`t1`.`col1` AS `col1`,`explain_direct_sort_27683`.`t1`.`col2` AS `col2`,`explain_direct_sort_27683`.`t1`.`col3` AS `col3`,`explain_direct_sort_27683`.`t1`.`col4` AS `col4` from `explain_direct_sort_27683`.`t1` where ((`explain_direct_sort_27683`.`t1`.`col2` > 'abc') and (`explain_direct_sort_27683`.`t1`.`col2` < 'def'))
 select * from t1 where col2 > 'abc' and col2 < 'def';
@@ -209,7 +209,7 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$in": [ "abc", "def", "xyz" ] } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_direct_sort_27683.t1]
 explain select * from t1 where col2 like 'a%';
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	idx_col2	idx_col2	13	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27683`.`t1`.`col2` like 'a%'); Using MRR
+1	SIMPLE	t1	NULL	range	idx_col2	idx_col2	13	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27683`.`t1`.`col2` like 'a%')
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27683`.`t1`.`col1` AS `col1`,`explain_direct_sort_27683`.`t1`.`col2` AS `col2`,`explain_direct_sort_27683`.`t1`.`col3` AS `col3`,`explain_direct_sort_27683`.`t1`.`col4` AS `col4` from `explain_direct_sort_27683`.`t1` where (`explain_direct_sort_27683`.`t1`.`col2` like 'a%')
 select * from t1 where col2 like 'a%';

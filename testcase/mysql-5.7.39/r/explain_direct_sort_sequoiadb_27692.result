@@ -54,7 +54,7 @@ id	col1
 [Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$lt": 20 } }], selector[{}], order_by[{ "id": -1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_direct_sort_27692.t1_range]
 explain select * from t1_range where id < 20 order by col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1_range	p0,p1	range	PRIMARY	PRIMARY	4	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27692`.`t1_range`.`id` < 20); Using MRR; Using pushed sort (`explain_direct_sort_27692`.`t1_range`.`col1`)
+1	SIMPLE	t1_range	p0,p1	range	PRIMARY	PRIMARY	4	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27692`.`t1_range`.`id` < 20); Using pushed sort (`explain_direct_sort_27692`.`t1_range`.`col1`)
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27692`.`t1_range`.`id` AS `id`,`explain_direct_sort_27692`.`t1_range`.`col1` AS `col1` from `explain_direct_sort_27692`.`t1_range` where (`explain_direct_sort_27692`.`t1_range`.`id` < 20) order by `explain_direct_sort_27692`.`t1_range`.`col1`
 select * from t1_range where id < 20 order by col1;

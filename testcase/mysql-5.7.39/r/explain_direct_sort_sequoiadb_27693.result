@@ -30,7 +30,7 @@ explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order b
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
 1	PRIMARY	t1	NULL	ref	idx_col1,idx_col12	idx_col1	5	tt.col1	2	100.00	Using join buffer (Batched Key Access)
-2	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27693`.`t2`.`col1` < 5); Using MRR; Using temporary; Using filesort
+2	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27693`.`t2`.`col1` < 5); Using temporary; Using filesort
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27693`.`t1`.`col1` AS `col1`,`explain_direct_sort_27693`.`t1`.`col2` AS `col2`,`explain_direct_sort_27693`.`t1`.`col3` AS `col3`,`explain_direct_sort_27693`.`t1`.`col4` AS `col4` from `explain_direct_sort_27693`.`t1` join (/* select#2 */ select distinct `explain_direct_sort_27693`.`t2`.`col1` AS `col1`,`explain_direct_sort_27693`.`t2`.`col2` AS `col2`,`explain_direct_sort_27693`.`t2`.`col3` AS `col3`,`explain_direct_sort_27693`.`t2`.`col4` AS `col4` from `explain_direct_sort_27693`.`t2` where (`explain_direct_sort_27693`.`t2`.`col1` < 5) order by `explain_direct_sort_27693`.`t2`.`col2`) `tt` where (`explain_direct_sort_27693`.`t1`.`col1` = `tt`.`col1`)
 select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1;
@@ -45,7 +45,7 @@ explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order b
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using temporary; Using filesort
 1	PRIMARY	t1	NULL	ref	idx_col1,idx_col12	idx_col1	5	tt.col1	2	100.00	Using join buffer (Batched Key Access)
-2	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27693`.`t2`.`col1` < 5); Using MRR; Using temporary; Using filesort
+2	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27693`.`t2`.`col1` < 5); Using temporary; Using filesort
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27693`.`t1`.`col1` AS `col1`,`explain_direct_sort_27693`.`t1`.`col2` AS `col2`,`explain_direct_sort_27693`.`t1`.`col3` AS `col3`,`explain_direct_sort_27693`.`t1`.`col4` AS `col4` from `explain_direct_sort_27693`.`t1` join (/* select#2 */ select distinct `explain_direct_sort_27693`.`t2`.`col1` AS `col1`,`explain_direct_sort_27693`.`t2`.`col2` AS `col2`,`explain_direct_sort_27693`.`t2`.`col3` AS `col3`,`explain_direct_sort_27693`.`t2`.`col4` AS `col4` from `explain_direct_sort_27693`.`t2` where (`explain_direct_sort_27693`.`t2`.`col1` < 5) order by `explain_direct_sort_27693`.`t2`.`col2` desc) `tt` where (`explain_direct_sort_27693`.`t1`.`col1` = `tt`.`col1`) order by `explain_direct_sort_27693`.`t1`.`col2`
 select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col2;
@@ -60,7 +60,7 @@ explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order b
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using temporary; Using filesort
 1	PRIMARY	t1	NULL	ref	idx_col1,idx_col12	idx_col1	5	tt.col1	2	100.00	Using join buffer (Batched Key Access)
-2	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27693`.`t2`.`col1` < 5); Using MRR; Using temporary; Using filesort
+2	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27693`.`t2`.`col1` < 5); Using temporary; Using filesort
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27693`.`t1`.`col1` AS `col1`,`explain_direct_sort_27693`.`t1`.`col2` AS `col2`,`explain_direct_sort_27693`.`t1`.`col3` AS `col3`,`explain_direct_sort_27693`.`t1`.`col4` AS `col4` from `explain_direct_sort_27693`.`t1` join (/* select#2 */ select distinct `explain_direct_sort_27693`.`t2`.`col1` AS `col1`,`explain_direct_sort_27693`.`t2`.`col2` AS `col2`,`explain_direct_sort_27693`.`t2`.`col3` AS `col3`,`explain_direct_sort_27693`.`t2`.`col4` AS `col4` from `explain_direct_sort_27693`.`t2` where (`explain_direct_sort_27693`.`t2`.`col1` < 5) order by `explain_direct_sort_27693`.`t2`.`col2`) `tt` where (`explain_direct_sort_27693`.`t1`.`col1` = `tt`.`col1`) order by `explain_direct_sort_27693`.`t1`.`col2` desc
 select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1 order by t1.col2 desc;
@@ -75,7 +75,7 @@ explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order b
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using temporary; Using filesort
 1	PRIMARY	t1	NULL	ref	idx_col1,idx_col12	idx_col1	5	tt.col1	2	100.00	Using join buffer (Batched Key Access)
-2	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27693`.`t2`.`col1` < 5); Using MRR; Using temporary; Using filesort
+2	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27693`.`t2`.`col1` < 5); Using temporary; Using filesort
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27693`.`t1`.`col1` AS `col1`,`explain_direct_sort_27693`.`t1`.`col2` AS `col2`,`explain_direct_sort_27693`.`t1`.`col3` AS `col3`,`explain_direct_sort_27693`.`t1`.`col4` AS `col4` from `explain_direct_sort_27693`.`t1` join (/* select#2 */ select distinct `explain_direct_sort_27693`.`t2`.`col1` AS `col1`,`explain_direct_sort_27693`.`t2`.`col2` AS `col2`,`explain_direct_sort_27693`.`t2`.`col3` AS `col3`,`explain_direct_sort_27693`.`t2`.`col4` AS `col4` from `explain_direct_sort_27693`.`t2` where (`explain_direct_sort_27693`.`t2`.`col1` < 5) order by `explain_direct_sort_27693`.`t2`.`col2` desc) `tt` where (`explain_direct_sort_27693`.`t1`.`col1` = `tt`.`col1`) order by `explain_direct_sort_27693`.`t1`.`col3`
 select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col3;

@@ -37,7 +37,7 @@ c1	c2	c1	c2
 71	7	71	7
 EXPLAIN SELECT * FROM t1 STRAIGHT_JOIN t2 ON t1.c1 = t2.c1 WHERE t1.c2 > 6 AND t1.c2 < 9 ORDER BY t1.c1 LIMIT 2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	k1	k1	5	NULL	2	100.00	Using where with pushed condition ((`order_by_limit_sequoiadb_28552`.`t1`.`c2` > 6) and (`order_by_limit_sequoiadb_28552`.`t1`.`c2` < 9)); Using MRR; Using index; Using temporary; Using filesort
+1	SIMPLE	t1	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	k1	k1	5	NULL	2	100.00	Using where with pushed condition ((`order_by_limit_sequoiadb_28552`.`t1`.`c2` > 6) and (`order_by_limit_sequoiadb_28552`.`t1`.`c2` < 9)); Using index; Using temporary; Using filesort
 1	SIMPLE	t2	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	index	NULL	k1	10	NULL	100	10.00	Using where; Using index; Using join buffer (Block Nested Loop)
 SET optimizer_limit_pushdown_threshold = 100;
 SELECT * FROM t1 STRAIGHT_JOIN t2 ON t1.c1 = t2.c1 WHERE t1.c2 > 6 AND t1.c2 < 9 ORDER BY t1.c1 LIMIT 2;
@@ -46,7 +46,7 @@ c1	c2	c1	c2
 71	7	71	7
 EXPLAIN SELECT * FROM t1 STRAIGHT_JOIN t2 ON t1.c1 = t2.c1 WHERE t1.c2 > 6 AND t1.c2 < 9 ORDER BY t1.c1 LIMIT 2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	k1	k1	5	NULL	2	100.00	Using where with pushed condition ((`order_by_limit_sequoiadb_28552`.`t1`.`c2` > 6) and (`order_by_limit_sequoiadb_28552`.`t1`.`c2` < 9)); Using MRR; Using index; Using temporary; Using filesort
+1	SIMPLE	t1	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	k1	k1	5	NULL	2	100.00	Using where with pushed condition ((`order_by_limit_sequoiadb_28552`.`t1`.`c2` > 6) and (`order_by_limit_sequoiadb_28552`.`t1`.`c2` < 9)); Using index; Using temporary; Using filesort
 1	SIMPLE	t2	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	index	NULL	k1	10	NULL	100	10.00	Using where; Using index; Using join buffer (Block Nested Loop)
 SET SESSION join_buffer_size=default;
 SET optimizer_limit_pushdown_threshold=default;
