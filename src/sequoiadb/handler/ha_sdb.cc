@@ -4877,12 +4877,6 @@ sdb_idx_access_method ha_sdb::choose_idx_access_method(uint keyno,
     goto done;
   }
 
-  /* Default implementation performance is quite enough for one range */
-  if (n_ranges_arg <= 1) {
-    method = IDX_ACCESS_DEFAULT;
-    goto done;
-  }
-
   /*
     We don't know what values they will be. So just return unknown. And at
     ::multi_range_read_init() we will get this info, and then we will choose
@@ -4890,6 +4884,12 @@ sdb_idx_access_method ha_sdb::choose_idx_access_method(uint keyno,
   */
   if (!seq || !seq_init_param) {
     method = IDX_ACCESS_UNKNOWN;
+    goto done;
+  }
+
+  /* Default implementation performance is quite enough for one range */
+  if (n_ranges_arg <= 1) {
+    method = IDX_ACCESS_DEFAULT;
     goto done;
   }
 
