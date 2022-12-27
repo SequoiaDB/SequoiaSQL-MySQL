@@ -1829,6 +1829,18 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
 
+  m_idx_access_method_array = (sdb_idx_access_method *)sdb_my_malloc(
+      PSI_INSTRUMENT_ME, table->s->keys * sizeof(sdb_idx_access_method),
+      MYF(0));
+  if (!m_idx_access_method_array) {
+    rc = HA_ERR_OUT_OF_MEM; /* purecov: inspected */
+    goto error;             /* purecov: inspected */
+  }
+
+  for (uint i = 0; i < table->s->keys; ++i) {
+    m_idx_access_method_array[i] = IDX_ACCESS_UNKNOWN;
+  }
+
   thr_lock_data_init(&share->lock, &lock_data, (void *)this);
 
   ref_length = SDB_OID_LEN;  // length of _id
@@ -1923,18 +1935,6 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   rc = update_stats(ha_thd(), false);
   if (0 != rc) {
     goto error;
-  }
-
-  m_idx_access_method_array = (sdb_idx_access_method *)sdb_my_malloc(
-      PSI_INSTRUMENT_ME, table->s->keys * sizeof(sdb_idx_access_method),
-      MYF(0));
-  if (!m_idx_access_method_array) {
-    rc = HA_ERR_OUT_OF_MEM; /* purecov: inspected */
-    goto error;             /* purecov: inspected */
-  }
-
-  for (uint i = 0; i < table->s->keys; ++i) {
-    m_idx_access_method_array[i] = IDX_ACCESS_UNKNOWN;
   }
 
 done:
