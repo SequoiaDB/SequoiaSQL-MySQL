@@ -29,6 +29,7 @@
 #include "server_ha_query.h"
 #include "name_map.h"
 #include "sql_audit.h"
+#include "debug_sync.h"
 
 // SQL statements
 #define HA_STMT_EXEC_ONLY_IN_MYSQL "SET sequoiadb_execute_only_in_mysql = 1"
@@ -739,7 +740,8 @@ static void build_mysqldump_command(char *cmd, const ha_dump_source &src,
   int max_cmd_len = FN_REFLEN * 2 + 100;
   end = snprintf(cmd, max_cmd_len, "%s/bin/mysqldump -B ", mysql_home_ptr);
   if (!dump_sysdb) {
-    end += snprintf(cmd + end, max_cmd_len, "--no-data --all-databases ");
+    end += snprintf(cmd + end, max_cmd_len,
+                    "--no-data --all-databases --lock-tables=FALSE ");
   } else {
     end += snprintf(cmd + end, max_cmd_len, "-a mysql -t ");
   }
@@ -1238,6 +1240,100 @@ error:
   goto done;
 }
 
+static int add_xlock_releated_current_instance(const char *sdb_group_name,
+                                               Sdb_conn &sdb_conn,
+                                               int instance_id) {
+  int rc = SDB_ERR_OK;
+  Sdb_cl lock_cl;
+  char db_name[sizeof(HA_INST_LOCK_DB_PREFIX) + 10] = {0};
+  char table_name[sizeof(HA_INST_LOCK_TABLE_PREFIX) + 10] = {0};
+  bson::BSONObj cond, obj, result;
+  bson::BSONObjBuilder cond_builder, obj_builder;
+
+  snprintf(db_name, sizeof(HA_INST_LOCK_DB_PREFIX) + 10, "%s%d",
+           HA_INST_LOCK_DB_PREFIX, instance_id);
+  snprintf(table_name, sizeof(HA_INST_LOCK_TABLE_PREFIX) + 10, "%s%d",
+           HA_INST_LOCK_TABLE_PREFIX, instance_id);
+  rc = ha_get_lock_cl(sdb_conn, sdb_group_name, lock_cl,
+                      ha_get_sys_meta_group());
+  if (rc) {
+    goto error; /* purecov: inspected */
+  }
+
+  try {
+    cond_builder.append(HA_FIELD_DB, db_name);
+    cond_builder.append(HA_FIELD_TABLE, table_name);
+    cond_builder.append(HA_FIELD_TYPE, HA_OPERATION_TYPE_TABLE);
+    cond = cond_builder.done();
+
+    bson::BSONObjBuilder sub_builder(obj_builder.subobjStart("$inc"));
+    sub_builder.append(HA_FIELD_VERSION, 1);
+    sub_builder.doneFast();
+    obj = obj_builder.done();
+
+    rc = lock_cl.upsert(obj, cond);
+    if (0 != rc) {
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to build query condition while adding 'S' "
+                        "lock on record for current instance, exception: %s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+static int add_slock_releated_current_instance(const char *sdb_group_name,
+                                               Sdb_conn &sdb_conn,
+                                               int instance_id) {
+  int rc = SDB_ERR_OK;
+  Sdb_cl lock_cl;
+  char db_name[sizeof(HA_INST_LOCK_DB_PREFIX) + 10] = {0};
+  char table_name[sizeof(HA_INST_LOCK_TABLE_PREFIX) + 10] = {0};
+  bson::BSONObj cond, obj, result;
+  bson::BSONObjBuilder cond_builder, obj_builder;
+
+  snprintf(db_name, sizeof(HA_INST_LOCK_DB_PREFIX) + 10, "%s%d",
+           HA_INST_LOCK_DB_PREFIX, instance_id);
+  snprintf(table_name, sizeof(HA_INST_LOCK_TABLE_PREFIX) + 10, "%s%d",
+           HA_INST_LOCK_TABLE_PREFIX, instance_id);
+  rc = ha_get_lock_cl(sdb_conn, sdb_group_name, lock_cl,
+                      ha_get_sys_meta_group());
+  if (rc) {
+    goto error; /* purecov: inspected */
+  }
+
+  try {
+    cond_builder.append(HA_FIELD_DB, db_name);
+    cond_builder.append(HA_FIELD_TABLE, table_name);
+    cond_builder.append(HA_FIELD_TYPE, HA_OPERATION_TYPE_TABLE);
+    cond = cond_builder.done();
+
+    rc = lock_cl.query_one(result, cond);
+    if (HA_ERR_END_OF_FILE == rc || SDB_DMS_EOC == get_sdb_code(rc)) {
+      SDB_LOG_INFO(
+          "Unable to add 'S' lock on record for current instance, "
+          "try to add 'X' lock");
+      rc = add_xlock_releated_current_instance(sdb_group_name, sdb_conn,
+                                               instance_id);
+    }
+    if (0 != rc) {
+      goto error; /* purecov: inspected */
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to build query condition while adding "
+                        "'S' lock record for current instance, exception: %s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done; /* purecov: inspected */
+}
+
 // dump full metadata from dump source by executing 'mysqldump' command
 // note: can't print error log here, or automated testing may fail
 static int dump_full_meta_data(ha_recover_replay_thread *ha_thread,
@@ -1251,6 +1347,19 @@ static int dump_full_meta_data(ha_recover_replay_thread *ha_thread,
     goto error;
   }
 
+  // Lock DDL operation for current instance
+  rc = add_xlock_releated_current_instance(ha_thread->sdb_group_name, sdb_conn,
+                                           dump_source.dump_source_id);
+  HA_RC_CHECK(rc, error, "HA: Failed to add 'X' lock on dump source");
+
+  if (ha_is_full_recovery_sync_point_enabled()) {
+#if defined(ENABLED_DEBUG_SYNC)
+    debug_sync_set_action(
+        ha_thread->thd,
+        STRING_WITH_LEN("debug_xlock_before_dump_metadata WAIT_FOR sig"));
+#endif
+    DEBUG_SYNC(ha_thread->thd, "debug_xlock_before_dump_metadata");
+  }
   rc = copy_dump_source_state(ha_thread, sdb_conn, dump_source);
   if (rc) {
     sql_print_information("HA: Failed to copy dump source state");
@@ -1442,7 +1551,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
   static const int MAX_TRY_COUNT = 3;
 
   int rc = 0;
-  Sdb_cl inst_state_cl, sql_log_cl, inst_obj_state_cl;
+  Sdb_cl inst_state_cl, sql_log_cl, inst_obj_state_cl, lock_cl;
   bson::BSONObjBuilder builder, simple_builder;
   bson::BSONObj result, cond, obj, order_by, attr;
   struct timespec abstime;
@@ -1461,9 +1570,16 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
   int cata_version = -1;
   THD *thd = ha_thread->thd;
   Diagnostics_area *da = thd->get_stmt_da();
+  Sdb_pool_conn pool_conn(0, true);
+  Sdb_conn &tmp_sdb_conn = pool_conn;
 
   DBUG_ENTER("replay_sql_stmt_loop");
   DBUG_ASSERT(ha_thread->instance_id > 0);
+
+  rc = tmp_sdb_conn.connect();
+  HA_RC_CHECK(rc, error,
+              "Failed to connection 'SequoiaDB', sequoiadb error: %s",
+              ha_error_string(tmp_sdb_conn, rc, err_buf));
 
   rc = sdb_conn.get_cl(sdb_group_name, HA_INSTANCE_STATE_CL, inst_state_cl);
   HA_RC_CHECK(
@@ -1558,6 +1674,16 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                   ha_error_string(sdb_conn, rc, err_buf));
     }
 
+    // Reconnect 'SequoiaDB' if connection is invalid
+    if (!(tmp_sdb_conn.is_valid() && tmp_sdb_conn.is_authenticated())) {
+      /* purecov: begin inspected */
+      rc = tmp_sdb_conn.connect();
+      HA_RC_CHECK(rc, sleep_secs,
+                  "Failed to reconnect 'SequoiaDB', sequoiadb error:%s",
+                  ha_error_string(tmp_sdb_conn, rc, err_buf));
+      /* purecov: end */
+    }
+
     rc = sql_log_cl.query(cond, SDB_EMPTY_BSON, order_by, SDB_EMPTY_BSON, 0,
                           REPLAY_LIMIT);
     if (SDB_DMS_NOTEXIST == get_sdb_code(rc) ||
@@ -1599,6 +1725,24 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         }
       }
 
+      rc = tmp_sdb_conn.begin_transaction(ISO_READ_STABILITY);
+      HA_RC_CHECK(rc, sleep_secs,
+                  "Failed to start transaction, sequoiadb error: %s",
+                  ha_error_string(tmp_sdb_conn, rc, err_buf));
+
+      // Add 'S' lock on current instance
+      rc = add_slock_releated_current_instance(sdb_group_name, tmp_sdb_conn,
+                                               ha_thread->instance_id);
+      HA_RC_CHECK(rc, sleep_secs, "Failed to add 'S' lock on current instance");
+
+      if (ha_is_ddl_playback_sync_point_enabled()) {
+#if defined(ENABLED_DEBUG_SYNC)
+        debug_sync_set_action(
+            thd,
+            STRING_WITH_LEN("debug_slock_before_playback_ddl WAIT_FOR sig"));
+#endif
+        DEBUG_SYNC(thd, "debug_slock_before_playback_ddl");
+      }
       DBUG_ASSERT(sql_id >= 0);
       if (owner == ha_thread->instance_id) {
         // update its own instance state
@@ -1775,6 +1919,14 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                   "HA: Failed to update instance and instance state, "
                   "sequoiadb error: %s",
                   ha_error_string(sdb_conn, rc, err_buf));
+
+      // Release lock on current instance
+      rc = tmp_sdb_conn.commit_transaction();
+      HA_RC_CHECK(
+          rc, sleep_secs,
+          "Failed to release lock on current instance, sequoiadb error:%s",
+          ha_error_string(sdb_conn, rc, err_buf));
+
       // flush privileges after replay DCL
       if (0 == strcmp(op_type, HA_OPERATION_TYPE_DCL)) {
         rc = server_ha_query(thd, C_STRING_WITH_LEN(HA_STMT_FLUSH_PRIVILEGES));
@@ -1798,6 +1950,9 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                       ha_error_string(sdb_conn, rc, err_buf));
     }
   sleep_secs:
+    if (tmp_sdb_conn.is_transaction_on()) {
+      tmp_sdb_conn.commit_transaction();
+    }
     da->reset_diagnostics_area();
     if (curr_executed < REPLAY_LIMIT) {
       sdb_set_clock_time(abstime, SLEEP_SECONDS);

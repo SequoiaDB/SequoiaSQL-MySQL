@@ -41,6 +41,7 @@
 #include "tztime.h"
 #include "sql_time.h"
 #include "name_map.h"
+#include "debug_sync.h"
 #include "ha_sdb_util.h"
 
 #ifdef IS_MARIADB
@@ -63,6 +64,8 @@ static char *ha_inst_group_key = NULL;
 static uint ha_wait_replay_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
 static uint ha_wait_recover_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
 static bool aborting_ha = false;
+static my_bool ha_enable_ddl_playback_sync_point = FALSE;
+static my_bool ha_enable_full_recovery_sync_point = FALSE;
 static char ha_data_group_name[SDB_RG_NAME_MAX_SIZE + 1] = {0};
 static char *ha_data_group_name_ptr = ha_data_group_name;
 
@@ -101,10 +104,33 @@ static MYSQL_THDVAR_UINT(
     /*等待元数据操作同步到其他实例超时时间[0, 3600]，单位：sec。*/,
     NULL, NULL, 0, 0, 3600, 0);
 
+// Use to enable sync point for DDL playback process
+static MYSQL_SYSVAR_BOOL(enable_ddl_playback_sync_point,
+                         ha_enable_ddl_playback_sync_point,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+                         "Enable sync point for DDL playback process. "
+                         "(Default: OFF)"
+                         /* 启用 DDL 回放流程同步测试点。*/,
+                         NULL, NULL, FALSE);
+
+// Use to enable sync point for full recover process
+static MYSQL_SYSVAR_BOOL(enable_full_recover_sync_point,
+                         ha_enable_full_recovery_sync_point,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+                         "Enable sync point for full recovery process. "
+                         "(Default: OFF)"
+                         /* 启用全量同步流程同步测试点。*/,
+                         NULL, NULL, FALSE);
+
 struct st_mysql_sys_var *ha_sys_vars[] = {
-    MYSQL_SYSVAR(inst_group_name),     MYSQL_SYSVAR(inst_group_key),
-    MYSQL_SYSVAR(wait_replay_timeout), MYSQL_SYSVAR(wait_recover_timeout),
-    MYSQL_SYSVAR(wait_sync_timeout),   NULL};
+    MYSQL_SYSVAR(inst_group_name),
+    MYSQL_SYSVAR(inst_group_key),
+    MYSQL_SYSVAR(wait_replay_timeout),
+    MYSQL_SYSVAR(wait_recover_timeout),
+    MYSQL_SYSVAR(wait_sync_timeout),
+    MYSQL_SYSVAR(enable_ddl_playback_sync_point),
+    MYSQL_SYSVAR(enable_full_recover_sync_point),
+    NULL};
 
 static struct st_mysql_show_var ha_status[] = {
     SDB_ST_SHOW_VAR("server_ha_data_group", (char *)&ha_data_group_name_ptr,
@@ -120,6 +146,22 @@ bool ha_is_open() {
 
 bool ha_is_aborting() {
   return aborting_ha;
+}
+
+bool ha_is_ddl_playback_sync_point_enabled() {
+  bool enabled = FALSE;
+#if defined(ENABLED_DEBUG_SYNC)
+  enabled = (opt_debug_sync_timeout && ha_enable_ddl_playback_sync_point);
+#endif
+  return enabled;
+}
+
+bool ha_is_full_recovery_sync_point_enabled() {
+  bool enabled = FALSE;
+#if defined(ENABLED_DEBUG_SYNC)
+  enabled = (opt_debug_sync_timeout && ha_enable_full_recovery_sync_point);
+#endif
+  return enabled;
 }
 
 void ha_set_data_group(const char *name) {
@@ -711,6 +753,51 @@ done:
   return rc;
 error:
   goto done;
+}
+
+static int add_slock_releated_current_instance(ha_sql_stmt_info *sql_info) {
+  int rc = SDB_ERR_OK;
+  Sdb_conn *sdb_conn = sql_info->sdb_conn;
+  Sdb_cl lock_cl;
+  char db_name[sizeof(HA_INST_LOCK_DB_PREFIX) + 10] = {0};
+  char table_name[sizeof(HA_INST_LOCK_TABLE_PREFIX) + 10] = {0};
+
+  snprintf(db_name, sizeof(HA_INST_LOCK_DB_PREFIX) + 10, "%s%d",
+           HA_INST_LOCK_DB_PREFIX, ha_thread.instance_id);
+  snprintf(table_name, sizeof(HA_INST_LOCK_TABLE_PREFIX) + 10, "%s%d",
+           HA_INST_LOCK_TABLE_PREFIX, ha_thread.instance_id);
+  rc = ha_get_lock_cl(*sdb_conn, ha_thread.sdb_group_name, lock_cl,
+                      ha_get_sys_meta_group());
+  if (rc) {
+    /* purecov: begin inspected */
+    ha_error_string(*sdb_conn, rc, sql_info->err_message);
+    goto error;
+    /* purecov: begin end */
+  }
+
+  rc = add_slock(lock_cl, db_name, table_name, HA_OPERATION_TYPE_TABLE,
+                 sql_info);
+  if (HA_ERR_END_OF_FILE == rc) {
+    SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'X' lock for '%s:%s'",
+                  db_name, table_name);
+    rc = add_xlock(lock_cl, db_name, table_name, HA_OPERATION_TYPE_TABLE,
+                   sql_info);
+  }
+  if (rc) {
+    /* purecov: begin inspected */
+    ha_error_string(*sdb_conn, rc, sql_info->err_message);
+    goto error;
+    /* purecov: end */
+  }
+done:
+  return rc;
+error:
+  /* purecov: begin inspected */
+  SDB_LOG_ERROR(
+      "Failed to add 'S' lock on record for current instance, error: %s",
+      sql_info->err_message);
+  goto done;
+  /* purecov: end */
 }
 
 // get cached record without lock
@@ -4872,6 +4959,13 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       if (rc) {
         goto error;
       }
+
+      // Add Share lock for current instance
+      rc = add_slock_releated_current_instance(sql_info);
+      if (rc) {
+        goto error; /* purecov: inspected */
+      }
+      DEBUG_SYNC(thd, "debug_slock_before_execute_ddl");
 
       rc = wait_objects_updated_to_lastest(thd, sql_info);
       if (rc) {
