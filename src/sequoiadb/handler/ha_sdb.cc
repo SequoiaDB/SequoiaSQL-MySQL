@@ -5555,12 +5555,32 @@ int ha_sdb::cur_row(uchar *buf) {
     Item *field = NULL;
     LEX *const lex = ha_thd()->lex;
     List_iterator<Item> li(sdb_lex_all_fields(lex));
+    SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
+    JOIN *join = NULL;
     while ((field = li++)) {
       Item::Type real_type = field->real_item()->type();
       if (real_type == Item::SUM_FUNC_ITEM) {
         Item_sum *sum_item = (Item_sum *)field->real_item();
         if (sum_item->sum_func() == Item_sum::COUNT_FUNC) {
           ((Item_sum_count *)sum_item)->make_const(total_count);
+        }
+      }
+    }
+    /*
+       In some case, join->fields and select_lex->all_fields does not point to
+       the same address, so join->fields also be filled by total_count.
+       eg:
+         select SQL_BUFFER_RESULT count(1) from t1;
+    */
+    if (select_lex && (join = select_lex->join)) {
+      List_iterator<Item> li(*join->fields);
+      while ((field = li++)) {
+        Item::Type real_type = field->real_item()->type();
+        if (real_type == Item::SUM_FUNC_ITEM) {
+          Item_sum *sum_item = (Item_sum *)field->real_item();
+          if (sum_item->sum_func() == Item_sum::COUNT_FUNC) {
+            ((Item_sum_count *)sum_item)->make_const(total_count);
+          }
         }
       }
     }
