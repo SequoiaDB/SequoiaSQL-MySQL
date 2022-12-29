@@ -426,6 +426,7 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
   ha_sdb_cond_ctx *sdb_ctx = (ha_sdb_cond_ctx *)arg;
   Item_func::Functype type;
   Item_field *item_field = NULL;
+  Item *real_item = NULL;
 
   if (sdb_ctx->type == ha_sdb_cond_ctx::PUSHED_COND) {
     if (SDB_COND_UNSUPPORTED == sdb_ctx->status ||
@@ -446,10 +447,18 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
   }
 
   if (sdb_ctx->type == ha_sdb_cond_ctx::WHERE_COND && cond_item) {
-    switch (cond_item->type()) {
+    // Get the real item. See also Item_ref.
+    real_item = const_cast<Item *>(cond_item)->real_item();
+    // Correct the fake function, e.g: FLOOR(1), MOD(5, 2)...their real_item is
+    // FUNC_ITEM but their type is INT_ITEM, and should be treated as constant
+    if (Item::FUNC_ITEM == real_item->type() &&
+        Item::FUNC_ITEM != cond_item->type()) {
+      real_item = const_cast<Item *>(cond_item);
+    }
+    switch (real_item->type()) {
       case Item::FIELD_ITEM:
         for (Field **field = sdb_ctx->table->field; *field; field++) {
-          if (0 == strcmp(sdb_field_name((*field)), sdb_item_name(cond_item))) {
+          if (0 == strcmp(sdb_field_name((*field)), sdb_item_name(real_item))) {
             bitmap_set_bit(&sdb_ctx->where_cond_set, (*field)->field_index);
             DBUG_PRINT("ha_sdb:info",
                        ("Table: %s, field: %s is in where condition",
@@ -461,7 +470,7 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
         sdb_ctx->sub_sel = true;
         break;
       case Item::FUNC_ITEM:
-        type = ((Item_func *)cond_item)->functype();
+        type = ((Item_func *)real_item)->functype();
         if ((Item_func::UNKNOWN_FUNC != type && Item_func::EQ_FUNC != type &&
              Item_func::EQUAL_FUNC != type && Item_func::NE_FUNC != type &&
              Item_func::LT_FUNC != type && Item_func::LE_FUNC != type &&
@@ -476,7 +485,7 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
              Item_func::INTERVAL_FUNC != type &&
              Item_func::ISNOTNULLTEST_FUNC != type &&
              Item_func::NEG_FUNC != type) ||
-            (sdb_get_used_tables((Item_func *)cond_item) & RAND_TABLE_BIT)) {
+            (sdb_get_used_tables((Item_func *)real_item) & RAND_TABLE_BIT)) {
           sdb_ctx->status = SDB_COND_UNSUPPORTED;
         }
         break;

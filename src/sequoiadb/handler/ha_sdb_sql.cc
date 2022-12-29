@@ -368,10 +368,18 @@ bool sdb_use_JT_REF_OR_NULL(JOIN *join, const TABLE *table) {
   if (!join) {
     return false;
   }
-  JOIN_TAB *tab = join->map2table
-                      ? join->map2table[table->pos_in_table_list->tableno()]
-                      : NULL;
-  return JT_REF_OR_NULL == tab->type();
+
+  if (join->is_executed()) {
+    QEP_TAB *tab = join->qep_tab
+                       ? &join->qep_tab[table->pos_in_table_list->tableno()]
+                       : NULL;
+    return JT_REF_OR_NULL == tab->type();
+  } else {
+    JOIN_TAB *tab = join->map2table
+                        ? join->map2table[table->pos_in_table_list->tableno()]
+                        : NULL;
+    return JT_REF_OR_NULL == tab->type();
+  }
 }
 
 sdb_join_type sdb_get_join_type(JOIN *join) {
