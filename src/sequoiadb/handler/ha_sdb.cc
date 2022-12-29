@@ -4567,8 +4567,8 @@ ha_rows ha_sdb::multi_range_read_info_v1(uint keyno, uint n_ranges, uint n_rows,
   ha_rows rows = 0;
 
   /* Get cost/flags/mem_usage of default MRR implementation */
-  rows =
-      handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags, cost);
+  rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags,
+                                        cost);
   assert(!rows);
 
   if (choose_mrr_impl(keyno, bufsz, flags, cost, true)) {
@@ -4587,8 +4587,8 @@ ha_rows ha_sdb::multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
   sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
 
   /* Get cost/flags/mem_usage of default MRR implementation */
-  rows =
-      handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags, cost);
+  rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags,
+                                        cost);
   assert(!rows);
 
   method = choose_idx_access_method(keyno, n_rows, NULL, NULL, bufsz, flags,
@@ -7304,6 +7304,7 @@ int ha_sdb::cur_row(uchar *buf) {
        'select a, count(b) from table_name where ... '.
     */
     Item *field = NULL;
+    JOIN *join = NULL;
     SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
     List_iterator<Item> li(sdb_lex_all_fields(select_lex));
     while ((field = li++)) {
@@ -7312,6 +7313,24 @@ int ha_sdb::cur_row(uchar *buf) {
         Item_sum *sum_item = (Item_sum *)field->real_item();
         if (sum_item->sum_func() == Item_sum::COUNT_FUNC) {
           ((Item_sum_count *)sum_item)->make_const(total_count);
+        }
+      }
+    }
+    /*
+       In some case, join->fields and select_lex->all_fields does not point to
+       the same address, so join->fields also be filled by total_count.
+       eg:
+         select SQL_BUFFER_RESULT count(1) from t1;
+    */
+    if (select_lex && (join = select_lex->join)) {
+      List_iterator<Item> li(*join->fields);
+      while ((field = li++)) {
+        Item::Type real_type = field->real_item()->type();
+        if (real_type == Item::SUM_FUNC_ITEM) {
+          Item_sum *sum_item = (Item_sum *)field->real_item();
+          if (sum_item->sum_func() == Item_sum::COUNT_FUNC) {
+            ((Item_sum_count *)sum_item)->make_const(total_count);
+          }
         }
       }
     }
