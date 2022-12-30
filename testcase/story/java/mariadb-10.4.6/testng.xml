@@ -33,6 +33,7 @@
             <package name="com.sequoiasql.crud"/>
             <package name="com.sequoiasql.ddl"/>
             <package name="com.sequoiasql.mysql"/>
+            <package name="com.sequoiasql.statsflush"/>
         </packages>
     </test>
     <test name="serialtest" parallel="classes" thread-count="1">
