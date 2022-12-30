@@ -46,6 +46,7 @@
 #ifdef IS_MARIADB
 #include "server_ha_sql_rewrite.h"
 #endif
+#include "debug_sync.h"
 
 // thread local key for ha_sql_stmt_info
 thread_local_key_t ha_sql_stmt_info_key;
@@ -578,29 +579,16 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   bson::BSONObj cond, obj, result;
   int sql_command = thd_sql_command(thd);
   const char *db_name = NULL, *table_name = NULL, *op_type = NULL;
+  bool add_share_lock = true;
 
   rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_LOCK_CL, lock_cl);
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
   }
-  if (SQLCOM_CREATE_DB == sql_command || SQLCOM_ALTER_DB == sql_command) {
-    // add 'X' lock for current database in 'lock_record' later
+  if (is_db_meta_sql(thd)) {
+    // add 'X' lock for current database in 'lock_objects' later
     goto done;
-  } else if (SQLCOM_DROP_DB == sql_command) {  // if it's 'DROP DATABASE '
-    // add 'X' lock for current database
-    db_name = check_and_build_lower_case_name(thd, thd->lex->name.str);
-    if (NULL == db_name) {
-      rc = SDB_HA_OOM;
-      goto error;
-    }
-    table_name = HA_EMPTY_STRING;
-    op_type = HA_OPERATION_TYPE_DB;
-    SDB_LOG_DEBUG("HA: Add 'U' lock for database '%s'", db_name);
-    rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
-    if (rc) {
-      goto error;
-    }
   } else if (is_routine_meta_sql(thd) && strlen(sql_info->sp_db_name)) {
     // add 'S' lock for database including this routine
     for (ha_table_list *ha_tables = sql_info->tables; ha_tables;
@@ -611,6 +599,7 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       SDB_LOG_DEBUG("HA: Add 'S' lock for database '%s'", db_name);
       rc = add_slock(lock_cl, db_name, table_name, op_type, sql_info);
       if (HA_ERR_END_OF_FILE == rc) {
+        add_share_lock = false;
         SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'U' lock for '%s:%s'",
                       db_name, table_name);
         rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
@@ -632,6 +621,7 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       SDB_LOG_DEBUG("HA: Add 'S' lock for database '%s'", db_name);
       rc = add_slock(lock_cl, db_name, table_name, op_type, sql_info);
       if (HA_ERR_END_OF_FILE == rc) {
+        add_share_lock = false;
         SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'U' lock for '%s:%s'",
                       db_name, table_name);
         rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
@@ -650,6 +640,7 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       SDB_LOG_DEBUG("HA: Add 'S' lock for database '%s'", db_name);
       rc = add_slock(lock_cl, db_name, table_name, op_type, sql_info);
       if (HA_ERR_END_OF_FILE == rc) {
+        add_share_lock = false;
         SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'X' lock for '%s:%s'",
                       db_name, table_name);
         rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
@@ -658,6 +649,9 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         goto error;
       }
     }
+  }
+  if (add_share_lock) {
+    DEBUG_SYNC(thd, "after_add_share_lock_for_databases");
   }
 done:
   return rc;
@@ -700,8 +694,13 @@ static int lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       continue;
     }
 
-    SDB_LOG_DEBUG("HA: Add 'U' lock for '%s:%s'", db_name, table_name);
-    rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
+    if (is_db_meta_sql(thd)) {
+      SDB_LOG_DEBUG("HA: Add 'X' lock for '%s:%s'", db_name, table_name);
+      rc = add_xlock(lock_cl, db_name, table_name, op_type, sql_info);
+    } else {
+      SDB_LOG_DEBUG("HA: Add 'U' lock for '%s:%s'", db_name, table_name);
+      rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
+    }
     if (rc) {
       goto error;
     }
