@@ -35,6 +35,10 @@ public class StatsFlush26628 extends MysqlTestBase {
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc2 = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
+            if ( !jdbc1.query( "select version();" ).toString()
+                    .contains( "debug" ) ) {
+                throw new SkipException( "package is release skip testcase" );
+            }
             if ( sdb.isCollectionSpaceExist( dbName ) ) {
                 sdb.dropCollectionSpace( dbName );
             }
@@ -59,13 +63,13 @@ public class StatsFlush26628 extends MysqlTestBase {
     public void test() throws Exception {
         String tbName1 = "tb_26628_1";
         String tbName2 = "tb_26628_2";
-        int num = 10000000;
-        int changeNum = 500001;
+        int insertRecordsNum = 10000000;
+        int changeRecordsNum = 500001;
         if ( jdbc1.query( "select version();" ).toString()
                 .contains( "debug" ) ) {
             jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
-            num = 1000;
-            changeNum = 51;
+            insertRecordsNum = 1000;
+            changeRecordsNum = 51;
         }
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
@@ -81,13 +85,11 @@ public class StatsFlush26628 extends MysqlTestBase {
         jdbc1.update( "create table " + tbName2 + "(\n"
                 + "  id int not null auto_increment,\n" + "  primary key(id)\n"
                 + "  ) ;" );
-        for ( int i = 0; i < num + 10; i++ ) {
-            jdbc1.update( "insert into " + tbName2 + " values(null); " );
-        }
+        StatsFlushUtils.insertData2( jdbc1, tbName2, insertRecordsNum + 10 );
 
         // 插入数据，数据量等于1000w（debug包设置为1000）；
-        StatsFlushUtils.insertData( jdbc1, tbName1, num );
-        Thread.sleep( 4000 );
+        StatsFlushUtils.insertData1( jdbc1, tbName1, insertRecordsNum );
+        StatsFlushUtils.waitStatsFlush( jdbc1 );
 
         // 查看两个实例的查询计划,此时两个实例查出的查询计划相同；
         String queryExplain = "explain select alias1.cust_no from " + tbName1
@@ -95,15 +97,15 @@ public class StatsFlush26628 extends MysqlTestBase {
                 + "    join " + tbName2 + " as alias3\n"
                 + "    on alias2.cust_no\n" + "    on alias1.prdt_no\n"
                 + "    where alias1.id and alias1.id<3 or alias1.id and alias3.id ;";
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain ) );
+        Assert.assertEquals( jdbc1.< Character > query( queryExplain ),
+                jdbc2.< Character > query( queryExplain ) );
         String[] explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1,
                 queryExplain, 1 );
         Assert.assertEquals( explainInfo1[ 2 ], "alias2" );
 
         // 其中一个实例做delete、insert混合操作，操作累计变化的数据量小于10%
-        StatsFlushUtils.insertData( jdbc1, tbName1, changeNum );
-        Thread.sleep( 4000 );
+        StatsFlushUtils.insertData1( jdbc1, tbName1, changeRecordsNum );
+        StatsFlushUtils.waitStatsFlush( jdbc1 );
 
         // 此時实例1中查询表tbName1的访问计划改变
         explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain,
@@ -116,18 +118,18 @@ public class StatsFlush26628 extends MysqlTestBase {
 
         // 变化的数据量大于10%，查看实例2中查询表tbName1的访问计划跟实例1的相同
         jdbc1.update(
-                "delete from " + tbName1 + " where id<=" + changeNum + ";" );
+                "delete from " + tbName1 + " where id<=" + changeRecordsNum + ";" );
 
         // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
         StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain );
 
         // 检查此时查询返回的结果的正确性
         List< String > expCount = new ArrayList<>();
+        expCount.add( String.valueOf( insertRecordsNum ) );
         List< String > actCount1 = jdbc1
                 .query( "select count(*) from " + tbName1 + ";" );
         List< String > actCount2 = jdbc2
                 .query( "select count(*) from " + tbName1 + ";" );
-        expCount.add( String.valueOf( num ) );
         Assert.assertEquals( actCount1, expCount );
         Assert.assertEquals( actCount2, expCount );
     }
@@ -136,7 +138,6 @@ public class StatsFlush26628 extends MysqlTestBase {
     public void tearDown() throws Exception {
         try {
             jdbc1.dropDatabase( dbName );
-            jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
             jdbc1.update( "set debug = default;" );

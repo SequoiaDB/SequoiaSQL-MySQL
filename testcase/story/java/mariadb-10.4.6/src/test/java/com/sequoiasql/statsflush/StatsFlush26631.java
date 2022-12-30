@@ -35,6 +35,10 @@ public class StatsFlush26631 extends MysqlTestBase {
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc2 = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
+            if ( !jdbc1.query( "select version();" ).toString()
+                    .contains( "debug" ) ) {
+                throw new SkipException( "package is release skip testcase" );
+            }
             if ( sdb.isCollectionSpaceExist( dbName ) ) {
                 sdb.dropCollectionSpace( dbName );
             }
@@ -59,12 +63,12 @@ public class StatsFlush26631 extends MysqlTestBase {
     public void test() throws Exception {
         String tbName1 = "tb_26631_1";
         String tbName2 = "tb_26631_2";
-        int num = 600;
-        int changeNum = 500001;
+        int insertRecordsNum = 600;
+        int changeRecordsNum = 500001;
         if ( jdbc1.query( "select version();" ).toString()
                 .contains( "debug" ) ) {
             jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
-            changeNum = 51;
+            changeRecordsNum = 51;
         }
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
@@ -80,12 +84,10 @@ public class StatsFlush26631 extends MysqlTestBase {
         jdbc1.update( "create table " + tbName2 + "(\n"
                 + "  id int not null auto_increment,\n" + "  primary key(id)\n"
                 + "  ) ;" );
-        for ( int i = 0; i < num + 1; i++ ) {
-            jdbc1.update( "insert into " + tbName2 + " values(null); " );
-        }
+        StatsFlushUtils.insertData2( jdbc1, tbName2, insertRecordsNum + 1 );
 
         // 插入数据，数据量小于1000
-        StatsFlushUtils.insertData( jdbc1, tbName1, num );
+        StatsFlushUtils.insertData1( jdbc1, tbName1, insertRecordsNum );
 
         // 查看两个实例的查询计划,此时两个实例查出的查询计划相同；
         String queryExplain = "explain select alias1.cust_no from " + tbName1
@@ -93,38 +95,37 @@ public class StatsFlush26631 extends MysqlTestBase {
                 + "    join " + tbName2 + " as alias3\n"
                 + "    on alias2.cust_no\n" + "    on alias1.prdt_no\n"
                 + "    where alias1.id and alias1.id<3 or alias1.id and alias3.id ;";
-        ArrayList< String > explainList1 = StatsFlushUtils.getExplain( jdbc1,
-                queryExplain );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain ) );
+        ArrayList< String > explainList1 = jdbc1.query( queryExplain );
+        Assert.assertEquals( jdbc1.< Character > query( queryExplain ),
+                jdbc2.< Character > query( queryExplain ) );
 
         // 其中一个实例做update，操作匹配到的记录数超过50，但实际记录未发生改变；
         jdbc1.update( "update " + tbName1 + " set cust_no=\"123\" where id >"
-                + changeNum * 14 + " and id<=" + changeNum * 15 + ";" );
-        Thread.sleep( 4000 );
+                + changeRecordsNum * 14 + " and id<=" + changeRecordsNum * 15 + ";" );
+        StatsFlushUtils.waitStatsFlush( jdbc1 );
         // 查看实例1、2中查询表tbName1的访问计划没有改变
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain ) );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain ),
+        Assert.assertEquals( jdbc1.< Character > query( queryExplain ),
+                jdbc2.< Character > query( queryExplain ) );
+        Assert.assertEquals( jdbc1.< Character > query( queryExplain ),
                 explainList1 );
 
         // 其中一个实例做delete，操作匹配到的记录数超过50，但实际记录未发生改变；
-        jdbc1.update( "delete from " + tbName1 + " where id >" + changeNum * 14
-                + " and id<=" + changeNum * 15 + ";" );
-        Thread.sleep( 4000 );
+        jdbc1.update( "delete from " + tbName1 + " where id >" + changeRecordsNum * 14
+                + " and id<=" + changeRecordsNum * 15 + ";" );
+        StatsFlushUtils.waitStatsFlush( jdbc1 );
         // 查看实例1、2中查询表tbName1的访问计划没有改变
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain ) );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain ),
+        Assert.assertEquals( jdbc1.< Character > query( queryExplain ),
+                jdbc2.< Character > query( queryExplain ) );
+        Assert.assertEquals( jdbc1.< Character > query( queryExplain ),
                 explainList1 );
 
         // 检查此时查询返回的结果的正确性
         List< String > expCount = new ArrayList<>();
+        expCount.add( String.valueOf( insertRecordsNum ) );
         List< String > actCount1 = jdbc1
                 .query( "select count(*) from " + tbName1 + ";" );
         List< String > actCount2 = jdbc2
                 .query( "select count(*) from " + tbName1 + ";" );
-        expCount.add( String.valueOf( num ) );
         Assert.assertEquals( actCount1, expCount );
         Assert.assertEquals( actCount2, expCount );
     }
@@ -133,7 +134,6 @@ public class StatsFlush26631 extends MysqlTestBase {
     public void tearDown() throws Exception {
         try {
             jdbc1.dropDatabase( dbName );
-            jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
             jdbc1.update( "set debug = default;" );

@@ -65,8 +65,8 @@ public class StatsFlush26636 extends MysqlTestBase {
         String tbName2 = "tb_26636_2";
         String tbName3 = "tb_26636_3";
         String tbName4 = "tb_26636_4";
-        int num = 600;
-        int changNum = 5;
+        int insertRecordsNum = 600;
+        int changeRecordsNum = 5;
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -92,14 +92,12 @@ public class StatsFlush26636 extends MysqlTestBase {
         jdbc1.update( "create table " + tbName4 + "(\n"
                 + "  id int not null auto_increment,\n" + "  primary key(id)\n"
                 + "  ) ;" );
-        for ( int i = 0; i < num + 1; i++ ) {
-            jdbc1.update( "insert into " + tbName2 + " values(null); " );
-            jdbc1.update( "insert into " + tbName4 + " values(null); " );
-        }
+        StatsFlushUtils.insertData2( jdbc1, tbName2, insertRecordsNum + 1 );
+        StatsFlushUtils.insertData2( jdbc1, tbName4, insertRecordsNum + 1 );
 
         // 插入数据
-        StatsFlushUtils.insertData( jdbc1, tbName1, num );
-        StatsFlushUtils.insertData( jdbc1, tbName3, num );
+        StatsFlushUtils.insertData1( jdbc1, tbName1, insertRecordsNum );
+        StatsFlushUtils.insertData1( jdbc1, tbName3, insertRecordsNum );
 
         // 查看两个实例的查询计划,此时两个实例查出的查询计划一致；
         String queryExplain1 = "explain select alias1.cust_no from " + tbName1
@@ -112,10 +110,10 @@ public class StatsFlush26636 extends MysqlTestBase {
                 + "    join " + tbName4 + " as alias3\n"
                 + "    on alias2.cust_no\n" + "    on alias1.prdt_no\n"
                 + "    where alias1.id and alias1.id<3 or alias1.id and alias3.id ;";
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain1 ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain1 ) );
-        Assert.assertEquals( StatsFlushUtils.getExplain( jdbc1, queryExplain2 ),
-                StatsFlushUtils.getExplain( jdbc2, queryExplain2 ) );
+        Assert.assertEquals( jdbc1.< Character > query( queryExplain1 ),
+                jdbc2.< Character > query( queryExplain1 ) );
+        Assert.assertEquals( jdbc1.< Character > query( queryExplain2 ),
+                jdbc2.< Character > query( queryExplain2 ) );
         String[] explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1,
                 queryExplain1, 1 );
         Assert.assertEquals( explainInfo1[ 2 ], "alias2" );
@@ -124,7 +122,7 @@ public class StatsFlush26636 extends MysqlTestBase {
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
 
         // 在实例1中向表tbName1插入数据，使实例1中查询表tbName1的访问计划改变
-        StatsFlushUtils.insertData( jdbc1, tbName1, changNum );
+        StatsFlushUtils.insertData1( jdbc1, tbName1, changeRecordsNum );
         explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain1,
                 1 );
         Assert.assertEquals( explainInfo1[ 2 ], "alias3" );
@@ -138,7 +136,7 @@ public class StatsFlush26636 extends MysqlTestBase {
 
         // 两次crud操作间隔快到达sequoiadb_stats_flush_time_threshold阈值时，用户做analyze操作
         jdbc1.query( "select * from " + tbName1 + " where id>10 and id<20;" );
-        Thread.sleep( 8000 );
+        StatsFlushUtils.waitStatsFlush( jdbc1 );
         jdbc1.query( "select * from " + tbName1 + " where id>10 and id<20;" );
         jdbc1.update( "analyze table " + tbName1 + ";" );
         jdbc1.update( "analyze table " + tbName2 + ";" );
@@ -146,7 +144,7 @@ public class StatsFlush26636 extends MysqlTestBase {
         StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain1 );
 
         // 在实例1中向表tbName3插入数据，使实例1中查询表tbName3的访问计划改变
-        StatsFlushUtils.insertData( jdbc1, tbName3, changNum );
+        StatsFlushUtils.insertData1( jdbc1, tbName3, changeRecordsNum );
         explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain2,
                 1 );
         Assert.assertEquals( explainInfo1[ 2 ], "alias3" );
@@ -155,7 +153,7 @@ public class StatsFlush26636 extends MysqlTestBase {
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
         // 两次crud操作间隔快到达sequoiadb_stats_flush_time_threshold阈值时，用户做flush操作
         jdbc1.query( "select * from " + tbName3 + " where id>10 and id<20;" );
-        Thread.sleep( 8000 );
+        StatsFlushUtils.waitStatsFlush( jdbc1 );
         jdbc1.query( "select * from " + tbName3 + " where id>10 and id<20;" );
         jdbc1.update( "flush table " + tbName3 + ";" );
         jdbc1.update( "flush table " + tbName4 + ";" );
@@ -164,6 +162,7 @@ public class StatsFlush26636 extends MysqlTestBase {
 
         // 检查查询返回的结果的正确性
         List< String > expCount = new ArrayList<>();
+        expCount.add( String.valueOf( insertRecordsNum + changeRecordsNum ) );
         List< String > actCount1 = jdbc1
                 .query( "select count(*) from " + tbName1 + ";" );
         List< String > actCount2 = jdbc2
@@ -172,7 +171,8 @@ public class StatsFlush26636 extends MysqlTestBase {
                 .query( "select count(*) from " + tbName3 + ";" );
         List< String > actCount4 = jdbc2
                 .query( "select count(*) from " + tbName3 + ";" );
-        expCount.add( String.valueOf( num + changNum ) );
+        Assert.assertEquals( actCount1, expCount );
+        Assert.assertEquals( actCount2, expCount );
         Assert.assertEquals( actCount3, expCount );
         Assert.assertEquals( actCount4, expCount );
     }
@@ -181,7 +181,6 @@ public class StatsFlush26636 extends MysqlTestBase {
     public void tearDown() throws Exception {
         try {
             jdbc1.dropDatabase( dbName );
-            jdbc2.dropDatabase( dbName );
         } finally {
             // 关闭连接
             jdbc1.update( "set debug = default;" );

@@ -14,12 +14,7 @@ public class StatsFlushUtils extends MysqlTestBase {
         return explainList.get( lineIndex ).split( "\\|" );
     }
 
-    public static ArrayList< String > getExplain( JdbcInterface jdbc,
-            String sql ) throws SQLException {
-        return jdbc.query( sql );
-    }
-
-    public static void insertData( JdbcInterface jdbc, String tableName,
+    public static void insertData1( JdbcInterface jdbc, String tableName,
             int num ) throws SQLException {
         String sql = "insert into " + tableName
                 + " values (null,\"123\",\"123\")";
@@ -30,22 +25,41 @@ public class StatsFlushUtils extends MysqlTestBase {
         jdbc.update( sql );
     }
 
+    public static void insertData2( JdbcInterface jdbc, String tableName,
+            int num ) throws SQLException {
+        String sql = "insert into " + tableName + " values (null)";
+        for ( int i = 1; i < num; i++ ) {
+            sql = sql + ",(null)";
+        }
+        sql = sql + ";";
+        jdbc.update( sql );
+    }
+
     public static void checkExplain( JdbcInterface jdbc1, JdbcInterface jdbc2,
             String queryExplain )
             throws TimeoutException, InterruptedException, SQLException {
         int retry = 0;
-        ArrayList< String > explain1 = getExplain( jdbc1, queryExplain );
-        ArrayList< String > explain2 = getExplain( jdbc2, queryExplain );
+        ArrayList< String > explain1 = jdbc1.query( queryExplain );
+        ArrayList< String > explain2 = jdbc2.query( queryExplain );
         while ( !explain1.toString().equals( explain2.toString() ) ) {
             // 计时超过预期时间后两个实例查到的访问计划还没有统一则抛异常
             retry = retry + 1;
-            if ( retry > 3 ) {
+            if ( retry > 24 ) {
                 throw new TimeoutException( "retry timed out." );
             }
             // HAPendingLog的记录没有被完全清除则休眠4s再进入下一次循环
-            Thread.sleep( 4000 );
-            explain1 = getExplain( jdbc1, queryExplain );
-            explain2 = getExplain( jdbc2, queryExplain );
+            Thread.sleep( 500 );
+            explain1 = jdbc1.query( queryExplain );
+            explain2 = jdbc2.query( queryExplain );
         }
+    }
+
+    public static void waitStatsFlush( JdbcInterface jdbc )
+            throws SQLException {
+        jdbc.update( "drop table if exists tmp_t1 ;" );
+        jdbc.update( "create table tmp_t1(id int) ;" );
+        jdbc.update( "set session server_ha_wait_sync_timeout=10;" );
+        jdbc.update( "flush table t1 ;" );
+        jdbc.update( "set session server_ha_wait_sync_timeout=default;" );
     }
 }
