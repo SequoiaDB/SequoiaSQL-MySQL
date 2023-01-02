@@ -174,27 +174,19 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	200	Using filesort
 SELECT * FROM (SELECT * FROM t1 ORDER BY col_int + 1 LIMIT 7) AS dt;
 col_int_key	col_varchar_10	col_int	col_varchar_10_key	col_varchar_16	col_varchar_16_key	pk
-9	o	NULL	NULL	the	really	42
-NULL	u	NULL	j	the	k	26
 3	g	NULL	q	something	w	28
 8	NULL	NULL	NULL	NULL	p	27
 9	about	NULL	r	NULL	NULL	19
-NULL	v	NULL	m	y	had	47
+9	o	NULL	NULL	the	really	42
 NULL	NULL	NULL	y	b	NULL	45
+NULL	u	NULL	j	the	k	26
+NULL	v	NULL	m	y	had	47
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	200	
 2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	200	Using pushed GROUP BY; Storage engine handles access type
 SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
-col_int_key	col_varchar_10	col_int	col_varchar_10_key	col_varchar_16	col_varchar_16_key	pk
-0	i	NULL	NULL	NULL	i	199
-629604352	q	-2067595264	she	right	go	30
-3	NULL	-2044526592	e	x	y	41
-8	NULL	-1991376896	NULL	s	time	22
-1455292416	v	-1987248128	i	u	he	113
-1611137024	NULL	-1925840896	y	y	l	31
-NULL	say	-1810497536	m	can	x	179
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "col_int": { "$first": "$col_int" }, "_id": { "col_int": "$col_int" }, "col_int_key": { "$first": "$col_int_key" }, "col_varchar_10": { "$first": "$col_varchar_10" }, "col_varchar_10_key": { "$first": "$col_varchar_10_key" }, "col_varchar_16": { "$first": "$col_varchar_16" }, "col_varchar_16_key": { "$first": "$col_varchar_16_key" }, "pk": { "$first": "$pk" } } }], sort[{ "$sort": { "col_int": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int + 1) AS dt LIMIT 7;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -439,27 +431,19 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	200	Using filesort
 SELECT * FROM (SELECT * FROM t1 ORDER BY col_int + 1 LIMIT 7) AS dt;
 col_int_key	col_varchar_10	col_int	col_varchar_10_key	col_varchar_16	col_varchar_16_key	pk
-9	o	NULL	NULL	the	really	42
-NULL	u	NULL	j	the	k	26
 3	g	NULL	q	something	w	28
 8	NULL	NULL	NULL	NULL	p	27
 9	about	NULL	r	NULL	NULL	19
-NULL	v	NULL	m	y	had	47
+9	o	NULL	NULL	the	really	42
 NULL	NULL	NULL	y	b	NULL	45
+NULL	u	NULL	j	the	k	26
+NULL	v	NULL	m	y	had	47
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	200	
 2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	200	Using pushed GROUP BY; Storage engine handles access type
 SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
-col_int_key	col_varchar_10	col_int	col_varchar_10_key	col_varchar_16	col_varchar_16_key	pk
-0	i	NULL	NULL	NULL	i	199
-629604352	q	-2067595264	she	right	go	30
-3	NULL	-2044526592	e	x	y	41
-8	NULL	-1991376896	NULL	s	time	22
-1455292416	v	-1987248128	i	u	he	113
-1611137024	NULL	-1925840896	y	y	l	31
-NULL	say	-1810497536	m	can	x	179
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "col_int": { "$first": "$col_int" }, "_id": { "col_int": "$col_int" }, "col_int_key": { "$first": "$col_int_key" }, "col_varchar_10": { "$first": "$col_varchar_10" }, "col_varchar_10_key": { "$first": "$col_varchar_10_key" }, "col_varchar_16": { "$first": "$col_varchar_16" }, "col_varchar_16_key": { "$first": "$col_varchar_16_key" }, "pk": { "$first": "$pk" } } }], sort[{ "$sort": { "col_int": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int + 1) AS dt LIMIT 7;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra

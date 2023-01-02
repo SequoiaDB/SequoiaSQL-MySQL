@@ -46,11 +46,14 @@ SELECT * FROM (SELECT * FROM t1 ORDER BY col_int LIMIT 7) AS dt;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 EXPLAIN SELECT * FROM (SELECT * FROM t1 ORDER BY col_int + 1 LIMIT 7) AS dt;
+--sorted_result
 SELECT * FROM (SELECT * FROM t1 ORDER BY col_int + 1 LIMIT 7) AS dt;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
+--disable_result_log
 SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
+--enable_result_log
 --source include/query_pushdown_condition_sequoiadb.inc
 
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int + 1) AS dt LIMIT 7;
