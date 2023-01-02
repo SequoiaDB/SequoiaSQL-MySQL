@@ -57,13 +57,16 @@ select col1, row_number() over w as 'row_number', rank() over w as 'rank' from t
 # explain && analyze
 # optimizer_switch
 explain select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
+select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 explain format = json select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 analyze select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
+select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 # "r_total_time_ms" is hard to test
 # analyze format = json select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 set session optimizer_switch='optimizer_sort_pushdown=off';
 --replace_column 9 #
 explain select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
+select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 
 #
 #seqDB-28513:存储过程中的单表查询测试
