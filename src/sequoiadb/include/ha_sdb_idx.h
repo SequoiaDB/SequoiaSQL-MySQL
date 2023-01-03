@@ -172,6 +172,9 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl,
 int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,
                       bool secondary_sort_oid);
 
+bool sdb_is_key_buf_same(KEY *key_info, const key_range *key1,
+                         const key_range *key2);
+
 /*
   type: index scan type
     1: advance to the first record of same value.
