@@ -4469,6 +4469,7 @@ ha_rows ha_sdb::multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
                                          uint *flags, Cost_estimate *cost) {
   ha_rows rows = 0;
   sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
+  DBUG_ASSERT(m_idx_access_method_array != NULL);
 
   rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, key_parts,
                                         bufsz, flags, cost);
@@ -4545,6 +4546,7 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   KEY_MULTI_RANGE range;
   sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
 
+  DBUG_ASSERT(m_idx_access_method_array != NULL);
   /*
     n_ranges_arg is 0 if the caller can't efficiently determine it,
     then we have to count it ourselves.
@@ -4627,6 +4629,7 @@ ha_rows ha_sdb::multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
                                          Cost_estimate *cost) {
   ha_rows rows = 0;
   sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
+  DBUG_ASSERT(m_idx_access_method_array != NULL);
 
   /* Get cost/flags/mem_usage of default MRR implementation */
   rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags,
@@ -4700,6 +4703,7 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   KEY_MULTI_RANGE range;
   sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
 
+  DBUG_ASSERT(m_idx_access_method_array != NULL);
   /*
     n_ranges_arg is 0 if the caller can't efficiently determine it,
     then we have to count it ourselves.
@@ -5114,6 +5118,8 @@ int ha_sdb::multi_range_read_init_v2(RANGE_SEQ_IF *seq, void *seq_init_param,
                                      uint n_ranges, uint mode,
                                      HANDLER_BUFFER *buf) {
   DBUG_ENTER("ha_sdb::multi_range_read_init()");
+  DBUG_ASSERT(m_idx_access_method_array != NULL);
+
   int rc = 0;
   bool is_mrr_assoc = false;
   uint key_length = 0;
@@ -11530,6 +11536,8 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
   @return true cannot be pushed
 */
 bool ha_sdb::filesort_push(const ORDER *order) {
+  DBUG_ASSERT(m_idx_access_method_array != NULL);
+
   bool rs = true;
   THD *thd = ha_thd();
   KEY *key_info = NULL;
