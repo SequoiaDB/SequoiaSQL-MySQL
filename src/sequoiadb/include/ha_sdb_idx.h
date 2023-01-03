@@ -39,21 +39,29 @@ inline const char *sdb_idx_access_method2str(sdb_idx_access_method method) {
   switch (method) {
     case IDX_ACCESS_DEFAULT: {
       str = "default";
+      break;
     }
     case IDX_ACCESS_USING_IN: {
       str = "using $in";
+      break;
     }
     case IDX_ACCESS_USING_RANGE: {
       str = "using $Range";
+      break;
     }
     case IDX_ACCESS_USING_RANGE_EQUAL: {
       str = "using $Range for all equal";
+      break;
     }
     case IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL: {
       str = "using $Range for all equal(maybe null)";
+      break;
     }
     case IDX_ACCESS_UNKNOWN:
-    default: { str = "unknown"; }
+    default: {
+      str = "unknown";
+      break;
+    }
   }
   return str;
 }
