@@ -34,3 +34,4 @@ DROP TABLE limit_sequoiadb;
 DROP view limit_sequoiadb_view;
 
 --source include/uninstall_sequoiadb.inc
+

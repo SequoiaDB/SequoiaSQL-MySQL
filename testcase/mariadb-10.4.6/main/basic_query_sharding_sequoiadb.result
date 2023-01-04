@@ -1412,9 +1412,10 @@ one	^
 two	=
 SELECT * FROM t1 WHERE a <= LCASE('h') AND a >= UCASE('t');
 a	b
-abcdefg	z
+
 VVV	
-abc	 
+abc	
+abcdefg	z
 four	N
 SELECT * FROM t1 WHERE SUBSTRING(a,1,2) <> 'bc' AND MID(a,2,1) < 'o';
 a	b
@@ -1439,23 +1440,24 @@ abcdefg	z
 four	N
 SELECT * FROM t1 WHERE a > REPEAT('g',10);
 a	b
-one	^
 hello	X
 monty		
-www.sequoiadb.com	k
+one	^
 two	=
+www.sequoiadb.com	k
 SELECT * FROM t1 WHERE a > CONCAT_WS('com','.','sequoiadb');
 a	b
-one	^
+
 456	
+VVV	
+abc	
 abcdefg	z
+four	N
 hello	X
 monty		
-www.sequoiadb.com	k
-VVV	
-abc	 
-four	N
+one	^
 two	=
+www.sequoiadb.com	k
 SELECT DISTINCT a FROM t1 WHERE ELT(a, 'ab') IS NOT NULL;
 a
  01
@@ -1723,8 +1725,8 @@ d	dt	tm
 2010-07-15	2001-06-06 01:01:01	48:00:00
 SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59');
 d	tm
-2006-01-01	-24:00:00
 2019-01-01	-48:00:00
+2006-01-01	-24:00:00
 Warnings:
 Warning	1292	Truncated incorrect DECIMAL value: '837:59:59'
 Warning	1292	Truncated incorrect DECIMAL value: '837:59:59'
@@ -1888,9 +1890,9 @@ SELECT d,dt,tm FROM t1 WHERE ADDTIME(tm, '20:40:00') > '40:00:00' AND SUBTIME(tm
 d	dt	tm
 SELECT * FROM t1 WHERE tm > MAKETIME(30,25,7);
 d	dt	t	tm
-2010-07-15	2001-06-06 01:01:01	2010-03-05 11:08:02	48:00:00
 1999-11-30	2011-01-20 01:00:00	2001-01-01 00:00:00	100:55:50
 2007-08-01	2038-01-19 12:14:07	2010-02-01 09:31:01	300:55:50
+2010-07-15	2001-06-06 01:01:01	2010-03-05 11:08:02	48:00:00
 DROP TABLE t1;
 CREATE TABLE t1 (a INT key, b MEDIUMINT, c DECIMAL(60,30), d DOUBLE);
 INSERT INTO t1 VALUES (1,4,12.12,4.551),(10,6,11.11,4.55),(22,21,123.123,3.14),(34,30,12345.12345,3.14135),(14,10,100.1,111.551),(9,9,9.9,99.341),(30,31,34.67,14.001),(101,100,234.354,678.1),(89,89,90.89,90.99),(13,21,21.3,-34.01
@@ -2810,8 +2812,8 @@ NULL
 2021-01-07
 Warnings:
 Warning	1292	Incorrect datetime value: '1990030'
-Warning	1292	Incorrect datetime value: '2015093'
 Warning	1292	Incorrect datetime value: '2093110'
+Warning	1292	Incorrect datetime value: '2015093'
 SET SQL_MODE = 'ONLY_FULL_GROUP_BY';
 SELECT MAX(a)-MIN(a) FROM t1 GROUP BY b;
 MAX(a)-MIN(a)
