@@ -378,6 +378,7 @@ SELECT * FROM t1 WHERE POSITION('b' IN a) < 5;
 #SEQUOIASQLMAINSTREAM-206
 #--sorted_result
 #SELECT * FROM t1 WHERE LEFT(a,2) > 'h' AND LEFT(a,3) > 'd';
+--sorted_result
 SELECT * FROM t1 WHERE a <= LCASE('h') AND a >= UCASE('t');
 --sorted_result
 SELECT * FROM t1 WHERE SUBSTRING(a,1,2) <> 'bc' AND MID(a,2,1) < 'o';
@@ -386,7 +387,9 @@ SELECT * FROM t1 WHERE SUBSTRING(a,1,2) <> 'bc' AND MID(a,2,1) < 'o';
 #SELECT * FROM t1 WHERE SUBSTRING_INDEX(a,'.',1) > 'hello';
 --sorted_result
 SELECT a,b FROM t1 WHERE LTRIM(a) <= 'four' and RTRIM(a) >= '456';
+--sorted_result
 SELECT * FROM t1 WHERE a > REPEAT('g',10);
+--sorted_result
 SELECT * FROM t1 WHERE a > CONCAT_WS('com','.','sequoiadb');
 #SEQUOIASQLMAINSTREM-206
 #--sorted_result
@@ -531,6 +534,7 @@ SELECT * FROM t1 WHERE DATE(d) BETWEEN CAST("2003-1-1" as DATE) AND CAST("2008-1
 SELECT * FROM t1 WHERE MAKEDATE(2002,1) BETWEEN DATE(d) AND DATE(dt);
 --sorted_result
 SELECT d,dt,tm FROM t1 WHERE ADDTIME(tm, '20:40:00') > '40:00:00' AND SUBTIME(tm, '30:23:00') < '-80:00:00';
+--sorted_result
 SELECT * FROM t1 WHERE tm > MAKETIME(30,25,7);
 DROP TABLE t1;
 

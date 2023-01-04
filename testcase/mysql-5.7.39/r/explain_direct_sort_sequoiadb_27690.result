@@ -326,13 +326,13 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` join `explain_direct_sort_27690`.`t2` where (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`)
 select * from t1 join t2 on t1.col1 = t2.col1;
 col1	col2	col3	col4	col1	col2	col3	col4
-2	defg	abd	abd	2	defg	abd	abd
-4	abc	abcdef	xyz	4	abc	abcdef	xyz
-3	abd	def	defg	3	abd	def	defg
 0	abde	xyz	def	0	abde	xyz	def
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
 5	xyz	abc	efg	5	xyz	abc	efg
 6	abcdef	abde	abc	6	abcdef	abde	abc
-1	def	defg	abcdef	1	def	defg	abcdef
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra

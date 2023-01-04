@@ -434,6 +434,7 @@ drop view v1,v2,v3,v4,v5;
 create table t1 (a int, primary key(a));
 insert into t1 values (1), (2), (3);
 create view v1 (x) as select a from t1 where a > 1;
+--sorted_result
 select t1.a, v1.x from t1 left join v1 on (t1.a= v1.x);
 drop table t1;
 drop view v1;

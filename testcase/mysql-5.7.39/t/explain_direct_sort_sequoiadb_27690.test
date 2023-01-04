@@ -103,6 +103,7 @@ select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t
 
 #关联算法为NL
 explain select * from t1 join t2 on t1.col1 = t2.col1;
+--sorted_result
 select * from t1 join t2 on t1.col1 = t2.col1;
 --source include/query_pushdown_condition_sequoiadb.inc
 explain select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1;
