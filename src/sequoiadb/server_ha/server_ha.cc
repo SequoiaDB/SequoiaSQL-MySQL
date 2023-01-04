@@ -46,6 +46,7 @@
 #ifdef IS_MARIADB
 #include "server_ha_sql_rewrite.h"
 #endif
+#include "sql_prepare.h"
 
 // thread local key for ha_sql_stmt_info
 thread_local_key_t ha_sql_stmt_info_key;
@@ -3398,8 +3399,7 @@ error:
   goto done;
 }
 
-inline static bool need_retry_stmt(THD *thd) {
-  int sql_command = thd_sql_command(thd);
+inline static bool need_retry_stmt(int sql_command) {
   bool need_retry = false;
   switch (sql_command) {
     case SQLCOM_REPLACE:
@@ -3420,6 +3420,10 @@ inline static bool need_retry_stmt(THD *thd) {
       break;
   }
   return need_retry;
+}
+
+inline static bool need_retry_stmt(THD *thd) {
+  return need_retry_stmt(thd_sql_command(thd));
 }
 
 static inline bool query_entry(ha_event_class_t event_class,
@@ -3592,6 +3596,23 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
                                           unsigned int event_class,
                                           ha_event_general &event);
 
+static void test_if_prepared_stmt_need_retry(THD *thd, bool &need_retry) {
+  need_retry = false;
+  if (SQLCOM_EXECUTE == thd_sql_command(thd)) {
+#ifdef IS_MYSQL
+    Prepared_statement *stmt = NULL;
+    const LEX_CSTRING &name = thd->lex->prepared_stmt_name;
+#else
+    Statement *stmt = NULL;
+    const LEX_CSTRING *name = &thd->lex->prepared_stmt.name();
+#endif
+    stmt = thd->stmt_map.find_by_name(name);
+    if (stmt) {
+      need_retry = need_retry_stmt(stmt->lex->sql_command);
+    }
+  }
+}
+
 static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
   DBUG_ENTER("set_retry_flag");
   uint mysql_errno = sdb_sql_errno(thd);
@@ -3634,7 +3655,11 @@ static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
     DBUG_VOID_RETURN;
   }
 
-  if (need_retry_stmt(thd) &&
+  bool prepared_statement_need_retry = false;
+  // Test if prepared statement need retry
+  test_if_prepared_stmt_need_retry(thd, prepared_statement_need_retry);
+
+  if ((need_retry_stmt(thd) || prepared_statement_need_retry) &&
       (need_retry_errno(mysql_errno) || version_error) &&
       NULL == sroutine_to_open) {
     SDB_LOG_DEBUG(
