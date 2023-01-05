@@ -189,9 +189,15 @@ void ha_sdb_cond_ctx::update_stat(int rc) {
   List<Sdb_item> tmp_list = item_list;
   Sdb_item *item_tmp = NULL;
   if (SDB_ERR_OK == rc) {
-    if (Item_func::NOT_FUNC == cur_item->type() &&
-        SDB_COND_PART_SUPPORTED == status) {
-      status = SDB_COND_UNSUPPORTED;
+    if (Item_func::NOT_FUNC == cur_item->type()) {
+      if (SDB_COND_PART_SUPPORTED == status) {
+        // Should not prune condition under NOT. It may reduce the search area.
+        status = SDB_COND_UNSUPPORTED;
+      } else if (SDB_COND_SUPPORTED == status) {
+        // If has NOT, the matched area would be expanded. Because $not can
+        // match the NULL value. See SEQUOIASQLMAINSTREAM-1631.
+        status = SDB_COND_PART_SUPPORTED;
+      }
     }
     goto done;
   }
