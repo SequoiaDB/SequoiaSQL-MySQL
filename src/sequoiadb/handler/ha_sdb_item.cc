@@ -1607,11 +1607,30 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
 #ifdef IS_MARIADB
     if (like_item->get_negated()) {
       if (sdb_support_cond_not(current_thd)) {
-        bson::BSONObjBuilder not_builder;
-        bson::BSONArrayBuilder arr_builder(not_builder.subarrayStart("$not"));
-        arr_builder.append(obj);
-        arr_builder.done();
-        obj = not_builder.obj();
+        /*
+          Condition format:
+          {
+            "$and": [ { "$not": [<like cond>] },
+                      { <field>: { "$isnull": 0 } } ]
+          }
+          Here appends { $isnull: 0 } because "$not" can match NULL value.
+          See SEQUOIASQLMAINSTREAM-1632
+        */
+        bson::BSONObjBuilder and_builder;
+        bson::BSONArrayBuilder and_arr_bldr(and_builder.subarrayStart("$and"));
+        bson::BSONObjBuilder not_builder(and_arr_bldr.subobjStart());
+        bson::BSONArrayBuilder not_arr_bldr(not_builder.subarrayStart("$not"));
+        not_arr_bldr.append(obj);
+        not_arr_bldr.done();
+        not_builder.done();
+        bson::BSONObjBuilder field_builder(and_arr_bldr.subobjStart());
+        bson::BSONObjBuilder not_null_builder(
+            field_builder.subobjStart(sdb_item_field_name(item_field)));
+        not_null_builder.append("$isnull", 0);
+        not_null_builder.done();
+        field_builder.done();
+        and_arr_bldr.done();
+        obj = and_builder.obj();
       } else {
         rc = SDB_ERR_COND_UNSUPPORTED;
         goto error;

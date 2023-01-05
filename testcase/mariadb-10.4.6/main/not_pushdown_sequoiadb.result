@@ -40,7 +40,7 @@ a	b	c	d
 6	46	dp	2018-10-02
 7	47	scm	2018-12-04
 8	48	fs	2010-12-04
-[Note] SequoiaDB: Query message: condition[{ "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "c": { "$isnull": 0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
 explain select * from test where c not like "sdb" ;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
@@ -152,7 +152,7 @@ a	b	c	d
 6	46	dp	2018-10-02
 7	47	scm	2018-12-04
 8	48	fs	2010-12-04
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "b": { "$gt": 2 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "c": { "$isnull": 0 } } ] }, { "b": { "$gt": 2 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
 explain select * from test where (not c like "sdb") and b>2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
@@ -185,7 +185,7 @@ a	b	c	d
 6	46	dp	2018-10-02
 7	47	scm	2018-12-04
 8	48	fs	2010-12-04
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "b": { "$gt": 2 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "c": { "$isnull": 0 } } ] }, { "b": { "$gt": 2 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
 explain select * from test where (not c like "sdb") or b>2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
@@ -215,7 +215,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
 select * from test where (not c like "sdb") and (not b<>2);
 a	b	c	d
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "b": { "$et": 2 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "c": { "$isnull": 0 } } ] }, { "b": { "$et": 2 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
 explain select * from test where (not c like "sdb") and (not b<>2);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
@@ -246,7 +246,7 @@ a	b	c	d
 6	46	dp	2018-10-02
 7	47	scm	2018-12-04
 8	48	fs	2010-12-04
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "b": { "$et": 2 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "c": { "$isnull": 0 } } ] }, { "b": { "$et": 2 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
 explain select * from test where (not c like "sdb") or (not b<>2);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
@@ -305,7 +305,7 @@ a	b	c	d
 6	46	dp	2018-10-02
 7	47	scm	2018-12-04
 8	48	fs	2010-12-04
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "b": { "$isnull": 0 } }, { "a": { "$lte": 4 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "$not": [ { "c": { "$regex": "^sdb$", "$options": "s" } } ] }, { "c": { "$isnull": 0 } } ] }, { "b": { "$isnull": 0 } }, { "a": { "$lte": 4 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
 explain select * from test where not (c like "sdb" and b is null and a>4);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
@@ -319,7 +319,7 @@ select * from test where not (c like "s%" or a in (1,2,3));
 a	b	c	d
 6	46	dp	2018-10-02
 8	48	fs	2010-12-04
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$not": [ { "$and": [ { "c": { "$gte": "s" } }, { "c": { "$lt": "sÿ" } } ] } ] }, { "a": { "$nin": [ 1, 2, 3 ] } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$not": [ { "$and": [ { "c": { "$gte": "s" } }, { "c": { "$lt": "sÿ" } } ] } ] }, { "c": { "$isnull": 0 } } ] }, { "a": { "$nin": [ 1, 2, 3 ] } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
 explain select * from test where not (c like "s%" or a in (1,2,3));
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
@@ -334,7 +334,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select * from test where not (c like "s%" or b is null or a>4);
 a	b	c	d
 2	20	123	2022-12-02
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$not": [ { "$and": [ { "c": { "$gte": "s" } }, { "c": { "$lt": "sÿ" } } ] } ] }, { "b": { "$isnull": 0 } }, { "a": { "$lte": 4 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$not": [ { "$and": [ { "c": { "$gte": "s" } }, { "c": { "$lt": "sÿ" } } ] } ] }, { "c": { "$isnull": 0 } } ] }, { "b": { "$isnull": 0 } }, { "a": { "$lte": 4 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28737.test]
 explain select * from test where not (c like "s%" or b is null or a>4);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	test	ALL	NULL	NULL	NULL	NULL	8	Using where with pushed condition
