@@ -20,6 +20,7 @@
 #include "ha_sdb_conf.h"
 #include "ha_sdb_def.h"
 #include "ha_sdb_util.h"
+#include <boost/algorithm/string.hpp>
 
 // Complete the struct declaration
 struct st_mysql_sys_var {
@@ -673,6 +674,7 @@ int ha_sdb_conn_addrs::get_conn_addrs(
     addr_vec.clear();
     for (int i = 0; i < conn_num; ++i) {
       addr_vec.push_back(addrs[i]);
+      boost::trim(addr_vec[i]);
     }
   } catch (std::exception &e) {
     rc = HA_ERR_GENERIC;
