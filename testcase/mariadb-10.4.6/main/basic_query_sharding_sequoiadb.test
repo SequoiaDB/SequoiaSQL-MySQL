@@ -754,6 +754,7 @@ SELECT DISTINCT a, b, c, d, e, f FROM t1 WHERE a > 31 GROUP BY 'const';
 SELECT c DIV 1 AS cc, a FROM t1 GROUP BY cc,a;
 --sorted_result
 SELECT COUNT(DISTINCT(t1.c)), LEFT(d, 256) AS comment FROM t1 LEFT JOIN t2 ON t1.a=t2.a GROUP BY comment;
+--sorted_result
 SELECT DATE(LEFT(e+1,7)) FROM t1 GROUP BY 1;
 SET SQL_MODE = 'ONLY_FULL_GROUP_BY';
 --sorted_result

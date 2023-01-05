@@ -2803,17 +2803,17 @@ COUNT(DISTINCT(t1.c))	comment
 1	yew
 SELECT DATE(LEFT(e+1,7)) FROM t1 GROUP BY 1;
 DATE(LEFT(e+1,7))
-NULL
 2020-01-09
 2020-05-05
 2020-06-06
 2020-08-01
 2020-10-04
 2021-01-07
-Warnings:
+NULL
 Warning	1292	Incorrect datetime value: '1990030'
-Warning	1292	Incorrect datetime value: '2093110'
 Warning	1292	Incorrect datetime value: '2015093'
+Warning	1292	Incorrect datetime value: '2093110'
+Warnings:
 SET SQL_MODE = 'ONLY_FULL_GROUP_BY';
 SELECT MAX(a)-MIN(a) FROM t1 GROUP BY b;
 MAX(a)-MIN(a)
