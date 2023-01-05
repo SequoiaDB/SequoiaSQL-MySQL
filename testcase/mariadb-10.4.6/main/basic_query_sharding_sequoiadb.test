@@ -487,6 +487,7 @@ SELECT * FROM t1 WHERE d > DATE_FORMAT(dt, "%Y-%m-%d");
 --sorted_result
 SELECT d,dt,tm FROM t1 WHERE TIME_FORMAT(tm, '%H') >= 20;
 # SEQUOIASQLMAINSTREAM-607
+--sorted_result
 SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59');
 --sorted_result
 SELECT t,tm FROM t1 WHERE TIME_TO_SEC(tm) > 100000;
