@@ -33,6 +33,6 @@ col_int_key = 5 OR col_int_key IS NULL
 GROUP BY col_int;
 pk	col_int	col_varchar_16	col_int_key	col_varchar_16_key
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 5 } }], selector[{}], order_by[{}], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[group_by_sequoiadb.group_by_sequoiadb]
-[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{}], order_by[{}], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[group_by_sequoiadb.group_by_sequoiadb]
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 5 } }], selector[{}], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[group_by_sequoiadb.group_by_sequoiadb]
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{}], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[group_by_sequoiadb.group_by_sequoiadb]
 drop database group_by_sequoiadb;
