@@ -16,14 +16,54 @@ key idx_col2(col2),
 key idx_col12(col1,col2),
 unique key uniq_idx4(col4)
 );
-insert into t1 values(0,'abc','abc','abc');
-insert into t1 values(1,'abcdef','abcdef','abcdef');
-insert into t1 values(2,'abd','abd','abd');
-insert into t1 values(3,'abde','abde','efg');
-insert into t1 values(4,'def','def','def');
-insert into t1 values(5,'defg','defg','defg');
-insert into t1 values(6,'xyz','xyz','xyz');
+insert into t1 values(2,'defg','abd','abd');
+insert into t1 values(4,'abc','abcdef','xyz');
 insert into t1 values(null,null,null,null);
+insert into t1 values(3,'abd','def','defg');
+insert into t1 values(0,'abde','xyz','def');
+insert into t1 values(5,'xyz','abc','efg');
+insert into t1 values(6,'abcdef','abde','abc');
+insert into t1 values(1,'def','defg','abcdef');
+select * from t1 order by col1;
+col1	col2	col3	col4
+NULL	NULL	NULL	NULL
+0	abde	xyz	def
+1	def	defg	abcdef
+2	defg	abd	abd
+3	abd	def	defg
+4	abc	abcdef	xyz
+5	xyz	abc	efg
+6	abcdef	abde	abc
+select * from t1 order by col2;
+col1	col2	col3	col4
+NULL	NULL	NULL	NULL
+4	abc	abcdef	xyz
+6	abcdef	abde	abc
+3	abd	def	defg
+0	abde	xyz	def
+1	def	defg	abcdef
+2	defg	abd	abd
+5	xyz	abc	efg
+select * from t1 order by col3;
+col1	col2	col3	col4
+NULL	NULL	NULL	NULL
+5	xyz	abc	efg
+4	abc	abcdef	xyz
+2	defg	abd	abd
+6	abcdef	abde	abc
+3	abd	def	defg
+1	def	defg	abcdef
+0	abde	xyz	def
+select * from t1 order by col4;
+col1	col2	col3	col4
+NULL	NULL	NULL	NULL
+6	abcdef	abde	abc
+1	def	defg	abcdef
+2	defg	abd	abd
+0	abde	xyz	def
+3	abd	def	defg
+5	xyz	abc	efg
+4	abc	abcdef	xyz
 create table t2 like t1;
 insert into t2 select * from t1;
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1;
@@ -35,13 +75,13 @@ Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1
 select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1;
 col1	col2	col3	col4	col1	col2	col3	col4
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-0	abc	abc	abc	0	abc	abc	abc
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
-4	def	def	def	4	def	def	def
-5	defg	defg	defg	5	defg	defg	defg
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
+0	abde	xyz	def	0	abde	xyz	def
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+5	xyz	abc	efg	5	xyz	abc	efg
+6	abcdef	abde	abc	6	abcdef	abde	abc
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
@@ -53,13 +93,13 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` on((`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`)) where 1 order by `explain_direct_sort_27690`.`t1`.`col1` desc
 select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
 col1	col2	col3	col4	col1	col2	col3	col4
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-5	defg	defg	defg	5	defg	defg	defg
-4	def	def	def	4	def	def	def
-3	abde	abde	efg	3	abde	abde	efg
-2	abd	abd	abd	2	abd	abd	abd
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-0	abc	abc	abc	0	abc	abc	abc
+6	abcdef	abde	abc	6	abcdef	abde	abc
+5	xyz	abc	efg	5	xyz	abc	efg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+3	abd	def	defg	3	abd	def	defg
+2	defg	abd	abd	2	defg	abd	abd
+1	def	defg	abcdef	1	def	defg	abcdef
+0	abde	xyz	def	0	abde	xyz	def
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
@@ -72,9 +112,9 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` on((`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`)) where (`explain_direct_sort_27690`.`t1`.`col1` between 1 and 3)
 select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3;
 col1	col2	col3	col4	col1	col2	col3	col4
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 3 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
@@ -86,9 +126,9 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` on((`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`)) where (`explain_direct_sort_27690`.`t1`.`col1` between 1 and 3) order by `explain_direct_sort_27690`.`t1`.`col1`
 select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3 order by t1.col1;
 col1	col2	col3	col4	col1	col2	col3	col4
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 3 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
@@ -101,16 +141,16 @@ Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1
 select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2;
 col1	col2	col3	col4	col1	col2	col3	col4
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-0	abc	abc	abc	0	abc	abc	abc
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
-4	def	def	def	4	def	def	def
-5	defg	defg	defg	5	defg	defg	defg
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+0	abde	xyz	def	0	abde	xyz	def
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+5	xyz	abc	efg	5	xyz	abc	efg
+6	abcdef	abde	abc	6	abcdef	abde	abc
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	8	100.00	Using temporary; Using filesort
@@ -119,17 +159,17 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` on(((`explain_direct_sort_27690`.`t2`.`col2` = `explain_direct_sort_27690`.`t1`.`col2`) and (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`))) where 1 order by `explain_direct_sort_27690`.`t1`.`col1` desc,`explain_direct_sort_27690`.`t2`.`col2` desc
 select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
 col1	col2	col3	col4	col1	col2	col3	col4
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-5	defg	defg	defg	5	defg	defg	defg
-4	def	def	def	4	def	def	def
-3	abde	abde	efg	3	abde	abde	efg
-2	abd	abd	abd	2	abd	abd	abd
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-0	abc	abc	abc	0	abc	abc	abc
+6	abcdef	abde	abc	6	abcdef	abde	abc
+5	xyz	abc	efg	5	xyz	abc	efg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+3	abd	def	defg	3	abd	def	defg
+2	defg	abd	abd	2	defg	abd	abd
+1	def	defg	abcdef	1	def	defg	abcdef
+0	abde	xyz	def	0	abde	xyz	def
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	8	100.00	Using filesort
@@ -139,16 +179,16 @@ Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1
 select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col3;
 col1	col2	col3	col4	col1	col2	col3	col4
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-0	abc	abc	abc	0	abc	abc	abc
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
-4	def	def	def	4	def	def	def
-5	defg	defg	defg	5	defg	defg	defg
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+5	xyz	abc	efg	5	xyz	abc	efg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+2	defg	abd	abd	2	defg	abd	abd
+6	abcdef	abde	abc	6	abcdef	abde	abc
+3	abd	def	defg	3	abd	def	defg
+1	def	defg	abcdef	1	def	defg	abcdef
+0	abde	xyz	def	0	abde	xyz	def
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 3 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 0 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 ignore index(idx_col1, idx_col12) on t1.col1 = t2.col1 order by t1.col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	8	100.00	Using temporary; Using filesort
@@ -158,13 +198,13 @@ Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1
 select * from t1 left join t2 ignore index(idx_col1) on t1.col1 = t2.col1 order by t1.col1;
 col1	col2	col3	col4	col1	col2	col3	col4
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-0	abc	abc	abc	0	abc	abc	abc
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
-4	def	def	def	4	def	def	def
-5	defg	defg	defg	5	defg	defg	defg
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
+0	abde	xyz	def	0	abde	xyz	def
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+5	xyz	abc	efg	5	xyz	abc	efg
+6	abcdef	abde	abc	6	abcdef	abde	abc
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
@@ -176,13 +216,13 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` IGNORE INDEX (`idx_col12`) IGNORE INDEX (`idx_col1`) on((`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`)) where 1 order by `explain_direct_sort_27690`.`t1`.`col1` desc
 select * from t1 left join t2 ignore index(idx_col1) on t1.col1 = t2.col1 order by t1.col1 desc;
 col1	col2	col3	col4	col1	col2	col3	col4
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-5	defg	defg	defg	5	defg	defg	defg
-4	def	def	def	4	def	def	def
-3	abde	abde	efg	3	abde	abde	efg
-2	abd	abd	abd	2	abd	abd	abd
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-0	abc	abc	abc	0	abc	abc	abc
+6	abcdef	abde	abc	6	abcdef	abde	abc
+5	xyz	abc	efg	5	xyz	abc	efg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+3	abd	def	defg	3	abd	def	defg
+2	defg	abd	abd	2	defg	abd	abd
+1	def	defg	abcdef	1	def	defg	abcdef
+0	abde	xyz	def	0	abde	xyz	def
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 2 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
@@ -196,16 +236,16 @@ Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1
 select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2;
 col1	col2	col3	col4	col1	col2	col3	col4
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-0	abc	abc	abc	0	abc	abc	abc
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
-4	def	def	def	4	def	def	def
-5	defg	defg	defg	5	defg	defg	defg
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 }, "col2": { "$et": "def" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 }, "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 }, "col2": { "$et": "xyz" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+0	abde	xyz	def	0	abde	xyz	def
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+5	xyz	abc	efg	5	xyz	abc	efg
+6	abcdef	abde	abc	6	abcdef	abde	abc
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 }, "col2": { "$et": "xyz" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 }, "col2": { "$et": "abcdef" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 }, "col2": { "$et": "def" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	8	100.00	Using temporary; Using filesort
@@ -214,17 +254,17 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` IGNORE INDEX (`idx_col2`) IGNORE INDEX (`idx_col1`) on(((`explain_direct_sort_27690`.`t2`.`col2` = `explain_direct_sort_27690`.`t1`.`col2`) and (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`))) where 1 order by `explain_direct_sort_27690`.`t1`.`col1` desc,`explain_direct_sort_27690`.`t2`.`col2` desc
 select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
 col1	col2	col3	col4	col1	col2	col3	col4
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-5	defg	defg	defg	5	defg	defg	defg
-4	def	def	def	4	def	def	def
-3	abde	abde	efg	3	abde	abde	efg
-2	abd	abd	abd	2	abd	abd	abd
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-0	abc	abc	abc	0	abc	abc	abc
+6	abcdef	abde	abc	6	abcdef	abde	abc
+5	xyz	abc	efg	5	xyz	abc	efg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+3	abd	def	defg	3	abd	def	defg
+2	defg	abd	abd	2	defg	abd	abd
+1	def	defg	abcdef	1	def	defg	abcdef
+0	abde	xyz	def	0	abde	xyz	def
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 }, "col2": { "$et": "def" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 }, "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 }, "col2": { "$et": "xyz" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 }, "col2": { "$et": "xyz" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 }, "col2": { "$et": "abcdef" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 }, "col2": { "$et": "def" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 limit 2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	index	NULL	idx_col1	5	NULL	1	100.00	NULL
@@ -234,8 +274,8 @@ Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1
 select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 limit 2;
 col1	col2	col3	col4	col1	col2	col3	col4
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-0	abc	abc	abc	0	abc	abc	abc
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 }, "col2": { "$et": "xyz" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+0	abde	xyz	def	0	abde	xyz	def
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 }, "col2": { "$et": "def" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 0 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc limit 1,2;
@@ -246,8 +286,8 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` on((`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`)) where 1 order by `explain_direct_sort_27690`.`t1`.`col1` desc limit 1,2
 select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc limit 1,2;
 col1	col2	col3	col4	col1	col2	col3	col4
-5	defg	defg	defg	5	defg	defg	defg
-4	def	def	def	4	def	def	def
+5	xyz	abc	efg	5	xyz	abc	efg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
@@ -261,10 +301,10 @@ Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1
 select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2 limit 2;
 col1	col2	col3	col4	col1	col2	col3	col4
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-0	abc	abc	abc	0	abc	abc	abc
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+0	abde	xyz	def	0	abde	xyz	def
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 < 3 order by t1.col1 desc ,t2.col2 desc limit 1,2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	2	100.00	Using where with pushed condition (`explain_direct_sort_27690`.`t1`.`col1` < 3); Using temporary; Using filesort
@@ -273,8 +313,8 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` left join `explain_direct_sort_27690`.`t2` on(((`explain_direct_sort_27690`.`t2`.`col2` = `explain_direct_sort_27690`.`t1`.`col2`) and (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`))) where (`explain_direct_sort_27690`.`t1`.`col1` < 3) order by `explain_direct_sort_27690`.`t1`.`col1` desc,`explain_direct_sort_27690`.`t2`.`col2` desc limit 1,2
 select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 < 3 order by t1.col1 desc ,t2.col2 desc limit 1,2;
 col1	col2	col3	col4	col1	col2	col3	col4
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-0	abc	abc	abc	0	abc	abc	abc
+1	def	defg	abcdef	1	def	defg	abcdef
+0	abde	xyz	def	0	abde	xyz	def
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 0 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
@@ -286,14 +326,14 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` join `explain_direct_sort_27690`.`t2` where (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`)
 select * from t1 join t2 on t1.col1 = t2.col1;
 col1	col2	col3	col4	col1	col2	col3	col4
-0	abc	abc	abc	0	abc	abc	abc
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
-4	def	def	def	4	def	def	def
-5	defg	defg	defg	5	defg	defg	defg
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+0	abde	xyz	def	0	abde	xyz	def
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+5	xyz	abc	efg	5	xyz	abc	efg
+6	abcdef	abde	abc	6	abcdef	abde	abc
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	ALL	idx_col1,idx_col12	NULL	NULL	NULL	8	100.00	Using where with pushed condition (`explain_direct_sort_27690`.`t1`.`col1` is not null); Using filesort
@@ -302,13 +342,13 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` join `explain_direct_sort_27690`.`t2` where (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`) order by `explain_direct_sort_27690`.`t1`.`col1`
 select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1;
 col1	col2	col3	col4	col1	col2	col3	col4
-0	abc	abc	abc	0	abc	abc	abc
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
-4	def	def	def	4	def	def	def
-5	defg	defg	defg	5	defg	defg	defg
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
+0	abde	xyz	def	0	abde	xyz	def
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+3	abd	def	defg	3	abd	def	defg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+5	xyz	abc	efg	5	xyz	abc	efg
+6	abcdef	abde	abc	6	abcdef	abde	abc
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -318,13 +358,13 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` join `explain_direct_sort_27690`.`t2` where (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`) order by `explain_direct_sort_27690`.`t1`.`col1` desc
 select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
 col1	col2	col3	col4	col1	col2	col3	col4
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-5	defg	defg	defg	5	defg	defg	defg
-4	def	def	def	4	def	def	def
-3	abde	abde	efg	3	abde	abde	efg
-2	abd	abd	abd	2	abd	abd	abd
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-0	abc	abc	abc	0	abc	abc	abc
+6	abcdef	abde	abc	6	abcdef	abde	abc
+5	xyz	abc	efg	5	xyz	abc	efg
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+3	abd	def	defg	3	abd	def	defg
+2	defg	abd	abd	2	defg	abd	abd
+1	def	defg	abcdef	1	def	defg	abcdef
+0	abde	xyz	def	0	abde	xyz	def
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 0 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 explain select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -334,14 +374,14 @@ Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_27690`.`t1`.`col1` AS `col1`,`explain_direct_sort_27690`.`t1`.`col2` AS `col2`,`explain_direct_sort_27690`.`t1`.`col3` AS `col3`,`explain_direct_sort_27690`.`t1`.`col4` AS `col4`,`explain_direct_sort_27690`.`t2`.`col1` AS `col1`,`explain_direct_sort_27690`.`t2`.`col2` AS `col2`,`explain_direct_sort_27690`.`t2`.`col3` AS `col3`,`explain_direct_sort_27690`.`t2`.`col4` AS `col4` from `explain_direct_sort_27690`.`t1` join `explain_direct_sort_27690`.`t2` where (`explain_direct_sort_27690`.`t2`.`col1` = `explain_direct_sort_27690`.`t1`.`col1`) order by `explain_direct_sort_27690`.`t1`.`col2`
 select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col2;
 col1	col2	col3	col4	col1	col2	col3	col4
-0	abc	abc	abc	0	abc	abc	abc
-1	abcdef	abcdef	abcdef	1	abcdef	abcdef	abcdef
-2	abd	abd	abd	2	abd	abd	abd
-3	abde	abde	efg	3	abde	abde	efg
-4	def	def	def	4	def	def	def
-5	defg	defg	defg	5	defg	defg	defg
-6	xyz	xyz	xyz	6	xyz	xyz	xyz
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 6 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
+4	abc	abcdef	xyz	4	abc	abcdef	xyz
+6	abcdef	abde	abc	6	abcdef	abde	abc
+3	abd	def	defg	3	abd	def	defg
+0	abde	xyz	def	0	abde	xyz	def
+1	def	defg	abcdef	1	def	defg	abcdef
+2	defg	abd	abd	2	defg	abd	abd
+5	xyz	abc	efg	5	xyz	abc	efg
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27690.t2]
 drop table t1,t2;
 set session optimizer_switch=default;
 set session sequoiadb_debug_log=off;
