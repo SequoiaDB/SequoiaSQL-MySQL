@@ -827,7 +827,7 @@ class ha_sdb : public handler {
   enum thr_lock_type m_lock_type;
   Sdb_cl *collection;
   bool first_read;
-  bool first_info;
+  bool first_analyze;
   bool delete_with_select;
   bool direct_sort;
   bool direct_limit;
