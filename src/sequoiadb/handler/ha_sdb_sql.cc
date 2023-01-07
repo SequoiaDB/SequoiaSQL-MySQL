@@ -503,6 +503,13 @@ void sdb_clear_const_keys(JOIN *join) {
   }
 }
 
+bool sdb_join_is_optimized(JOIN *join) {
+  if (!join) {
+    return false; /* purecov: inspected */
+  }
+  return join->is_optimized();
+}
+
 st_order *sdb_get_join_order_by(JOIN *join) {
   if (!join) {
     return NULL;
@@ -1377,6 +1384,13 @@ void sdb_clear_const_keys(JOIN *join) {
   if (join && join->best_ref[0]) {
     join->best_ref[0]->const_keys.clear_all();
   }
+}
+
+bool sdb_join_is_optimized(JOIN *join) {
+  if (!join) {
+    return false; /* purecov: inspected */
+  }
+  return JOIN::NOT_OPTIMIZED != join->optimization_state;
 }
 
 st_order *sdb_get_join_order_by(JOIN *join) {

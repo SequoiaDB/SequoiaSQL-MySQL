@@ -1724,7 +1724,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_lock_type = TL_IGNORE;
   collection = NULL;
   first_read = true;
-  first_info = true;
+  first_analyze = true;
   delete_with_select = false;
   direct_sort = false;
   direct_limit = false;
@@ -2060,7 +2060,7 @@ int ha_sdb::reset() {
   field_order_condition = SDB_EMPTY_BSON;
   group_list_condition = SDB_EMPTY_BSON;
   last_key_value = SDB_EMPTY_BSON;
-  first_info = true;
+  first_analyze = true;
   delete_with_select = false;
   count_query = false;
   m_ignore_dup_key = false;
@@ -7911,6 +7911,7 @@ int ha_sdb::info(uint flag) {
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
   SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+  JOIN *join = NULL;
 
   if (sdb_execute_only_in_mysql(thd)) {
     if (flag & HA_STATUS_VARIABLE) {
@@ -7940,19 +7941,15 @@ int ha_sdb::info(uint flag) {
   }
 #endif
 
-  if (first_info) {
-    SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
-    const bool use_limit = select_lex
-                               ? select_lex->explicit_limit &&
-                                     select_lex->get_limit() != HA_POS_ERROR
-                               : false;
-    m_use_group =
-        select_lex ? (sdb_get_join_group_list(select_lex->join) ? true : false)
-                   : false;
+  if (select_lex && (join = select_lex->join) && sdb_join_is_optimized(join) &&
+      first_analyze) {
+    const bool use_limit =
+        select_lex->explicit_limit && select_lex->get_limit() != HA_POS_ERROR;
+    m_use_group = sdb_get_join_group_list(join) ? true : false;
     if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SORT) &&
-        sdb_check_condition_pushdown_switch(thd) && select_lex) {
-      st_order *order = sdb_get_join_order_by(select_lex->join);
-      st_order *group_list = sdb_get_join_group_list(select_lex->join);
+        sdb_check_condition_pushdown_switch(thd)) {
+      st_order *order = sdb_get_join_order_by(join);
+      st_order *group_list = sdb_get_join_group_list(join);
       if (SQLCOM_SELECT == thd_sql_command(thd) && sdb_is_single_table(thd)) {
         bool has_opt_sort_pushdown = false;
         has_opt_sort_pushdown =
@@ -7984,7 +7981,7 @@ int ha_sdb::info(uint flag) {
         }
       }
     }
-    first_info = false;
+    first_analyze = false;
   }
 
   if (flag & HA_STATUS_VARIABLE) {

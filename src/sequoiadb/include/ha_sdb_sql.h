@@ -371,6 +371,8 @@ sdb_join_type sdb_get_join_type(JOIN *join);
 
 void sdb_clear_const_keys(JOIN *join);
 
+bool sdb_join_is_optimized(JOIN *join);
+
 // About Field
 const char *sdb_field_name(const Field *f);
 
