@@ -212,7 +212,7 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col2": { "$gt": "abc" } }, { "col2": { "$lt": "def" } } ] }], selector[{}], order_by[{ "col2": -1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_direct_sort_27683.t1]
 explain select * from t1 where col2 in ('abc','def','xyz') order by col2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	idx_col2	idx_col2	13	NULL	6	Using where with pushed condition
+1	SIMPLE	t1	range	idx_col2	idx_col2	13	NULL	6	Using where with pushed condition; Using MRR
 select * from t1 where col2 in ('abc','def','xyz') order by col2;
 col1	col2	col3	col4
 0	abc	abcdef	xyz

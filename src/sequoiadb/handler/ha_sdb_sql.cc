@@ -942,6 +942,15 @@ KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
   return key_info;
 }
 
+uint sdb_get_mrr_flag(TABLE *table) {
+  QEP_TAB *qep_tab = table->reginfo.qep_tab;
+  if (qep_tab && qep_tab->quick() &&
+      qep_tab->quick()->get_type() == QUICK_SELECT_I::QS_TYPE_RANGE) {
+    return ((QUICK_RANGE_SELECT *) qep_tab->quick())->mrr_flags;
+  }
+  return 0;
+}
+
 bool sdb_field_default_values_is_null(const Create_field *definition) {
   return (NULL == definition->def);
 }
@@ -1810,6 +1819,17 @@ KEY *sdb_get_join_tab_key_in_use(TABLE *table) {
     }
   }
   return key_info;
+}
+
+uint sdb_get_mrr_flag(TABLE *table) {
+  JOIN_TAB *join_tab = table->reginfo.join_tab;
+  if (join_tab && join_tab->select && join_tab->select->quick) {
+    QUICK_SELECT_I *quick = join_tab->select->quick;
+    if (quick->get_type() == QUICK_SELECT_I::QS_TYPE_RANGE) {
+      return ((QUICK_RANGE_SELECT *) quick)->mrr_flags;
+    }
+  }
+  return 0;
 }
 
 bool sdb_field_default_values_is_null(const Create_field *definition) {
