@@ -1777,7 +1777,6 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_null_rejecting = false;
   m_index_need_sorted = true;
   m_use_group = false;
-  m_idx_access_method_array = NULL;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1793,12 +1792,6 @@ ha_sdb::~ha_sdb() {
     delete sdb_condition;
     sdb_condition = NULL;
   }
-  // Code for safety
-  if (m_idx_access_method_array) {
-    my_free(m_idx_access_method_array); /* purecov: deadcode */
-    m_idx_access_method_array = NULL;   /* purecov: deadcode */
-  }
-
   DBUG_VOID_RETURN;
 }
 
@@ -1869,18 +1862,6 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   if (!share) {
     rc = HA_ERR_OUT_OF_MEM;
     goto error;
-  }
-
-  m_idx_access_method_array = (sdb_idx_access_method *)sdb_my_malloc(
-      PSI_INSTRUMENT_ME, table->s->keys * sizeof(sdb_idx_access_method),
-      MYF(0));
-  if (!m_idx_access_method_array) {
-    rc = HA_ERR_OUT_OF_MEM; /* purecov: inspected */
-    goto error;             /* purecov: inspected */
-  }
-
-  for (uint i = 0; i < table->s->keys; ++i) {
-    m_idx_access_method_array[i] = IDX_ACCESS_UNKNOWN;
   }
 
   thr_lock_data_init(&share->lock, &lock_data, (void *)this);
@@ -2022,10 +2003,6 @@ int ha_sdb::close(void) {
   m_bson_element_cache.release();
 
   tbl_ctx_impl.reset();
-  if (m_idx_access_method_array) {
-    my_free(m_idx_access_method_array);
-    m_idx_access_method_array = NULL;
-  }
   DBUG_RETURN(0);
 }
 
@@ -2100,11 +2077,6 @@ int ha_sdb::reset() {
   m_null_rejecting = false;
   m_index_need_sorted = true;
   m_use_group = false;
-  if (m_idx_access_method_array) {
-    for (uint i = 0; i < table->s->keys; ++i) {
-      m_idx_access_method_array[i] = IDX_ACCESS_UNKNOWN;
-    }
-  }
   DBUG_RETURN(0);
 }
 
@@ -4232,8 +4204,8 @@ bool ha_sdb::is_in_one_query_for_cur_select() {
     }
     case SDB_JOIN_MULTI_RANGE: {
       if (sdb_choose_all_in_mrr_info(ha_thd())) {
-        DBUG_ASSERT(m_method != IDX_ACCESS_UNKNOWN);
-        return (ranges_in_seq <= 1 || m_method != IDX_ACCESS_DEFAULT);
+        return (ranges_in_seq <= 1 ||
+                !(sdb_get_mrr_flag(table) & HA_MRR_USE_DEFAULT_IMPL));
       } else {
         return (ranges_in_seq <= 1 || !m_use_default_impl);
       }
@@ -4427,6 +4399,14 @@ sdb_idx_access_method ha_sdb::choose_idx_access_method(
     *flags &= ~HA_MRR_USE_DEFAULT_IMPL;
   }
 
+  if (IDX_ACCESS_USING_RANGE == method ||
+      IDX_ACCESS_USING_RANGE_EQUAL == method ||
+      IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL == method) {
+    *flags |= SDBMRR_IMPL_USING_RANGE_HINT;
+  } else {
+    *flags &= ~SDBMRR_IMPL_USING_RANGE_HINT;
+  }
+
   *bufsz = 0; /* We do not use the buf mixed.*/
   if (reset_cost) {
     cost->reset();
@@ -4468,16 +4448,12 @@ ha_rows ha_sdb::multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
                                          uint key_parts, uint *bufsz,
                                          uint *flags, Cost_estimate *cost) {
   ha_rows rows = 0;
-  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
-  DBUG_ASSERT(m_idx_access_method_array != NULL);
-
   rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, key_parts,
                                         bufsz, flags, cost);
   DBUG_ASSERT(!rows);
   *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
-  method = choose_idx_access_method(keyno, n_ranges, NULL, NULL, bufsz, flags,
-                                    cost, true);
-  m_idx_access_method_array[keyno] = method;
+  choose_idx_access_method(keyno, n_ranges, NULL, NULL, bufsz, flags, cost,
+                           true);
   return 0;
 }
 
@@ -4544,9 +4520,7 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   ha_rows rows = 0;
   range_seq_t seq_it;
   KEY_MULTI_RANGE range;
-  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
 
-  DBUG_ASSERT(m_idx_access_method_array != NULL);
   /*
     n_ranges_arg is 0 if the caller can't efficiently determine it,
     then we have to count it ourselves.
@@ -4569,9 +4543,8 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   }
 
   *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
-  method = choose_idx_access_method(keyno, ranges_in_seq, seq, seq_init_param,
-                                    bufsz, flags, cost, false);
-  m_idx_access_method_array[keyno] = method;
+  choose_idx_access_method(keyno, ranges_in_seq, seq, seq_init_param, bufsz,
+                           flags, cost, false);
 done:
   return rows;
 error:
@@ -4628,17 +4601,14 @@ ha_rows ha_sdb::multi_range_read_info_v2(uint keyno, uint n_ranges, uint n_rows,
                                          uint *bufsz, uint *flags,
                                          Cost_estimate *cost) {
   ha_rows rows = 0;
-  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
-  DBUG_ASSERT(m_idx_access_method_array != NULL);
 
   /* Get cost/flags/mem_usage of default MRR implementation */
   rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags,
                                         cost);
   assert(!rows);
 
-  method = choose_idx_access_method(keyno, n_rows, NULL, NULL, bufsz, flags,
-                                    cost, true);
-  m_idx_access_method_array[keyno] = method;
+  choose_idx_access_method(keyno, n_ranges, NULL, NULL, bufsz, flags, cost,
+                           true);
   return 0;
 }
 
@@ -4701,9 +4671,7 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   uint def_bufsz = *bufsz;
   range_seq_t seq_it;
   KEY_MULTI_RANGE range;
-  sdb_idx_access_method method = IDX_ACCESS_UNKNOWN;
 
-  DBUG_ASSERT(m_idx_access_method_array != NULL);
   /*
     n_ranges_arg is 0 if the caller can't efficiently determine it,
     then we have to count it ourselves.
@@ -4725,9 +4693,8 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
     goto error;
   }
 
-  method = choose_idx_access_method(keyno, ranges_in_seq, seq, seq_init_param,
-                                    bufsz, flags, cost, false);
-  m_idx_access_method_array[keyno] = method;
+  choose_idx_access_method(keyno, ranges_in_seq, seq, seq_init_param, bufsz,
+                           flags, cost, false);
 done:
   return rows;
 error:
@@ -5118,7 +5085,6 @@ int ha_sdb::multi_range_read_init_v2(RANGE_SEQ_IF *seq, void *seq_init_param,
                                      uint n_ranges, uint mode,
                                      HANDLER_BUFFER *buf) {
   DBUG_ENTER("ha_sdb::multi_range_read_init()");
-  DBUG_ASSERT(m_idx_access_method_array != NULL);
 
   int rc = 0;
   bool is_mrr_assoc = false;
@@ -5140,28 +5106,6 @@ int ha_sdb::multi_range_read_init_v2(RANGE_SEQ_IF *seq, void *seq_init_param,
   m_seq_init_param = seq_init_param;
 
   /*
-    Here ignore the HA_MRR_USE_DEFAULT_IMPL flag. Because to reduce the index
-    sort, the way to check index sort is like:
-    1. At multi_range_read_info_const() we return no HA_MRR_SORTED, to check
-       whether sql layer need the sorted output. Generally no HA_MRR_SORTED
-       means always cannot output result in order, but in fact SDB can.
-    2. SQL layer consider SequoiaDB MRR as not able to output sorted. When
-       SQL layer really need the sort, it would add HA_MRR_USE_DEFAULT_IMPL
-       flag so that the result can be sorted.
-    3. At here, since we have chosen the method at info phase, the result we
-       chosen again must be the same. So do nothing.
-    However, we can check whether the result is the same again for safety.
-  */
-  {
-    sdb_idx_access_method info_result = m_idx_access_method_array[active_index];
-    if (info_result != IDX_ACCESS_UNKNOWN) {
-      sdb_idx_access_method init_result =
-          choose_idx_access_method(active_index, seq, seq_init_param, n_ranges);
-      assert(info_result == init_result);
-    }
-  }
-
-  /*
     Sometimes method is unknown because the multi_range_read_info[_const]()
     cannot choose the right method, or even not called. So we have to do choose
     here.
@@ -5179,11 +5123,13 @@ int ha_sdb::multi_range_read_init_v2(RANGE_SEQ_IF *seq, void *seq_init_param,
        has never called by optimizer. Such as the group min max and index merge
        plan would make MRR inside to help their scan.
   */
-  m_method = m_idx_access_method_array[active_index];
-  if (IDX_ACCESS_UNKNOWN == m_method) {
-    m_method =
-        choose_idx_access_method(active_index, seq, seq_init_param, n_ranges);
-    DBUG_ASSERT(m_method != IDX_ACCESS_UNKNOWN);
+  m_method =
+      choose_idx_access_method(active_index, seq, seq_init_param, n_ranges);
+  assert(m_method != IDX_ACCESS_UNKNOWN);
+  if (m_mode & SDBMRR_IMPL_USING_RANGE_HINT) {
+    assert(IDX_ACCESS_USING_RANGE == m_method ||
+           IDX_ACCESS_USING_RANGE_EQUAL == m_method ||
+           IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL == m_method);
   }
 
   first_read = true;
@@ -11533,8 +11479,6 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
   @return true cannot be pushed
 */
 bool ha_sdb::filesort_push(const ORDER *order) {
-  DBUG_ASSERT(m_idx_access_method_array != NULL);
-
   bool rs = true;
   THD *thd = ha_thd();
   KEY *key_info = NULL;
@@ -11553,7 +11497,8 @@ bool ha_sdb::filesort_push(const ORDER *order) {
        using index.
   */
   if (!(thd_sql_command(thd) == SQLCOM_SELECT &&  // 1)
-        sdb_is_single_table(ha_thd()))) {         // 2)
+        sdb_is_single_table(ha_thd()) &&          // 2)
+        is_in_one_query_for_cur_select())) {      // 3)
     goto done;
   }
 
@@ -11589,17 +11534,7 @@ bool ha_sdb::filesort_push(const ORDER *order) {
   }
 
   // 6)
-  if (key_info) {
-    m_method = m_idx_access_method_array[key_info - table->key_info];
-    if (IDX_ACCESS_USING_RANGE == m_method ||
-        IDX_ACCESS_USING_RANGE_EQUAL == m_method ||
-        IDX_ACCESS_USING_RANGE_EQUAL_MAYBE_NULL == m_method) {
-      goto done;
-    }
-  }
-
-  // 3)
-  if (!is_in_one_query_for_cur_select()) {
+  if (key_info && (sdb_get_mrr_flag(table) & SDBMRR_IMPL_USING_RANGE_HINT)) {
     goto done;
   }
 

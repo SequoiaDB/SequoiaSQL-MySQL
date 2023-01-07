@@ -886,7 +886,6 @@ class ha_sdb : public handler {
   bool m_null_rejecting;
   bool m_index_need_sorted;
   bool m_use_group;
-  sdb_idx_access_method *m_idx_access_method_array;
   sdb_idx_access_method m_method;
 };
 #endif

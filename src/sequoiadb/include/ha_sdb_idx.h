@@ -22,6 +22,8 @@
 #include "sdb_cl.h"
 #include "ha_sdb_conf.h"
 
+#define SDBMRR_IMPL_USING_RANGE_HINT HA_MRR_IMPLEMENTATION_FLAG1
+
 typedef enum sdb_idx_access_method {
   IDX_ACCESS_DEFAULT = 1,       /* Using default implementation of mysql. */
   IDX_ACCESS_USING_IN,          /* Using $in to do index search. */
