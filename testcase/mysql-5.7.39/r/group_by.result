@@ -56,8 +56,8 @@ userid	MIN(t1.score+0.0)
 2	2.0
 SELECT t2.userid, MIN(t1.score+0.0) FROM t1, t2 WHERE t1.userID=t2.userID AND t1.spID=2  GROUP BY t2.userid ORDER BY NULL;
 userid	MIN(t1.score+0.0)
-2	2.0
 1	1.0
+2	2.0
 drop table t1,t2;
 CREATE TABLE t1 (
 PID int(10) unsigned NOT NULL auto_increment,
@@ -206,17 +206,17 @@ INSERT INTO t2 VALUES ('Web Interface','AAAAAAAA-AAA','id0001','','');
 INSERT INTO t2 VALUES ('Host communication','AAAAA','id0001','','');
 select value,description,bug_id from t2 left join t1 on t2.program=t1.product and t2.value=t1.component where program="AAAAA";
 value	description	bug_id
-BBBBBBBBBBBBB - conversion		9
 BBBBBBBBBBBBB - conversion		10
-BBBBBBBBBBBBB - generic		7
-BBBBBBBBBBBBB - generic		14
+BBBBBBBBBBBBB - conversion		9
 BBBBBBBBBBBBB - eeeeeeeee		NULL
-kkkkkkkkkkk lllllllllll		6
-kkkkkkkkkkk lllllllllll		8
-kkkkkkkkkkk lllllllllll		12
-Test Procedures		NULL
+BBBBBBBBBBBBB - generic		14
+BBBBBBBBBBBBB - generic		7
 Documentation		NULL
 Host communication		NULL
+Test Procedures		NULL
+kkkkkkkkkkk lllllllllll		12
+kkkkkkkkkkk lllllllllll		6
+kkkkkkkkkkk lllllllllll		8
 select value,description,COUNT(bug_id) from t2 left join t1 on t2.program=t1.product and t2.value=t1.component where program="AAAAA" group by value;
 value	description	COUNT(bug_id)
 BBBBBBBBBBBBB - conversion		2
@@ -484,8 +484,8 @@ c1.id AND c1.active = 'Yes' LEFT JOIN t3 AS c2 ON m.c2id = c2.id AND
 c2.active = 'Yes' WHERE m.pid=1  AND (c1.id IS NOT NULL OR c2.id IS NOT NULL);
 pid	c1id	c2id	value	id	active	id	active
 1	1	NULL	1	1	Yes	NULL	NULL
-1	NULL	3	3	NULL	NULL	3	Yes
 1	4	NULL	4	4	Yes	NULL	NULL
+1	NULL	3	3	NULL	NULL	3	Yes
 select max(value) from t1 AS m LEFT JOIN t2 AS c1 ON 
 m.c1id = c1.id AND c1.active = 'Yes' LEFT JOIN t3 AS c2 ON m.c2id = 
 c2.id AND c2.active = 'Yes' WHERE m.pid=1  AND (c1.id IS NOT NULL OR c2.id IS 
@@ -1953,23 +1953,23 @@ SUM(alias2.col_varchar_nokey)	field2
 0	6
 0	7
 0	9
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'f'
-Warning	1292	Truncated incorrect DOUBLE value: 'e'
-Warning	1292	Truncated incorrect DOUBLE value: 'p'
-Warning	1292	Truncated incorrect DOUBLE value: 'f'
-Warning	1292	Truncated incorrect DOUBLE value: 'y'
-Warning	1292	Truncated incorrect DOUBLE value: 'p'
-Warning	1292	Truncated incorrect DOUBLE value: 'p'
 Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warning	1292	Truncated incorrect DOUBLE value: 'p'
+Warning	1292	Truncated incorrect DOUBLE value: 'b'
 Warning	1292	Truncated incorrect DOUBLE value: 'd'
+Warning	1292	Truncated incorrect DOUBLE value: 'e'
+Warning	1292	Truncated incorrect DOUBLE value: 'e'
+Warning	1292	Truncated incorrect DOUBLE value: 'f'
+Warning	1292	Truncated incorrect DOUBLE value: 'f'
 Warning	1292	Truncated incorrect DOUBLE value: 'f'
 Warning	1292	Truncated incorrect DOUBLE value: 'p'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warning	1292	Truncated incorrect DOUBLE value: 'e'
 Warning	1292	Truncated incorrect DOUBLE value: 'p'
 Warning	1292	Truncated incorrect DOUBLE value: 'p'
+Warning	1292	Truncated incorrect DOUBLE value: 'p'
+Warning	1292	Truncated incorrect DOUBLE value: 'p'
+Warning	1292	Truncated incorrect DOUBLE value: 'p'
+Warning	1292	Truncated incorrect DOUBLE value: 'p'
+Warning	1292	Truncated incorrect DOUBLE value: 'y'
+Warnings:
 DROP TABLE t1,t2;
 #
 # Bug#12798270: ASSERTION `!TAB->SORTED' FAILED IN JOIN_READ_KEY2

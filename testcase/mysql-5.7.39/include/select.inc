@@ -1902,6 +1902,7 @@ select * from t1 left join (t1 as t2 left join t1 as t3 using (a)) using ( a );
 select * from (t1 as t2 left join t1 as t3 using (a)) natural left join t1;
 select * from t1 natural left join (t1 as t2 left join t1 as t3 using (a));
 # right join on
+--sorted_result
 select * from (t1 as t2 left join t1 as t3 using (a)) right join t1 on t1.a>1;
 --sorted_result
 select * from t1 right join (t1 as t2 left join t1 as t3 using (a)) on t1.a>1;
