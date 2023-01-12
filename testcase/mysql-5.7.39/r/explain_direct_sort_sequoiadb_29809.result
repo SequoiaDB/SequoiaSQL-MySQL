@@ -28,49 +28,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT * FROM t1 ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "24.00"
-    },
-    "ordering_operation": {
-      "using_filesort": true,
-      "cost_info": {
-        "sort_cost": "5.00"
-      },
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "ALL",
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 5,
-        "filtered": "100.00",
-        "pushed_sort": "(`explain_direct_sort_29809`.`t1`.`col_int`)",
-        "cost_info": {
-          "read_cost": "18.00",
-          "eval_cost": "1.00",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "160"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT * FROM t1 ORDER BY col_int;
 col_int	col_varchar_16	col_date	col_date2
 NULL	NULL	NULL	NULL
@@ -85,49 +42,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a')) group by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' GROUP BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "grouping_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "possible_keys": [
-          "col_varchar_16",
-          "col_int"
-        ],
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 2,
-        "filtered": "46.66",
-        "pushed_condition": "((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a'))",
-        "using_pushed_group_by": true,
-        "storage_engine_handles_access_type": true,
-        "cost_info": {
-          "read_cost": "18.53",
-          "eval_cost": "0.47",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "74"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a')) group by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' GROUP BY col_int;
 col_int
 0
@@ -139,54 +53,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` between 0 and 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int BETWEEN 0 AND 1 ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "3.81"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "range",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "rows_examined_per_scan": 2,
-        "rows_produced_per_join": 2,
-        "filtered": "100.00",
-        "pushed_condition": "(`explain_direct_sort_29809`.`t1`.`col_int` between 0 and 1)",
-        "cost_info": {
-          "read_cost": "3.41",
-          "eval_cost": "0.40",
-          "prefix_cost": "3.81",
-          "data_read_per_join": "64"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` between 0 and 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT * FROM t1 WHERE col_int BETWEEN 0 AND 1 ORDER BY col_int;
 col_int	col_varchar_16	col_date	col_date2
 0	b	2020-02-01	2020-01-01
@@ -198,53 +64,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a')) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "9.68"
-    },
-    "ordering_operation": {
-      "using_filesort": true,
-      "cost_info": {
-        "sort_cost": "3.00"
-      },
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "index_merge",
-        "possible_keys": [
-          "col_varchar_16",
-          "col_int"
-        ],
-        "key": "sdb_sort_union(col_int,col_varchar_16)",
-        "key_length": "5,19",
-        "rows_examined_per_scan": 3,
-        "rows_produced_per_join": 3,
-        "filtered": "100.00",
-        "pushed_condition": "((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a'))",
-        "cost_info": {
-          "read_cost": "6.08",
-          "eval_cost": "0.60",
-          "prefix_cost": "6.68",
-          "data_read_per_join": "96"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a')) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' ORDER BY col_int;
 col_int
 0
@@ -256,56 +75,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` = 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int = 1 ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "2.40"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "ref",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "ref": [
-          "const"
-        ],
-        "rows_examined_per_scan": 2,
-        "rows_produced_per_join": 2,
-        "filtered": "100.00",
-        "cost_info": {
-          "read_cost": "2.00",
-          "eval_cost": "0.40",
-          "prefix_cost": "2.40",
-          "data_read_per_join": "64"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` = 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT * FROM t1 WHERE col_int = 1 ORDER BY col_int;
 col_int	col_varchar_16	col_date	col_date2
 1	a	2020-02-02	2020-01-01
@@ -316,55 +85,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` = 1) group by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int = 1 GROUP BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "1.20"
-    },
-    "grouping_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "ref",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "ref": [
-          "const"
-        ],
-        "rows_examined_per_scan": 1,
-        "rows_produced_per_join": 1,
-        "filtered": "100.00",
-        "using_pushed_group_by": true,
-        "using_index": true,
-        "cost_info": {
-          "read_cost": "1.00",
-          "eval_cost": "0.20",
-          "prefix_cost": "1.20",
-          "data_read_per_join": "32"
-        },
-        "used_columns": [
-          "col_int"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` = 1) group by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT col_int FROM t1 WHERE col_int = 1 GROUP BY col_int;
 col_int
 1
@@ -375,57 +95,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` = 1) or isnull(`explain_direct_sort_29809`.`t1`.`col_int`)) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int = 1 OR col_int IS NULL ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "2.80"
-    },
-    "ordering_operation": {
-      "using_filesort": true,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "ref_or_null",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "ref": [
-          "const"
-        ],
-        "rows_examined_per_scan": 4,
-        "rows_produced_per_join": 4,
-        "filtered": "100.00",
-        "pushed_condition": "((`explain_direct_sort_29809`.`t1`.`col_int` = 1) or isnull(`explain_direct_sort_29809`.`t1`.`col_int`))",
-        "cost_info": {
-          "read_cost": "2.00",
-          "eval_cost": "0.80",
-          "prefix_cost": "2.80",
-          "data_read_per_join": "128"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` = 1) or isnull(`explain_direct_sort_29809`.`t1`.`col_int`)) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT * FROM t1 WHERE col_int = 1 OR col_int IS NULL ORDER BY col_int;
 col_int	col_varchar_16	col_date	col_date2
 NULL	NULL	NULL	NULL
@@ -438,52 +107,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int > 1 ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "2.61"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "range",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "rows_examined_per_scan": 4,
-        "rows_produced_per_join": 4,
-        "filtered": "100.00",
-        "pushed_condition": "(`explain_direct_sort_29809`.`t1`.`col_int` > 1)",
-        "using_index": true,
-        "cost_info": {
-          "read_cost": "1.81",
-          "eval_cost": "0.80",
-          "prefix_cost": "2.61",
-          "data_read_per_join": "128"
-        },
-        "used_columns": [
-          "col_int"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT col_int FROM t1 WHERE col_int > 1 ORDER BY col_int;
 col_int
 3
@@ -494,53 +117,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select '1' AS `col_int`,'a' AS `col_varchar_16`,'2020-02-02' AS `col_date`,'2020-01-01' AS `col_date2` from `explain_direct_sort_29809`.`t1` where 1 order by 'a'
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_varchar_16 = 'a' ORDER BY col_varchar_16;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "1.00"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0"
-        ],
-        "access_type": "const",
-        "possible_keys": [
-          "col_varchar_16"
-        ],
-        "key": "col_varchar_16",
-        "used_key_parts": [
-          "col_varchar_16"
-        ],
-        "key_length": "19",
-        "ref": [
-          "const"
-        ],
-        "rows_examined_per_scan": 1,
-        "rows_produced_per_join": 1,
-        "filtered": "100.00",
-        "cost_info": {
-          "read_cost": "0.00",
-          "eval_cost": "0.20",
-          "prefix_cost": "0.00",
-          "data_read_per_join": "32"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select '1' AS `col_int`,'a' AS `col_varchar_16`,'2020-02-02' AS `col_date`,'2020-01-01' AS `col_date2` from `explain_direct_sort_29809`.`t1` where 1 order by 'a'
 SELECT * FROM t1 WHERE col_varchar_16 = 'a' ORDER BY col_varchar_16;
 col_int	col_varchar_16	col_date	col_date2
 1	a	2020-02-02	2020-01-01
@@ -553,83 +129,6 @@ Warnings:
 Warning	1287	'GROUP BY with ASC/DESC' is deprecated and will be removed in a future release. Please use GROUP BY ... ORDER BY ... ASC/DESC instead
 Note	1003	/* select#1 */ select `dt`.`col_varchar_16` AS `col_varchar_16` from (/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) group by `explain_direct_sort_29809`.`t1`.`col_varchar_16` desc limit 4) `dt` where (`dt`.`col_varchar_16` > 'aef') order by `dt`.`col_varchar_16` desc limit 2,2
 EXPLAIN FORMAT = JSON SELECT * FROM (SELECT col_varchar_16 FROM t1 WHERE col_int > 1 GROUP BY col_varchar_16 DESC LIMIT 4) dt WHERE col_varchar_16 >"aef" ORDER BY col_varchar_16 DESC LIMIT 2,2;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "11.50"
-    },
-    "ordering_operation": {
-      "using_filesort": true,
-      "cost_info": {
-        "sort_cost": "1.00"
-      },
-      "table": {
-        "table_name": "dt",
-        "access_type": "ALL",
-        "rows_examined_per_scan": 2,
-        "rows_produced_per_join": 1,
-        "filtered": "50.00",
-        "cost_info": {
-          "read_cost": "10.30",
-          "eval_cost": "0.20",
-          "prefix_cost": "10.50",
-          "data_read_per_join": "24"
-        },
-        "used_columns": [
-          "col_varchar_16"
-        ],
-        "attached_condition": "(`dt`.`col_varchar_16` > 'aef')",
-        "materialized_from_subquery": {
-          "using_temporary_table": true,
-          "dependent": false,
-          "cacheable": true,
-          "query_block": {
-            "select_id": 2,
-            "cost_info": {
-              "query_cost": "19.00"
-            },
-            "grouping_operation": {
-              "using_filesort": false,
-              "table": {
-                "table_name": "t1",
-                "partitions": [
-                  "p0",
-                  "p1",
-                  "p2",
-                  "p3"
-                ],
-                "possible_keys": [
-                  "col_int"
-                ],
-                "rows_examined_per_scan": 5,
-                "rows_produced_per_join": 1,
-                "filtered": "33.33",
-                "pushed_condition": "(`explain_direct_sort_29809`.`t1`.`col_int` > 1)",
-                "using_pushed_group_by": true,
-                "storage_engine_handles_access_type": true,
-                "cost_info": {
-                  "read_cost": "18.67",
-                  "eval_cost": "0.33",
-                  "prefix_cost": "19.00",
-                  "data_read_per_join": "53"
-                },
-                "used_columns": [
-                  "col_int",
-                  "col_varchar_16"
-                ]
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-Warnings:
-Warning	1287	'GROUP BY with ASC/DESC' is deprecated and will be removed in a future release. Please use GROUP BY ... ORDER BY ... ASC/DESC instead
-Note	1003	/* select#1 */ select `dt`.`col_varchar_16` AS `col_varchar_16` from (/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) group by `explain_direct_sort_29809`.`t1`.`col_varchar_16` desc limit 4) `dt` where (`dt`.`col_varchar_16` > 'aef') order by `dt`.`col_varchar_16` desc limit 2,2
 SELECT * FROM (SELECT col_varchar_16 FROM t1 WHERE col_int > 1 GROUP BY col_varchar_16 DESC LIMIT 4) dt WHERE col_varchar_16 >"aef" ORDER BY col_varchar_16 DESC LIMIT 2,2;
 col_varchar_16
 Warnings:
@@ -642,88 +141,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t2`.`col_int` AS `col_int`,(/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_varchar_16` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` < 3) order by `explain_direct_sort_29809`.`t1`.`col_int` limit 0,1) AS `c` from `explain_direct_sort_29809`.`t2`
 EXPLAIN FORMAT = JSON SELECT col_int, (SELECT col_varchar_16 FROM t1 WHERE col_int < 3 ORDER BY col_int LIMIT 0, 1) AS c FROM t2;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "table": {
-      "table_name": "t2",
-      "partitions": [
-        "p0",
-        "p1",
-        "p2",
-        "p3"
-      ],
-      "access_type": "index",
-      "key": "col_int",
-      "used_key_parts": [
-        "col_int"
-      ],
-      "key_length": "5",
-      "rows_examined_per_scan": 5,
-      "rows_produced_per_join": 5,
-      "filtered": "100.00",
-      "using_index": true,
-      "cost_info": {
-        "read_cost": "18.00",
-        "eval_cost": "1.00",
-        "prefix_cost": "19.00",
-        "data_read_per_join": "160"
-      },
-      "used_columns": [
-        "col_int"
-      ]
-    },
-    "select_list_subqueries": [
-      {
-        "dependent": false,
-        "cacheable": true,
-        "query_block": {
-          "select_id": 2,
-          "cost_info": {
-            "query_cost": "19.00"
-          },
-          "ordering_operation": {
-            "using_filesort": false,
-            "table": {
-              "table_name": "t1",
-              "partitions": [
-                "p0",
-                "p1",
-                "p2",
-                "p3"
-              ],
-              "possible_keys": [
-                "col_int"
-              ],
-              "rows_examined_per_scan": 5,
-              "rows_produced_per_join": 1,
-              "filtered": "33.33",
-              "pushed_condition": "(`explain_direct_sort_29809`.`t1`.`col_int` < 3)",
-              "using_pushed_order_by": true,
-              "storage_engine_handles_access_type": true,
-              "cost_info": {
-                "read_cost": "18.67",
-                "eval_cost": "0.33",
-                "prefix_cost": "19.00",
-                "data_read_per_join": "53"
-              },
-              "used_columns": [
-                "col_int",
-                "col_varchar_16"
-              ]
-            }
-          }
-        }
-      }
-    ]
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t2`.`col_int` AS `col_int`,(/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_varchar_16` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` < 3) order by `explain_direct_sort_29809`.`t1`.`col_int` limit 0,1) AS `c` from `explain_direct_sort_29809`.`t2`
 SELECT col_int, (SELECT col_varchar_16 FROM t1 WHERE col_int < 3 ORDER BY col_int LIMIT 0, 1) AS c FROM t2;
 col_int	c
 NULL	b
@@ -740,103 +157,6 @@ NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using tempor
 Warnings:
 Note	1003	(/* select#1 */ select `explain_direct_sort_29809`.`t2`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t2`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t2`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t2`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t2` where `explain_direct_sort_29809`.`t2`.`col_int` order by `explain_direct_sort_29809`.`t2`.`col_varchar_16` limit 3) union (/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` desc limit 3)
 EXPLAIN FORMAT = JSON (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
-EXPLAIN
-{
-  "query_block": {
-    "union_result": {
-      "using_temporary_table": true,
-      "table_name": "<union1,2>",
-      "access_type": "ALL",
-      "query_specifications": [
-        {
-          "dependent": false,
-          "cacheable": true,
-          "query_block": {
-            "select_id": 1,
-            "cost_info": {
-              "query_cost": "19.00"
-            },
-            "ordering_operation": {
-              "using_filesort": false,
-              "table": {
-                "table_name": "t2",
-                "partitions": [
-                  "p0",
-                  "p1",
-                  "p2",
-                  "p3"
-                ],
-                "access_type": "index",
-                "key": "col_varchar_16",
-                "used_key_parts": [
-                  "col_varchar_16"
-                ],
-                "key_length": "19",
-                "rows_examined_per_scan": 3,
-                "rows_produced_per_join": 4,
-                "filtered": "80.00",
-                "cost_info": {
-                  "read_cost": "18.20",
-                  "eval_cost": "0.80",
-                  "prefix_cost": "19.00",
-                  "data_read_per_join": "128"
-                },
-                "used_columns": [
-                  "col_int",
-                  "col_varchar_16",
-                  "col_date",
-                  "col_date2"
-                ],
-                "attached_condition": "`explain_direct_sort_29809`.`t2`.`col_int`"
-              }
-            }
-          }
-        },
-        {
-          "dependent": false,
-          "cacheable": true,
-          "query_block": {
-            "select_id": 2,
-            "cost_info": {
-              "query_cost": "19.00"
-            },
-            "ordering_operation": {
-              "using_filesort": false,
-              "table": {
-                "table_name": "t1",
-                "partitions": [
-                  "p0",
-                  "p1",
-                  "p2",
-                  "p3"
-                ],
-                "rows_examined_per_scan": 5,
-                "rows_produced_per_join": 5,
-                "filtered": "100.00",
-                "using_pushed_order_by": true,
-                "storage_engine_handles_access_type": true,
-                "cost_info": {
-                  "read_cost": "18.00",
-                  "eval_cost": "1.00",
-                  "prefix_cost": "19.00",
-                  "data_read_per_join": "160"
-                },
-                "used_columns": [
-                  "col_int",
-                  "col_varchar_16",
-                  "col_date",
-                  "col_date2"
-                ]
-              }
-            }
-          }
-        }
-      ]
-    }
-  }
-}
-Warnings:
-Note	1003	(/* select#1 */ select `explain_direct_sort_29809`.`t2`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t2`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t2`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t2`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t2` where `explain_direct_sort_29809`.`t2`.`col_int` order by `explain_direct_sort_29809`.`t2`.`col_varchar_16` limit 3) union (/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` desc limit 3)
 (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
 col_int	col_varchar_16	col_date	col_date2
 1	a	2020-02-02	2020-01-01
@@ -853,46 +173,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` limit 2
 EXPLAIN FORMAT = JSON SELECT * FROM t1 ORDER BY col_int LIMIT 2;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 5,
-        "filtered": "100.00",
-        "using_pushed_order_by": true,
-        "storage_engine_handles_access_type": true,
-        "cost_info": {
-          "read_cost": "18.00",
-          "eval_cost": "1.00",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "160"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` limit 2
 SELECT * FROM t1 ORDER BY col_int LIMIT 2;
 col_int	col_varchar_16	col_date	col_date2
 NULL	NULL	NULL	NULL
@@ -939,46 +219,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT * FROM t1 ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 5,
-        "filtered": "100.00",
-        "using_pushed_order_by": true,
-        "storage_engine_handles_access_type": true,
-        "cost_info": {
-          "read_cost": "18.00",
-          "eval_cost": "1.00",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "160"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT * FROM t1 ORDER BY col_int;
 col_int	col_varchar_16	col_date	col_date2
 NULL	NULL	NULL	NULL
@@ -993,49 +233,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a')) group by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' GROUP BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "grouping_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "possible_keys": [
-          "col_varchar_16",
-          "col_int"
-        ],
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 2,
-        "filtered": "46.66",
-        "pushed_condition": "((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a'))",
-        "using_pushed_group_by": true,
-        "storage_engine_handles_access_type": true,
-        "cost_info": {
-          "read_cost": "18.53",
-          "eval_cost": "0.47",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "74"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a')) group by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' GROUP BY col_int;
 col_int
 0
@@ -1047,50 +244,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` between 0 and 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int BETWEEN 0 AND 1 ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "possible_keys": [
-          "col_int"
-        ],
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 1,
-        "filtered": "20.00",
-        "pushed_condition": "(`explain_direct_sort_29809`.`t1`.`col_int` between 0 and 1)",
-        "using_pushed_order_by": true,
-        "storage_engine_handles_access_type": true,
-        "cost_info": {
-          "read_cost": "18.80",
-          "eval_cost": "0.20",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "32"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` between 0 and 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT * FROM t1 WHERE col_int BETWEEN 0 AND 1 ORDER BY col_int;
 col_int	col_varchar_16	col_date	col_date2
 0	b	2020-02-01	2020-01-01
@@ -1102,49 +255,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a')) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "possible_keys": [
-          "col_varchar_16",
-          "col_int"
-        ],
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 2,
-        "filtered": "46.66",
-        "pushed_condition": "((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a'))",
-        "using_pushed_order_by": true,
-        "storage_engine_handles_access_type": true,
-        "cost_info": {
-          "read_cost": "18.53",
-          "eval_cost": "0.47",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "74"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` <= 1) or (`explain_direct_sort_29809`.`t1`.`col_varchar_16` = 'a')) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' ORDER BY col_int;
 col_int
 0
@@ -1156,57 +266,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` = 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int = 1 ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "1.20"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "ref",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "ref": [
-          "const"
-        ],
-        "rows_examined_per_scan": 1,
-        "rows_produced_per_join": 1,
-        "filtered": "100.00",
-        "using_pushed_order_by": true,
-        "cost_info": {
-          "read_cost": "1.00",
-          "eval_cost": "0.20",
-          "prefix_cost": "1.20",
-          "data_read_per_join": "32"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` = 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT * FROM t1 WHERE col_int = 1 ORDER BY col_int;
 col_int	col_varchar_16	col_date	col_date2
 1	a	2020-02-02	2020-01-01
@@ -1217,55 +276,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` = 1) group by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int = 1 GROUP BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "1.20"
-    },
-    "grouping_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "ref",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "ref": [
-          "const"
-        ],
-        "rows_examined_per_scan": 1,
-        "rows_produced_per_join": 1,
-        "filtered": "100.00",
-        "using_pushed_group_by": true,
-        "using_index": true,
-        "cost_info": {
-          "read_cost": "1.00",
-          "eval_cost": "0.20",
-          "prefix_cost": "1.20",
-          "data_read_per_join": "32"
-        },
-        "used_columns": [
-          "col_int"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` = 1) group by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT col_int FROM t1 WHERE col_int = 1 GROUP BY col_int;
 col_int
 1
@@ -1276,57 +286,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` = 1) or isnull(`explain_direct_sort_29809`.`t1`.`col_int`)) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int = 1 OR col_int IS NULL ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "2.80"
-    },
-    "ordering_operation": {
-      "using_filesort": true,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "ref_or_null",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "ref": [
-          "const"
-        ],
-        "rows_examined_per_scan": 4,
-        "rows_produced_per_join": 4,
-        "filtered": "100.00",
-        "pushed_condition": "((`explain_direct_sort_29809`.`t1`.`col_int` = 1) or isnull(`explain_direct_sort_29809`.`t1`.`col_int`))",
-        "cost_info": {
-          "read_cost": "2.00",
-          "eval_cost": "0.80",
-          "prefix_cost": "2.80",
-          "data_read_per_join": "128"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where ((`explain_direct_sort_29809`.`t1`.`col_int` = 1) or isnull(`explain_direct_sort_29809`.`t1`.`col_int`)) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT * FROM t1 WHERE col_int = 1 OR col_int IS NULL ORDER BY col_int;
 col_int	col_varchar_16	col_date	col_date2
 NULL	NULL	NULL	NULL
@@ -1339,53 +298,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int > 1 ORDER BY col_int;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "access_type": "index",
-        "possible_keys": [
-          "col_int"
-        ],
-        "key": "col_int",
-        "used_key_parts": [
-          "col_int"
-        ],
-        "key_length": "5",
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 1,
-        "filtered": "33.33",
-        "pushed_condition": "(`explain_direct_sort_29809`.`t1`.`col_int` > 1)",
-        "using_pushed_order_by": true,
-        "using_index": true,
-        "cost_info": {
-          "read_cost": "18.67",
-          "eval_cost": "0.33",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "53"
-        },
-        "used_columns": [
-          "col_int"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
 SELECT col_int FROM t1 WHERE col_int > 1 ORDER BY col_int;
 col_int
 3
@@ -1396,54 +308,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select '1' AS `col_int`,'a' AS `col_varchar_16`,'2020-02-02' AS `col_date`,'2020-01-01' AS `col_date2` from `explain_direct_sort_29809`.`t1` where 1 order by 'a'
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_varchar_16 = 'a' ORDER BY col_varchar_16;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "1.00"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0"
-        ],
-        "access_type": "const",
-        "possible_keys": [
-          "col_varchar_16"
-        ],
-        "key": "col_varchar_16",
-        "used_key_parts": [
-          "col_varchar_16"
-        ],
-        "key_length": "19",
-        "ref": [
-          "const"
-        ],
-        "rows_examined_per_scan": 1,
-        "rows_produced_per_join": 1,
-        "filtered": "100.00",
-        "using_pushed_order_by": true,
-        "cost_info": {
-          "read_cost": "0.00",
-          "eval_cost": "0.20",
-          "prefix_cost": "0.00",
-          "data_read_per_join": "32"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select '1' AS `col_int`,'a' AS `col_varchar_16`,'2020-02-02' AS `col_date`,'2020-01-01' AS `col_date2` from `explain_direct_sort_29809`.`t1` where 1 order by 'a'
 SELECT * FROM t1 WHERE col_varchar_16 = 'a' ORDER BY col_varchar_16;
 col_int	col_varchar_16	col_date	col_date2
 1	a	2020-02-02	2020-01-01
@@ -1456,83 +320,6 @@ Warnings:
 Warning	1287	'GROUP BY with ASC/DESC' is deprecated and will be removed in a future release. Please use GROUP BY ... ORDER BY ... ASC/DESC instead
 Note	1003	/* select#1 */ select `dt`.`col_varchar_16` AS `col_varchar_16` from (/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) group by `explain_direct_sort_29809`.`t1`.`col_varchar_16` desc limit 4) `dt` where (`dt`.`col_varchar_16` > 'aef') order by `dt`.`col_varchar_16` desc limit 2,2
 EXPLAIN FORMAT = JSON SELECT * FROM (SELECT col_varchar_16 FROM t1 WHERE col_int > 1 GROUP BY col_varchar_16 DESC LIMIT 4) dt WHERE col_varchar_16 >"aef" ORDER BY col_varchar_16 DESC LIMIT 2,2;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "11.50"
-    },
-    "ordering_operation": {
-      "using_filesort": true,
-      "cost_info": {
-        "sort_cost": "1.00"
-      },
-      "table": {
-        "table_name": "dt",
-        "access_type": "ALL",
-        "rows_examined_per_scan": 2,
-        "rows_produced_per_join": 1,
-        "filtered": "50.00",
-        "cost_info": {
-          "read_cost": "10.30",
-          "eval_cost": "0.20",
-          "prefix_cost": "10.50",
-          "data_read_per_join": "24"
-        },
-        "used_columns": [
-          "col_varchar_16"
-        ],
-        "attached_condition": "(`dt`.`col_varchar_16` > 'aef')",
-        "materialized_from_subquery": {
-          "using_temporary_table": true,
-          "dependent": false,
-          "cacheable": true,
-          "query_block": {
-            "select_id": 2,
-            "cost_info": {
-              "query_cost": "19.00"
-            },
-            "grouping_operation": {
-              "using_filesort": false,
-              "table": {
-                "table_name": "t1",
-                "partitions": [
-                  "p0",
-                  "p1",
-                  "p2",
-                  "p3"
-                ],
-                "possible_keys": [
-                  "col_int"
-                ],
-                "rows_examined_per_scan": 5,
-                "rows_produced_per_join": 1,
-                "filtered": "33.33",
-                "pushed_condition": "(`explain_direct_sort_29809`.`t1`.`col_int` > 1)",
-                "using_pushed_group_by": true,
-                "storage_engine_handles_access_type": true,
-                "cost_info": {
-                  "read_cost": "18.67",
-                  "eval_cost": "0.33",
-                  "prefix_cost": "19.00",
-                  "data_read_per_join": "53"
-                },
-                "used_columns": [
-                  "col_int",
-                  "col_varchar_16"
-                ]
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-Warnings:
-Warning	1287	'GROUP BY with ASC/DESC' is deprecated and will be removed in a future release. Please use GROUP BY ... ORDER BY ... ASC/DESC instead
-Note	1003	/* select#1 */ select `dt`.`col_varchar_16` AS `col_varchar_16` from (/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) group by `explain_direct_sort_29809`.`t1`.`col_varchar_16` desc limit 4) `dt` where (`dt`.`col_varchar_16` > 'aef') order by `dt`.`col_varchar_16` desc limit 2,2
 SELECT * FROM (SELECT col_varchar_16 FROM t1 WHERE col_int > 1 GROUP BY col_varchar_16 DESC LIMIT 4) dt WHERE col_varchar_16 >"aef" ORDER BY col_varchar_16 DESC LIMIT 2,2;
 col_varchar_16
 Warnings:
@@ -1545,88 +332,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t2`.`col_int` AS `col_int`,(/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_varchar_16` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` < 3) order by `explain_direct_sort_29809`.`t1`.`col_int` limit 0,1) AS `c` from `explain_direct_sort_29809`.`t2`
 EXPLAIN FORMAT = JSON SELECT col_int, (SELECT col_varchar_16 FROM t1 WHERE col_int < 3 ORDER BY col_int LIMIT 0, 1) AS c FROM t2;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "table": {
-      "table_name": "t2",
-      "partitions": [
-        "p0",
-        "p1",
-        "p2",
-        "p3"
-      ],
-      "access_type": "index",
-      "key": "col_int",
-      "used_key_parts": [
-        "col_int"
-      ],
-      "key_length": "5",
-      "rows_examined_per_scan": 5,
-      "rows_produced_per_join": 5,
-      "filtered": "100.00",
-      "using_index": true,
-      "cost_info": {
-        "read_cost": "18.00",
-        "eval_cost": "1.00",
-        "prefix_cost": "19.00",
-        "data_read_per_join": "160"
-      },
-      "used_columns": [
-        "col_int"
-      ]
-    },
-    "select_list_subqueries": [
-      {
-        "dependent": false,
-        "cacheable": true,
-        "query_block": {
-          "select_id": 2,
-          "cost_info": {
-            "query_cost": "19.00"
-          },
-          "ordering_operation": {
-            "using_filesort": false,
-            "table": {
-              "table_name": "t1",
-              "partitions": [
-                "p0",
-                "p1",
-                "p2",
-                "p3"
-              ],
-              "possible_keys": [
-                "col_int"
-              ],
-              "rows_examined_per_scan": 5,
-              "rows_produced_per_join": 1,
-              "filtered": "33.33",
-              "pushed_condition": "(`explain_direct_sort_29809`.`t1`.`col_int` < 3)",
-              "using_pushed_order_by": true,
-              "storage_engine_handles_access_type": true,
-              "cost_info": {
-                "read_cost": "18.67",
-                "eval_cost": "0.33",
-                "prefix_cost": "19.00",
-                "data_read_per_join": "53"
-              },
-              "used_columns": [
-                "col_int",
-                "col_varchar_16"
-              ]
-            }
-          }
-        }
-      }
-    ]
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t2`.`col_int` AS `col_int`,(/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_varchar_16` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` < 3) order by `explain_direct_sort_29809`.`t1`.`col_int` limit 0,1) AS `c` from `explain_direct_sort_29809`.`t2`
 SELECT col_int, (SELECT col_varchar_16 FROM t1 WHERE col_int < 3 ORDER BY col_int LIMIT 0, 1) AS c FROM t2;
 col_int	c
 NULL	b
@@ -1643,103 +348,6 @@ NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using tempor
 Warnings:
 Note	1003	(/* select#1 */ select `explain_direct_sort_29809`.`t2`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t2`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t2`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t2`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t2` where `explain_direct_sort_29809`.`t2`.`col_int` order by `explain_direct_sort_29809`.`t2`.`col_varchar_16` limit 3) union (/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` desc limit 3)
 EXPLAIN FORMAT = JSON (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
-EXPLAIN
-{
-  "query_block": {
-    "union_result": {
-      "using_temporary_table": true,
-      "table_name": "<union1,2>",
-      "access_type": "ALL",
-      "query_specifications": [
-        {
-          "dependent": false,
-          "cacheable": true,
-          "query_block": {
-            "select_id": 1,
-            "cost_info": {
-              "query_cost": "19.00"
-            },
-            "ordering_operation": {
-              "using_filesort": false,
-              "table": {
-                "table_name": "t2",
-                "partitions": [
-                  "p0",
-                  "p1",
-                  "p2",
-                  "p3"
-                ],
-                "access_type": "index",
-                "key": "col_varchar_16",
-                "used_key_parts": [
-                  "col_varchar_16"
-                ],
-                "key_length": "19",
-                "rows_examined_per_scan": 3,
-                "rows_produced_per_join": 4,
-                "filtered": "80.00",
-                "cost_info": {
-                  "read_cost": "18.20",
-                  "eval_cost": "0.80",
-                  "prefix_cost": "19.00",
-                  "data_read_per_join": "128"
-                },
-                "used_columns": [
-                  "col_int",
-                  "col_varchar_16",
-                  "col_date",
-                  "col_date2"
-                ],
-                "attached_condition": "`explain_direct_sort_29809`.`t2`.`col_int`"
-              }
-            }
-          }
-        },
-        {
-          "dependent": false,
-          "cacheable": true,
-          "query_block": {
-            "select_id": 2,
-            "cost_info": {
-              "query_cost": "19.00"
-            },
-            "ordering_operation": {
-              "using_filesort": false,
-              "table": {
-                "table_name": "t1",
-                "partitions": [
-                  "p0",
-                  "p1",
-                  "p2",
-                  "p3"
-                ],
-                "rows_examined_per_scan": 5,
-                "rows_produced_per_join": 5,
-                "filtered": "100.00",
-                "using_pushed_order_by": true,
-                "storage_engine_handles_access_type": true,
-                "cost_info": {
-                  "read_cost": "18.00",
-                  "eval_cost": "1.00",
-                  "prefix_cost": "19.00",
-                  "data_read_per_join": "160"
-                },
-                "used_columns": [
-                  "col_int",
-                  "col_varchar_16",
-                  "col_date",
-                  "col_date2"
-                ]
-              }
-            }
-          }
-        }
-      ]
-    }
-  }
-}
-Warnings:
-Note	1003	(/* select#1 */ select `explain_direct_sort_29809`.`t2`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t2`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t2`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t2`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t2` where `explain_direct_sort_29809`.`t2`.`col_int` order by `explain_direct_sort_29809`.`t2`.`col_varchar_16` limit 3) union (/* select#2 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` desc limit 3)
 (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
 col_int	col_varchar_16	col_date	col_date2
 1	a	2020-02-02	2020-01-01
@@ -1756,46 +364,6 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` limit 2
 EXPLAIN FORMAT = JSON SELECT * FROM t1 ORDER BY col_int LIMIT 2;
-EXPLAIN
-{
-  "query_block": {
-    "select_id": 1,
-    "cost_info": {
-      "query_cost": "19.00"
-    },
-    "ordering_operation": {
-      "using_filesort": false,
-      "table": {
-        "table_name": "t1",
-        "partitions": [
-          "p0",
-          "p1",
-          "p2",
-          "p3"
-        ],
-        "rows_examined_per_scan": 5,
-        "rows_produced_per_join": 5,
-        "filtered": "100.00",
-        "using_pushed_order_by": true,
-        "storage_engine_handles_access_type": true,
-        "cost_info": {
-          "read_cost": "18.00",
-          "eval_cost": "1.00",
-          "prefix_cost": "19.00",
-          "data_read_per_join": "160"
-        },
-        "used_columns": [
-          "col_int",
-          "col_varchar_16",
-          "col_date",
-          "col_date2"
-        ]
-      }
-    }
-  }
-}
-Warnings:
-Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` limit 2
 SELECT * FROM t1 ORDER BY col_int LIMIT 2;
 col_int	col_varchar_16	col_date	col_date2
 NULL	NULL	NULL	NULL
