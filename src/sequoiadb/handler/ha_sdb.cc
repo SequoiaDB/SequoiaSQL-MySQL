@@ -11666,8 +11666,9 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
         // last error object.
         bool print_verbose_msg = false;
         const char *auto_incr_field_name =
-            table->next_number_field ? sdb_field_name(table->next_number_field)
-                                     : NULL;
+            (table && table->next_number_field)
+                ? sdb_field_name(table->next_number_field)
+                : NULL;
         // eg: IndexValue": {"a": 1, "b": { "$undefined": 1 } }
         bson::BSONElement idx_value_elem =
             error_obj.getField(SDB_FIELD_INDEX_VALUE);
