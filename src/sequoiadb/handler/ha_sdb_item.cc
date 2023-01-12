@@ -230,7 +230,9 @@ int Sdb_and_item::to_bson(bson::BSONObj &obj) {
   DBUG_ENTER("Sdb_and_item::to_bson()");
 
   if (0 == obj_num_cur) {
-    goto done;
+    // If all of children items are unsupported, this expression is unsupported
+    rc = SDB_ERR_COND_PART_UNSUPPORTED;
+    goto error;
   }
   try {
     obj = BSON(this->name() << children.arr());
