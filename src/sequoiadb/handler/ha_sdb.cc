@@ -9841,7 +9841,7 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
       case SDB_IXM_KEY_NOTNULL:
         if (NULL == error_msg) {
           my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
-        } else if (NULL == table->next_number_field) {
+        } else if (NULL == table || NULL == table->next_number_field) {
           my_printf_error(error, "%s", MYF(0), error_msg);
         } else {
           my_printf_error(error,
