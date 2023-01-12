@@ -22,53 +22,71 @@ INSERT INTO t2 SELECT * FROM t1;
 # cover direct_sort for GROUP BY and ORDER BY
 ## ALL
 EXPLAIN SELECT * FROM t1 ORDER BY col_int;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT * FROM t1 ORDER BY col_int;
+--enable_result_log
 SELECT * FROM t1 ORDER BY col_int;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 EXPLAIN SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' GROUP BY col_int;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' GROUP BY col_int;
+--enable_result_log
 SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' GROUP BY col_int;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 ## RANGE
 EXPLAIN SELECT * FROM t1 WHERE col_int BETWEEN 0 AND 1 ORDER BY col_int;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int BETWEEN 0 AND 1 ORDER BY col_int;
+--enable_result_log
 SELECT * FROM t1 WHERE col_int BETWEEN 0 AND 1 ORDER BY col_int;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 ## INDEX_MERGE
 EXPLAIN SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' ORDER BY col_int;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' ORDER BY col_int;
+--enable_result_log
 SELECT col_int FROM t1 WHERE col_int <= 1 OR col_varchar_16 = 'a' ORDER BY col_int;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 ## REF
 EXPLAIN SELECT * FROM t1 WHERE col_int = 1 ORDER BY col_int;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int = 1 ORDER BY col_int;
+--enable_result_log
 SELECT * FROM t1 WHERE col_int = 1 ORDER BY col_int;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 EXPLAIN SELECT col_int FROM t1 WHERE col_int = 1 GROUP BY col_int;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int = 1 GROUP BY col_int;
+--enable_result_log
 SELECT col_int FROM t1 WHERE col_int = 1 GROUP BY col_int;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 ## REF_OR_NULL
 EXPLAIN SELECT * FROM t1 WHERE col_int = 1 OR col_int IS NULL ORDER BY col_int;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_int = 1 OR col_int IS NULL ORDER BY col_int;
+--enable_result_log
 SELECT * FROM t1 WHERE col_int = 1 OR col_int IS NULL ORDER BY col_int;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 ## INDEX
 EXPLAIN SELECT col_int FROM t1 WHERE col_int > 1 ORDER BY col_int;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT col_int FROM t1 WHERE col_int > 1 ORDER BY col_int;
+--enable_result_log
 SELECT col_int FROM t1 WHERE col_int > 1 ORDER BY col_int;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 ## CONST
 EXPLAIN SELECT * FROM t1 WHERE col_varchar_16 = 'a' ORDER BY col_varchar_16;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT * FROM t1 WHERE col_varchar_16 = 'a' ORDER BY col_varchar_16;
+--enable_result_log
 SELECT * FROM t1 WHERE col_varchar_16 = 'a' ORDER BY col_varchar_16;
 --source include/query_pushdown_condition_sequoiadb.inc
 
@@ -76,19 +94,25 @@ SELECT * FROM t1 WHERE col_varchar_16 = 'a' ORDER BY col_varchar_16;
 # single table in multiple query block
 ## derived table
 EXPLAIN SELECT * FROM (SELECT col_varchar_16 FROM t1 WHERE col_int > 1 GROUP BY col_varchar_16 DESC LIMIT 4) dt WHERE col_varchar_16 >"aef" ORDER BY col_varchar_16 DESC LIMIT 2,2;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT * FROM (SELECT col_varchar_16 FROM t1 WHERE col_int > 1 GROUP BY col_varchar_16 DESC LIMIT 4) dt WHERE col_varchar_16 >"aef" ORDER BY col_varchar_16 DESC LIMIT 2,2;
+--enable_result_log
 SELECT * FROM (SELECT col_varchar_16 FROM t1 WHERE col_int > 1 GROUP BY col_varchar_16 DESC LIMIT 4) dt WHERE col_varchar_16 >"aef" ORDER BY col_varchar_16 DESC LIMIT 2,2;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 ## subquery
 EXPLAIN SELECT col_int, (SELECT col_varchar_16 FROM t1 WHERE col_int < 3 ORDER BY col_int LIMIT 0, 1) AS c FROM t2;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT col_int, (SELECT col_varchar_16 FROM t1 WHERE col_int < 3 ORDER BY col_int LIMIT 0, 1) AS c FROM t2;
+--enable_result_log
 SELECT col_int, (SELECT col_varchar_16 FROM t1 WHERE col_int < 3 ORDER BY col_int LIMIT 0, 1) AS c FROM t2;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 ## union
 EXPLAIN (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
+--disable_result_log
 EXPLAIN FORMAT = JSON (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
+--enable_result_log
 (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
 --source include/query_pushdown_condition_sequoiadb.inc
 
@@ -98,7 +122,9 @@ EXPLAIN INSERT INTO t2 SELECT * FROM t1 WHERE col_int BETWEEN 1 AND 2 ORDER BY c
 
 # ORDER BY + LIMIT
 EXPLAIN SELECT * FROM t1 ORDER BY col_int LIMIT 2;
+--disable_result_log
 EXPLAIN FORMAT = JSON SELECT * FROM t1 ORDER BY col_int LIMIT 2;
+--enable_result_log
 SELECT * FROM t1 ORDER BY col_int LIMIT 2;
 --source include/query_pushdown_condition_sequoiadb.inc
 
