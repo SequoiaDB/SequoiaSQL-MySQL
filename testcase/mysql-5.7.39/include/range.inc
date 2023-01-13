@@ -61,7 +61,7 @@ INSERT INTO t1 VALUES (3,1999,34,0,'1999-07-12'), (1,1999,111,0,'1999-03-23'),
                       (1,1999,59,0,'1999-07-01'), (1,1999,60,0,'1999-07-01'),
                       (3,1999,35,0,'1999-07-12');
 # SEQUOIADBMAINSTREAM-8896
-# select YEAR,ISSUE from t1 where PAPER_ID=3 and (YEAR>1999 or (YEAR=1999 and ISSUE>28))  order by YEAR,ISSUE;
+select YEAR,ISSUE from t1 where PAPER_ID=3 and (YEAR>1999 or (YEAR=1999 and ISSUE>28))  order by YEAR,ISSUE;
 #check table t1;
 #repair table t1;
 drop table t1;
