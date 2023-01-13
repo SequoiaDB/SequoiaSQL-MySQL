@@ -179,6 +179,7 @@ set session optimizer_index_sort_prune=on;
 
 
 # seqDB-29636
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from t1 where col1>=1;
 replace into replace_table1 select count(1) from t1 where col1>=1;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -186,6 +187,7 @@ replace into replace_table1 select count(1) from t1 where col1>=1;
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5 select * from t1 where col1>=1 limit 2,3;
 replace into t5 select * from t1 where col1>=1 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -193,6 +195,7 @@ replace into t5 select * from t1 where col1>=1 limit 2,3;
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from t1 where col1>1 group by col1 desc;
 replace into t5 select * from t1 where col1>1 group by col1 desc;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -200,6 +203,7 @@ replace into t5 select * from t1 where col1>1 group by col1 desc;
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 replace into t5 select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -207,6 +211,7 @@ replace into t5 select * from t1 where col3>="20221115114210" order by col4 limi
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from t1 where col3>="20221115114210" group by col3 limit 2;
 replace into t5 select * from t1 where col3>="20221115114210" group by col3 limit 2;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -214,6 +219,7 @@ replace into t5 select * from t1 where col3>="20221115114210" group by col3 limi
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from t1 where col4>"bcd" group by col3 order by col3;
 replace into t5 select * from t1 where col4>"bcd" group by col3 order by col3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -221,6 +227,7 @@ replace into t5 select * from t1 where col4>"bcd" group by col3 order by col3;
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from t1 where col2>="def" group by col1 order by col4 limit 2,3;
 replace into t5 select * from t1 where col2>="def" group by col2 order by col4 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -229,6 +236,7 @@ select * from t5;
 truncate table t5;
 
 # partition table
+--replace_column 9 #
 explain  replace into t3_partition select * from t1_partition where col2>="def" group by col1 order by col4 limit 2,3;
 --sorted_result
 replace into t3_partition select * from t1_partition where col2>="def" group by col2 order by col4 limit 2,3;
@@ -238,6 +246,7 @@ select * from t3_partition;
 truncate table t3_partition;
 
 # seqDB-29637
+--replace_column 9 #
 explain replace into t5 select * from t1 where col2>"def" order by col4 desc;
 replace into t5 select * from t1 where col2>"def" order by col4 desc;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -245,6 +254,7 @@ replace into t5 select * from t1 where col2>"def" order by col4 desc;
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from t1 where col1>1 group by col1 desc;
 replace into replace_table1 select count(1) from t1 where col1>1 group by col1 desc;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -252,6 +262,7 @@ replace into replace_table1 select count(1) from t1 where col1>1 group by col1 d
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from t1 where col3>="20221115114210" group by col3 limit 1,1;
 replace into replace_table1 select count(1) from t1 where col3>="20221115114210" group by col3 limit 1,1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -259,6 +270,7 @@ replace into replace_table1 select count(1) from t1 where col3>="20221115114210"
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from t1 where col4>"bcd" group by col3 order by col3;
 replace into replace_table1 select count(1) from t1 where col4>"bcd" group by col3 order by col3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -266,6 +278,7 @@ replace into replace_table1 select count(1) from t1 where col4>"bcd" group by co
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(col1) from t1 where col2>="def" group by col1 order by col1 limit 1;
 replace into replace_table1 select count(col1) from t1 where col2>="def" group by col1 order by col1 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -275,6 +288,7 @@ truncate table replace_table1;
 
 
 # seqDB-29638
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from t1 where col2>="def" limit 1;
 replace into replace_table1 select count(1) from t1 where col2>="def" limit 1;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -282,6 +296,7 @@ replace into replace_table1 select count(1) from t1 where col2>="def" limit 1;
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from t1 where col2>="bcd" order by col4 desc;
 replace into replace_table1 select count(1) from t1 where col2>="bcd" order by col4 desc;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -289,6 +304,7 @@ replace into replace_table1 select count(1) from t1 where col2>="bcd" order by c
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from t1 where col3>="20221115114210" order by col4 limit 1;
 replace into replace_table1 select count(1) from t1 where col3>="20221115114210" order by col4 limit 1;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -298,6 +314,7 @@ truncate table replace_table1;
 
 
 # seqDB-29639
+--replace_column 9 #
 explain replace into replace_table1(select count(1) from t1 where col1>1) union ALL (select count(1) from t2 where col4<"zzz") limit 1,1;
 replace into replace_table1(select count(1) from t1 where col1>1) union ALL (select count(1) from t2 where col4<"zzz") limit 1,1;
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -305,6 +322,7 @@ replace into replace_table1(select count(1) from t1 where col1>1) union ALL (sel
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>=1 limit 2,4) union ALL (select *  from t2 where col2>"def" limit 2,3) limit 1,3;
 replace into t5(select * from t1 where col1>=1 limit 2,4) union ALL (select *  from t2 where col2>"def" limit 2,3) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -312,6 +330,7 @@ replace into t5(select * from t1 where col1>=1 limit 2,4) union ALL (select *  f
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>=1 group by col1 desc) union ALL (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 replace into t5(select * from t1 where col1>=1 group by col1 desc) union ALL (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -319,6 +338,7 @@ replace into t5(select * from t1 where col1>=1 group by col1 desc) union ALL (se
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table7(select col4 from t1 where col1>1 order by col4 desc) union ALL (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1,3;
 replace into replace_table7(select col4 from t1 where col1>1 order by col4 desc) union ALL (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -326,6 +346,7 @@ replace into replace_table7(select col4 from t1 where col1>1 order by col4 desc)
 select * from replace_table7;
 truncate table replace_table7;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>1 group by col1 limit 2,4 ) union ALL (select * from t2 where col3>="20221115114210" group by col4 limit 2,3) order by col1  limit 1,3;
 replace into t5(select * from t1 where col1>1 group by col1 limit 2,4 ) union ALL (select * from t2 where col3>="20221115114210" group by col4 limit 2,3) order by col1  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -333,6 +354,7 @@ replace into t5(select * from t1 where col1>1 group by col1 limit 2,4 ) union AL
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3) union ALL (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 1,3;
 replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3) union ALL (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -340,6 +362,7 @@ replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3) u
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) union ALL (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 1,3;
 replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) union ALL (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -347,6 +370,7 @@ replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3  l
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>=1 limit 2,3) union ALL (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 replace into t5(select * from t1 where col1>=1 limit 2,3) union ALL (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -354,6 +378,7 @@ replace into t5(select * from t1 where col1>=1 limit 2,3) union ALL (select * fr
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table7(select col2 from t1 where col1>1 group by col2 desc) union ALL (select col2 from t2 where col3>="20221115114210" order by col2 limit 1) order by col2 limit 1;
 replace into replace_table7(select col2 from t1 where col1>1 group by col2 desc) union ALL (select col2 from t2 where col3>="20221115114210" order by col2 limit 1) order by col2 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -361,6 +386,7 @@ replace into replace_table7(select col2 from t1 where col1>1 group by col2 desc)
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc  limit 1) union ALL (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc  limit 1) union ALL (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -368,6 +394,7 @@ replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) union ALL(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) union (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -375,24 +402,27 @@ replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) unio
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table7 (select col2 from t1 where col1>=1 limit 1)  UNION ALL (select col2 from t1 where col2>="def" order by col4 desc limit 1) UNION ALL (select col2 from t2 where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 --sorted_result
 replace into replace_table7(select col2 from t1 where col1>=1 limit 1)  UNION ALL (select col2 from t1 where col2>="def" order by col4 desc limit 1) UNION ALL (select col2 from t2 where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from replace_table7;
 truncate table replace_table7;
 
+--replace_column 9 #
 explain replace into t5 (select * from t1 where col1>=1 limit 1) UNION ALL (select * from t2 where col2>"defg" order by col2 desc) UNION ALL (select * from t1 where col2>"defg" order by col2 desc limit 1) UNION ALL (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col2 desc limit 1;
 --sorted_result
 replace into t5 (select * from t1 where col1>=1 limit 1) UNION ALL (select * from t2 where col2>"defg" order by col2 desc) UNION ALL (select * from t1 where col2>"defg" order by col2 desc limit 1) UNION ALL (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col2 desc limit 1;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from t5;
 truncate table t5;
 
 
 # partition table 
+--replace_column 9 #
 explain replace into replace_table7(select col4 from t1_partition where col1>=1 limit 1) UNION ALL (select col4 from t2_partition where col4>"defg" order by col4 desc) UNION ALL (select col4 from t1_partition where col4>"defg" order by col4 desc limit 1) UNION ALL (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 1) order by col4 desc limit 1;
 --sorted_result
 replace into replace_table7(select col4 from t1_partition where col1>=1 limit 1) UNION ALL (select col4 from t2_partition where col4>"defg" order by col4 desc) UNION ALL (select col4 from t1_partition where col4>"defg" order by col4 desc limit 1) UNION ALL (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 1) order by col4 desc limit 1;
@@ -402,6 +432,7 @@ select * from replace_table7;
 truncate table replace_table7;
 
 # seqDB-29640
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>=1 order by col1 desc) union ALL (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 replace into t5(select * from t1 where col1>=1 order by col1 desc) union ALL (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -409,6 +440,7 @@ replace into t5(select * from t1 where col1>=1 order by col1 desc) union ALL (se
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 desc) union ALL (select count(*) from t2 where col2>"def" group by col2 desc) limit 1,3;
 replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 desc) union ALL (select count(*) from t2 where col2>"def" group by col2 desc) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -416,6 +448,7 @@ replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col1>1 group by col1 limit 2,4 ) union ALL (select count(*) from t2 where col3>="20221115114210" group by col4 limit 2,3)   limit 1,3;
 replace into replace_table1(select count(*) from t1 where col1>1 group by col1 limit 2,4 ) union ALL (select count(*) from t2 where col3>="20221115114210" group by col4 limit 2,3)  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -423,6 +456,7 @@ replace into replace_table1(select count(*) from t1 where col1>1 group by col1 l
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3) union ALL (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 1,3;
 replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3) union ALL (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -430,6 +464,7 @@ replace into replace_table1(select count(*) from t1 where col4>"bcd" group by co
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) union ALL (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2)  limit 1,3;
 replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) union ALL (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2)  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -438,6 +473,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29641
+--replace_column 9 #
 explain  replace into replace_table1(select count(*) from t1 where col1>=1 limit 0,4) union ALL (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
 --sorted_result
 replace into replace_table1(select count(*) from t1 where col1>=1 limit 0,4) union ALL (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
@@ -446,6 +482,7 @@ replace into replace_table1(select count(*) from t1 where col1>=1 limit 0,4) uni
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) union ALL (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 --sorted_result
 replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) union ALL (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
@@ -454,6 +491,7 @@ replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(col4) from t1 where col1>1 order by col4 desc) union ALL (select count(col4) from t2 where col3>="20221115114210" order by col4 limit 1)  limit 1,3;
 --sorted_result
 replace into replace_table1(select count(col4) from t1 where col1>1 order by col4 desc) union ALL (select count(col4) from t2 where col3>="20221115114210" order by col4 limit 1)  limit 1,3;
@@ -463,6 +501,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29642
+--replace_column 9 #
 explain replace into replace_table1(select count(1) from t1 where col1>1) UNION (select count(1) from t2 where col4<"zzz") limit 1,1;
 replace into replace_table1(select count(1) from t1 where col1>1) UNION (select count(1) from t2 where col4<"zzz") limit 1,1;
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -470,6 +509,7 @@ replace into replace_table1(select count(1) from t1 where col1>1) UNION (select 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>=1 limit 2,4) UNION (select *  from t2 where col2>"def" limit 2,3) limit 1,3;
 replace into t5(select * from t1 where col1>=1 limit 2,4) UNION (select *  from t2 where col2>"def" limit 2,3) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -477,6 +517,7 @@ replace into t5(select * from t1 where col1>=1 limit 2,4) UNION (select *  from 
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>=1 group by col1 desc) UNION (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 replace into t5(select * from t1 where col1>=1 group by col1 desc) UNION (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -484,6 +525,7 @@ replace into t5(select * from t1 where col1>=1 group by col1 desc) UNION (select
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1(select col1 from t1 where col1>1 order by col1 desc) UNION (select col1 from t2 where col3>="20221115114210" order by col4 limit 1) order by col1 limit 1;
 replace into replace_table1(select col1 from t1 where col1>1 order by col1 desc) UNION (select col1 from t2 where col3>="20221115114210" order by col4 limit 1) order by col1 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -491,6 +533,7 @@ replace into replace_table1(select col1 from t1 where col1>1 order by col1 desc)
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>1 group by col1 limit 2,4 ) UNION (select * from t2 where col3>="20221115114210" group by col4 limit 2,3) order by col1  limit 1,3;
 replace into t5(select * from t1 where col1>1 group by col1 limit 2,4 ) UNION (select * from t2 where col3>="20221115114210" group by col4 limit 2,3) order by col1  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -498,6 +541,7 @@ replace into t5(select * from t1 where col1>1 group by col1 limit 2,4 ) UNION (s
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3) UNION (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 1,3;
 replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3) UNION (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -505,6 +549,7 @@ replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3) U
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) UNION (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 1,3;
 replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) UNION (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -512,6 +557,7 @@ replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3  l
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>=1 limit 2,3) UNION (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 replace into t5(select * from t1 where col1>=1 limit 2,3) UNION (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -519,6 +565,7 @@ replace into t5(select * from t1 where col1>=1 limit 2,3) UNION (select * from t
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table7(select col4 from t1 where col1>1 group by col4 desc) UNION (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1;
 replace into replace_table7(select col4 from t1 where col1>1 group by col4 desc) UNION (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -526,6 +573,7 @@ replace into replace_table7(select col4 from t1 where col1>1 group by col4 desc)
 select * from replace_table7;
 truncate table replace_table7;
 
+--replace_column 9 #
 explain replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -533,6 +581,7 @@ replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc 
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -540,23 +589,26 @@ replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) UNIO
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 (select * from t1 where col1>=1 limit 2,3)  UNION (select * from t1 where col2>="def" order by col4  limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2  limit 2,1) order by col3  limit 2;
 --sorted_result
 replace into t5(select * from t1 where col1>=1 limit 2,3)  UNION (select * from t1 where col2>="def" order by col4  limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2  limit 2,1) order by col3  limit 2;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 (select * from t1 where col1>=1 limit 2,3) UNION (select * from t2 where col2>"def" order by col4 ) UNION (select * from t1 where col2>="def" order by col4  limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2  limit 2,1) order by col3  limit 2;
 --sorted_result
 replace into t5(select * from t1 where col1>=1 limit 2,3) UNION (select * from t2 where col2>"def" order by col4 ) UNION (select * from t1 where col2>="def" order by col4  limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2  limit 2,1) order by col3  limit 2;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from t5;
 truncate table t5;
 
 # partition table
+--replace_column 9 #
 explain  replace into replace_table7(select col4 from t1_partition where col1>=1 limit 1) UNION (select col4 from t2_partition where col4>"def" order by col4 ) UNION (select col4 from t1_partition where col4>="def" order by col4  limit 1) UNION (select col4 from t2_partition where col1>=1 group by col4 order by col4  limit 1) order by col4  limit 1;
 --sorted_result
 replace into replace_table7(select col4 from t1_partition where col1>=1 limit 1) UNION (select col4 from t2_partition where col4>"def" order by col4 ) UNION (select col4 from t1_partition where col4>="def" order by col4  limit 1) UNION (select col4 from t2_partition where col1>=1 group by col4 order by col4  limit 1) order by col4  limit 1;
@@ -566,6 +618,7 @@ select * from replace_table7;
 truncate table replace_table7;
 
 # seqDB-29643
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1>=1 order by col1 desc) UNION (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 replace into t5(select * from t1 where col1>=1 order by col1 desc) UNION (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -573,6 +626,7 @@ replace into t5(select * from t1 where col1>=1 order by col1 desc) UNION (select
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 desc) UNION (select count(*) from t2 where col2>"def" group by col2 desc) limit 1,3;
 replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 desc) UNION (select count(*) from t2 where col2>"def" group by col2 desc) limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -580,6 +634,7 @@ replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col1>1 group by col1 limit 2,4 ) UNION (select count(*) from t2 where col3>="20221115114210" group by col4 limit 2,3)   limit 1,3;
 replace into replace_table1(select count(*) from t1 where col1>1 group by col1 limit 2,4 ) UNION (select count(*) from t2 where col3>="20221115114210" group by col4 limit 2,3)  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -587,6 +642,7 @@ replace into replace_table1(select count(*) from t1 where col1>1 group by col1 l
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3) UNION (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 1,3;
 replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3) UNION (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -594,6 +650,7 @@ replace into replace_table1(select count(*) from t1 where col4>"bcd" group by co
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) UNION (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2)  limit 1,3;
 replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) UNION (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2)  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -602,6 +659,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29644
+--replace_column 9 #
 explain  replace into replace_table1(select count(*) from t1 where col1>=1 limit 0,4) UNION (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
 --sorted_result
 replace into replace_table1(select count(*) from t1 where col1>=1 limit 0,4) UNION (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
@@ -610,6 +668,7 @@ replace into replace_table1(select count(*) from t1 where col1>=1 limit 0,4) UNI
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) UNION (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 --sorted_result
 replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) UNION (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
@@ -618,6 +677,7 @@ replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1(select count(1) from t1 where col1>1 order by col1 desc) UNION (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
 --sorted_result
 replace into replace_table1(select count(1) from t1 where col1>1 order by col1 desc) UNION (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
@@ -627,6 +687,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29645
+--replace_column 9 #
 explain replace into replace_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) UNION (select count(1) from t1 where col4<"zzz") limit 0,3;
 replace into replace_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) UNION (select count(1) from t1 where col4<"zzz") limit 0,3;
 --source include/query_pushdown_condition_sequoiadb_7.inc
@@ -634,6 +695,7 @@ replace into replace_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) UNION (select count(1) from t1,t2  where t1.col4 >='def' and t2.col4<"zzz") UNION (select count(1) from t1 where col4<"zzz") limit 0,3;
 replace into replace_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) UNION (select count(1) from t1,t2  where t1.col4 >='def' and t2.col4<"zzz") UNION (select count(1) from t1 where col4<"zzz") limit 0,3;
 --source include/query_pushdown_condition_sequoiadb_11.inc
@@ -641,6 +703,7 @@ replace into replace_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1,4) UNION (select * from t1 where col3>="20221115114210" group by col3 order by col3  limit 0,2) limit 0,3;
 replace into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1,4) UNION (select * from t1 where col3>="20221115114210" group by col3 order by col3  limit 0,2) limit 0,3;
 --source include/query_pushdown_condition_sequoiadb_4.inc
@@ -648,6 +711,7 @@ replace into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group b
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1,4) UNION (select t2.*  from t1,t2  where t1.col4 >='def' and t2.col4<"zzz" group by col3 order by col3  limit 0,2) UNION (select * from t1 where col3>="20221115114210" group by col3 order by col3  limit 0,2) limit 0,3;
 replace into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1,4) UNION (select t2.*  from t1,t2  where t1.col4 >='def' and t2.col4<"zzz" group by col3 order by col3  limit 0,2) UNION (select * from t1 where col3>="20221115114210" group by col3 order by col3  limit 0,2) limit 0,3;
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -656,6 +720,7 @@ select * from t5;
 truncate table t5;
 
 # seqDB-29646
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1) from t2 where col3>"20221115114210";
 replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1) from t2 where col3>"20221115114210";
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -663,6 +728,7 @@ replace into replace_table3 select count(*),(select count(col1) from t1 where co
 select * from replace_table3;
 truncate table replace_table3;
 
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where col3>"20221115114210"  limit 1,3;
 replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where col3>"20221115114210"  limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -670,6 +736,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col2 from t1 where col3>="20221215114210" group by col4) from t2 where t2.col1 <6 group by col1;
 replace into replace_table4 select *,(select col2 from t1 where col3>="20221215114210" group by col4) from t2 where t2.col1 <6 group by col1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -677,6 +744,7 @@ replace into replace_table4 select *,(select col2 from t1 where col3>="202212151
 select * from replace_table4;
 truncate table replace_table4;
  
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col2>="bcd" order by col3 limit 2,1) from t2 where col3>"20221115114210" order by col4 limit 1,3;
 replace into replace_table2 select *,(select col1 from t1 where col2>="bcd" order by col3 limit 2,1) from t2 where col3>"20221115114210" order by col4 limit 1,3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -684,6 +752,7 @@ replace into replace_table2 select *,(select col1 from t1 where col2>="bcd" orde
 select * from replace_table2;
 truncate table replace_table2;
  
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col2 from t1 where col3<"20221215114210" group by col4 limit 2,1) from t2 where t2.col1 <6 group by col1 limit 3;
 replace into replace_table4 select *,(select col2 from t1 where col3<"20221215114210" group by col4 limit 2,1) from t2 where t2.col1 <6 group by col1 limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -691,6 +760,7 @@ replace into replace_table4 select *,(select col2 from t1 where col3<"2022121511
 select * from replace_table4;
 truncate table replace_table4;
  
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col2 from t1 where col3>="20221215114210" group by col4 order by col1) from t2 where t2.col1 <6 group by col1 order by col3;
 replace into replace_table4 select *,(select col2 from t1 where col3>="20221215114210" group by col4 order by col1) from t2 where t2.col1 <6 group by col1 order by col3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -698,6 +768,7 @@ replace into replace_table4 select *,(select col2 from t1 where col3>="202212151
 select * from replace_table4;
 truncate table replace_table4;
  
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 <6 group by col1 order by col3 limit 3;
 replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 <6 group by col1 order by col3 limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -705,6 +776,7 @@ replace into replace_table4 select *,(select col4 from t1 where col3<"2022121511
 select * from replace_table4;
 truncate table replace_table4;
 
+--replace_column 9 #
 explain replace into replace_table3 select col1,(select col1 from t1 where col2>="bcd" order by col1 limit 0,1) from t2 where t2.col4 >"def" group by col1 limit 3;
 replace into replace_table3 select col1,(select col1 from t1 where col2>="bcd" order by col1 limit 0,1) from t2 where t2.col4 >"def" group by col1 limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -712,6 +784,7 @@ replace into replace_table3 select col1,(select col1 from t1 where col2>="bcd" o
 select * from replace_table4;
 truncate table replace_table4;
  
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 group by col1 order by col3 limit 3;
 replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 group by col1 order by col3 limit 3;
  
@@ -720,6 +793,7 @@ replace into replace_table4 select *,(select col1 from t1 where col3>="202212151
 select * from replace_table4;
 truncate table replace_table4;
  
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3 limit 3;
 replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3 limit 3;
  
@@ -728,6 +802,7 @@ replace into replace_table4 select *,(select col1 from t1 where col3>="202212151
 select * from replace_table4;
 truncate table replace_table4;
  
+--replace_column 9 #
 explain replace into replace_table5 select count(*),(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6;
 replace into replace_table5 select count(*),(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6;
  
@@ -736,6 +811,7 @@ replace into replace_table5 select count(*),(select col4 from t1 where col3<"202
 select * from replace_table5;
 truncate table replace_table5;
  
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6 limit 3;
 replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6 limit 3;
  
@@ -744,6 +820,7 @@ replace into replace_table4 select *,(select col4 from t1 where col3<"2022121511
 select * from replace_table4;
 truncate table replace_table4;
  
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6 order by col3;
 replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6 order by col3;
  
@@ -753,6 +830,7 @@ select * from replace_table4;
 truncate table replace_table4;
 
 # partition table
+--replace_column 9 #
 explain  replace into replace_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 < 6 order by col4;
 --sorted_result
 replace into replace_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 < 6 order by col4;
@@ -763,6 +841,7 @@ truncate table replace_table5;
  
 
 # seqDB-29647
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col2="bcd" order by col3) from t2 where col3>"20221115114210" order by col4;
 replace into replace_table2 select *,(select col1 from t1 where col2="bcd" order by col3) from t2 where col3>"20221115114210" order by col4;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -770,6 +849,7 @@ replace into replace_table2 select *,(select col1 from t1 where col2="bcd" order
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col2) from t1 where col3>="20221215114210" group by col4) from t2 where t2.col1 <6 group by col1;
 replace into replace_table3 select count(*),(select count(col2) from t1 where col3>="20221215114210" group by col4) from t2 where t2.col1 <6 group by col1;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -777,6 +857,7 @@ replace into replace_table3 select count(*),(select count(col2) from t1 where co
 select * from replace_table3;
 truncate table replace_table3;
  
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col2) from t1 where col3<"20221215114210" group by col4 limit 2,1) from t2 where t2.col1 <6 group by col1 limit 3;
 replace into replace_table3 select count(*),(select count(col2) from t1 where col3<"20221215114210" group by col4 limit 2,1) from t2 where t2.col1 <6 group by col1 limit 3;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -784,6 +865,7 @@ replace into replace_table3 select count(*),(select count(col2) from t1 where co
 select * from replace_table3;
 truncate table replace_table3;
  
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col2) from t1 where col3>="20221215114210" group by col4 order by col1) from t2 where t2.col1 <6 group by col1 order by col3;
 replace into replace_table3 select count(*),(select count(col2) from t1 where col3>="20221215114210" group by col4 order by col1) from t2 where t2.col1 <6 group by col1 order by col3;
  
@@ -792,6 +874,7 @@ replace into replace_table3 select count(*),(select count(col2) from t1 where co
 select * from replace_table3;
 truncate table replace_table3;
  
+--replace_column 9 #
 explain replace into replace_table3 select count(col1),(select count(col1) from t1 where col3<"20221215114210" group by col1 order by col1 limit 1) from t2 where t2.col1 <6 group by col1 order by col1 limit 1;
 replace into replace_table3 select count(col1),(select count(col1) from t1 where col3<"20221215114210" group by col1 order by col1 limit 1) from t2 where t2.col1 <6 group by col1 order by col1 limit 1;
  
@@ -801,6 +884,7 @@ select * from replace_table3;
 truncate table replace_table3;
 
 # seqDB-29648
+--replace_column 9 #
 explain  replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1 limit 1,3) from t2 where col3>"20221115114210" limit 3;
 --sorted_result
 replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1 limit 1,3) from t2 where col3>"20221115114210" limit 3;
@@ -809,6 +893,7 @@ replace into replace_table3 select count(*),(select count(col1) from t1 where co
 select * from replace_table3;
 truncate table replace_table3;
 
+--replace_column 9 #
 explain  replace into replace_table3 select count(1),(select col1 from t1 where col2="bcd" order by col3) from t2 where col3>"20221115114210" order by col4;
 --sorted_result
 replace into replace_table3 select count(1),(select col1 from t1 where col2="bcd" order by col3) from t2 where col3>"20221115114210" order by col4;
@@ -817,6 +902,7 @@ replace into replace_table3 select count(1),(select col1 from t1 where col2="bcd
 select * from replace_table3;
 truncate table replace_table3;
 
+--replace_column 9 #
 explain  replace into replace_table3 select count(1),(select col1 from t1 where col2>="bcd" order by col3 limit 2,1) from t2 where col3>"20221115114210" order by col4 limit 1,3;
 --sorted_result
 replace into replace_table3 select count(1),(select col1 from t1 where col2>="bcd" order by col3 limit 2,1) from t2 where col3>"20221115114210" order by col4 limit 1,3;
@@ -827,6 +913,7 @@ truncate table replace_table3;
  
 
 # seqDB-29649
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
 replace into replace_table1 select count(*) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
 --source include/query_pushdown_condition_sequoiadb_5.inc
@@ -834,6 +921,7 @@ replace into replace_table1 select count(*) from t2 where t2.col1 < (select coun
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1)  limit 3;
 replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1)  limit 3;
  
@@ -844,6 +932,7 @@ truncate table t5;
  
 
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>="20221115114010" group by col4 having col4 < "zzz") group by col3 desc; 
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>="20221115114010" group by col4 having col4 < "zzz") group by col3 desc; 
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -851,6 +940,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1)  order by col3 desc limit 3;
 replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1)  order by col3 desc limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -858,6 +948,7 @@ replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col3 desc limit 3;
 replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col3 desc limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -865,6 +956,7 @@ replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -872,6 +964,7 @@ replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc;
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -879,6 +972,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
 replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
  
@@ -887,6 +981,7 @@ replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col2 desc having col2 < "zzz") group by col3 desc limit 3;
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col2 desc having col2 < "zzz") group by col3 desc limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -894,6 +989,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col1>="7" group by col4 desc) group by col3 desc limit 3;
 replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col1>="7" group by col4 desc) group by col3 desc limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -901,6 +997,7 @@ replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col1
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc limit 3;
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -908,6 +1005,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col4 in(select col2 from t1 where col2>"def" order by col1 desc) group by col1 limit 3;
 replace into t5 select * from t2 where t2.col4 in(select col2 from t1 where col2>"def" order by col1 desc) group by col1 limit 3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -915,6 +1013,7 @@ replace into t5 select * from t2 where t2.col4 in(select col2 from t1 where col2
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select col1 from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 order by col1 limit 1;
 replace into replace_table1 select col1 from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 order by col1 limit 1;
 --source include/query_pushdown_condition_sequoiadb_4.inc
@@ -922,6 +1021,7 @@ replace into replace_table1 select col1 from t2 where t2.col1 <(select count(1) 
 select * from replace_table1;
 truncate table replace_table1;
    
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col1 <(select count(col1) from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
 replace into t5 select * from t2 where t2.col1 <(select count(col1) from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
 --source include/query_pushdown_condition_sequoiadb_4.inc
@@ -929,6 +1029,7 @@ replace into t5 select * from t2 where t2.col1 <(select count(col1) from t1 wher
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
 replace into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -936,6 +1037,7 @@ replace into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1>
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1=1 order by col3 desc)  group by col1 limit 3;
 replace into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1=1 order by col3 desc)  group by col1 limit 3;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -943,6 +1045,7 @@ replace into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1=
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"  order by col1 desc); 
 replace into replace_table1 select count(*) from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"  order by col1 desc); 
 --source include/query_pushdown_condition_sequoiadb_4.inc
@@ -950,6 +1053,7 @@ replace into replace_table1 select count(*) from t2 where t2.col2 in(select col4
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc)  limit 3;
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc)  limit 3;
  
@@ -958,6 +1062,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) order by col3 desc limit 3;
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) order by col3 desc limit 3;
  
@@ -966,6 +1071,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"  order by col1 desc) order by col3 desc;
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"  order by col1 desc) order by col3 desc;
  
@@ -974,6 +1080,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col1 desc)  order by col3 desc limit 3;
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col1 desc)  order by col3 desc limit 3;
  
@@ -982,6 +1089,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col2 limit 0,1) order by col3 desc;
 replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col2 limit 0,1) order by col3 desc;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -990,6 +1098,7 @@ select * from t5;
 truncate table t5;
 
 # partition table
+--replace_column 9 #
 explain  replace into replace_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
 --sorted_result
 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
@@ -999,6 +1108,7 @@ select * from replace_table7;
 truncate table replace_table7;
 
 # seqDB-29650
+--replace_column 9 #
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col4 desc) order by col3 desc;
 replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col4 desc) order by col3 desc;
  
@@ -1007,6 +1117,7 @@ replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4 desc) group by col3 desc; 
 replace into replace_table1 select count(*) from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4 desc) group by col3 desc; 
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -1014,6 +1125,7 @@ replace into replace_table1 select count(*) from t2 where t2.col1 in(select coun
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where  t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 limit 0,1)group by col3 desc limit 3; 
 replace into replace_table1 select count(*) from t2 where  t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 limit 0,1)group by col3 desc limit 3; 
  
@@ -1022,13 +1134,15 @@ replace into replace_table1 select count(*) from t2 where  t2.col1 < (select cou
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4  order by col1 desc)  group by col3 order by col2 desc;
 replace into replace_table1 select count(*) from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4  order by col1 desc)  group by col3 order by col2 desc;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
 replace into replace_table1 select count(*) from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
  
@@ -1038,6 +1152,7 @@ select * from replace_table1;
 truncate table replace_table1;
  
 # seqDB-29651
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1)  limit 3;
 --sorted_result
 replace into replace_table1 select count(1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1)  limit 3;
@@ -1046,6 +1161,7 @@ replace into replace_table1 select count(1) from t2 where t2.col1 < (select col1
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col4 desc) order by col3 desc;
 --sorted_result
 replace into replace_table1 select count(1) from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col4 desc) order by col3 desc;
@@ -1054,6 +1170,7 @@ replace into replace_table1 select count(1) from t2 where t2.col2 in(select col4
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1)  order by col3 desc limit 3;
 --sorted_result
 replace into replace_table1 select count(1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1)  order by col3 desc limit 3;
@@ -1063,6 +1180,7 @@ select * from replace_table1;
 truncate table replace_table1;
  
 # seqDB-29652 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where col1>4 group by col1 having col1> (select count(1) from t1 where col4>"def") ;
 replace into replace_table1 select count(*) from t2 where col1>4 group by col1 having col1> (select count(1) from t1 where col4>"def") ;
 --source include/query_pushdown_condition_sequoiadb_5.inc
@@ -1070,6 +1188,7 @@ replace into replace_table1 select count(*) from t2 where col1>4 group by col1 h
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where col1>4 group by col1 having col1> (select col1 from t1 where col4>"def" limit 1) limit 2;
 replace into t5 select * from t2 where col1>4 group by col1 having col1> (select col1 from t1 where col4>"def" limit 1) limit 2;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1079,6 +1198,7 @@ truncate table t5;
  
 
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where col1>4 group by col1 having col2 in (select col4 from t1 where col2>"def" group by col2 desc having col2 < "zzz");
 replace into t5 select * from t2 where col1>4 group by col1 having col2 in (select col4 from t1 where col2>"def" group by col2 desc having col2 < "zzz");
  
@@ -1087,6 +1207,7 @@ replace into t5 select * from t2 where col1>4 group by col1 having col2 in (sele
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into replace_table7 select col2 from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1) order by col2 desc limit 1;
 replace into replace_table7 select col2 from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1) order by col2 desc limit 1;
  
@@ -1095,6 +1216,7 @@ replace into replace_table7 select col2 from t2 where col1>1 group by col1 havin
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into replace_table7 select col4 from t2 where col1>1 group by col4 having col4< (select col4 from t1 where col2="abcdef" group by col4 desc limit 1) limit 1;
 replace into replace_table7 select col4 from t2 where col1>1 group by col4 having col4< (select col4 from t1 where col2="abcdef" group by col4 desc limit 1) limit 1;
  
@@ -1103,6 +1225,7 @@ replace into replace_table7 select col4 from t2 where col1>1 group by col4 havin
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3; 
 replace into t5 select * from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3; 
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1110,6 +1233,7 @@ replace into t5 select * from t2 where col1>1 group by col1 having col2< (select
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where col1>4 group by col1 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 ) order by col2 desc limit 2;
 replace into t5 select * from t2 where col1>4 group by col1 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 ) order by col2 desc limit 2;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1117,6 +1241,7 @@ replace into t5 select * from t2 where col1>4 group by col1 having col2< (select
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where col1>1 group by col2 having col2< (select col4 from t1 where col2="abcdef" order by col4 desc );
 replace into replace_table1 select count(*) from t2 where col1>1 group by col2 having col2< (select col4 from t1 where col2="abcdef" order by col4 desc );
  
@@ -1125,6 +1250,7 @@ replace into replace_table1 select count(*) from t2 where col1>1 group by col2 h
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where col1>4 group by col2 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1 );
 replace into replace_table1 select count(*) from t2 where col1>4 group by col2 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1 );
  
@@ -1133,6 +1259,7 @@ replace into replace_table1 select count(*) from t2 where col1>4 group by col2 h
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where col1>4 group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 );
 replace into replace_table1 select count(*) from t2 where col1>4 group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 );
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1140,6 +1267,7 @@ replace into replace_table1 select count(*) from t2 where col1>4 group by col2 h
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into t5 select * from t2 where col1>4 group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 ) limit 2;
 replace into t5 select * from t2 where col1>4 group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 ) limit 2;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1148,6 +1276,7 @@ select * from t5;
 truncate table t5;
 
 # partition table
+--replace_column 9 #
 explain  replace into replace_table7 select col4 from t2_partition where col1>4 group by col4 having col4< (select col4 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1 ) limit 1;
 --sorted_result
 replace into replace_table7 select col4 from t2_partition where col1>4 group by col4 having col4< (select col4 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1 ) limit 1;
@@ -1157,6 +1286,7 @@ select * from replace_table7;
 truncate table replace_table7;
 
 # seqDB-29653
+--replace_column 9 #
 explain replace into t5 select * from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2="abcdef" order by col1 desc);
 replace into t5 select * from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2="abcdef" order by col1 desc);
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1164,6 +1294,7 @@ replace into t5 select * from t2 where col1>1 group by col1 having col2< (select
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where col1>1 group by col1 having col1 > (select count(col4) from t1 where col2="abcdef" group by col3 desc);
 replace into replace_table1 select count(*) from t2 where col1>1 group by col1 having col1 > (select count(col4) from t1 where col2="abcdef" group by col3 desc);
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1171,6 +1302,7 @@ replace into replace_table1 select count(*) from t2 where col1>1 group by col1 h
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where col1>1 group by col1 having col1 > (select count(col4)  from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3 desc; 
 --sorted_result
 replace into replace_table1 select count(*) from t2 where col1>1 group by col1 having col1 > (select count(col4)  from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3 desc; 
@@ -1180,6 +1312,7 @@ replace into replace_table1 select count(*) from t2 where col1>1 group by col1 h
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where col1>1 group by col1 having col1 > (select count(col4)  from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3 desc; 
 --sorted_result
 replace into replace_table1 select count(*) from t2 where col1>1 group by col1 having col1 > (select count(col4)  from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3 desc; 
@@ -1189,6 +1322,7 @@ replace into replace_table1 select count(*) from t2 where col1>1 group by col1 h
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t2 where col1>4 group by col1 having col1 > (select count(col4)  from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 ) order by col2 desc limit 2;
 replace into replace_table1 select count(*) from t2 where col1>4 group by col1 having col1 > (select count(col4)  from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 ) order by col2 desc limit 2;
  
@@ -1198,6 +1332,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29654
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from t2 where col1>4 group by col1 having col1> (select col1 from t1 where col4>"def" limit 1) limit 2;
 --sorted_result
 replace into replace_table1 select count(1) from t2 where col1>4 group by col1 having col1> (select col1 from t1 where col4>"def" limit 1) limit 2;
@@ -1206,6 +1341,7 @@ replace into replace_table1 select count(1) from t2 where col1>4 group by col1 h
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from t2 where col1>1 group by col2 having col2< (select col4 from t1 where col2="abcdef" order by col1 desc);
 --sorted_result
 replace into replace_table1 select count(1) from t2 where col1>1 group by col2 having col2< (select col4 from t1 where col2="abcdef" order by col1 desc);
@@ -1214,6 +1350,7 @@ replace into replace_table1 select count(1) from t2 where col1>1 group by col2 h
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from t2 where col1>1 group by col2 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1) order by col2 desc limit 1;
 --sorted_result
 replace into replace_table1 select count(1) from t2 where col1>1 group by col2 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1) order by col2 desc limit 1;
@@ -1224,6 +1361,7 @@ truncate table replace_table1;
 
 
 # seqDB-29655
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_7.inc
@@ -1231,6 +1369,7 @@ replace into replace_table3 select count(*),(select count(col1) from t1 where co
 select * from replace_table3;
 truncate table replace_table3;
 
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_8.inc
@@ -1240,6 +1379,7 @@ truncate table replace_table2;
  
 
  
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=7 group by col1)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 desc having col4 < "zzz" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table2 select *,(select col1 from t1 where col1>=7 group by col1)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 desc having col4 < "zzz" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_5.inc
@@ -1247,6 +1387,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=7 group by
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_5.inc
@@ -1254,6 +1395,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by
 select * from replace_table2;
 truncate table replace_table2;
  
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 group by col1 limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table2 select *,(select col1 from t1 where col1>=1 group by col1 limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -1261,6 +1403,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=1 group by
 select * from replace_table2;
 truncate table replace_table2;
  
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=7 group by col1 order by col3 desc)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table2 select *,(select col1 from t1 where col1>=7 group by col1 order by col3 desc)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_4.inc
@@ -1268,6 +1411,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=7 group by
 select * from replace_table2;
 truncate table replace_table2;
  
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 group by col1 order by col1 desc limit 1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table2 select *,(select col1 from t1 where col1>=1 group by col1 order by col1 desc limit 1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_4.inc
@@ -1275,6 +1419,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=1 group by
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   order by col3 desc;
 replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   order by col3 desc;
  
@@ -1283,6 +1428,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,
 select * from replace_table2;
 truncate table replace_table2;
  
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1 )   order by col3 desc;
 replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1 )   order by col3 desc;
  
@@ -1291,6 +1437,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,
 select * from replace_table2;
 truncate table replace_table2;
  
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2="abcdef" order by col4 desc )   order by col3 desc;
 replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2="abcdef" order by col4 desc )   order by col3 desc;
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -1298,6 +1445,7 @@ replace into replace_table2 select *,(select col1 from t1 where col1>=1 limit 2,
 select * from replace_table2;
 truncate table replace_table2;
  
+--replace_column 9 #
 explain replace into replace_table2 select *,(select col1 from t1 where col2>="bcd" order by col1 limit 0,1) from t2 where t2.col4 in(select col2 from t1 where col2>"def" group by col1 desc having col1 < 10) group by col4 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table2 select *,(select col1 from t1 where col2>="bcd" order by col1 limit 0,1) from t2 where t2.col4 in(select col2 from t1 where col2>"def" group by col1 desc having col1 < 10) group by col4 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_4.inc
@@ -1305,6 +1453,7 @@ replace into replace_table2 select *,(select col1 from t1 where col2>="bcd" orde
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3;
 replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3; 
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -1313,6 +1462,7 @@ select * from replace_table4;
 truncate table replace_table4;
  
  # partition table
+--replace_column 9 #
 explain  replace into replace_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
 --sorted_result
 replace into replace_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
@@ -1322,6 +1472,7 @@ select * from replace_table5;
 truncate table replace_table5;
 
 # seqDB-29656
+--replace_column 9 #
 explain  replace into replace_table2 select *,(select col1 from t1 where col1>=7 order by col1 desc)  from t2 where t2.col2 in(select col2 from t1 where col3>"20221115114210" order by col2 desc) group by col2 having col2> (select col2 from t1 where col2>"abcdef" group by col2 order by col2 desc limit 1 )   limit 1;
  replace into replace_table2 select *,(select col1 from t1 where col1>=7 order by col1 desc)  from t2 where t2.col2 in(select col2 from t1 where col3>"20221115114210" order by col2 desc) group by col2 having col2> (select col2 from t1 where col2>"abcdef" group by col2 order by col2 desc limit 1 )   limit 1;
 --source include/query_pushdown_condition_sequoiadb_5.inc
@@ -1329,6 +1480,7 @@ explain  replace into replace_table2 select *,(select col1 from t1 where col1>=7
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col1)  from t1 where col1>=7 group by col1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table3 select count(*),(select count(col1)  from t1 where col1>=7 group by col1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -1336,6 +1488,7 @@ replace into replace_table3 select count(*),(select count(col1)  from t1 where c
 select * from replace_table3;
 truncate table replace_table3;
  
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col1)  from t1 where col1>=1 group by col1 limit 2,1)  from t2 where  t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table3 select count(*),(select count(col1)  from t1 where col1>=1 group by col1 limit 2,1)  from t2 where  t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -1343,6 +1496,7 @@ replace into replace_table3 select count(*),(select count(col1)  from t1 where c
 select * from replace_table3;
 truncate table replace_table3;
  
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col1)  from t1 where col1>=7 group by col1 order by col3 desc)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4  order by col1 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table3 select count(*),(select count(col1)  from t1 where col1>=7 group by col1 order by col3 desc)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4  order by col1 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_5.inc
@@ -1350,6 +1504,7 @@ replace into replace_table3 select count(*),(select count(col1)  from t1 where c
 select * from replace_table3;
 truncate table replace_table3;
  
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(col1)  from t1 where col1>=1 group by col1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 replace into replace_table3 select count(*),(select count(col1)  from t1 where col1>=1 group by col1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_pushdown_condition_sequoiadb_5.inc
@@ -1358,6 +1513,7 @@ select * from replace_table3;
 truncate table replace_table3;
 
 # seqDB-29657
+--replace_column 9 #
 explain  replace into replace_table3 select count(1) as col1,(select count(col1)  from t1 where col1>=1 limit 6) as col2  from t2 where t2.col1 < (select count(col1)  from t1 where col1>=5 limit 0,1) group by col1 having col1< (select count(col4)  from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 );
 --sorted_result
 replace into replace_table3 select count(1) as col1,(select count(col1)  from t1 where col1>=1 limit 6) as col2  from t2 where t2.col1 < (select count(col1)  from t1 where col1>=5 limit 0,1) group by col1 having col1< (select count(col4)  from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 );
@@ -1366,6 +1522,7 @@ replace into replace_table3 select count(1) as col1,(select count(col1)  from t1
 select * from replace_table3;
 truncate table replace_table3;
 
+--replace_column 9 #
 explain replace into replace_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col1 desc)  from t2 where t2.col1 in (select count(col1) from t1 where col3>"20221115114210" order by col1 desc) group by t2.col1 having t2.col1> (select count(col1) from t1 where col2>"abcdef" group by col1 order by col1 desc limit 1 )   limit 3;
 --sorted_result
 replace into replace_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col1 desc)  from t2 where t2.col1 in (select count(col1) from t1 where col3>"20221115114210" order by col1 desc) group by t2.col1 having t2.col1> (select count(col1) from t1 where col2>"abcdef" group by col1 order by col1 desc limit 1 )   limit 3;
@@ -1374,6 +1531,7 @@ replace into replace_table3 select count(1),(select count(col1) from t1 where co
 select * from replace_table3;
 truncate table replace_table3;
 
+--replace_column 9 #
 explain  replace into replace_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 order by col4 limit 0,1) group by col1 having col1< (select count(col4) from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --sorted_result
 replace into replace_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 order by col4 limit 0,1) group by t2.col1 having t2.col1< (select count(col4) from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
@@ -1383,6 +1541,7 @@ select * from replace_table3;
 truncate table replace_table3;
 
 # seqDB-29658
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
 replace into replace_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
 --source include/query_pushdown_condition_sequoiadb_9.inc
@@ -1390,6 +1549,7 @@ replace into replace_table3 select count(*),(select count(1) from t1, t2 where t
 select * from replace_table3;
 truncate table replace_table3;
 
+--replace_column 9 #
 explain replace into replace_table4 select *, (select t1.col4 from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
 replace into replace_table4 select *, (select t1.col4 from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
 --source include/query_pushdown_condition_sequoiadb_5.inc
@@ -1400,6 +1560,7 @@ truncate table replace_table4;
 
 
 # seqDB-29659
+--replace_column 9 #
 explain replace into replace_table1 select * from (select count(*) from t1 where col3>="20221115114310") dt;
 replace into replace_table1 select * from (select count(*) from t1 where col3>="20221115114310") dt;
 --source include/query_pushdown_condition_sequoiadb_3.inc
@@ -1407,6 +1568,7 @@ replace into replace_table1 select * from (select count(*) from t1 where col3>="
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col3>="20221115114310" limit 2,1) dt where col2>"bcd" limit 3;
 replace into t5 select * from (select * from t1 where col3>="20221115114310" limit 2,1) dt where col2>"bcd" limit 3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1414,6 +1576,7 @@ replace into t5 select * from (select * from t1 where col3>="20221115114310" lim
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col3>="20221115114310" group by col1) dt where col2>"bcd" group by col2;
 replace into t5 select * from (select * from t1 where col3>="20221115114310" group by col1) dt where col2>"bcd" group by col2;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1421,6 +1584,7 @@ replace into t5 select * from (select * from t1 where col3>="20221115114310" gro
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col3>="20221115114310" order by col1 limit 2,1) dt where col2>"bcd" order by col3 limit 3;
 replace into t5 select * from (select * from t1 where col3>="20221115114310" order by col1 limit 2,1) dt where col2>"bcd" order by col3 limit 3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1428,6 +1592,7 @@ replace into t5 select * from (select * from t1 where col3>="20221115114310" ord
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col3>="20221115114310" group by col1 limit 2,1) dt where col2>"bcd" group by col2 limit 3;
 replace into t5 select * from (select * from t1 where col3>="20221115114310" group by col1 limit 2,1) dt where col2>"bcd" group by col2 limit 3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1435,6 +1600,7 @@ replace into t5 select * from (select * from t1 where col3>="20221115114310" gro
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col3>="20221115114310" group by col1 order by col1) dt where col2>"defg" group by col2 order by col3;
 --sorted_result
 replace into t5 select * from (select * from t1 where col3>="20221115114310" group by col1 order by col1) dt where col2>"defg" group by col2 order by col3;
@@ -1443,6 +1609,7 @@ replace into t5 select * from (select * from t1 where col3>="20221115114310" gro
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3 limit 3;
 replace into t5 select * from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3 limit 3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1450,6 +1617,7 @@ replace into t5 select * from (select * from t1 where col3>="20221115114310" gro
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col2>"def" order by col4 desc limit 5) dt where col1>=1 limit 2,3;
 replace into t5 select * from (select * from t1 where col2>"def" order by col4 desc limit 5) dt where col1>=1 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1457,6 +1625,7 @@ replace into t5 select * from (select * from t1 where col2>"def" order by col4 d
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
 replace into t5 select * from (select * from t1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1464,6 +1633,7 @@ replace into t5 select * from (select * from t1 where col1>1 group by col4 desc 
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;
 replace into replace_table1 select count(1) from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1472,6 +1642,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # partition table
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from (select col2 from t1_partition where col3>="20221115114310" group by col1 order by col1 limit 1) dt where col2>"bcd" group by col2 order by col2;
 --sorted_result
 replace into replace_table1 select count(1) from (select col2 from t1_partition where col3>="20221115114310" group by col1 order by col1 limit 1) dt where col2>"bcd" group by col2 order by col2;
@@ -1481,6 +1652,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29660
+--replace_column 9 #
 explain replace into t5 select * from (select * from t1 where col3>="20221115114310" order by col1) dt where col2>"bcd" order by col3;
 replace into t5 select * from (select * from t1 where col3>="20221115114310" order by col1) dt where col2>"bcd" order by col3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1488,6 +1660,7 @@ replace into t5 select * from (select * from t1 where col3>="20221115114310" ord
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" group by col1) dt limit 1;
 replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" group by col1) dt limit 1;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1495,6 +1668,7 @@ replace into replace_table1 select count(*) from (select count(*) from t1 where 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" group by col1 limit 8) dt limit 1;
 replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" group by col1 limit 8) dt limit 1;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1502,6 +1676,7 @@ replace into replace_table1 select count(*) from (select count(*) from t1 where 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" group by col1 order by col1) dt limit 1;
 replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" group by col1 order by col1) dt limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1509,6 +1684,7 @@ replace into replace_table1 select count(*) from (select count(*) from t1 where 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" group by col1 order by col1 limit 8) dt limit 1;
 replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" group by col1 order by col1 limit 8) dt limit 1;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1517,6 +1693,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29661
+--replace_column 9 #
 explain  replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" limit 8) dt limit 1;
 --sorted_result
 replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" limit 8) dt limit 1;
@@ -1525,6 +1702,7 @@ replace into replace_table1 select count(*) from (select count(*) from t1 where 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from (select count(1) from t1 where col3>="20221115114310" order by col1) dt;
 --sorted_result
 replace into replace_table1 select count(1) from (select count(1) from t1 where col3>="20221115114310" order by col1) dt;
@@ -1533,6 +1711,7 @@ replace into replace_table1 select count(1) from (select count(1) from t1 where 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from (select count(1) from t1 where col3>="20221115114310" order by col1 limit 2,1) dt;
 --sorted_result
 replace into replace_table1 select count(1) from (select count(1) from t1 where col3>="20221115114310" order by col1 limit 2,1) dt;
@@ -1542,6 +1721,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29662
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from v4 where col3<"20221115114310";
 replace into replace_table1 select count(1) from v4 where col3<"20221115114310";
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1549,6 +1729,7 @@ replace into replace_table1 select count(1) from v4 where col3<"20221115114310";
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5 select * from v5 where col1>=1  limit 2,4;
 replace into t5 select * from v5 where col1>=1 limit 2,4;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1558,6 +1739,7 @@ truncate table t5;
 
 
  
+--replace_column 9 #
 explain replace into replace_table2 select * from v6 where col2<="dd" group by col3;
 replace into replace_table2 select * from v6 where col2<="dd" group by col3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1565,6 +1747,7 @@ replace into replace_table2 select * from v6 where col2<="dd" group by col3;
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into t5 select * from v5 where col1>=1 order by col1 limit 2,4;
 replace into t5 select * from v5 where col1>=1 order by col1 limit 2,4;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1573,6 +1756,7 @@ select * from t5;
 truncate table t5;
 
  
+--replace_column 9 #
 explain replace into replace_table2 select * from v6 where col2<="dd" group by col3 limit 1;
 replace into replace_table2 select * from v6 where col2<="dd" group by col3 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1580,6 +1764,7 @@ replace into replace_table2 select * from v6 where col2<="dd" group by col3 limi
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into replace_table2 select * from v6 where col2<="dd" group by col3 order by col3;
 replace into replace_table2 select * from v6 where col2<="dd" group by col3 order by col3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1587,6 +1772,7 @@ replace into replace_table2 select * from v6 where col2<="dd" group by col3 orde
 select * from replace_table2;
 truncate table replace_table2;
 
+--replace_column 9 #
 explain replace into replace_table2 select * from v6 where col2<="dd" group by col3 order by col3 limit 1;
 replace into replace_table2 select * from v6 where col2<="dd" group by col3 order by col3 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1595,6 +1781,7 @@ select * from replace_table2;
 truncate table replace_table2;
 
 # seqDB-29663
+--replace_column 9 #
 explain replace into t5 select * from v5 where col1>=1 order by col1;
 replace into t5 select * from v5 where col1>=1 order by col1;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1602,6 +1789,7 @@ replace into t5 select * from v5 where col1>=1 order by col1;
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3;
 replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1609,6 +1797,7 @@ replace into replace_table1 select count(1) from v6 where col2<="dd" group by co
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 limit 1;
 replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1616,6 +1805,7 @@ replace into replace_table1 select count(1) from v6 where col2<="dd" group by co
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 order by col3;
 replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 order by col3;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1623,6 +1813,7 @@ replace into replace_table1 select count(1) from v6 where col2<="dd" group by co
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 order by col3 limit 1;
 replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 order by col3 limit 1;
 --source include/query_pushdown_condition_sequoiadb_2.inc
@@ -1631,6 +1822,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29664
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from v5 where col1>=1  limit 2,4;
 --sorted_result
 replace into replace_table1 select count(1) from v5 where col1>=1 limit 2,4;
@@ -1639,6 +1831,7 @@ replace into replace_table1 select count(1) from v5 where col1>=1 limit 2,4;
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from v5 where col1>=1 order by col1;
 --sorted_result
 replace into replace_table1 select count(1) from v5 where col1>=1 order by col1;
@@ -1647,6 +1840,7 @@ replace into replace_table1 select count(1) from v5 where col1>=1 order by col1;
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(1) from v5 where col1>=1 order by col1 limit 2,4;
 --sorted_result
 replace into replace_table1 select count(1) from v5 where col1>=1 order by col1 limit 2,4;
@@ -1657,6 +1851,7 @@ truncate table replace_table1;
 
 
 # seqDB-29665
+--replace_column 9 #
 explain replace into replace_table1 select * from (select count(*) from v1 where col3>="20221115114310") dt;
 replace into replace_table1 select * from (select count(*) from v1 where col3>="20221115114310") dt;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1664,6 +1859,7 @@ replace into replace_table1 select * from (select count(*) from v1 where col3>="
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col3>="20221115114310" limit 2,1) dt where col2>"bcd" limit 3;
 replace into t5 select * from (select * from v1 where col3>="20221115114310" limit 2,1) dt where col2>"bcd" limit 3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1671,6 +1867,7 @@ replace into t5 select * from (select * from v1 where col3>="20221115114310" lim
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col3>"20221115114310" group by col1) dt where col2>"defg" group by col2;
 --sorted_result
 replace into t5 select * from (select * from v1 where col3>"20221115114310" group by col1) dt where col2>"defg" group by col2;
@@ -1679,6 +1876,7 @@ replace into t5 select * from (select * from v1 where col3>"20221115114310" grou
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col3>="20221115114310" order by col1 limit 2,1) dt where col2>"defg" order by col3 limit 3;
 replace into t5 select * from (select * from v1 where col3>="20221115114310" order by col1 limit 2,1) dt where col2>"defg" order by col3 limit 3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1686,6 +1884,7 @@ replace into t5 select * from (select * from v1 where col3>="20221115114310" ord
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col3>="20221115114310" group by col1 limit 2,1) dt where col2>"defg" group by col2 limit 3;
 replace into t5 select * from (select * from v1 where col3>="20221115114310" group by col1 limit 2,1) dt where col2>"defg" group by col2 limit 3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1693,6 +1892,7 @@ replace into t5 select * from (select * from v1 where col3>="20221115114310" gro
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col3>="20221115114310" group by col1 order by col1) dt where col2>"defg" group by col2 order by col3;
 --sorted_result
 replace into t5 select * from (select * from v1 where col3>="20221115114310" group by col1 order by col1) dt where col2>"defg" group by col2 order by col3;
@@ -1701,6 +1901,7 @@ replace into t5 select * from (select * from v1 where col3>="20221115114310" gro
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"defg" group by col2 order by col3 limit 3;
 --sorted_result
 replace into t5 select * from (select * from v1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"defg" group by col2 order by col3 limit 3;
@@ -1709,6 +1910,7 @@ replace into t5 select * from (select * from v1 where col3>="20221115114310" gro
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col2>"def" order by col4 desc limit 5) dt where col1>=1 limit 2,3;
 replace into t5 select * from (select * from v1 where col2>"def" order by col4 desc limit 5) dt where col1>=1 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1716,6 +1918,7 @@ replace into t5 select * from (select * from v1 where col2>"def" order by col4 d
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
 replace into t5 select * from (select * from v1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1723,6 +1926,7 @@ replace into t5 select * from (select * from v1 where col1>1 group by col4 desc 
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(1) from (select * from v1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;
 replace into replace_table1 select count(1) from (select * from v1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1732,6 +1936,7 @@ truncate table replace_table1;
 
 
 # seqDB-29666
+--replace_column 9 #
 explain replace into t5 select * from (select * from v1 where col3>"20221115114310" order by col1) dt where col2>"defg" order by col3 desc;
 --sorted_result
 replace into t5 select * from (select * from v1 where col3>"20221115114310" order by col1) dt where col2>"defg" order by col3 desc;
@@ -1740,6 +1945,7 @@ replace into t5 select * from (select * from v1 where col3>"20221115114310" orde
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from (select count(*) from v1 where col3>="20221115114010" group by col3) dt limit 1;
 replace into replace_table1 select count(*) from (select count(*) from v1 where col3>="20221115114010" group by col3) dt limit 1;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1747,6 +1953,7 @@ replace into replace_table1 select count(*) from (select count(*) from v1 where 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from (select count(*) from v1 where col3>="20221115114010" group by col1 limit 8) dt limit 1;
 replace into replace_table1 select count(*) from (select count(*) from v1 where col3>="20221115114010" group by col1 limit 8) dt limit 1;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1754,6 +1961,7 @@ replace into replace_table1 select count(*) from (select count(*) from v1 where 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from (select count(*) from v1 where col3>="20221115114010" order by col1 limit 8) dt limit 1;
 replace into replace_table1 select count(*) from (select count(*) from v1 where col3>="20221115114010" order by col1 limit 8) dt limit 1;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1761,6 +1969,7 @@ replace into replace_table1 select count(*) from (select count(*) from v1 where 
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from (select count(*) from v1 where col3>="20221115114010" group by col1 order by col1 limit 8) dt limit 1;
 replace into replace_table1 select count(*) from (select count(*) from v1 where col3>="20221115114010" group by col1 order by col1 limit 8) dt limit 1;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1769,6 +1978,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29667
+--replace_column 9 #
 explain  replace into replace_table1 select count(*) from (select * from v1 where col3>="20221115114310" limit 2,1) dt where col2>"bcd" limit 3;
 --sorted_result
 replace into replace_table1 select count(*) from (select * from v1 where col3>="20221115114310" limit 2,1) dt where col2>"bcd" limit 3;
@@ -1777,6 +1987,7 @@ replace into replace_table1 select count(*) from (select * from v1 where col3>="
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(*) from (select * from v1 where col3>="20221115114310" order by col1) dt where col2>"defg" order by col3;
 --sorted_result
 replace into replace_table1 select count(*) from (select * from v1 where col3>="20221115114310" order by col1) dt where col2>"defg" order by col3;
@@ -1785,6 +1996,7 @@ replace into replace_table1 select count(*) from (select * from v1 where col3>="
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain  replace into replace_table1 select count(*) from (select * from v1 where col3>="20221115114310" order by col1 limit 2,1) dt where col2>"defg" order by col3 limit 3;
 --sorted_result
 replace into replace_table1 select count(*) from (select * from v1 where col3>="20221115114310" order by col1 limit 2,1) dt where col2>"defg" order by col3 limit 3;
@@ -1794,6 +2006,7 @@ select * from replace_table1;
 truncate table replace_table1;
 
 # seqDB-29668
+--replace_column 9 #
 explain replace into replace_table1 select * from (select count(*) from v7) dt;
 replace into replace_table1 select * from (select count(*) from v7) dt;
 --source include/query_pushdown_condition_sequoiadb_7.inc
@@ -1801,6 +2014,7 @@ replace into replace_table1 select * from (select count(*) from v7) dt;
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table1 select count(*) from t1,t2, (select count(*) from v7) dt;
 replace into replace_table1 select count(*) from t1,t2, (select count(*) from v7) dt;
 --source include/query_pushdown_condition_sequoiadb_11.inc
@@ -1808,12 +2022,14 @@ replace into replace_table1 select count(*) from t1,t2, (select count(*) from v7
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(*) from v7 ) ;
 replace into replace_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(*) from v7 ) ;
 --source include/query_pushdown_condition_sequoiadb_14.inc
 select * from replace_table3;
 truncate table replace_table3;
 
+--replace_column 9 #
 explain replace into t5 select * from (select * from v8 where col2>"defg" group by col1 order by col1 limit 7) dt where col3>="20221115112010" group by col2 order by col3 limit 6;
 replace into t5 select * from (select * from v8 where col2>"defg" group by col1 order by col1 limit 7) dt where col3>="20221115112010" group by col2 order by col3 limit 6;
 --source include/query_pushdown_condition_sequoiadb_4.inc
@@ -1821,6 +2037,7 @@ replace into t5 select * from (select * from v8 where col2>"defg" group by col1 
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into replace_table1 select t1.col1 from t1,t2, (select * from v8 where col2>="def" group by col1 order by col1 limit 7) dt where t1.col3>="20221115112010" group by t1.col1 order by t1.col1 limit 1;
 replace into replace_table1 select t1.col1 from t1,t2, (select * from v8 where col2>="def" group by col1 order by col1 limit 7) dt where t1.col3>="20221115112010" group by t1.col1 order by t1.col1 limit 1;
 --source include/query_pushdown_condition_sequoiadb_6.inc
@@ -1828,6 +2045,7 @@ replace into replace_table1 select t1.col1 from t1,t2, (select * from v8 where c
 select * from replace_table1;
 truncate table replace_table1;
 
+--replace_column 9 #
 explain replace into replace_table4 select *, (select t1.col4 from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1) from t2 where t2.col1 < (select col1 from v8 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
 replace into replace_table4 select *, (select t1.col4 from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1) from t2 where t2.col1 < (select col1 from v8 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
 --source include/query_pushdown_condition_sequoiadb_8.inc
@@ -1837,6 +2055,7 @@ truncate table replace_table4;
 
 
 # partition table
+--replace_column 9 #
 explain  replace into replace_table5 select t2_partition.col1, (select t1_partition.col2 from t1_partition, t2_partition where t1_partition.col1>=2 and t2_partition.col1 <=6 group by t1_partition.col2 order by t1_partition.col2  limit 1) from t2_partition where t2_partition.col1 < (select col1 from v8 where col1>=5 group by col2 order by col2 limit 0,1) group by t2_partition.col2 order by t2_partition.col2 desc limit 1;
 --sorted_result
 replace into replace_table5 select t2_partition.col1, (select t1_partition.col2 from t1_partition, t2_partition where t1_partition.col1>=2 and t2_partition.col1 <=6 group by t1_partition.col2 order by t1_partition.col2  limit 1) from t2_partition where t2_partition.col1 < (select col1 from v8 where col1>=5 group by col2 order by col2 limit 0,1) group by t2_partition.col2 order by t2_partition.col2 desc limit 1;
@@ -1846,6 +2065,7 @@ select * from replace_table5;
 truncate table replace_table5;
 
 # seqDB-29670
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
@@ -1857,6 +2077,7 @@ union
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" order by col4 limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col1 limit 1);
@@ -1868,6 +2089,7 @@ union
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" group by col4 limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
@@ -1879,6 +2101,7 @@ union
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col1);
@@ -1890,6 +2113,7 @@ union
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union 
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2);
@@ -1901,6 +2125,7 @@ union
 select * from t5;
 truncate table t5;
  
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1<(select count(1) from (select * from  t2 where col1<5 union ALL (select * from t1 where col2<(select col4 from t1 where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
@@ -1913,6 +2138,7 @@ union
 select * from t5;
 truncate table t5;
 
+--replace_column 9 #
 explain replace into t5(select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -1935,6 +2161,7 @@ truncate table t5;
 
 
 # seqDB-29671
+--replace_column 9 #
 explain replace into replace_table1(select count(*) from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" group by col4 limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col1 limit 1);
@@ -1946,6 +2173,7 @@ union
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1(select count(*)  from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3<"20221115114210" group by col4 limit 1) order by col1 desc) dt where col1>0  group by col2 limit 1);
@@ -1953,11 +2181,12 @@ union
 replace into replace_table1(select count(*)  from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3<"20221115114210" group by col4 limit 1) order by col1 desc) dt where col1>0  group by col2 limit 1);
---source include/query_pushdown_condition_sequoiadb_12.inc
+--source include/query_pushdown_condition_sequoiadb_11.inc
 --sorted_result
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1(select count(*)  from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col1);
@@ -1969,6 +2198,7 @@ union
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1(select count(*)  from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union 
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2);
@@ -1980,6 +2210,7 @@ union
 select * from replace_table1;
 truncate table replace_table1;
  
+--replace_column 9 #
 explain replace into replace_table1(select count(*)  from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union 
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc limit 9) dt where col1>0  group by col2);

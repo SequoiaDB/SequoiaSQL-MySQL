@@ -16,7 +16,7 @@ set session sequoiadb_debug_log=on;
 set session sequoiadb_optimizer_options='direct_count,direct_delete,direct_update,direct_limit';
 explain select id from t1 group by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select id from t1 group by id;
 id
 NULL
@@ -29,7 +29,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select documentno from t1 group by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select documentno from t1 group by documentno limit 2;
 documentno
 NULL
@@ -38,7 +38,7 @@ abc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select id from t1 order by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select id from t1 order by id;
 id
 NULL
@@ -55,7 +55,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select documentno from t1 order by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select documentno from t1 order by documentno limit 2;
 documentno
 NULL
@@ -65,7 +65,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select id from t1 group by id with rollup limit 10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select id from t1 group by id with rollup limit 10;
 id
 NULL
@@ -79,7 +79,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct id from t1 group by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select distinct id from t1 group by id;
 id
 NULL
@@ -92,7 +92,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct documentno from t1 group by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select distinct documentno from t1 group by documentno limit 2;
 documentno
 NULL
@@ -101,7 +101,7 @@ abc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BUFFER_RESULT documentno from t1 group by documentno;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index; Using temporary
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index; Using temporary
 select SQL_BUFFER_RESULT documentno from t1 group by documentno;
 documentno
 NULL
@@ -113,7 +113,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BUFFER_RESULT id from t1 group by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index; Using temporary
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index; Using temporary
 select SQL_BUFFER_RESULT id from t1 group by id limit 2;
 id
 NULL
@@ -122,7 +122,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BUFFER_RESULT documentno from t1 order by documentno;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index; Using temporary
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index; Using temporary
 select SQL_BUFFER_RESULT documentno from t1 order by documentno;
 documentno
 NULL
@@ -139,7 +139,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BUFFER_RESULT id from t1 order by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	2	Using index; Using temporary
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index; Using temporary
 select SQL_BUFFER_RESULT id from t1 order by id limit 2;
 id
 NULL
@@ -149,7 +149,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BUFFER_RESULT documentno from t1 group by documentno with rollup limit 10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index; Using temporary
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index; Using temporary
 select SQL_BUFFER_RESULT documentno from t1 group by documentno with rollup limit 10;
 documentno
 NULL
@@ -162,7 +162,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_BUFFER_RESULT documentno from t1 group by documentno;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index; Using temporary
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index; Using temporary
 select distinct SQL_BUFFER_RESULT documentno from t1 group by documentno;
 documentno
 NULL
@@ -174,7 +174,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_BUFFER_RESULT id from t1 group by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index; Using temporary
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index; Using temporary
 select distinct SQL_BUFFER_RESULT id from t1 group by id limit 2;
 id
 NULL
@@ -183,7 +183,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_SMALL_RESULT id from t1 group by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_SMALL_RESULT id from t1 group by id;
 id
 NULL
@@ -196,7 +196,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_SMALL_RESULT documentno from t1 group by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select SQL_SMALL_RESULT documentno from t1 group by documentno limit 2;
 documentno
 NULL
@@ -205,7 +205,7 @@ abc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_SMALL_RESULT id from t1 order by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_SMALL_RESULT id from t1 order by id;
 id
 NULL
@@ -222,7 +222,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_SMALL_RESULT documentno from t1 order by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select SQL_SMALL_RESULT documentno from t1 order by documentno limit 2;
 documentno
 NULL
@@ -232,7 +232,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_SMALL_RESULT id from t1 group by id with rollup limit 10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_SMALL_RESULT id from t1 group by id with rollup limit 10;
 id
 NULL
@@ -246,7 +246,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_SMALL_RESULT id from t1 group by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select distinct SQL_SMALL_RESULT id from t1 group by id;
 id
 NULL
@@ -259,7 +259,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_SMALL_RESULT documentno from t1 group by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select distinct SQL_SMALL_RESULT documentno from t1 group by documentno limit 2;
 documentno
 NULL
@@ -268,7 +268,7 @@ abc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BIG_RESULT id from t1 group by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index; Using filesort
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index; Using filesort
 select SQL_BIG_RESULT id from t1 group by id;
 id
 NULL
@@ -281,7 +281,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BIG_RESULT documentno from t1 group by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index; Using filesort
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index; Using filesort
 select SQL_BIG_RESULT documentno from t1 group by documentno limit 2;
 documentno
 NULL
@@ -290,7 +290,7 @@ abc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BIG_RESULT id from t1 order by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_BIG_RESULT id from t1 order by id;
 id
 NULL
@@ -307,7 +307,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BIG_RESULT documentno from t1 order by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select SQL_BIG_RESULT documentno from t1 order by documentno limit 2;
 documentno
 NULL
@@ -317,7 +317,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_BIG_RESULT id from t1 group by id with rollup limit 10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index; Using filesort
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index; Using filesort
 select SQL_BIG_RESULT id from t1 group by id with rollup limit 10;
 id
 NULL
@@ -331,7 +331,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_BIG_RESULT id from t1 group by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index; Using filesort
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index; Using filesort
 select distinct SQL_BIG_RESULT id from t1 group by id;
 id
 NULL
@@ -344,7 +344,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_BIG_RESULT documentno from t1 group by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index; Using filesort
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index; Using filesort
 select distinct SQL_BIG_RESULT documentno from t1 group by documentno limit 2;
 documentno
 NULL
@@ -353,7 +353,7 @@ abc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select HIGH_PRIORITY documentno from t1 group by documentno;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select HIGH_PRIORITY documentno from t1 group by documentno;
 documentno
 NULL
@@ -365,7 +365,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select HIGH_PRIORITY id from t1 group by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select HIGH_PRIORITY id from t1 group by id limit 2;
 id
 NULL
@@ -374,7 +374,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select HIGH_PRIORITY documentno from t1 order by documentno;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select HIGH_PRIORITY documentno from t1 order by documentno;
 documentno
 NULL
@@ -390,7 +390,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select HIGH_PRIORITY id from t1 order by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select HIGH_PRIORITY id from t1 order by id limit 2;
 id
 NULL
@@ -400,7 +400,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select HIGH_PRIORITY documentno from t1 group by documentno with rollup limit 10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select HIGH_PRIORITY documentno from t1 group by documentno with rollup limit 10;
 documentno
 NULL
@@ -414,7 +414,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct HIGH_PRIORITY documentno from t1 group by documentno;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select distinct HIGH_PRIORITY documentno from t1 group by documentno;
 documentno
 NULL
@@ -426,7 +426,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct HIGH_PRIORITY id from t1 group by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select distinct HIGH_PRIORITY id from t1 group by id limit 2;
 id
 NULL
@@ -435,7 +435,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_CACHE id from t1 group by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_CACHE id from t1 group by id;
 id
 NULL
@@ -448,7 +448,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_CACHE documentno from t1 group by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select SQL_CACHE documentno from t1 group by documentno limit 2;
 documentno
 NULL
@@ -457,7 +457,7 @@ abc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_CACHE id from t1 order by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_CACHE id from t1 order by id;
 id
 NULL
@@ -474,7 +474,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_CACHE documentno from t1 order by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select SQL_CACHE documentno from t1 order by documentno limit 2;
 documentno
 NULL
@@ -484,7 +484,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_CACHE id from t1 group by id with rollup limit 10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_CACHE id from t1 group by id with rollup limit 10;
 id
 NULL
@@ -498,7 +498,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_CACHE id from t1 group by id;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select distinct SQL_CACHE id from t1 group by id;
 id
 NULL
@@ -511,7 +511,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_CACHE documentno from t1 group by documentno limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select distinct SQL_CACHE documentno from t1 group by documentno limit 2;
 documentno
 NULL
@@ -536,7 +536,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_NO_CACHE id from t1 group by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_NO_CACHE id from t1 group by id limit 2;
 id
 NULL
@@ -545,7 +545,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_NO_CACHE documentno from t1 order by documentno;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select SQL_NO_CACHE documentno from t1 order by documentno;
 documentno
 NULL
@@ -562,7 +562,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_NO_CACHE id from t1 order by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select SQL_NO_CACHE id from t1 order by id limit 2;
 id
 NULL
@@ -572,7 +572,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select SQL_NO_CACHE documentno from t1 group by documentno with rollup limit 10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select SQL_NO_CACHE documentno from t1 group by documentno with rollup limit 10;
 documentno
 NULL
@@ -585,7 +585,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_NO_CACHE documentno from t1 group by documentno;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	doc	131	NULL	9	Using index
+1	SIMPLE	t1	index	NULL	doc	131	NULL	#	Using index
 select distinct SQL_NO_CACHE documentno from t1 group by documentno;
 documentno
 NULL
@@ -597,7 +597,7 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select distinct SQL_NO_CACHE id from t1 group by id limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	2	Using index
+1	SIMPLE	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select distinct SQL_NO_CACHE id from t1 group by id limit 2;
 id
 NULL
@@ -606,34 +606,34 @@ NULL
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain (select documentno from t1 group by documentno limit 2) union (select documentno from t1 order by documentno limit 2);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	index	NULL	doc	131	NULL	9	Using index
-2	UNION	t1	index	NULL	doc	131	NULL	9	Using index
-NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	index	NULL	doc	131	NULL	#	Using index
+2	UNION	t1	index	NULL	doc	131	NULL	#	Using index
+NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select documentno from t1 group by documentno limit 2) union (select documentno from t1 order by documentno limit 2);
 documentno
 NULL
 abc
 [Note] SequoiaDB: optimizer selector object: { "documentno": null }, table: count_limit_sort_pushdown_sequoiadb_29792.t1
-[Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select *,(select documentno from t1 tt group by documentno limit 1) from t2 where t2.id <(select id from t1 where id=5 order by id desc limit 6);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t2	range	id_doc_sff_idx	id_doc_sff_idx	5	NULL	2	Using where with pushed condition; Using index
-3	SUBQUERY	t1	ref	id_doc_sff_idx	id_doc_sff_idx	5	const	2	Using index
-2	SUBQUERY	tt	index	NULL	doc	131	NULL	9	Using index
+1	PRIMARY	t2	range	id_doc_sff_idx	id_doc_sff_idx	5	NULL	#	Using where with pushed condition; Using index
+3	SUBQUERY	t1	ref	id_doc_sff_idx	id_doc_sff_idx	5	const	#	Using index
+2	SUBQUERY	tt	index	NULL	doc	131	NULL	#	Using index
 select *,(select documentno from t1 tt group by documentno limit 1) from t2 where t2.id <(select id from t1 where id=5 order by id desc limit 6);
 id	documentno	sffid	(select documentno from t1 tt group by documentno limit 1)
 1	abc	1	NULL
 2	abc	3	NULL
 4	bdc	4	NULL
 4	bdc	4	NULL
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 5 } }], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 5 } }], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 [Note] SequoiaDB: optimizer selector object: { "id": null, "documentno": null, "sffid": null }, table: count_limit_sort_pushdown_sequoiadb_29792.t2
 [Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 5 } }], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select * from (select documentno from t1 group by documentno limit 10) dt where documentno>="aaa" limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	9	Using where
-2	DERIVED	t1	index	NULL	doc	131	NULL	9	Using index
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where
+2	DERIVED	t1	index	NULL	doc	131	NULL	#	Using index
 select * from (select documentno from t1 group by documentno limit 10) dt where documentno>="aaa" limit 2,3;
 documentno
 cf 
@@ -643,11 +643,11 @@ ef
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select * from (select id from t1 order by id limit 6) dt where id<6 limit 2,2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using where
-2	DERIVED	t1	index	NULL	id_doc_sff_idx	142	NULL	9	Using index
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where
+2	DERIVED	t1	index	NULL	id_doc_sff_idx	142	NULL	#	Using index
 select * from (select id from t1 order by id limit 6) dt where id<6 limit 2,2;
 id
 4
 [Note] SequoiaDB: optimizer selector object: { "id": null, "documentno": null, "sffid": null }, table: count_limit_sort_pushdown_sequoiadb_29792.t1
-[Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 drop database if exists count_limit_sort_pushdown_sequoiadb_29792;

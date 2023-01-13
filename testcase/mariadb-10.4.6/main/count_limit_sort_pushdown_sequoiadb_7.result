@@ -180,9 +180,9 @@ set session optimizer_switch='optimizer_sort_pushdown=on';
 set session optimizer_index_sort_prune=on;
 explain replace into replace_table1(select count(1) from t1 where col1>2) INTERSECT (select count(1) from t2 where col4<"defg") limit 0,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition; Using index
-2	INTERSECT	t2	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(1) from t1 where col1>2) INTERSECT (select count(1) from t2 where col4<"defg") limit 0,1;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_7.t1
@@ -195,9 +195,9 @@ col1
 truncate table replace_table1;
 explain replace into t5(select * from t1 where col1>=1 limit 0,7) INTERSECT (select *  from t2 where col2>"def" limit 0,5) limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into t5(select * from t1 where col1>=1 limit 0,7) INTERSECT (select *  from t2 where col2>"def" limit 0,5) limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[7], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -222,9 +222,9 @@ NULL	abc	2022-11-15 11:40:10	abc
 truncate table t5;
 explain replace into t5(select * from t1 where col1>=1 group by col1 desc) INTERSECT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into t5(select * from t1 where col1>=1 group by col1 desc) INTERSECT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
@@ -233,9 +233,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>1 order by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>1 order by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -245,9 +245,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>1 group by col1 limit 0,7 ) INTERSECT (select * from t2 where col3>="20221115114210" group by col4 limit 0,5) order by col1  limit 1,2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>1 group by col1 limit 0,7 ) INTERSECT (select * from t2 where col3>="20221115114210" group by col4 limit 0,5) order by col1  limit 1,2;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 5 }]
@@ -256,9 +256,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3) INTERSECT (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3) INTERSECT (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 1,3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "bcd" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
@@ -268,9 +268,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 1,3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "bcd" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 2 }]
@@ -279,9 +279,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>=1 limit 2,3) INTERSECT (select * from t2 where col2>="def" order by col4 desc) order by col1 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	6	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>=1 limit 2,3) INTERSECT (select * from t2 where col2>="def" order by col4 desc) order by col1 limit 3;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -292,9 +292,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc) INTERSECT (select count(1) from t2 where col1>1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	14	Using where with pushed condition; Using index; Using pushed GROUP BY
-2	INTERSECT	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY
+2	INTERSECT	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc) INTERSECT (select count(1) from t2 where col1>1) order by col1 limit 1;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
@@ -306,9 +306,9 @@ col1
 truncate table replace_table1;
 explain replace into t5(select * from t1 where col1>1 group by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>1 group by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -317,9 +317,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -328,9 +328,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) INTERSECT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) union (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gte": "def" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 1 }]
@@ -341,10 +341,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table7(select col4 from t1 where col1>=1 limit 0,7)  INTERSECT (select col4 from t1 where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2 where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-3	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2,3>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+3	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2,3>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table7(select col4 from t1 where col1>=1 limit 0,7)  INTERSECT (select col4 from t1 where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2 where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
@@ -358,11 +358,11 @@ xyzz
 truncate table replace_table7;
 explain replace into replace_table7 (select col4 from t1 where col1>=1 limit 0,7) INTERSECT (select col4 from t2 where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1 where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2 where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-3	INTERSECT	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-4	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+3	INTERSECT	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+4	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table7(select col4 from t1 where col1>=1 limit 0,7) INTERSECT (select col4 from t2 where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1 where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2 where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.replace_table7]
@@ -376,14 +376,14 @@ xyzz
 truncate table replace_table7;
 explain  replace into replace_table7 (select col4 from t1_partition where col1>=1 limit 0,7) INTERSECT (select col4 from t2_partition where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1_partition where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	14	Using where with pushed condition
-2	INTERSECT	t2_partition	range	idx_col2	idx_col2	13	NULL	4	Using where with pushed condition
-3	INTERSECT	t1_partition	range	idx_col2	idx_col2	13	NULL	4	Using where with pushed condition; Using filesort
-4	INTERSECT	t2_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+3	INTERSECT	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+4	INTERSECT	t2_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table7 (select col4 from t1_partition where col1>=1 limit 0,7) INTERSECT (select col4 from t2_partition where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1_partition where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
-[Note] SequoiaDB: Release local statistics for current handler
-[Note] SequoiaDB: Release local statistics for current handler
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.replace_table7]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[7], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2_partition]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col4": -1 }], hint[{ "": "" }], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1_partition]
@@ -411,9 +411,9 @@ NULL	abc	2022-11-15 11:40:10	abc	2
 truncate table t3_partition;
 explain replace into t5(select * from t1 where col1>=1 order by col1 desc) INTERSECT (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into t5(select * from t1 where col1>=1 order by col1 desc) INTERSECT (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -424,9 +424,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 desc) INTERSECT (select count(*) from t2 where col2>"def" group by col2 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 desc) INTERSECT (select count(*) from t2 where col2>"def" group by col2 desc) limit 1,3;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col2": null }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{ "_id": null, "col2": null }], order_by[{ "col2": -1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -435,9 +435,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(*) from t1 where col1>1 group by col1 limit 0,7 ) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col4 limit 0,5)  limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using temporary; Using filesort
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(*) from t1 where col1>1 group by col1 limit 0,7 ) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col4 limit 0,5)  limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -447,9 +447,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 1,3;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col3": null }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -459,9 +459,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2)  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2)  limit 1,3;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col3": null }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -470,9 +470,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(1) from t1 where col1>=1 limit 0,7) INTERSECT (select count(1)  from t2 where col2>"def" limit 0,5) limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(1) from t1 where col1>=1 limit 0,7) INTERSECT (select count(1)  from t2 where col2>"def" limit 0,5) limit 2;
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -481,9 +481,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) INTERSECT (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) INTERSECT (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -492,9 +492,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(1) from t1 where col1>1 order by col1 desc) INTERSECT (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(1) from t1 where col1>1 order by col1 desc) INTERSECT (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3) limit 1,3;
 [Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -503,9 +503,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(1) from t1 where col1>1) EXCEPT (select count(1) from t2 where col4<"zzz") limit 0,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	EXCEPT	t2	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(1) from t1 where col1>1) EXCEPT (select count(1) from t2 where col4<"zzz") limit 0,1;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_7.t1
@@ -519,9 +519,9 @@ col1
 truncate table replace_table1;
 explain replace into t5(select * from t1 where col1>=1 limit 2,4) EXCEPT (select *  from t2 where col2>"def" limit 2,3) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into t5(select * from t1 where col1>=1 limit 2,4) EXCEPT (select *  from t2 where col2>"def" limit 2,3) limit 1,3;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[4], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -532,9 +532,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>=1 group by col1 desc) EXCEPT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into t5(select * from t1 where col1>=1 group by col1 desc) EXCEPT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
@@ -546,9 +546,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>1 order by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>1 order by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -560,9 +560,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>1 group by col1 limit 2,4 ) EXCEPT (select * from t2 where col3>="20221115114210" group by col4 limit 2,3) order by col1  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>1 group by col1 limit 2,4 ) EXCEPT (select * from t2 where col3>="20221115114210" group by col4 limit 2,3) order by col1  limit 1,3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 4 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 3 }]
@@ -574,9 +574,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col4>"abc" group by col3 order by col3) EXCEPT (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col4>"abc" group by col3 order by col3) EXCEPT (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "abc" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
@@ -588,9 +588,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col4>"abc" group by col3 order by col3  limit 0,3) EXCEPT (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col4>"abc" group by col3 order by col3  limit 0,3) EXCEPT (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "abc" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 2 }]
@@ -602,9 +602,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>=1 limit 2,3) EXCEPT (select * from t2 where col2>="def" order by col4 desc) order by col1 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	6	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>=1 limit 2,3) EXCEPT (select * from t2 where col2>="def" order by col4 desc) order by col1 limit 3;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -614,9 +614,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc) EXCEPT (select count(1) from t2 where col1>1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	14	Using where with pushed condition; Using index; Using pushed GROUP BY
-2	EXCEPT	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY
+2	EXCEPT	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc) EXCEPT (select count(1) from t2 where col1>1) order by col1 limit 1;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
@@ -629,9 +629,9 @@ col1
 truncate table replace_table1;
 explain replace into t5(select * from t1 where col1>1 group by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>1 group by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -641,9 +641,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col1>1 group by col1 desc  limit 0,7) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>1 group by col1 desc  limit 0,7) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -655,9 +655,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) EXCEPT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col4>="def" order by col4 limit 2,3) union (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gte": "def" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 1 }]
@@ -668,10 +668,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table7(select col2 from t1 where col1>=1 limit 0,7)  EXCEPT (select col2 from t1 where col2>="defg" order by col2 desc limit 1) EXCEPT (select col2 from t2 where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col12	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t1	index	idx_col2	idx_col2	13	NULL	14	Using where with pushed condition; Using index; Using pushed ORDER BY
-3	EXCEPT	t2	index	idx_col1,idx_col12	idx_col12	18	NULL	14	Using where with pushed condition; Using index; Using pushed GROUP BY; Using pushed ORDER BY
-NULL	EXCEPT RESULT	<except1,2,3>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col12	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t1	index	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index; Using pushed ORDER BY
+3	EXCEPT	t2	index	idx_col1,idx_col12	idx_col12	18	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY; Using pushed ORDER BY
+NULL	EXCEPT RESULT	<except1,2,3>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table7(select col2 from t1 where col1>=1 limit 0,7)  EXCEPT (select col2 from t1 where col2>="defg" order by col2 desc limit 1) EXCEPT (select col2 from t2 where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t5]
 [Note] SequoiaDB: optimizer selector object: { "col1": null, "col2": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
@@ -686,11 +686,11 @@ xyz
 truncate table replace_table7;
 explain replace into t5(select * from t1 where col1>=1 limit 0,7) EXCEPT (select * from t2 where col2>"defg" order by col4 desc) EXCEPT (select * from t1 where col2>="defg" order by col4 desc limit 2,3) EXCEPT (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col3 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-3	EXCEPT	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-4	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+3	EXCEPT	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+4	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into t5(select * from t1 where col1>=1 limit 0,7) EXCEPT (select * from t2 where col2>"defg" order by col4 desc) EXCEPT (select * from t1 where col2>="defg" order by col4 desc limit 2,3) EXCEPT (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col3 desc limit 1;
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.replace_table7]
@@ -704,11 +704,11 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table7(select col2 from t1_partition where col1>=1 limit 0,7) EXCEPT (select col2 from t2_partition where col2>"defg" order by col2 desc) EXCEPT (select col2 from t1_partition where col2>="defg" order by col2 desc limit 1) EXCEPT (select col2 from t2_partition where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	index	idx_col1,idx_col12	idx_col12	18	NULL	18	Using where with pushed condition; Using index
-2	EXCEPT	t2_partition	range	idx_col2	idx_col2	13	NULL	4	Using where with pushed condition; Using index
-3	EXCEPT	t1_partition	index	idx_col2	idx_col2	13	NULL	18	Using where with pushed condition; Using index; Using pushed ORDER BY
-4	EXCEPT	t2_partition	index	idx_col1,idx_col12	idx_col12	18	NULL	18	Using where with pushed condition; Using index; Using pushed GROUP BY; Using pushed ORDER BY
-NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1_partition	index	idx_col1,idx_col12	idx_col12	18	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+3	EXCEPT	t1_partition	index	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index; Using pushed ORDER BY
+4	EXCEPT	t2_partition	index	idx_col1,idx_col12	idx_col12	18	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY; Using pushed ORDER BY
+NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table7(select col2 from t1_partition where col1>=1 limit 0,7) EXCEPT (select col2 from t2_partition where col2>"defg" order by col2 desc) EXCEPT (select col2 from t1_partition where col2>="defg" order by col2 desc limit 1) EXCEPT (select col2 from t2_partition where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{ "col1": null, "col2": null }], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[7], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1_partition]
 [Note] SequoiaDB: optimizer selector object: { "col2": null }, table: count_limit_sort_pushdown_sequoiadb_7.t2_partition
@@ -722,9 +722,9 @@ defg
 truncate table replace_table7;
 explain replace into replace_table1(select col1 from t1 where col1>=1 order by col1 desc) EXCEPT (select col1 from t2 where col2>"def" order by col1 desc) limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t2	index	idx_col2	idx_col12	18	NULL	14	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	index	idx_col2	idx_col12	18	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select col1 from t1 where col1>=1 order by col1 desc) EXCEPT (select col1 from t2 where col2>"def" order by col1 desc) limit 1;
 [Note] SequoiaDB: optimizer selector object: { "col1": null, "col2": null }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{ "col1": null, "col2": null }], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -734,9 +734,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 desc) EXCEPT (select count(*) from t2 where col2>"defg" group by col2 desc) limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(*) from t1 where col1>=1 group by col1 desc) EXCEPT (select count(*) from t2 where col2>"defg" group by col2 desc) limit 3;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col2": null }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{ "_id": null, "col2": null }], order_by[{ "col2": -1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -746,9 +746,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 (select count(*) from t1 where col1>1 group by col1 limit 0,7 ) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col4 limit 2,3)  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using temporary; Using filesort
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(*) from t1 where col1>1 group by col1 limit 0,7 ) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col4 limit 2,3)  limit 3;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -758,9 +758,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(*) from t1 where col4>"abc" group by col3 order by col3) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(*) from t1 where col4>"abc" group by col3 order by col3) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 3;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col3": null }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -770,9 +770,9 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1(select count(*) from t1 where col4>"abc" group by col3 order by col3  limit 0,7) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,1)  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,7) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,1)  limit 3;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col3": null }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -783,9 +783,9 @@ col1
 truncate table replace_table1;
 explain  replace into replace_table1(select count(1) from t1 where col1>=1 limit 2,4) EXCEPT (select count(1)  from t2 where col2>"def" limit 2,3) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(1) from t1 where col1>=1 limit 2,4) EXCEPT (select count(1)  from t2 where col2>"def" limit 2,3) limit 1,3;
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -794,9 +794,9 @@ col1
 truncate table replace_table1;
 explain  replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) EXCEPT (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) EXCEPT (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -805,9 +805,9 @@ col1
 truncate table replace_table1;
 explain  replace into replace_table1(select count(1) from t1 where col1>1 order by col1 desc) EXCEPT (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into replace_table1(select count(1) from t1 where col1>1 order by col1 desc) EXCEPT (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
 [Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_7.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_7.t2]
@@ -816,8 +816,8 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1) from t1  where col3>"20221115114212") select count(1) from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition; Using index
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
 replace into replace_table1 with t as (select count(1) from t1  where col3>"20221115114212") select count(1) from t;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col3": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gt": "2022-11-15 11:42:12" } }, table: count_limit_sort_pushdown_sequoiadb_7.t1
@@ -828,8 +828,8 @@ col1
 truncate table replace_table1;
 explain replace into t5 with t as (select * from t1  where col3>"20221115114212" limit 6) select * from t limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from t1  where col3>"20221115114212" limit 6) select * from t limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -838,8 +838,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col4>"cs" group by col2) select * from t group by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 with t as (select * from t1  where col4>"cs" group by col2) select * from t group by col4;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "cs" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 select * from t5;
@@ -852,8 +852,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 replace into t5 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t order by col1 limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -862,8 +862,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col4>"cs" group by col2 limit 5) select * from t group by col4  limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 with t as (select * from t1  where col4>"cs" group by col2 limit 5) select * from t group by col4  limit 2,1;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "cs" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 5 }]
 select * from t5;
@@ -872,8 +872,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col4>"cs" group by col2 order by col2) select * from t group by col4 order by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 replace into t5 with t as (select * from t1  where col4>"cs" group by col2 order by col2) select * from t group by col4 order by col4;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "cs" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 select * from t5;
@@ -886,8 +886,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col4>"cs" group by col2 order by col2 limit 5) select * from t group by col4 order by col4 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 replace into t5 with t as (select * from t1  where col4>"cs" group by col2 order by col2 limit 5) select * from t group by col4 order by col4 limit 2;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "cs" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 5 }]
 select * from t5;
@@ -897,8 +897,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col1>1 limit 2,1) select * from t order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
-2	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from t1  where col1>1 limit 2,1) select * from t order by col2 desc;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -907,7 +907,7 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col1>1 order by col2 desc) select * from t limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition
+1	SIMPLE	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from t1  where col1>1 order by col2 desc) select * from t limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -917,8 +917,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table5 with t as (select count(*),col2 from t1  where col1>1 limit 5) select * from t order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using filesort
-2	DERIVED	t1	range	idx_col1,idx_col12	idx_col12	5	NULL	8	Using where with pushed condition; Using index
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	range	idx_col1,idx_col12	idx_col12	5	NULL	#	Using where with pushed condition; Using index
 replace into replace_table5 with t as (select count(*),col2 from t1  where col1>1 limit 5) select * from t order by col2 desc;
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col12" }] table[count_limit_sort_pushdown_sequoiadb_7.t1]
@@ -928,7 +928,7 @@ col1	col2
 truncate table replace_table5;
 explain replace into replace_table1 with t as (select * from t1  where col4>"cs" order by col2) select count(1) from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select * from t1  where col4>"cs" order by col2) select count(1) from t;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col4": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$gt": "cs" } }, table: count_limit_sort_pushdown_sequoiadb_7.t1
@@ -938,7 +938,7 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 select * from t5;
@@ -947,8 +947,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 select * from t5;
@@ -958,8 +958,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 replace into t5 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -969,8 +969,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from t1  where col3>"20221115114212" group by col4 limit 6) select * from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 with t as (select * from t1  where col3>"20221115114212" group by col4 limit 6) select * from t order by col1 limit 2,1;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
@@ -980,8 +980,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table1 with t as (select * from t1  where col4>"aa" group by col3 order by col3 limit 2,1) select count(1) from t where col1<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using where
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 replace into replace_table1 with t as (select * from t1  where col4>"aa" group by col3 order by col3 limit 2,1) select count(1) from t where col1<10;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 1 }]
 select * from replace_table1;
@@ -991,8 +991,8 @@ col1
 truncate table replace_table1;
 explain replace into replace_table5 with t as (select count(*),col4 from t1  where col4>"cs") select * from t group by col4 order by col4 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
 replace into replace_table5 with t as (select count(*),col4 from t1  where col4>"cs") select * from t group by col4 order by col4 limit 2;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col4": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$gt": "cs" } }, table: count_limit_sort_pushdown_sequoiadb_7.t1
@@ -1003,8 +1003,8 @@ col1	col2
 truncate table replace_table5;
 explain replace into replace_table1 with t as (select * from t1  where col4>"cs" limit 5) select count(*)  from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select * from t1  where col4>"cs" limit 5) select count(*)  from t;
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "cs" } }], selector[{}], order_by[{}], hint[{}], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1013,8 +1013,8 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(*) from t1  where col4>"cs") select * from t limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(*) from t1  where col4>"cs") select * from t limit 2;
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col4": null }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$gt": "cs" } }, table: count_limit_sort_pushdown_sequoiadb_7.t1
@@ -1025,7 +1025,7 @@ col1
 truncate table replace_table1;
 explain replace into t5 with t as (select * from t1  where col3>"20221115114212" order by col4) select * from t order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition; Using filesort
+1	SIMPLE	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using filesort
 replace into t5 with t as (select * from t1  where col3>"20221115114212" order by col4) select * from t order by col1;
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1036,8 +1036,8 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table1 with t as (select count(1),col1 from t1  where col4>"cs" group by col2) select count(1) from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
 replace into replace_table1 with t as (select count(1),col1 from t1  where col4>"cs" group by col2) select count(1) from t group by col1 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "cs" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1047,8 +1047,8 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1),col1 from t1  where col4>"cs" group by col2 limit 5) select count(1) from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	t1	index	NULL	idx_col2	13	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	index	NULL	idx_col2	13	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from t1  where col4>"cs" group by col2 limit 5) select count(1) from t group by col1 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "cs" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1058,8 +1058,8 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1),col1 from t1  where col4>"cs" group by col2 order by col2)  select count(1) from t group by col1 order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
 replace into replace_table1 with t as (select count(1),col1 from t1  where col4>"cs" group by col2 order by col2)  select count(1) from t group by col1 order by col1;
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "cs" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1072,8 +1072,8 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1),col1 from t1  where col4>"cs" group by col2 order by col2 limit 5) select count(1) from t group by col1 order by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	t1	index	NULL	idx_col2	13	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	index	NULL	idx_col2	13	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from t1  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2;
 [Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gt": "2022-11-15 11:42:12" } }, table: count_limit_sort_pushdown_sequoiadb_7.t1
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_7.t1]
@@ -1083,8 +1083,8 @@ col1
 truncate table replace_table1;
 explain  replace into replace_table1 with t as (select * from t1  where col3>"20221115114212" limit 6) select count(1) from t limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select * from t1  where col3>"20221115114212" limit 6) select count(1) from t limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1092,7 +1092,7 @@ col1
 truncate table replace_table1;
 explain  replace into replace_table1 with t as (select * from t1  where col3>"20221115114212" order by col4) select count(1) from t order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition
+1	SIMPLE	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select * from t1  where col3>"20221115114212" order by col4) select count(1) from t order by col1;
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1101,8 +1101,8 @@ col1
 truncate table replace_table1;
 explain  replace into replace_table1 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 replace into replace_table1 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1110,10 +1110,10 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212") select count(1) from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212") select count(1) from t;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1122,10 +1122,10 @@ col1
 truncate table replace_table1;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" limit 6) select * from t limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" limit 6) select * from t limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1133,10 +1133,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2) select * from t group by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2) select * from t group by col4;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1147,10 +1147,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select * from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select * from t order by col1 limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1158,10 +1158,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 limit 5) select * from t group by col4  limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 limit 5) select * from t group by col4  limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1170,10 +1170,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2) select * from t group by col4 order by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2) select * from t group by col4 order by col4;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1184,10 +1184,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2 limit 5) select * from t group by col4 order by col4 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2 limit 5) select * from t group by col4 order by col4 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1197,10 +1197,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 limit 2,1) select * from t order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 limit 2,1) select * from t order by col2 desc;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1209,9 +1209,9 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 order by col2 desc) select * from t limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 order by col2 desc) select * from t limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1221,10 +1221,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table5 with t as (select count(*),col2 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 limit 5) select * from t order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table5 with t as (select count(*),col2 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 limit 5) select * from t order by col2 desc;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table5;
@@ -1233,10 +1233,10 @@ col1	col2
 truncate table replace_table5;
 explain replace into replace_table1 with t as (select count(1) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" order by col2) select count(1) from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" order by col2) select count(1) from t;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1245,9 +1245,9 @@ col1
 truncate table replace_table1;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1256,10 +1256,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col2>"def" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col2>"def" group by col2 desc) select * from t order by col3 desc;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1268,10 +1268,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1280,10 +1280,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" group by col4 limit 6) select * from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" group by col4 limit 6) select * from t order by col1 limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1291,10 +1291,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table1 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"aa" group by col3 order by col3 limit 2,1) select count(1) from t where col1<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using where
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"aa" group by col3 order by col3 limit 2,1) select count(1) from t where col1<10;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1303,10 +1303,10 @@ col1
 truncate table replace_table1;
 explain replace into replace_table5 with t as (select count(*),col4 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs") select * from t group by col4 order by col4 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table5 with t as (select count(*),col4 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs") select * from t group by col4 order by col4 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1314,10 +1314,10 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" limit 5) select count(*)  from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" limit 5) select count(*)  from t;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1326,10 +1326,10 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(*) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs") select * from t limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(*) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs") select * from t limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1338,9 +1338,9 @@ col1
 truncate table replace_table1;
 explain replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4) select * from t order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into t5 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4) select * from t order by col1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from t5;
@@ -1349,10 +1349,10 @@ col1	col2	col3	col4
 truncate table t5;
 explain replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2) select count(1) from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2) select count(1) from t group by col1 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1362,10 +1362,10 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 limit 5) select count(1) from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 limit 5) select count(1) from t group by col1 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1375,10 +1375,10 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2)  select count(1) from t group by col1 order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2)  select count(1) from t group by col1 order by col1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1389,10 +1389,10 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2 limit 5) select count(1) from t group by col1 order by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1401,10 +1401,10 @@ col1
 truncate table replace_table1;
 explain replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1413,10 +1413,10 @@ col1
 truncate table replace_table1;
 explain  replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4) select count(1) from t order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4) select count(1) from t order by col1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;
@@ -1425,10 +1425,10 @@ col1
 truncate table replace_table1;
 explain  replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	6	Using where
-5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived5>	ALL	NULL	NULL	NULL	NULL	#	Using where
+5	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 replace into replace_table1 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2,1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_7.t1]
 select * from replace_table1;

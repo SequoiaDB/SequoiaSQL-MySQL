@@ -109,9 +109,9 @@ set session optimizer_switch='optimizer_sort_pushdown=on';
 set session optimizer_index_sort_prune=on;
 explain (select count(1) from t1 where col1>2) INTERSECT (select count(1) from t2 where col4<"defg") limit 0,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition; Using index
-2	INTERSECT	t2	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(1) from t1 where col1>2) INTERSECT (select count(1) from t2 where col4<"defg") limit 0,1;
 count(1)
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_5.t1
@@ -122,9 +122,9 @@ count(1)
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "defg" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>=1 limit 0,7) INTERSECT (select *  from t2 where col2>"def" limit 0,5) limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 limit 0,7) INTERSECT (select *  from t2 where col2>"def" limit 0,5) limit 2;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
@@ -133,18 +133,18 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>=1 group by col1 desc) INTERSECT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) INTERSECT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 order by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
@@ -152,18 +152,18 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>1 group by col1 limit 0,7 ) INTERSECT (select * from t2 where col3>="20221115114210" group by col4 limit 0,5) order by col1  limit 1,2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 limit 0,7 ) INTERSECT (select * from t2 where col3>="20221115114210" group by col4 limit 0,5) order by col1  limit 1,2;
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 5 }]
 explain (select * from t1 where col4>"bcd" group by col3 order by col3) INTERSECT (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col4>"bcd" group by col3 order by col3) INTERSECT (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 1,3;
 col1	col2	col3	col4
 6	def	2022-11-15 11:42:10	def
@@ -171,18 +171,18 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 1,3;
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "bcd" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 2 }]
 explain (select * from t1 where col1>=1 limit 2,3) INTERSECT (select * from t2 where col2>="def" order by col4 desc) order by col1 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	6	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>=1 limit 2,3) INTERSECT (select * from t2 where col2>="def" order by col4 desc) order by col1 limit 3;
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
@@ -191,9 +191,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select col1 from t1 where col1>1 group by col1 desc) INTERSECT (select count(1) from t2 where col1>1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	14	Using where with pushed condition; Using index; Using pushed GROUP BY
-2	INTERSECT	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY
+2	INTERSECT	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc) INTERSECT (select count(1) from t2 where col1>1) order by col1 limit 1;
 col1
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_5.t1
@@ -203,27 +203,27 @@ col1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>1 group by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) INTERSECT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+2	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col4>="def" order by col4 limit 2,3) union (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
@@ -232,10 +232,10 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 1 }]
 explain (select col4 from t1 where col1>=1 limit 0,7)  INTERSECT (select col4 from t1 where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2 where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-3	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2,3>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+3	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2,3>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col4 from t1 where col1>=1 limit 0,7)  INTERSECT (select col4 from t1 where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2 where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 col4
 xyzz 
@@ -247,11 +247,11 @@ xyzz
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 explain  (select col4 from t1 where col1>=1 limit 0,7) INTERSECT (select col4 from t2 where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1 where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2 where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-3	INTERSECT	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-4	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+3	INTERSECT	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+4	INTERSECT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col4 from t1 where col1>=1 limit 0,7) INTERSECT (select col4 from t2 where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1 where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2 where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 col4
 xyzz 
@@ -263,25 +263,25 @@ xyzz
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 explain  (select col4 from t1_partition where col1>=1 limit 0,7) INTERSECT (select col4 from t2_partition where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1_partition where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	14	Using where with pushed condition
-2	INTERSECT	t2_partition	range	idx_col2	idx_col2	13	NULL	4	Using where with pushed condition
-3	INTERSECT	t1_partition	range	idx_col2	idx_col2	13	NULL	4	Using where with pushed condition; Using filesort
-4	INTERSECT	t2_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+3	INTERSECT	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+4	INTERSECT	t2_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col4 from t1_partition where col1>=1 limit 0,7) INTERSECT (select col4 from t2_partition where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1_partition where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 col4
 xyz 
-[Note] SequoiaDB: Release local statistics for current handler
-[Note] SequoiaDB: Release local statistics for current handler
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col4": -1 }], hint[{ "": "" }], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[7], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2_partition]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col4": -1 }], hint[{ "": "" }], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1_partition]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 explain (select * from t1 where col1>=1 order by col1 desc) INTERSECT (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 order by col1 desc) INTERSECT (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
@@ -290,18 +290,18 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(*) from t1 where col1>=1 group by col1 desc) INTERSECT (select count(*) from t2 where col2>"def" group by col2 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(*) from t1 where col1>=1 group by col1 desc) INTERSECT (select count(*) from t2 where col2>"def" group by col2 desc) limit 1,3;
 count(*)
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col2": null }, table: count_limit_sort_pushdown_sequoiadb_5.t2
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{ "_id": null, "col2": null }], order_by[{ "col2": -1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(*) from t1 where col1>1 group by col1 limit 0,7 ) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col4 limit 0,5)  limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using temporary; Using filesort
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(*) from t1 where col1>1 group by col1 limit 0,7 ) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col4 limit 0,5)  limit 2;
 count(*)
 1
@@ -309,9 +309,9 @@ count(*)
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(*) from t1 where col4>"bcd" group by col3 order by col3) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(*) from t1 where col4>"bcd" group by col3 order by col3) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 1,3;
 count(*)
 3
@@ -319,45 +319,45 @@ count(*)
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2)  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,3) INTERSECT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2)  limit 1,3;
 count(*)
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col3": null }, table: count_limit_sort_pushdown_sequoiadb_5.t2
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(1) from t1 where col1>=1 limit 0,7) INTERSECT (select count(1)  from t2 where col2>"def" limit 0,5) limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition; Using index
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(1) from t1 where col1>=1 limit 0,7) INTERSECT (select count(1)  from t2 where col2>"def" limit 0,5) limit 2;
 count(1)
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_5.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(1) from t1 where col1>=1 order by col1 desc) INTERSECT (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(1) from t1 where col1>=1 order by col1 desc) INTERSECT (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 count(1)
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_5.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(1) from t1 where col1>1 order by col1 desc) INTERSECT (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition
-NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	INTERSECT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
+NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(1) from t1 where col1>1 order by col1 desc) INTERSECT (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3) limit 1,3;
 count(1)
 [Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_5.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(1) from t1 where col1>1) EXCEPT (select count(1) from t2 where col4<"zzz") limit 0,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	EXCEPT	t2	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(1) from t1 where col1>1) EXCEPT (select count(1) from t2 where col4<"zzz") limit 0,1;
 count(1)
 8
@@ -369,9 +369,9 @@ count(1)
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "zzz" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>=1 limit 2,4) EXCEPT (select *  from t2 where col2>"def" limit 2,3) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 limit 2,4) EXCEPT (select *  from t2 where col2>"def" limit 2,3) limit 1,3;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
@@ -380,9 +380,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>=1 group by col1 desc) EXCEPT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) EXCEPT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
 4	abcde	2022-11-15 11:40:20	efg
@@ -392,9 +392,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 order by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
@@ -404,9 +404,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>1 group by col1 limit 2,4 ) EXCEPT (select * from t2 where col3>="20221115114210" group by col4 limit 2,3) order by col1  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 limit 2,4 ) EXCEPT (select * from t2 where col3>="20221115114210" group by col4 limit 2,3) order by col1  limit 1,3;
 col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
@@ -416,9 +416,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 3 }]
 explain (select * from t1 where col4>"abc" group by col3 order by col3) EXCEPT (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col4>"abc" group by col3 order by col3) EXCEPT (select * from t2 where col3>="20221115114210" group by col3 order by col3) order by col1  limit 3;
 col1	col2	col3	col4
 2	def	NULL	def
@@ -428,9 +428,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col4>"abc" group by col3 order by col3  limit 0,3) EXCEPT (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col4>"abc" group by col3 order by col3  limit 0,3) EXCEPT (select * from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,2) order by col1  limit 3;
 col1	col2	col3	col4
 2	def	NULL	def
@@ -440,9 +440,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 2 }]
 explain (select * from t1 where col1>=1 limit 2,3) EXCEPT (select * from t2 where col2>="def" order by col4 desc) order by col1 limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	6	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>=1 limit 2,3) EXCEPT (select * from t2 where col2>="def" order by col4 desc) order by col1 limit 3;
 col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
@@ -450,9 +450,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select col1 from t1 where col1>1 group by col1 desc) EXCEPT (select count(1) from t2 where col1>1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	14	Using where with pushed condition; Using index; Using pushed GROUP BY
-2	EXCEPT	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY
+2	EXCEPT	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc) EXCEPT (select count(1) from t2 where col1>1) order by col1 limit 1;
 col1
 2
@@ -463,9 +463,9 @@ col1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>1 group by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
 2	def	NULL	def
@@ -473,9 +473,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,7) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc  limit 0,7) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
@@ -485,9 +485,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) EXCEPT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+2	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col4>="def" order by col4 limit 2,3) union (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
@@ -496,10 +496,10 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 1 }]
 explain (select col2 from t1 where col1>=1 limit 0,7)  EXCEPT (select col2 from t1 where col2>="defg" order by col2 desc limit 1) EXCEPT (select col2 from t2 where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col12	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t1	index	idx_col2	idx_col2	13	NULL	14	Using where with pushed condition; Using index; Using pushed ORDER BY
-3	EXCEPT	t2	index	idx_col1,idx_col12	idx_col12	18	NULL	14	Using where with pushed condition; Using index; Using pushed GROUP BY; Using pushed ORDER BY
-NULL	EXCEPT RESULT	<except1,2,3>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col12	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t1	index	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index; Using pushed ORDER BY
+3	EXCEPT	t2	index	idx_col1,idx_col12	idx_col12	18	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY; Using pushed ORDER BY
+NULL	EXCEPT RESULT	<except1,2,3>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col2 from t1 where col1>=1 limit 0,7)  EXCEPT (select col2 from t1 where col2>="defg" order by col2 desc limit 1) EXCEPT (select col2 from t2 where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 col2
 xyz
@@ -511,11 +511,11 @@ xyz
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain (select * from t1 where col1>=1 limit 0,7) EXCEPT (select * from t2 where col2>"defg" order by col4 desc) EXCEPT (select * from t1 where col2>="defg" order by col4 desc limit 2,3) EXCEPT (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col3 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-3	EXCEPT	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
-4	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+3	EXCEPT	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+4	EXCEPT	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>=1 limit 0,7) EXCEPT (select * from t2 where col2>"defg" order by col4 desc) EXCEPT (select * from t1 where col2>="defg" order by col4 desc limit 2,3) EXCEPT (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col3 desc limit 1;
 col1	col2	col3	col4
 4	abcde	2022-11-15 11:40:20	efg
@@ -527,11 +527,11 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 1 }]
 explain (select col2 from t1_partition where col1>=1 limit 0,7) EXCEPT (select col2 from t2_partition where col2>"defg" order by col2 desc) EXCEPT (select col2 from t1_partition where col2>="defg" order by col2 desc limit 1) EXCEPT (select col2 from t2_partition where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	index	idx_col1,idx_col12	idx_col12	18	NULL	18	Using where with pushed condition; Using index
-2	EXCEPT	t2_partition	range	idx_col2	idx_col2	13	NULL	4	Using where with pushed condition; Using index
-3	EXCEPT	t1_partition	index	idx_col2	idx_col2	13	NULL	18	Using where with pushed condition; Using index; Using pushed ORDER BY
-4	EXCEPT	t2_partition	index	idx_col1,idx_col12	idx_col12	18	NULL	18	Using where with pushed condition; Using index; Using pushed GROUP BY; Using pushed ORDER BY
-NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+1	PRIMARY	t1_partition	index	idx_col1,idx_col12	idx_col12	18	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+3	EXCEPT	t1_partition	index	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index; Using pushed ORDER BY
+4	EXCEPT	t2_partition	index	idx_col1,idx_col12	idx_col12	18	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY; Using pushed ORDER BY
+NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col2 from t1_partition where col1>=1 limit 0,7) EXCEPT (select col2 from t2_partition where col2>"defg" order by col2 desc) EXCEPT (select col2 from t1_partition where col2>="defg" order by col2 desc limit 1) EXCEPT (select col2 from t2_partition where col1>=1 group by col2 order by col2 desc limit 1) order by col2 desc limit 1;
 col2
 defg 
@@ -543,9 +543,9 @@ defg
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain (select * from t1 where col1>=1 order by col1 desc) EXCEPT (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 order by col1 desc) EXCEPT (select * from t2 where col2>"def" order by col4 desc) limit 1,3;
 col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
@@ -555,9 +555,9 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(*) from t1 where col1>=1 group by col1 desc) EXCEPT (select count(*) from t2 where col2>"defg" group by col2 desc) limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(*) from t1 where col1>=1 group by col1 desc) EXCEPT (select count(*) from t2 where col2>"defg" group by col2 desc) limit 3;
 count(*)
 2
@@ -565,9 +565,9 @@ count(*)
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{ "_id": null, "col2": null }], order_by[{ "col2": -1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain  (select count(*) from t1 where col1>1 group by col1 limit 0,7 ) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col4 limit 2,3)  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using temporary; Using filesort
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(*) from t1 where col1>1 group by col1 limit 0,7 ) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col4 limit 2,3)  limit 3;
 count(*)
 2
@@ -575,9 +575,9 @@ count(*)
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(*) from t1 where col4>"abc" group by col3 order by col3) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(*) from t1 where col4>"abc" group by col3 order by col3) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3)  limit 3;
 count(*)
 2
@@ -585,9 +585,9 @@ count(*)
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(*) from t1 where col4>"abc" group by col3 order by col3  limit 0,7) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,1)  limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
-2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
+2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(*) from t1 where col4>"bcd" group by col3 order by col3  limit 0,7) EXCEPT (select count(*) from t2 where col3>="20221115114210" group by col3 order by col3  limit 0,1)  limit 3;
 count(*)
 2
@@ -596,35 +596,35 @@ count(*)
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(1) from t1 where col1>=1 limit 2,4) EXCEPT (select count(1)  from t2 where col2>"def" limit 2,3) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition; Using index
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition; Using index
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(1) from t1 where col1>=1 limit 2,4) EXCEPT (select count(1)  from t2 where col2>"def" limit 2,3) limit 1,3;
 count(1)
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_5.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(1) from t1 where col1>=1 order by col1 desc) EXCEPT (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	9	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	3	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(1) from t1 where col1>=1 order by col1 desc) EXCEPT (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 count(1)
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_5.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain (select count(1) from t1 where col1>1 order by col1 desc) EXCEPT (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition; Using index
-2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	4	Using where with pushed condition
-NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
+2	EXCEPT	t2	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
+NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select count(1) from t1 where col1>1 order by col1 desc) EXCEPT (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
 count(1)
 [Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_5.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_5.t2]
 explain  with t as (select count(1) from t1  where col3>"20221115114212") select count(1) from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition; Using index
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using index
 with t as (select count(1) from t1  where col3>"20221115114212") select count(1) from t;
 count(1)
 1
@@ -633,16 +633,16 @@ count(1)
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col3>"20221115114212" limit 6) select * from t limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 with t as (select * from t1  where col3>"20221115114212" limit 6) select * from t limit 2,1;
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col4>"cs" group by col2) select * from t group by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 with t as (select * from t1  where col4>"cs" group by col2) select * from t group by col4;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
@@ -653,24 +653,24 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "cs" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t order by col1 limit 2,1;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col4>"cs" group by col2 limit 5) select * from t group by col4  limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 with t as (select * from t1  where col4>"cs" group by col2 limit 5) select * from t group by col4  limit 2,1;
 col1	col2	col3	col4
 4	abcde	2022-11-15 11:40:20	efg
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "cs" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 5 }]
 explain  with t as (select * from t1  where col4>"cs" group by col2 order by col2) select * from t group by col4 order by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t1  where col4>"cs" group by col2 order by col2) select * from t group by col4 order by col4;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
@@ -681,8 +681,8 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "cs" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col4>"cs" group by col2 order by col2 limit 5) select * from t group by col4 order by col4 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t1  where col4>"cs" group by col2 order by col2 limit 5) select * from t group by col4 order by col4 limit 2;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
@@ -690,15 +690,15 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "cs" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 5 }]
 explain  with t as (select * from t1  where col1>1 limit 2,1) select * from t order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
-2	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from t1  where col1>1 limit 2,1) select * from t order by col2 desc;
 col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col1>1 order by col2 desc) select * from t limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	8	Using where with pushed condition
+1	SIMPLE	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from t1  where col1>1 order by col2 desc) select * from t limit 2;
 col1	col2	col3	col4
 2	def	NULL	def
@@ -706,8 +706,8 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{}], hint[{ "": "idx_col1" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(*),col2 from t1  where col1>1 limit 5) select * from t order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using filesort
-2	DERIVED	t1	range	idx_col1,idx_col12	idx_col12	5	NULL	8	Using where with pushed condition; Using index
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	range	idx_col1,idx_col12	idx_col12	5	NULL	#	Using where with pushed condition; Using index
 with t as (select count(*),col2 from t1  where col1>1 limit 5) select * from t order by col2 desc;
 count(*)	col2
 8	def
@@ -715,7 +715,7 @@ count(*)	col2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col12" }] table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col4>"cs" order by col2) select count(1) from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
 with t as (select * from t1  where col4>"cs" order by col2) select count(1) from t;
 count(1)
 7
@@ -724,15 +724,15 @@ count(1)
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$gt": "cs" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
@@ -740,8 +740,8 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using temporary; Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
@@ -749,24 +749,24 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col3>"20221115114212" group by col4 limit 6) select * from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	Using filesort
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 with t as (select * from t1  where col3>"20221115114212" group by col4 limit 6) select * from t order by col1 limit 2,1;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gt": "2022-11-15 11:42:12" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 6 }]
 explain  with t as (select * from t1  where col4>"aa" group by col3 order by col3 limit 2,1) select count(1) from t where col1<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using where
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t1  where col4>"aa" group by col3 order by col3 limit 2,1) select count(1) from t where col1<10;
 count(1)
 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 1 }]
 explain  with t as (select count(*),col4 from t1  where col4>"cs") select * from t group by col4 order by col4 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
 with t as (select count(*),col4 from t1  where col4>"cs") select * from t group by col4 order by col4 limit 2;
 count(*)	col4
 7	def
@@ -775,16 +775,16 @@ count(*)	col4
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$gt": "cs" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col4>"cs" limit 5) select count(*)  from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
 with t as (select * from t1  where col4>"cs" limit 5) select count(*)  from t;
 count(*)
 5
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "cs" } }], selector[{}], order_by[{}], hint[{}], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(*) from t1  where col4>"cs") select * from t limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
 with t as (select count(*) from t1  where col4>"cs") select * from t limit 2;
 count(*)
 7
@@ -793,7 +793,7 @@ count(*)
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$gt": "cs" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4) select * from t order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition; Using pushed sort (t1.col1)
+1	SIMPLE	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition; Using pushed sort (t1.col1)
 with t as (select * from t1  where col3>"20221115114212" order by col4) select * from t order by col1;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
@@ -802,8 +802,8 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from t1  where col4>"cs" group by col2) select count(1) from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
 with t as (select count(1),col1 from t1  where col4>"cs" group by col2) select count(1) from t group by col1 limit 2;
 count(1)
 1
@@ -811,8 +811,8 @@ count(1)
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "cs" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from t1  where col4>"cs" group by col2 limit 5) select count(1) from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	t1	index	NULL	idx_col2	13	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	index	NULL	idx_col2	13	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from t1  where col4>"cs" group by col2 limit 5) select count(1) from t group by col1 limit 2;
 count(1)
 1
@@ -820,8 +820,8 @@ count(1)
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "cs" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from t1  where col4>"cs" group by col2 order by col2)  select count(1) from t group by col1 order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using temporary; Using filesort
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using temporary; Using filesort
 with t as (select count(1),col1 from t1  where col4>"cs" group by col2 order by col2)  select count(1) from t group by col1 order by col1;
 count(1)
 1
@@ -832,8 +832,8 @@ count(1)
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "cs" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from t1  where col4>"cs" group by col2 order by col2 limit 5) select count(1) from t group by col1 order by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	t1	index	NULL	idx_col2	13	NULL	14	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t1	index	NULL	idx_col2	13	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from t1  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2;
 count(1)
 1
@@ -841,22 +841,22 @@ count(1)
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col3>"20221115114212" limit 6) select count(1) from t limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	
-2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 with t as (select * from t1  where col3>"20221115114212" limit 6) select count(1) from t limit 2,1;
 count(1)
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4) select count(1) from t order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	idx_col3	idx_col3	6	NULL	3	Using where with pushed condition
+1	SIMPLE	t1	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 with t as (select * from t1  where col3>"20221115114212" order by col4) select count(1) from t order by col1;
 count(1)
 3
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	2	
-2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	14	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2,1;
 count(1)
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:12" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
@@ -865,11 +865,11 @@ insert into t values(100, "Alex", 20,30),(20, "Dad", 10,NULL),(30, "Mom", NULL,N
 explain 
 with recursive cte as ((select * from t where name="Alex") union select t.* from t,cte where t.id=cte.father or t.id=cte.mother) select count(1) from cte;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	t	ALL	NULL	NULL	NULL	NULL	6	Using where with pushed condition
-3	RECURSIVE UNION	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using join buffer (flat, BNL join)
-3	RECURSIVE UNION	t	ALL	NULL	NULL	NULL	NULL	6	
-NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
+3	RECURSIVE UNION	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using join buffer (flat, BNL join)
+3	RECURSIVE UNION	t	ALL	NULL	NULL	NULL	NULL	#	
+NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	#	
 with recursive cte as ((select * from t where name="Alex") union select t.* from t,cte where t.id=cte.father or t.id=cte.mother) select count(1) from cte;
 count(1)
 5
@@ -880,11 +880,11 @@ count(1)
 explain
 with recursive cte as ((select * from t where name="Alex") union select t.* from t,cte where t.id=cte.father or t.id=cte.mother) select * from cte limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	t	ALL	NULL	NULL	NULL	NULL	6	Using where with pushed condition
-3	RECURSIVE UNION	t	ALL	NULL	NULL	NULL	NULL	6	
-3	RECURSIVE UNION	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using join buffer (flat, BNL join)
-NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	t	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
+3	RECURSIVE UNION	t	ALL	NULL	NULL	NULL	NULL	#	
+3	RECURSIVE UNION	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using join buffer (flat, BNL join)
+NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	#	
 with recursive cte as ((select * from t where name="Alex") union select t.* from t,cte where t.id=cte.father or t.id=cte.mother) select * from cte limit 3;
 id	name	father	mother
 100	Alex	20	30
@@ -896,11 +896,11 @@ id	name	father	mother
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t]
 explain with recursive cte as ((select * from t where name="Alex") union select t.* from t,cte where t.id=cte.father or t.id=cte.mother) select * from cte order by id asc,name asc,father asc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using filesort
-2	DERIVED	t	ALL	NULL	NULL	NULL	NULL	6	Using where with pushed condition
-3	RECURSIVE UNION	t	ALL	NULL	NULL	NULL	NULL	6	
-3	RECURSIVE UNION	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using join buffer (flat, BNL join)
-NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	t	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
+3	RECURSIVE UNION	t	ALL	NULL	NULL	NULL	NULL	#	
+3	RECURSIVE UNION	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using join buffer (flat, BNL join)
+NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	#	
 with recursive cte as ((select * from t where name="Alex") union select t.* from t,cte where t.id=cte.father or t.id=cte.mother) select * from cte order by  id asc,name asc,father asc;
 id	name	father	mother
 10	Grandpa Bi	NULL	NULL
@@ -915,11 +915,11 @@ id	name	father	mother
 explain
 with recursive cte as ((select * from t where name="Alex") union select t.* from t,cte where t.id=cte.father or t.id=cte.mother) select * from cte group by father;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	t	ALL	NULL	NULL	NULL	NULL	6	Using where with pushed condition
-3	RECURSIVE UNION	t	ALL	NULL	NULL	NULL	NULL	6	
-3	RECURSIVE UNION	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using join buffer (flat, BNL join)
-NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	NULL	
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	t	ALL	NULL	NULL	NULL	NULL	#	Using where with pushed condition
+3	RECURSIVE UNION	t	ALL	NULL	NULL	NULL	NULL	#	
+3	RECURSIVE UNION	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using join buffer (flat, BNL join)
+NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	#	
 with recursive cte as ((select * from t where name="Alex") union select t.* from t,cte where t.id=cte.father or t.id=cte.mother) select * from cte group by father;
 id	name	father	mother
 100	Alex	20	30
@@ -931,29 +931,29 @@ id	name	father	mother
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t]
 explain  with t as (select count(1) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212") select count(1) from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212") select count(1) from t;
 count(1)
 1
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" limit 6) select * from t limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" limit 6) select * from t limit 2,1;
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2) select * from t group by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2) select * from t group by col4;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
@@ -962,29 +962,29 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select * from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select * from t order by col1 limit 2,1;
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 limit 5) select * from t group by col4  limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 limit 5) select * from t group by col4  limit 2,1;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2) select * from t group by col4 order by col4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2) select * from t group by col4 order by col4;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
@@ -993,10 +993,10 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2 limit 5) select * from t group by col4 order by col4 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2 limit 5) select * from t group by col4 order by col4 limit 2;
 col1	col2	col3	col4
 4	abcde	2022-11-15 11:40:20	efg
@@ -1004,19 +1004,19 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 limit 2,1) select * from t order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 limit 2,1) select * from t order by col2 desc;
 col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 order by col2 desc) select * from t limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 order by col2 desc) select * from t limit 2;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
@@ -1024,117 +1024,117 @@ col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(*),col2 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 limit 5) select * from t order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(*),col2 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col1>1 limit 5) select * from t order by col2 desc;
 count(*)	col2
 5	xyz
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" order by col2) select count(1) from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" order by col2) select count(1) from t;
 count(1)
 1
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col2>"def" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col2>"def" group by col2 desc) select * from t order by col3 desc;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" group by col4 limit 6) select * from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" group by col4 limit 6) select * from t order by col1 limit 2,1;
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"aa" group by col3 order by col3 limit 2,1) select count(1) from t where col1<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	3	Using where
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"aa" group by col3 order by col3 limit 2,1) select count(1) from t where col1<10;
 count(1)
 1
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(*),col4 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs") select * from t group by col4 order by col4 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(*),col4 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs") select * from t group by col4 order by col4 limit 2;
 count(*)	col4
 4	xyz 
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" limit 5) select count(*)  from t;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" limit 5) select count(*)  from t;
 count(*)
 4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(*) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs") select * from t limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(*) from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs") select * from t limit 2;
 count(*)
 4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4) select * from t order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select * from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4) select * from t order by col1;
 col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2) select count(1) from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2) select count(1) from t group by col1 limit 2;
 count(1)
 1
@@ -1142,10 +1142,10 @@ count(1)
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 limit 5) select count(1) from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 limit 5) select count(1) from t group by col1 limit 2;
 count(1)
 1
@@ -1153,10 +1153,10 @@ count(1)
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2)  select count(1) from t group by col1 order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2)  select count(1) from t group by col1 order by col1;
 count(1)
 1
@@ -1165,40 +1165,40 @@ count(1)
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col4>"cs" group by col2 order by col2 limit 5) select count(1) from t group by col1 order by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	5	Using temporary; Using filesort
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where; Using temporary; Using filesort
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2;
 count(1)
 1
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2;
 count(1)
 1
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4) select count(1) from t order by col1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4) select count(1) from t order by col1;
 count(1)
 1
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 explain  with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2,1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	6	
-2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	6	Using where
-3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	6	Using where
-4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	6	Using where with pushed condition
+1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	
+2	DERIVED	<derived3>	ALL	NULL	NULL	NULL	NULL	#	Using where
+3	DERIVED	<derived4>	ALL	NULL	NULL	NULL	NULL	#	Using where
+4	DERIVED	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
 with t as (select count(1),col1 from (select * from v1 where col3>="20221115114010" limit 8) dt  where col3>"20221115114212" order by col4 limit 6) select count(1) from t order by col1 limit 2,1;
 count(1)
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 2 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[10], offset[1], table[count_limit_sort_pushdown_sequoiadb_5.t1]
