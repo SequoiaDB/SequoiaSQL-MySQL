@@ -12,6 +12,7 @@ import org.testng.annotations.Test;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @Descreption seqDB-27790:实例组中某实例create role操作失败，检查其他实例是否回放成功
@@ -70,19 +71,31 @@ public class CreateRole27790 extends MysqlTestBase {
                 MysqlTestBase.mysql1 );
         DDLUtils.checkPendingInfoIsCleared( sdb, instanceGroupName );
 
-        // 两个实例分别查询角色信息
         String queryRole = "select * from mysql.roles_mapping where Role='"
                 + roleName + "' and User='" + userName + "';";
         List< String > query1 = jdbc1.query( queryRole );
-        List< String > query2 = jdbc2.query( queryRole );
-        Assert.assertEquals( query1, query2 );
+
+        // 等待实例同步后查看创建role是否回放成功
+        int retry = 1;
+        while ( true ) {
+            List< String > query2 = jdbc2.query( queryRole );
+            if ( !query2.isEmpty() ) {
+                Assert.assertEquals( query1, query2 );
+                break;
+            }
+            retry = retry + 1;
+            if ( retry > 20 ) {
+                throw new TimeoutException(
+                        "Instance group synchronization failed" );
+            }
+            Thread.sleep( 1000 );
+        }
 
         // 删除角色，查询角色信息,预期为空
         jdbc1.update( "set debug = \"\";" );
         jdbc1.update( "drop role " + roleName + ";" );
         List< String > query3 = jdbc1.query( queryRole );
         Assert.assertEquals( true, query3.isEmpty() );
-
 
     }
 
