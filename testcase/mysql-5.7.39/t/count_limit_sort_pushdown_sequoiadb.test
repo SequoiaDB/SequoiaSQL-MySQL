@@ -1536,11 +1536,11 @@ explain (select * from t1 where col1<(select count(1) from (select * from  t2 wh
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
 --sorted_result
-
 (select * from t1 where col1<(select count(1) from (select * from  t2 where col1<5 union ALL (select * from t1 where col2<(select col4 from t1 where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
---source include/query_pushdown_condition_sequoiadb_6.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -6 | sed 's/\<condition\[{ "col2".*, selector/condition\[{""}\], selector/'
 
 # partiton table
 --replace_column 10 #  11 #
@@ -1548,11 +1548,11 @@ explain (select * from t1_partition where col1<(select count(1) from (select * f
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
 --sorted_result
---replace_column 10 #  11 #
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
---source include/query_pushdown_condition_sequoiadb_6.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -6 | sed 's/\<condition\[{ "col2".*, selector/condition\[{""}\], selector/'
 
 --replace_column 10 #  11 #
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
@@ -1563,7 +1563,6 @@ union ALL
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
 --sorted_result
-
 (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -1589,7 +1588,6 @@ explain (select count(*)  from t1 where col1<(select count(1) from t2 where col1
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3<"20221115114210" group by col4 limit 1) order by col1 desc) dt where col1>0  group by col2 limit 1);
 --sorted_result
-
 (select count(*)  from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3<"20221115114210" group by col4 limit 1) order by col1 desc) dt where col1>0  group by col2 limit 1);
