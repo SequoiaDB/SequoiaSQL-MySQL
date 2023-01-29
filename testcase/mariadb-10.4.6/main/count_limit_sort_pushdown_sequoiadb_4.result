@@ -3856,7 +3856,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 3 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
@@ -3872,24 +3872,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-6	UNION	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Release local statistics for current handler
-[Note] SequoiaDB: Release local statistics for current handler
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 3 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" }, "col5": { "$first": "$col5" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -7627,7 +7634,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 3 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
@@ -7643,24 +7650,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-6	UNION	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 3 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" }, "col5": { "$first": "$col5" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -11398,7 +11412,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 3 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
@@ -11414,24 +11428,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-6	UNION	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 3 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" }, "col5": { "$first": "$col5" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -15167,7 +15188,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
@@ -15183,24 +15204,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	index	NULL	idx_col3	6	NULL	#	Using where with pushed condition
-6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -18939,7 +18967,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
@@ -18955,24 +18983,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	index	NULL	idx_col3	6	NULL	#	Using where with pushed condition
-6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -22711,7 +22746,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
@@ -22727,24 +22762,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	index	NULL	idx_col3	6	NULL	#	Using where with pushed condition
-6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -26932,7 +26974,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 3 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
@@ -26948,24 +26990,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-6	UNION	t1_partition	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$gt": "aa" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 3 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" }, "col5": { "$first": "$col5" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -30699,7 +30748,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
@@ -30715,24 +30764,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	index	NULL	idx_col3	6	NULL	#	Using where with pushed condition
-6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
@@ -34469,7 +34525,7 @@ col1	col2	col3	col4
 7	def	2022-11-15 11:40:20	def
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "def" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 13 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyzz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
@@ -34485,24 +34541,31 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
 8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
 NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
+(select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col3 order by col3 limit 3,1)) )ct))
 union
 (select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	PRIMARY	t1_partition	ALL	idx_col1,idx_col12	NULL	NULL	NULL	#	Using where with pushed condition
-2	SUBQUERY	<derived3>	ALL	NULL	NULL	NULL	NULL	#	
-3	DERIVED	t1_partition	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
-4	UNION	t1_partition	range	idx_col2	idx_col2	13	NULL	#	Using where with pushed condition
-5	SUBQUERY	t1_partition	index	NULL	idx_col3	6	NULL	#	Using where with pushed condition
-6	UNION	t1_partition	range	idx_col1,idx_col2,idx_col12	idx_col2	13	NULL	#	Using where with pushed condition
-8	SUBQUERY	t1_partition	range	idx_col3	idx_col3	6	NULL	#	Using where with pushed condition
-NULL	UNION RESULT	<union1,6>	ALL	NULL	NULL	NULL	NULL	#	
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+col1	col2	col3	col4	col5
+0	abc	2022-11-15 11:40:10	abc	3
+1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
+10	abcdef	2022-11-15 11:40:15	abcdef	4
+11	abcde	2022-11-15 11:40:20	efg	2
+2	def	NULL	def	1
+2	xyz 	2022-11-15 11:45:10	xyz 	1
+3	NULL	2022-11-15 11:40:15	abcdef	3
+3	xyz	2022-11-15 11:45:10	xyz 	4
+4	abcde	2022-11-15 11:40:20	efg	5
+5	abcdef	2022-11-15 11:40:15	abcdef	5
+6	def	2022-11-15 11:42:10	def	1
+7	def	2022-11-15 11:40:20	def	4
+8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gt": "aa" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "efg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 20 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "xyz " } } ] }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1_partition]
 explain (select * from t1 where col1<(select count(1) from ((select * from  t1 where col1<5 limit 9)
 union ALL 
 (select * from t2 where col2>
