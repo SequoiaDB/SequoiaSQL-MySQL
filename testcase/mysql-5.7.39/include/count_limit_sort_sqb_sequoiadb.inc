@@ -54,7 +54,7 @@ select * from t1 where col2>="def" group by col2 order by col4 limit 2,3;
 --replace_column 10 #  11 #
 explain  select * from t1_partition where col2>="def" group by col1 order by col4 limit 2,3;
 --sorted_result
-select * from t1_partition where col2>="def" group by col2 order by col4 limit 2,3;
+select col2,col3,col4 from t1_partition where col2>="def" group by col2 order by col4 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 # seqDB-29565
