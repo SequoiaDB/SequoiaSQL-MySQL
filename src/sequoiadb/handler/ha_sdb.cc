@@ -4204,8 +4204,10 @@ bool ha_sdb::is_in_one_query_for_cur_select() {
     }
     case SDB_JOIN_MULTI_RANGE: {
       if (sdb_choose_all_in_mrr_info(ha_thd())) {
-        return (ranges_in_seq <= 1 ||
-                !(sdb_get_mrr_flag(table) & HA_MRR_USE_DEFAULT_IMPL));
+        uint n_ranges = 0;
+        uint mrr_flag = 0;
+        sdb_get_mrr_info(table, &mrr_flag, &n_ranges);
+        return (n_ranges <= 1 || !(mrr_flag & HA_MRR_USE_DEFAULT_IMPL));
       } else {
         return (ranges_in_seq <= 1 || !m_use_default_impl);
       }
@@ -4520,6 +4522,7 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   ha_rows rows = 0;
   range_seq_t seq_it;
   KEY_MULTI_RANGE range;
+  uint n_ranges = 0;
 
   /*
     n_ranges_arg is 0 if the caller can't efficiently determine it,
@@ -4527,12 +4530,11 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   */
   if (0 == n_ranges_arg) {
     seq_it = seq->init(seq_init_param, 0, 0);
-    ranges_in_seq = 0;
     while (!seq->next(seq_it, &range)) {
-      ranges_in_seq += 1;
+      n_ranges += 1;
     }
   } else {
-    ranges_in_seq = n_ranges_arg; /* purecov: inspected */
+    n_ranges = n_ranges_arg; /* purecov: inspected */
   }
 
   /* Get cost/flags/mem_usage of default MRR implementation */
@@ -4543,8 +4545,8 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   }
 
   *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
-  choose_idx_access_method(keyno, ranges_in_seq, seq, seq_init_param, bufsz,
-                           flags, cost, false);
+  choose_idx_access_method(keyno, n_ranges, seq, seq_init_param, bufsz, flags,
+                           cost, false);
 done:
   return rows;
 error:
@@ -4671,6 +4673,7 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   uint def_bufsz = *bufsz;
   range_seq_t seq_it;
   KEY_MULTI_RANGE range;
+  uint n_ranges = 0;
 
   /*
     n_ranges_arg is 0 if the caller can't efficiently determine it,
@@ -4678,12 +4681,11 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
   */
   if (0 == n_ranges_arg) {
     seq_it = seq->init(seq_init_param, 0, 0);
-    ranges_in_seq = 0;
     while (!seq->next(seq_it, &range)) {
-      ranges_in_seq += 1;
+      n_ranges += 1;
     }
   } else {
-    ranges_in_seq = n_ranges_arg; /* purecov: inspected */
+    n_ranges = n_ranges_arg; /* purecov: inspected */
   }
 
   /* Get cost/flags/mem_usage of default MRR implementation */
@@ -4693,8 +4695,8 @@ ha_rows ha_sdb::multi_range_read_info_const_v2(uint keyno, RANGE_SEQ_IF *seq,
     goto error;
   }
 
-  choose_idx_access_method(keyno, ranges_in_seq, seq, seq_init_param, bufsz,
-                           flags, cost, false);
+  choose_idx_access_method(keyno, n_ranges, seq, seq_init_param, bufsz, flags,
+                           cost, false);
 done:
   return rows;
 error:
@@ -11483,6 +11485,7 @@ bool ha_sdb::filesort_push(const ORDER *order) {
   THD *thd = ha_thd();
   KEY *key_info = NULL;
   SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+  uint mrr_flag = 0;
   /*
     The order can be pushdown when
     1) It is a SELECT statement. Because others statements are not considered.
@@ -11534,7 +11537,8 @@ bool ha_sdb::filesort_push(const ORDER *order) {
   }
 
   // 6)
-  if (key_info && (sdb_get_mrr_flag(table) & SDBMRR_IMPL_USING_RANGE_HINT)) {
+  sdb_get_mrr_info(table, &mrr_flag, NULL);
+  if (key_info && (mrr_flag & SDBMRR_IMPL_USING_RANGE_HINT)) {
     goto done;
   }
 

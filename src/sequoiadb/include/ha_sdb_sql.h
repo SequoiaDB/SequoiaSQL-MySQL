@@ -546,7 +546,13 @@ ulong sdb_thd_da_warn_count(THD *thd);
 
 KEY *sdb_get_join_tab_key_in_use(TABLE *table);
 
-uint sdb_get_mrr_flag(TABLE *table);
+/**
+  @param table      The table from which get the info
+  @param mrr_flags  The flag of MRR
+  @param n_ranges   The number of ranges of MRR
+  @return true if it is not a MRR scan plan
+*/
+bool sdb_get_mrr_info(TABLE *table, uint *mrr_flags, uint *n_ranges);
 
 bool sdb_field_default_values_is_null(const Create_field *definition);
 
