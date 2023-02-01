@@ -31,6 +31,10 @@
 #include <sql_partition.h>
 #endif
 
+#ifdef IS_MARIADB
+#include <ha_partition.h>
+#endif
+
 #ifdef IS_MYSQL
 bool key_buf_cmp(KEY *key_info, uint used_key_parts, const uchar *key1,
                  const uchar *key2) {
@@ -1890,7 +1894,13 @@ bool sdb_get_mrr_info(TABLE *table, uint *mrr_flags, uint *n_ranges) {
         At runtime phase, ranges_in_seq tells us the range number of chosen
         MRR plan. ranges_in_seq is set at ::multi_range_read_init().
       */
-      *n_ranges = table->file->ranges_in_seq;
+      if (table->s->db_type() != partition_hton) {
+        *n_ranges = table->file->ranges_in_seq;
+      } else {
+        handler *real_handler =
+            ((ha_partition *)table->file)->get_child_handlers()[0];
+        *n_ranges = real_handler->ranges_in_seq;
+      }
 
     } else {
       /*
