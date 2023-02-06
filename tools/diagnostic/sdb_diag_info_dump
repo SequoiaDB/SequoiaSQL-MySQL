@@ -86,6 +86,10 @@ GROUP_FILENAME="${ENVIRONMENT_PATHNAME}/group_list.json"
 ENGINE_FILENAME="${ENVIRONMENT_PATHNAME}/engine.txt"
 VERSION_FILENAME="${ENVIRONMENT_PATHNAME}/version.txt"
 
+#sdb -f tmp_pathname
+SDB_JS_FILENAME="sdb.js"
+NEW_SDB_STRING=""
+
 function mkdir_path()
 {
    local path="${1}"
@@ -96,18 +100,6 @@ function mkdir_path()
       rc=$?
    fi
    test $rc -ne 0 && echo "ERROR: Fail to mkdir path \"${path}\""
-   return $rc
-}
-
-function check_sdb_error()
-{
-   local error=$("${SDB_SHELL}" -s "getLastErrObj()")
-   local rc=0
-   if [ "${error}" != "" ]; then
-      #remove { and }
-      echo "${error}" | sed -e '1d' -e '$d'
-      rc=8
-   fi
    return $rc
 }
 
@@ -245,6 +237,17 @@ function convert_special_character()
       output=`convert_path_slash_point "${output}"`
    fi
    echo "${output}"
+}
+
+function exec_sdb_cmd()
+{
+   local sdb_js="${1}"
+
+   # append var db = new Sdb() string
+   echo "${NEW_SDB_STRING}" > "${SDB_JS_FILENAME}"
+   echo "${sdb_js}" >>"${SDB_JS_FILENAME}"
+
+   "${SDB_SHELL}" -f "${SDB_JS_FILENAME}"
 }
 
 function parse_tables_or_routines() 
@@ -506,6 +509,8 @@ function get_path()
       SOCKET="${cur_path}/${SOCKET}"                    # relative path
    fi
    cd "${cur_path}" >> /dev/null >&1
+
+   SDB_JS_FILENAME="${OUTPUT}"/"${SDB_JS_FILENAME}"
 }
 
 function get_autocnf_para_from_my_print_defaults()
@@ -636,12 +641,16 @@ function init_sequoiadb_conn()
    do
       # this db is available in the process
       if [[ "${SDB_PASSWD}" == "" && "${SDB_USER}" != "" ]]; then
-         msg=`${SDB_SHELL} -s "var db = new Sdb(\"${host_port_array[i]}\", 
-            \"${host_port_array[i+1]}\", 
-            CipherUser(\"${SDB_USER}\").token(\"${SDB_TOKEN}\").cipherFile(\"${SDB_CIPHERFILE}\"))"`
+         NEW_SDB_STRING="var db = new Sdb(\"${host_port_array[i]}\", \
+\"${host_port_array[i+1]}\", \
+CipherUser(\"${SDB_USER}\").token(\"${SDB_TOKEN}\").cipherFile(\"${SDB_CIPHERFILE}\"))"
+         echo "${NEW_SDB_STRING}" > "${SDB_JS_FILENAME}"
+         msg=`${SDB_SHELL} -f "${SDB_JS_FILENAME}"`
       else
-         msg=`${SDB_SHELL} -s "var db = new Sdb(\"${host_port_array[i]}\", 
-            \"${host_port_array[i+1]}\", \"${SDB_USER}\", \"${SDB_PASSWD}\")"`
+         NEW_SDB_STRING="var db = new Sdb(\"${host_port_array[i]}\", \
+\"${host_port_array[i+1]}\", \"${SDB_USER}\", \"${SDB_PASSWD}\")"
+         echo "${NEW_SDB_STRING}" > "${SDB_JS_FILENAME}"
+         msg=`${SDB_SHELL} -f "${SDB_JS_FILENAME}"`
       fi
 
       if [[ "${msg}" == "" ]]; then
@@ -690,7 +699,7 @@ function sdb_get_all_mapping_table()
    local mapping_tmp_result=""
    local sdb_js=""
    sdb_js=`sdb_get_all_mapping_table_js "${mapping_cs_name}" "${DATABASE}"`
-   local mapping_tmp_result=`"${SDB_SHELL}" -s "${sdb_js}"`
+   local mapping_tmp_result=`exec_sdb_cmd "${sdb_js}"`
    mapping_tmp_result=`echo "${mapping_tmp_result}" | awk \
       'BEGIN{i=0}
       $1=="\"TableName\":"{tb[i]=$2} $1=="\"DBName\":"{db[i]=$2}
@@ -721,7 +730,7 @@ function sdb_get_mapping_table()
       tb_convert_name=`echo "${tb_name}" | sed 's/*/\\\\*/g'`
       sdb_js=`sdb_get_mapping_table_js "${mapping_cs_name}" \
          "${DATABASE_TABLE_ARRAY[i]}" "${tb_convert_name}" "${tb_convert_name}"`
-      mapping_tmp_result=`"${SDB_SHELL}" -s "${sdb_js}"`
+      mapping_tmp_result=`exec_sdb_cmd "${sdb_js}"`
       mapping_tmp_result=`echo "${mapping_tmp_result}" | awk \
          'BEGIN{i=0}
          $1=="\"TableName\":"{tb[i]=$2} $1=="\"DBName\":"{db[i]=$2}
@@ -771,7 +780,7 @@ function sdb_check_partition_table()
       #db1.t1#P#p0
       #${DATABASE_TABLE_ARRAY[i]} -> database name
       #${DATABASE_TABLE_ARRAY[i]} -> table name
-      database_table_partition=`${SDB_SHELL} -s \"${sdb_js}\" \
+      database_table_partition=`exec_sdb_cmd "${sdb_js}" \
          | grep "^[ ]*\"Name\": \"${DATABASE_TABLE_ARRAY[i]}.${DATABASE_TABLE_ARRAY[i]}#P#.*\"" \
          | awk '{$1="\b";print $0}'`
       pt_name_array=(`echo "${database_table_partition}" \
@@ -802,7 +811,7 @@ function try_connect()
    fi
 
    eval "${MYSQL_EXEC_CMD_WITHOUT_DB}" "-s" "-e" \""select version();"\" "2>&1" > "/dev/null"
-   test $? -ne 0 && { echo "ERROR: Fail to connect the instance" >&2 && exit 2; }
+   test $? -ne 0 && { echo "ERROR: Fail to connect the instance" && exit 2; }
 
    if [ "${DATABASE}" != "" ]; then
       local conv_db_name=`convert_special_character "${DATABASE}" "0000100"`
@@ -828,6 +837,9 @@ function try_connect()
    fi
    if [ "${IS_SDB_CONNECTED}" == "1" ]; then
       echo "ERROR: Information on the SequoiaDB side will not be collected"
+   else
+      #touch sdb.js file
+      touch "${SDB_JS_FILENAME}" || { echo "ERROR: Fail to touch sdb.js file" && exit 4;}
    fi
    #remove empty file sdbbp.log
    rm -f "${OUTPUT}/empty_dir/sdbbp.log"
@@ -1251,7 +1263,7 @@ function get_sdb_table_partition_information()
    fi
 
    local sdb_js=`get_sdb_table_catalog_js "${db_name}" "${cl_full_name}"`
-   local sdb_table_catalog=`"${SDB_SHELL}" -s "${sdb_js}"`
+   local sdb_table_catalog=`exec_sdb_cmd "${sdb_js}"`
    rc=$?
    mkdir_path "${file_path}"
 
@@ -1265,19 +1277,20 @@ function get_sdb_table_partition_information()
    fi
 
    sdb_js=`get_sdb_table_detail_js "${db_name}" "${cl_full_name}"`
-   local sdb_table_detail=`"${SDB_SHELL}" -s "${sdb_js}"`
-   check_sdb_error
-   test $? -ne 0 && echo "ERROR: Fail to get partition \"${db_name}.${cl_full_name}\" detail from SequoiaDB."
+   local sdb_table_detail=`exec_sdb_cmd "${sdb_js}"`
+   
+   if [[ `echo "${sdb_table_detail}" | head -n 1 | grep "^shell:1 uncaught exception:"` != "" ]]; then
+      echo "ERROR: Fail to get partition \"${db_name}.${cl_full_name}\" detail from SequoiaDB."
+   fi
+
    mkdir_path "${file_path}"
    echo "${sdb_table_detail}" | sed '$d' > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}" 2>&1
-
 }
 
 function get_sdb_table_information()
 {
    local db_name="${1}"
    local tb_name="${2}"
-   local rc=0
    local full_table_name=""
 
    #'/' -> '.'
@@ -1289,8 +1302,7 @@ function get_sdb_table_information()
    #sql: \ -> sdb: \\
    tb_tmp_name=`convert_special_character "${tb_name}" "1000000"`
    local sdb_js=`get_sdb_table_catalog_js "${db_name}" "${tb_tmp_name}"`
-   local sdb_table_catalog=`"${SDB_SHELL}" -s "${sdb_js}"`
-   rc=$?
+   local sdb_table_catalog=`exec_sdb_cmd "${sdb_js}"`
    if [[ `echo "${sdb_table_catalog}" | grep "Return 0 row(s)."` != "" 
          && "${IS_MAPPING}" == "1" ]]; then
       full_table_name=`check_mapping_table "${db_name}" "${tb_tmp_name}"`
@@ -1299,11 +1311,8 @@ function get_sdb_table_information()
          tb_name="${full_table_name#*.}"
          tb_tmp_name="${tb_name}"
          sdb_js=`get_sdb_table_catalog_js "${db_name}" "${tb_name}"`
-         sdb_table_catalog=`"${SDB_SHELL}" -s "${sdb_js}"`
-         check_sdb_error
-         rc=$?
+         sdb_table_catalog=`exec_sdb_cmd "${sdb_js}"`
       else
-         rc=1
          mkdir_path "${file_path}"
       fi
    fi
@@ -1311,8 +1320,10 @@ function get_sdb_table_information()
    if [ "${sdb_table_catalog}" != "" ]; then
       # remove 'Return x row(s).'
       echo "${sdb_table_catalog}" | sed '$d'  > "${file_path}/${TABLE_CATALOG_JSON_FILENAME}" 2>&1
-      test $rc -ne 0 && echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" catalog from SequoiaDB." \
-      && cat "${file_path}/${TABLE_CATALOG_JSON_FILENAME}"
+      if [[ `echo "${sdb_table_catalog}" | head -n 1 | grep "^shell:1 uncaught exception:"` != "" ]]; then
+         echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" catalog from SequoiaDB." \
+            && cat "${file_path}/${TABLE_CATALOG_JSON_FILENAME}"
+      fi
    else
       echo "ERROR: Fail to get table \"${db_name}.${tb_name}\" catalog from SequoiaDB."
    fi
@@ -1338,15 +1349,15 @@ function get_sdb_table_information()
       fi
    fi
 
-   "${SDB_SHELL}" -s "jsonFormat(false)"
    sdb_js=`get_sdb_table_detail_js "${db_name}" "${tb_tmp_name}"`
-   local sdb_table_detail=`"${SDB_SHELL}" -s "${sdb_js}"`
-   "${SDB_SHELL}" -s "jsonFormat(true)"
-   check_sdb_error
-   
-   if [[ $? -ne 0 ]]; then
+   sdb_js="jsonFormat(false)
+${sdb_js}"
+   local sdb_table_detail=`exec_sdb_cmd "${sdb_js}"`
+
+   if [[ `echo "${sdb_table_detail}" | head -n 1 | grep "^shell:1 uncaught exception:"` != "" ]]; then
       echo "${sdb_table_detail}" > "${file_path}/${TABLE_STATISTICS_JSON_FILENAME}"
       echo "ERROR: Fail to get create table \"${db_name}.${tb_name}\" detail from SequoiaDB."
+      echo "${sdb_table_detail}"
    else
       # remove Return x rows
       echo "${sdb_table_detail}" \
@@ -1411,7 +1422,7 @@ function get_sdb_table_index_information()
       sdb_js=`get_sdb_table_index_list_js "${db_name}" "${tb_name}"`
    fi
 
-   local sdb_table_index_list=`"${SDB_SHELL}" -s "${sdb_js}"`
+   local sdb_table_index_list=`exec_sdb_cmd "${sdb_js}"`
    local full_table_name=""
    if [[ "${mapping_name}" == "" 
          && `echo "${sdb_table_index_list}" \
@@ -1423,17 +1434,18 @@ function get_sdb_table_index_information()
          tb_name="${full_table_name#*.}"
          cl_real_name="${tb_name}"
          sdb_js=`get_sdb_table_index_list_js "${db_name}" "${tb_name}"`
-         sdb_table_index_list=`"${SDB_SHELL}" -s "${sdb_js}"`
+         sdb_table_index_list=`exec_sdb_cmd "${sdb_js}"`
       else
          mkdir_path "${file_path}"
       fi
    fi
 
-   check_sdb_error
-   rc=$?
+   if [[ `echo "${sdb_table_index_list}" | head -n 1 | grep "^shell:1 uncaught exception:"` != "" ]]; then
+      echo "ERROR: Fail to get \"${db_name}.${tb_name}\" index list from SequoiaDB"
+      echo "${sdb_table_index_list}"
+      return 8
+   fi
 
-   test $rc -ne 0 && echo "ERROR: Fail to get \
-\"${db_name}.${tb_name}\" index list from SequoiaDB"
    local sdb_table_index_array=(`echo "${sdb_table_index_list[*]}" \
       | grep '^[ ]*"name": "' | grep -v ' "$id",$' | sed 's/^[ ]*"name": \(.*\),$/\1/g'`)
    if [ ${#sdb_table_index_array[@]} -eq 0 ]; then
@@ -1454,10 +1466,10 @@ function get_sdb_table_index_information()
 
       if [ "${SDB_HAVE_GETINDEXSTAT}" == "0" ]; then
          sdb_js=`get_sdb_table_index_js "${db_name}" "${cl_real_name}" "${index_tmp_name}"`
-         "${SDB_SHELL}" -s "${sdb_js}" > "${file_path}/${index_real_name}${JSON}" 2>&1
+         `exec_sdb_cmd "${sdb_js}" > "${file_path}/${index_real_name}${JSON}" 2>&1`
          rc=$?
-         error=$("${SDB_SHELL}" -s "getLastErrObj()")
-         if [ "${error}" != "" ]; then
+         error=`cat "${file_path}/${index_real_name}${JSON}" | head -n 10`
+         if [[ `echo "${error}" | grep "^shell:1 uncaught exception:"` != "" ]]; then
             echo "${error}"
             if [[ `echo "${error}" | grep "getIndexStat is not a function"` != "" ]]; then
                # skip this get index function
@@ -1795,12 +1807,11 @@ function get_sdb_remote_version()
 function get_sdb_list_groups()
 {
    local sdb_list_groups=""
-   sdb_list_groups=`"${SDB_SHELL}" -s "db.list(SDB_LIST_GROUPS)"`
-   local rc=$?
-   test $rc -eq 0 && check_sdb_error && rc=$?
+   sdb_list_groups=`exec_sdb_cmd "db.list(SDB_LIST_GROUPS)"`
    echo "${sdb_list_groups}" > "${OUTPUT}/${GROUP_FILENAME}" 2>&1
-   test $rc -ne 0 && echo "ERROR: Fail to get SequoiaDB groups." \
-   && cat "${OUTPUT}/${GROUP_FILENAME}" && return 8
+   if [[ `echo "${sdb_list_groups}" | head -n 1 | grep "^shell:1 uncaught exception:"` != "" ]]; then
+      echo "ERROR: Fail to get SequoiaDB groups." && cat "${OUTPUT}/${GROUP_FILENAME}" && return 8
+   fi
    #remove 'Return x row(s).'
    sed -i '$d' "${OUTPUT}/${GROUP_FILENAME}"
 }
@@ -1809,7 +1820,7 @@ function compress_tar_gz()
 {
    echo "INFO: Compress the diaginfo.tar.gz package in the directory \"${OUTPUT%*/$PACKAGE_PATHNAME}\""
    #remove tmp dir and file
-   rm -rf "${OUTPUT}/sdb.conf" "${OUTPUT}/empty_dir/" "${OUTPUT}/${QUERY_PATHNAME}/query.sql"
+   rm -rf "${OUTPUT}/sdb.conf" "${OUTPUT}/empty_dir/" "${OUTPUT}/${QUERY_PATHNAME}/query.sql" "${SDB_JS_FILENAME}"
    test -d "${OUTPUT}" || { echo "ERROR: \"${OUTPUT}\" does not exit" >&2 && exit 4; }
    cd "${OUTPUT}/.."
    tar -zcf "${PACKAGE_PATHNAME}.tar.gz" "${PACKAGE_PATHNAME}" >&2
