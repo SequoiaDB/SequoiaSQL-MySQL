@@ -40,7 +40,7 @@ function grant_to_customer()
 
   for ((i=0;i<count;i++))
   do
-    ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -e "
+    ${INSTALL_PATH}/bin/mysql -u${userName} "${pstr}" -h${host} -P${port} -e "
     GRANT ALL ON sequoiadb_foreign_config.* to '${custmor_array[$i]}'@'%';
     " 2>&1 | grep -v 'Warning'
     if [ ${PIPESTATUS[0]} = 0 ];then
@@ -55,7 +55,7 @@ function grant_to_customer()
 function init_all(){
   
 
-  ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -e " 
+  ${INSTALL_PATH}/bin/mysql -u${userName} "${pstr}" -h${host} -P${port} -e " 
 
   CREATE database IF NOT EXISTS sequoiadb_foreign_config;
   use sequoiadb_foreign_config;
@@ -138,7 +138,11 @@ do
                              ;;
      -p |--password)
       case $2 in
-        "")                  read -s -p "Enter your password:" passWord 
+        "")                  # for `read` keep the spaces before and after the string
+                             OLD_IFS="${IFS}"
+                             IFS=''
+                             read -s -p "Enter your password:" passWord
+                             IFS="${OLD_IFS}"
                              echo ""
                              shift 2
                              ;;

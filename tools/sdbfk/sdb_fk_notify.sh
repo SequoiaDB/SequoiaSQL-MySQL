@@ -39,9 +39,9 @@ function exec_sql()
 {
   #$2有参数的情况下不打印错误到屏幕，目前只有添加索引时需要这种情况
   if [ "$2" = "" ];then
-    ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -N -e " ${1} " 2>&1 | grep -v 'Warning'
+    ${INSTALL_PATH}/bin/mysql -u${userName} "${pstr}" -h${host} -P${port} -N -e " ${1} " 2>&1 | grep -v 'Warning'
   else
-    ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -N -e " ${1} " > /dev/null 2>&1
+    ${INSTALL_PATH}/bin/mysql -u${userName} "${pstr}" -h${host} -P${port} -N -e " ${1} " > /dev/null 2>&1
   fi
 }
 
@@ -280,7 +280,11 @@ while true
                                  ;;
        -p |--password)
           case $2 in
-            "")                  read -s -p "Enter your password:" passWord 
+            "")                  # for `read` keep the spaces before and after the string
+                                 OLD_IFS="${IFS}"
+                                 IFS=''
+                                 read -s -p "Enter your password:" passWord
+                                 IFS="${OLD_IFS}"
                                  echo ""
                                  shift 2
                                  ;;
@@ -332,7 +336,7 @@ else
   pstr="-p${passWord}"
 fi
 
-${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -N -e  "
+${INSTALL_PATH}/bin/mysql -u${userName} "${pstr}" -h${host} -P${port} -N -e  "
 select foreign_key_name,
       trigger_name,
       database_name,
