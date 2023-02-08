@@ -897,5 +897,7 @@ class ha_sdb : public handler {
   /* Same as handler::end_key but for start. Reverse-ordered scans need it */
   key_range m_save_start_range;
   key_range *m_start_range;
+
+  bool m_is_in_group_min_max;
 };
 #endif
