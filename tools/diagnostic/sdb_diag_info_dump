@@ -1884,7 +1884,11 @@ do
                                                       ;;
       -p | --password )                                 
          case "${2}" in
-            "")                                       read -s -p "Enter your password:" PASSWORD 
+            "")                                       # for `read` keep the spaces before and after the string
+                                                      OLD_IFS="${IFS}"
+                                                      IFS=''
+                                                      read -s -p "Enter your password:" PASSWORD
+                                                      IFS="${OLD_IFS}"
                                                       echo ""
                                                       shift 2
                                                       ;;
