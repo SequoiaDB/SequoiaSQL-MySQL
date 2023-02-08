@@ -1527,6 +1527,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_use_position = false;
   m_null_rejecting = false;
   m_use_group = false;
+  m_is_in_group_min_max = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1821,6 +1822,7 @@ int ha_sdb::reset() {
   key_parts = 0;
   m_null_rejecting = false;
   m_use_group = false;
+  m_is_in_group_min_max = false;
   DBUG_RETURN(0);
 }
 
@@ -3229,7 +3231,7 @@ int ha_sdb::index_next(uchar *buf) {
     DBUG_ASSERT(key_info);
     /* multi columns key need to save the key value from last record,
        save the whole record instead of key value.*/
-    if (key_info->user_defined_key_parts > 1) {
+    if (m_is_in_group_min_max && key_info->user_defined_key_parts > 1) {
       last_key_value = (SDB_OK == rc) ? cur_rec : SDB_EMPTY_BSON;
     }
   }
@@ -3258,7 +3260,7 @@ int ha_sdb::index_prev(uchar *buf) {
     DBUG_ASSERT(key_info);
     /* multi columns key need to save the key value from last record,
        save the whole record instead of key value.*/
-    if (SDB_OK == rc && key_info->user_defined_key_parts > 1) {
+    if (m_is_in_group_min_max && key_info->user_defined_key_parts > 1) {
       last_key_value = (SDB_OK == rc) ? cur_rec : SDB_EMPTY_BSON;
     }
   }
@@ -6911,6 +6913,9 @@ int ha_sdb::extra(enum ha_extra_function operation) {
       m_insert_with_update = true;
     case HA_EXTRA_SECONDARY_SORT_ROWID:
       m_secondary_sort_rowid = true;
+      break;
+    case HA_EXTRA_GROUP_MIN_MAX:
+      m_is_in_group_min_max = true;
       break;
     // To make them effective until ::reset(), ignore this reset here.
     case HA_EXTRA_NO_IGNORE_DUP_KEY:

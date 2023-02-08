@@ -760,5 +760,6 @@ class ha_sdb : public handler {
 #endif
   bool m_null_rejecting;
   bool m_use_group;
+  bool m_is_in_group_min_max;
 };
 #endif
