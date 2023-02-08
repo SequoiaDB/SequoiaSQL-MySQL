@@ -35,7 +35,11 @@ function execute_query()
    local exec_sql=$1
    local rc=0
    local msg
-   msg=$($MYSQL_LOGIN -e "${exec_sql}" 2>&1)
+   if [ "${MYSQL_PASSWD}" != "" ]; then
+      msg=$($MYSQL_LOGIN -p"${MYSQL_PASSWD}" -e "${exec_sql}" 2>&1)
+   else
+      msg=$($MYSQL_LOGIN -e "${exec_sql}" 2>&1)
+   fi
    rc=$?
    if [[ $rc != 0 ]]; then
       echo -e "Error in executing SQL: '${exec_sql}'"
@@ -182,12 +186,12 @@ function check_enable_mapping_flag
    do
       local host=${HOSTS[i]}
       local port=${PORTS[i]}
-      local passwd_item=""
-      if [ "${MYSQL_PASSWD}" != "" ]; then
-         passwd_item="-p${MYSQL_PASSWD}"
-      fi
       # check if 'sequoiadb_enable_mapping' is ON
-      msg=$($BIN_PATH/mysql -h${host} -P${port} -u${MYSQL_USER} ${passwd_item} -e "SELECT @@sequoiadb_enable_mapping" 2>&1)
+      if [ "${MYSQL_PASSWD}" != "" ]; then
+         msg=$($BIN_PATH/mysql -h${host} -P${port} -u${MYSQL_USER} -p"${MYSQL_PASSWD}" -e "SELECT @@sequoiadb_enable_mapping" 2>&1)
+      else
+         msg=$($BIN_PATH/mysql -h${host} -P${port} -u${MYSQL_USER} -e "SELECT @@sequoiadb_enable_mapping" 2>&1)
+      fi
       if [[ $? != 0 ]]; then
          msg=`echo "${msg}" | grep -v "Using a password"`  # remove 'Using a password' warning
          echo "ERROR: $msg"
@@ -661,7 +665,7 @@ cat <<EOF
 
       // build mysql shell command and run this command by Cmd.run method
       var cmd = new Cmd();
-      var shellCmd = '${BIN_PATH}/mysql -u${MYSQL_USER} --password=${MYSQL_PASSWD}';
+      var shellCmd = '${BIN_PATH}/mysql -u${MYSQL_USER} --password="${MYSQL_PASSWD}"';
       shellCmd += ' -h' + hostName + ' -P' + port + ' -e ' + '"' + sqlCmd + '"';
       cmd.run(shellCmd);
       if ( 0 != cmd.getLastRet()) {
@@ -852,15 +856,24 @@ init_login_args
 # prompt user input mysql password
 if [ "${PROMPT_MYSQL_PASSWD}" == true -a "${MYSQL_PASSWD}" == "" ]; then
    echo -n "Enter MySQL user password: "
+   # for `read` keep the spaces before and after the string
+   OLD_IFS="${IFS}"
+   IFS=''
    read -s MYSQL_PASSWD
+   IFS="${OLD_IFS}"
    echo ""
 fi
 
-# build mysql login command
-MYSQL_LOGIN="$BIN_PATH/mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} --password=${MYSQL_PASSWD}"
+
+## build mysql login command
+MYSQL_LOGIN="$BIN_PATH/mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER}"
 
 # get lower case table names
-msg=$($MYSQL_LOGIN -e "SELECT @@lower_case_table_names" 2>&1)
+if [ "${MYSQL_PASSWD}" != "" ]; then
+   msg=$($MYSQL_LOGIN -p"${MYSQL_PASSWD}" -e "SELECT @@lower_case_table_names" 2>&1)
+else
+   msg=$($MYSQL_LOGIN -e "SELECT @@lower_case_table_names" 2>&1)
+fi
 if [[ $? != 0 ]]; then
    msg=`echo "${msg}" | grep -v "Using a password"`  # remove 'Using a password' warning
    echo "ERROR: $msg"
