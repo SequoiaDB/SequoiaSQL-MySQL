@@ -891,5 +891,6 @@ class ha_sdb : public handler {
   bool m_index_need_sorted;
   bool m_use_group;
   sdb_idx_access_method m_method;
+  bool m_is_in_group_min_max;
 };
 #endif
