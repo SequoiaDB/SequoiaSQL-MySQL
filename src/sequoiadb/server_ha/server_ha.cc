@@ -411,7 +411,8 @@ static inline bool create_or_drop_only_temporary_table(THD *thd) {
       (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE)) {
     // We also check objects for SQL statement like
     // 'CREATE TABLE xxx AS SELECT/LIKE ...'
-    only_temp_table_op = (NULL == thd->lex->query_tables->next_global);
+    only_temp_table_op =
+        (thd->lex->query_tables && NULL == thd->lex->query_tables->next_global);
   }
 #ifdef IS_MYSQL
   only_temp_table_op |=
