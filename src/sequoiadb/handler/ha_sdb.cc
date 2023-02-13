@@ -1283,7 +1283,7 @@ sdb_batched_keys_ranges::sdb_batched_keys_ranges() {
   m_max_elements_cnt = 0;
   m_records_buf = NULL;
   m_read_ranges_buf_next = false;
-  m_state = NO_RECORD;
+  m_state = SDB_NO_RECORD;
   m_table = NULL;
   m_active_index = 0;
   m_is_mrr_assoc = false;
@@ -1341,7 +1341,7 @@ void sdb_batched_keys_ranges::deinit() {
     m_key_length = 0;
   }
   m_read_ranges_buf_next = false;
-  m_state = NO_RECORD;
+  m_state = SDB_NO_RECORD;
   m_table = NULL;
   m_active_index = 0;
   m_is_mrr_assoc = false;
@@ -1356,7 +1356,7 @@ void sdb_batched_keys_ranges::reuse_buf(int n_ranges) {
   memset(m_keys_buf, 0, original_keys_buf_size + records_buf_size);
   m_keys_buf_idx = 0;
   m_used_elements_cnt = n_ranges;
-  m_state = NO_RECORD;
+  m_state = SDB_NO_RECORD;
 }
 
 int sdb_batched_keys_ranges::expand_buf(int n_ranges) {
@@ -3605,7 +3605,7 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
         goto done;
       } else {
         m_batched_keys_ranges.set_need_read_buf_next(false);
-        m_batched_keys_ranges.set_state(NO_RECORD);
+        m_batched_keys_ranges.set_state(SDB_NO_RECORD);
       }
     }
 
