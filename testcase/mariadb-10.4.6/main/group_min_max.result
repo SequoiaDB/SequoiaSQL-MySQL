@@ -1712,13 +1712,9 @@ group_min_max.t1	optimize	status	OK
 SELECT a FROM t1 WHERE a='AA' GROUP BY a;
 a
 AA
-Warnings:
-Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'b' at row 1
 SELECT a FROM t1 WHERE a='BB' GROUP BY a;
 a
 BB
-Warnings:
-Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'b' at row 1
 SELECT DISTINCT a FROM t1 WHERE a='BB';
 a
 BB
@@ -1728,8 +1724,6 @@ BB
 SELECT a FROM t1 WHERE a LIKE 'B%' GROUP BY a;
 a
 BB
-Warnings:
-Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'b' at row 1
 DROP TABLE t1;
 CREATE TABLE t1 (
 a int(11) NOT NULL DEFAULT '0',

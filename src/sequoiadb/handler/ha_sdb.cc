@@ -952,26 +952,46 @@ int ha_sdb::handle_sort_condition(bool check_order_by_only) {
 
   try {
     if (order && (check_order_by_only ? !group_list : true)) {
-      while (order) {
-        if (Item::FIELD_ITEM != order->item[0]->type() &&
-            !(Item::REF_ITEM == order->item[0]->type() &&
-              Item_ref::VIEW_REF == ((Item_ref *)order->item[0])->ref_type() &&
-              Item::FIELD_ITEM ==
-                  ((Item_direct_view_ref *)order->item[0])->ref[0]->type())) {
-          goto error;
+      if (!sdb_build_sort_cond_on_runtime(ha_thd())) {
+        while (order) {
+          if (Item::FIELD_ITEM != order->item[0]->type() &&
+              !(Item::REF_ITEM == order->item[0]->type() &&
+                Item_ref::VIEW_REF ==
+                    ((Item_ref *)order->item[0])->ref_type() &&
+                Item::FIELD_ITEM ==
+                    ((Item_direct_view_ref *)order->item[0])->ref[0]->type())) {
+            goto error;
+          }
+          field = order->item[0]->field_for_view_update()->field;
+          if (!sdb_is_field_sortable(field)) {
+            goto error;
+          }
+          if (st_order::ORDER_ASC == order->direction) {
+            builder_order.append(sdb_field_name(field), 1);
+          } else if (st_order::ORDER_DESC == order->direction) {
+            builder_order.append(sdb_field_name(field), -1);
+          }
+          order = order->next;
         }
-        field = order->item[0]->field_for_view_update()->field;
-        if (!sdb_is_field_sortable(field)) {
-          goto error;
+        field_order_condition = builder_order.obj();
+      } else {
+        while (order) {
+          if (Item::FIELD_ITEM != order->item[0]->type() &&
+              !(Item::REF_ITEM == order->item[0]->type() &&
+                Item_ref::VIEW_REF ==
+                    ((Item_ref *)order->item[0])->ref_type() &&
+                Item::FIELD_ITEM ==
+                    ((Item_direct_view_ref *)order->item[0])->ref[0]->type())) {
+            goto error;
+          }
+          field = order->item[0]->field_for_view_update()->field;
+          if (!sdb_is_field_sortable(field)) {
+            goto error;
+          }
+          order = order->next;
         }
-        if (st_order::ORDER_ASC == order->direction) {
-          builder_order.append(sdb_field_name(field), 1);
-        } else if (st_order::ORDER_DESC == order->direction) {
-          builder_order.append(sdb_field_name(field), -1);
-        }
-        order = order->next;
       }
-      field_order_condition = builder_order.obj();
+
       sdb_order = sdb_get_join_order_by(join);
       if (!check_order_by_only) {
         sdb_set_join_order_by(join, NULL);
@@ -988,63 +1008,85 @@ int ha_sdb::handle_sort_condition(bool check_order_by_only) {
           st_rollup::STATE_NONE != join->rollup.state) {
         goto error;
       }
-      while (group_list) {
-        if (Item::FIELD_ITEM != group_list->item[0]->type() &&
-            !(Item::REF_ITEM == group_list->item[0]->type() &&
-              Item_ref::VIEW_REF ==
-                  ((Item_ref *)group_list->item[0])->ref_type() &&
-              Item::FIELD_ITEM == ((Item_direct_view_ref *)group_list->item[0])
-                                      ->ref[0]
-                                      ->type())) {
-          goto error;
+
+      if (!sdb_build_sort_cond_on_runtime(ha_thd())) {
+        while (group_list) {
+          if (Item::FIELD_ITEM != group_list->item[0]->type() &&
+              !(Item::REF_ITEM == group_list->item[0]->type() &&
+                Item_ref::VIEW_REF ==
+                    ((Item_ref *)group_list->item[0])->ref_type() &&
+                Item::FIELD_ITEM ==
+                    ((Item_direct_view_ref *)group_list->item[0])
+                        ->ref[0]
+                        ->type())) {
+            goto error;
+          }
+          field = group_list->item[0]->field_for_view_update()->field;
+          if (!sdb_is_field_sortable(field)) {
+            goto error;
+          }
+          char val[MAX_FIELD_NAME + 1] = {'\0'};
+          val[0] = '$';
+          strcat(val, sdb_field_name(field));
+          // Build '$_id' of group.
+          builder_id_field.append(sdb_field_name(field), val);
+          if (field_order_condition.isEmpty()) {
+            if (st_order::ORDER_ASC == group_list->direction) {
+              builder_order.append(sdb_field_name(field), 1);
+            } else if (st_order::ORDER_DESC == group_list->direction) {
+              builder_order.append(sdb_field_name(field), -1);
+            }
+          }
+          // Build '$first' of group.
+          bson::BSONObjBuilder builder_first;
+          bson::BSONObjBuilder builder_first_field(
+              builder_first.subobjStart(sdb_field_name(field)));
+          builder_first_field.append("$first", val);
+          builder_first_field.done();
+          builder_group_list.appendElements(builder_first.obj());
+
+          group_list = group_list->next;
         }
-        field = group_list->item[0]->field_for_view_update()->field;
-        if (!sdb_is_field_sortable(field)) {
-          goto error;
-        }
-        char val[MAX_FIELD_NAME + 1] = {'\0'};
-        val[0] = '$';
-        strcat(val, sdb_field_name(field));
-        // Build '$_id' of group.
-        builder_id_field.append(sdb_field_name(field), val);
+        builder_id_field.done();
+        builder_group_list.appendElements(builder_id.obj());
+        group_list_condition = builder_group_list.obj();
         if (field_order_condition.isEmpty()) {
-          if (st_order::ORDER_ASC == group_list->direction) {
-            builder_order.append(sdb_field_name(field), 1);
-          } else if (st_order::ORDER_DESC == group_list->direction) {
-            builder_order.append(sdb_field_name(field), -1);
+          field_order_condition = builder_order.obj();
+        }
+        // Build selector condition in group.
+        builder_selector_field.appendElements(group_list_condition);
+        for (Field **fields = table->field; *fields; fields++) {
+          Field *field = *fields;
+          const char *field_name = sdb_field_name(field);
+          char val[MAX_FIELD_NAME + 1] = {'\0'};
+          val[0] = '$';
+          strcat(val, field_name);
+          if (bitmap_is_set(table->read_set, field->field_index) &&
+              !group_list_condition.hasField(field_name)) {
+            tmp_obj = BSON(field_name << BSON("$first" << val));
+            builder_selector_field.appendElements(tmp_obj);
           }
         }
-        // Build '$first' of group.
-        bson::BSONObjBuilder builder_first;
-        bson::BSONObjBuilder builder_first_field(
-            builder_first.subobjStart(sdb_field_name(field)));
-        builder_first_field.append("$first", val);
-        builder_first_field.done();
-        builder_group_list.appendElements(builder_first.obj());
-
-        group_list = group_list->next;
-      }
-      builder_id_field.done();
-      builder_group_list.appendElements(builder_id.obj());
-      group_list_condition = builder_group_list.obj();
-      if (field_order_condition.isEmpty()) {
-        field_order_condition = builder_order.obj();
-      }
-      // Build selector condition in group.
-      builder_selector_field.appendElements(group_list_condition);
-      for (Field **fields = table->field; *fields; fields++) {
-        Field *field = *fields;
-        const char *field_name = sdb_field_name(field);
-        char val[MAX_FIELD_NAME + 1] = {'\0'};
-        val[0] = '$';
-        strcat(val, field_name);
-        if (bitmap_is_set(table->read_set, field->field_index) &&
-            !group_list_condition.hasField(field_name)) {
-          tmp_obj = BSON(field_name << BSON("$first" << val));
-          builder_selector_field.appendElements(tmp_obj);
+        group_list_condition = builder_selector_field.obj();
+      } else {
+        while (group_list) {
+          if (Item::FIELD_ITEM != group_list->item[0]->type() &&
+              !(Item::REF_ITEM == group_list->item[0]->type() &&
+                Item_ref::VIEW_REF ==
+                    ((Item_ref *)group_list->item[0])->ref_type() &&
+                Item::FIELD_ITEM ==
+                    ((Item_direct_view_ref *)group_list->item[0])
+                        ->ref[0]
+                        ->type())) {
+            goto error;
+          }
+          field = group_list->item[0]->field_for_view_update()->field;
+          if (!sdb_is_field_sortable(field)) {
+            goto error;
+          }
+          group_list = group_list->next;
         }
       }
-      group_list_condition = builder_selector_field.obj();
 
       sdb_group_list = sdb_get_join_group_list(join);
       sdb_set_join_group_list(join, NULL, false);
@@ -6759,6 +6801,93 @@ static bool sdb_index_contain_part_key(KEY *key_info) {
   return false;
 }
 
+int ha_sdb::build_sort_condition() {
+  int rc = 0;
+  Field *field = NULL;
+  bson::BSONObj tmp_obj;
+  st_order *order = sdb_order;
+  st_order *group_list = sdb_group_list;
+  bson::BSONObjBuilder builder_order(96);
+  bson::BSONObjBuilder builder_id(96);
+  bson::BSONObjBuilder builder_id_field(builder_id.subobjStart("_id"));
+  bson::BSONObjBuilder builder_group_list(96);
+  bson::BSONObjBuilder builder_selector_field(96);
+
+  DBUG_ENTER("ha_sdb::build_sort_condition");
+
+  try {
+    if (order) {
+      while (order) {
+        field = order->item[0]->field_for_view_update()->field;
+        if (st_order::ORDER_ASC == order->direction) {
+          builder_order.append(sdb_field_name(field), 1);
+        } else if (st_order::ORDER_DESC == order->direction) {
+          builder_order.append(sdb_field_name(field), -1);
+        }
+        order = order->next;
+      }
+      field_order_condition = builder_order.obj();
+    }
+
+    if (group_list) {
+      while (group_list) {
+        char val[MAX_FIELD_NAME + 1] = {'\0'};
+        field = group_list->item[0]->field_for_view_update()->field;
+        val[0] = '$';
+        strcat(val, sdb_field_name(field));
+        // Build '$_id' of group.
+        builder_id_field.append(sdb_field_name(field), val);
+        if (field_order_condition.isEmpty()) {
+          if (st_order::ORDER_ASC == group_list->direction) {
+            builder_order.append(sdb_field_name(field), 1);
+          }
+        }
+        // Build '$first' of group.
+        bson::BSONObjBuilder builder_first;
+        bson::BSONObjBuilder builder_first_field(
+            builder_first.subobjStart(sdb_field_name(field)));
+        builder_first_field.append("$first", val);
+        builder_first_field.done();
+        builder_group_list.appendElements(builder_first.obj());
+
+        group_list = group_list->next;
+      }
+      builder_id_field.done();
+      builder_group_list.appendElements(builder_id.obj());
+      group_list_condition = builder_group_list.obj();
+      if (field_order_condition.isEmpty()) {
+        field_order_condition = builder_order.obj();
+      }
+      // Build selector condition in group.
+      builder_selector_field.appendElements(group_list_condition);
+      for (Field **fields = table->field; *fields; fields++) {
+        Field *field = *fields;
+        const char *field_name = sdb_field_name(field);
+        char val[MAX_FIELD_NAME + 1] = {'\0'};
+        val[0] = '$';
+        strcat(val, field_name);
+        if (bitmap_is_set(table->read_set, field->field_index) &&
+            !group_list_condition.hasField(field_name)) {
+          tmp_obj = BSON(field_name << BSON("$first" << val));
+          builder_selector_field.appendElements(tmp_obj);
+        }
+      }
+      group_list_condition = builder_selector_field.obj();
+    }
+  }
+  /* purecov: begin inspected */
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to build bson obj when build sort "
+                        "condition, table_name:%s, db_name: %s, exception:%s",
+                        e.what());
+  /* purecov: end */
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done; /* purecov: inspected */
+}
+
 int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                            uchar *buf, bson::BSONObjBuilder *hint_builder) {
   int rc = 0;
@@ -6786,6 +6915,13 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   rc = pre_index_read_one(condition);
   if (rc) {
     goto error;
+  }
+
+  if (sdb_build_sort_cond_on_runtime(thd) && direct_sort) {
+    rc = build_sort_condition();
+    if (rc) {
+      goto error; /* purecov: inspected */
+    }
   }
 
   if (!sdb_is_single_table(thd) || !thd->variables.optimizer_index_sort_prune ||
@@ -7444,6 +7580,13 @@ int ha_sdb::rnd_next(uchar *buf) {
         first_read = first_read ? false : first_read;
         table->status = 0;
         goto done;
+      }
+
+      if (sdb_build_sort_cond_on_runtime(thd) && direct_sort) {
+        rc = build_sort_condition();
+        if (rc) {
+          goto error; /* purecov: inspected */
+        }
       }
 
 #ifdef IS_MARIADB
@@ -11283,8 +11426,10 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     if ((!sdb_get_join_order_by(join) && sdb_order) ||
         (!sdb_get_join_group_list(join) && sdb_group_list)) {
       direct_sort = false;
-      field_order_condition = SDB_EMPTY_BSON;
-      group_list_condition = SDB_EMPTY_BSON;
+      if (!sdb_build_sort_cond_on_runtime(ha_thd())) {
+        field_order_condition = SDB_EMPTY_BSON;
+        group_list_condition = SDB_EMPTY_BSON;
+      }
     }
     if (sdb_order) {
       sdb_set_join_order_by(join, sdb_order);

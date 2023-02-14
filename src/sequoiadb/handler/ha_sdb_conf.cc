@@ -576,6 +576,14 @@ static MYSQL_THDVAR_BOOL(
     /* 是否在 ::multi_range_read_info[_const] 函数完成所有 mrr 选择工作 */,
     NULL, NULL, TRUE);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    build_sort_cond_on_runtime, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Whether build sort condition on runtime. "
+    "(Default: ON)"
+    /* 是否在 runtime 层构建排序条件(包括order by、group by)。*/,
+    NULL, NULL, TRUE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -620,6 +628,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(cls_pushdown_expand),
     MYSQL_SYSVAR(support_cond_not),
     MYSQL_SYSVAR(choose_all_in_mrr_info),
+    MYSQL_SYSVAR(build_sort_cond_on_runtime),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -857,4 +866,8 @@ bool sdb_support_cond_not(THD *thd) {
 
 bool sdb_choose_all_in_mrr_info(THD *thd) {
   return THDVAR(thd, choose_all_in_mrr_info);
+}
+
+bool sdb_build_sort_cond_on_runtime(THD *thd) {
+  return THDVAR(thd, build_sort_cond_on_runtime);
 }
