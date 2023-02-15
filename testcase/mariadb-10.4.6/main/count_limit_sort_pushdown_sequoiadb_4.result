@@ -145,7 +145,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -297,7 +297,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -449,7 +449,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -601,7 +601,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -753,7 +753,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -905,7 +905,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -1057,7 +1057,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -1209,7 +1209,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -1353,11 +1353,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 (select * from t1 where col1>=1 group by col1 desc) union ALL (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select col4 from t1 where col1>1 order by col4 desc) union ALL (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -1435,7 +1435,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc  limit 1) union ALL (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 col1
 1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) union ALL(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -1614,11 +1614,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) UNION (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select col1 from t1 where col1>1 order by col1 desc) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
@@ -1685,7 +1685,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col4 from t1 where col1>1 group by col4 desc) UNION (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1;
 col4
 abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -1695,7 +1695,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 col1
 1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -2231,22 +2231,22 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col3 desc limit 3;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-2	def	NULL	def
+1	defg 	2022-11-15 11:45:10	defg
 3	NULL	2022-11-15 11:40:15	abcdef
+4	abcde	2022-11-15 11:40:20	efg
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 5 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-4	abcde	2022-11-15 11:40:20	efg
-5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+1	defg 	2022-11-15 11:45:10	defg
+6	def	2022-11-15 11:42:10	def
+7	def	2022-11-15 11:40:20	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "xyzz " } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -2277,7 +2277,7 @@ select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain  select * from t2 where t2.col2 < (select col4 from t1 where col1>="7" group by col4 desc) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
@@ -2287,8 +2287,8 @@ col1	col2	col3	col4
 0	abc	2022-11-15 11:40:10	abc
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -2561,7 +2561,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select * from t2 where col1>4 group by col1 having col2 in (select col4 from t1 where col2>"def" group by col2 desc having col2 < "zzz");
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col2": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col2": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select col2 from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1) order by col2 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	range	idx_col1,idx_col12	idx_col12	5	NULL	#	Using where with pushed condition; Using index; Using temporary; Using filesort
@@ -2578,7 +2578,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select col4 from t2 where col1>1 group by col4 having col4< (select col4 from t1 where col2="abcdef" group by col4 desc limit 1) limit 1;
 col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain  select * from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using temporary; Using filesort
@@ -2779,10 +2779,10 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY
 select *,(select col1 from t1 where col1>=7 group by col1)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 desc having col4 < "zzz" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 col1	col2	col3	col4	(select col1 from t1 where col1>=7 group by col1)
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col3": { "$gt": "2022-11-15 11:42:10" } }, { "col4": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col3": { "$gt": "2022-11-15 11:42:10" } }, { "col4": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain  select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -2908,7 +2908,7 @@ select *,(select col1 from t1 where col2>="bcd" order by col3 limit 0,1) from t2
 col1	col2	col3	col4	(select col1 from t1 where col2>="bcd" order by col3 limit 0,1)
 1	defg 	2022-11-15 11:45:10	defg	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col1": { "$lt": 10 } } ] } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col1": 1, "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col1": { "$lt": 10 } } ] } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "bcd" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 explain  select *,(select col2 from t1 where col3<"20221215114210" group by col2 order by col2 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3;
@@ -3197,8 +3197,9 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from (select * from t1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
 col1	col2	col3	col4
+4	abcde	2022-11-15 11:40:20	efg
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
 explain  select count(1) from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
@@ -4101,8 +4102,8 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) INTERSECT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -4160,7 +4161,7 @@ NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc) INTERSECT (select count(1) from t2 where col1>1) order by col1 limit 1;
 col1
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_4.t2]
@@ -4171,7 +4172,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -4180,7 +4181,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) INTERSECT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -4348,11 +4349,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) EXCEPT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -4420,7 +4421,7 @@ NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 col1
 2
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_4.t2]
@@ -4432,7 +4433,7 @@ NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
 2	def	NULL	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,7) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -4444,7 +4445,7 @@ col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) EXCEPT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -4691,7 +4692,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
@@ -4700,7 +4701,7 @@ with t as (select * from t1  where col2>"defg" group by col2 desc) select * from
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 3	xyz	2022-11-15 11:45:10	xyz 
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -5130,11 +5131,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 (select * from t1 where col1>=1 group by col1 desc) union ALL (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select col4 from t1 where col1>1 order by col4 desc) union ALL (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -5212,7 +5213,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc  limit 1) union ALL (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 col1
 1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) union ALL(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -5391,11 +5392,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) UNION (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select col1 from t1 where col1>1 order by col1 desc) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
@@ -5462,7 +5463,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col4 from t1 where col1>1 group by col4 desc) UNION (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1;
 col4
 abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -5472,7 +5473,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 col1
 1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -6008,22 +6009,22 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col3 desc limit 3;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-2	def	NULL	def
+1	defg 	2022-11-15 11:45:10	defg
 3	NULL	2022-11-15 11:40:15	abcdef
+4	abcde	2022-11-15 11:40:20	efg
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 5 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-4	abcde	2022-11-15 11:40:20	efg
-5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+1	defg 	2022-11-15 11:45:10	defg
+6	def	2022-11-15 11:42:10	def
+7	def	2022-11-15 11:40:20	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "xyzz " } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -6054,7 +6055,7 @@ select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain  select * from t2 where t2.col2 < (select col4 from t1 where col1>="7" group by col4 desc) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
@@ -6064,8 +6065,8 @@ col1	col2	col3	col4
 0	abc	2022-11-15 11:40:10	abc
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -6338,7 +6339,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select * from t2 where col1>4 group by col1 having col2 in (select col4 from t1 where col2>"def" group by col2 desc having col2 < "zzz");
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col2": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col2": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select col2 from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1) order by col2 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	range	idx_col1,idx_col12	idx_col12	5	NULL	#	Using where with pushed condition; Using index; Using temporary; Using filesort
@@ -6355,7 +6356,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select col4 from t2 where col1>1 group by col4 having col4< (select col4 from t1 where col2="abcdef" group by col4 desc limit 1) limit 1;
 col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain  select * from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using temporary; Using filesort
@@ -6556,10 +6557,10 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY
 select *,(select col1 from t1 where col1>=7 group by col1)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 desc having col4 < "zzz" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 col1	col2	col3	col4	(select col1 from t1 where col1>=7 group by col1)
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col3": { "$gt": "2022-11-15 11:42:10" } }, { "col4": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col3": { "$gt": "2022-11-15 11:42:10" } }, { "col4": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain  select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -6685,7 +6686,7 @@ select *,(select col1 from t1 where col2>="bcd" order by col3 limit 0,1) from t2
 col1	col2	col3	col4	(select col1 from t1 where col2>="bcd" order by col3 limit 0,1)
 1	defg 	2022-11-15 11:45:10	defg	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col1": { "$lt": 10 } } ] } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col1": 1, "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col1": { "$lt": 10 } } ] } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "bcd" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 explain  select *,(select col2 from t1 where col3<"20221215114210" group by col2 order by col2 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3;
@@ -6974,8 +6975,9 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from (select * from t1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
 col1	col2	col3	col4
+4	abcde	2022-11-15 11:40:20	efg
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
 explain  select count(1) from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
@@ -7878,8 +7880,8 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) INTERSECT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -7937,7 +7939,7 @@ NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc) INTERSECT (select count(1) from t2 where col1>1) order by col1 limit 1;
 col1
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_4.t2]
@@ -7948,7 +7950,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -7957,7 +7959,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) INTERSECT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -8125,11 +8127,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) EXCEPT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -8197,7 +8199,7 @@ NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 col1
 2
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_4.t2]
@@ -8209,7 +8211,7 @@ NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
 2	def	NULL	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,7) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -8221,7 +8223,7 @@ col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) EXCEPT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -8468,7 +8470,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
@@ -8477,7 +8479,7 @@ with t as (select * from t1  where col2>"defg" group by col2 desc) select * from
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 3	xyz	2022-11-15 11:45:10	xyz 
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -8907,11 +8909,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 (select * from t1 where col1>=1 group by col1 desc) union ALL (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select col4 from t1 where col1>1 order by col4 desc) union ALL (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -8989,7 +8991,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc  limit 1) union ALL (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 col1
 1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) union ALL(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -9168,11 +9170,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) UNION (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select col1 from t1 where col1>1 order by col1 desc) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
@@ -9239,7 +9241,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col4 from t1 where col1>1 group by col4 desc) UNION (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1;
 col4
 abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -9249,7 +9251,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 col1
 1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -9785,22 +9787,22 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col3 desc limit 3;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-2	def	NULL	def
+1	defg 	2022-11-15 11:45:10	defg
 3	NULL	2022-11-15 11:40:15	abcdef
+4	abcde	2022-11-15 11:40:20	efg
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 5 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-4	abcde	2022-11-15 11:40:20	efg
-5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+1	defg 	2022-11-15 11:45:10	defg
+6	def	2022-11-15 11:42:10	def
+7	def	2022-11-15 11:40:20	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "xyzz " } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -9831,7 +9833,7 @@ select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain  select * from t2 where t2.col2 < (select col4 from t1 where col1>="7" group by col4 desc) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
@@ -9841,8 +9843,8 @@ col1	col2	col3	col4
 0	abc	2022-11-15 11:40:10	abc
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -10115,7 +10117,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select * from t2 where col1>4 group by col1 having col2 in (select col4 from t1 where col2>"def" group by col2 desc having col2 < "zzz");
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col2": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col2": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select col2 from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1) order by col2 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	range	idx_col1,idx_col12	idx_col12	5	NULL	#	Using where with pushed condition; Using index; Using temporary; Using filesort
@@ -10132,7 +10134,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select col4 from t2 where col1>1 group by col4 having col4< (select col4 from t1 where col2="abcdef" group by col4 desc limit 1) limit 1;
 col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain  select * from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using temporary; Using filesort
@@ -10333,10 +10335,10 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY
 select *,(select col1 from t1 where col1>=7 group by col1)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 desc having col4 < "zzz" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 col1	col2	col3	col4	(select col1 from t1 where col1>=7 group by col1)
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col3": { "$gt": "2022-11-15 11:42:10" } }, { "col4": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col3": { "$gt": "2022-11-15 11:42:10" } }, { "col4": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain  select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -10462,7 +10464,7 @@ select *,(select col1 from t1 where col2>="bcd" order by col3 limit 0,1) from t2
 col1	col2	col3	col4	(select col1 from t1 where col2>="bcd" order by col3 limit 0,1)
 1	defg 	2022-11-15 11:45:10	defg	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col1": { "$lt": 10 } } ] } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col1": 1, "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col1": { "$lt": 10 } } ] } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "bcd" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 explain  select *,(select col2 from t1 where col3<"20221215114210" group by col2 order by col2 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3;
@@ -10751,8 +10753,9 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from (select * from t1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
 col1	col2	col3	col4
+4	abcde	2022-11-15 11:40:20	efg
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
 explain  select count(1) from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
@@ -11655,8 +11658,8 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) INTERSECT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -11714,7 +11717,7 @@ NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc) INTERSECT (select count(1) from t2 where col1>1) order by col1 limit 1;
 col1
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_4.t2]
@@ -11725,7 +11728,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -11734,7 +11737,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) INTERSECT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -11902,11 +11905,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) EXCEPT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -11974,7 +11977,7 @@ NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 col1
 2
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_4.t2]
@@ -11986,7 +11989,7 @@ NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
 2	def	NULL	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,7) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -11998,7 +12001,7 @@ col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) EXCEPT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -12245,7 +12248,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
@@ -12254,7 +12257,7 @@ with t as (select * from t1  where col2>"defg" group by col2 desc) select * from
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 3	xyz	2022-11-15 11:45:10	xyz 
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -16024,7 +16027,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
@@ -19803,7 +19806,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
@@ -23582,7 +23585,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
@@ -24027,7 +24030,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -24177,7 +24180,7 @@ col1	col2	col3	col4
 5	abcdef	2022-11-15 11:40:15	abcdef
 6	def	2022-11-15 11:42:10	def
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
@@ -24468,11 +24471,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 (select * from t1 where col1>=1 group by col1 desc) union ALL (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select col4 from t1 where col1>1 order by col4 desc) union ALL (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -24550,7 +24553,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc  limit 1) union ALL (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 col1
 1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) union ALL(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -24729,11 +24732,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) UNION (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select col1 from t1 where col1>1 order by col1 desc) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index
@@ -24800,7 +24803,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col4 from t1 where col1>1 group by col4 desc) UNION (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1;
 col4
 abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -24810,7 +24813,7 @@ NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
 col1
 1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) UNION (select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -25346,22 +25349,22 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col3 desc limit 3;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-2	def	NULL	def
+1	defg 	2022-11-15 11:45:10	defg
 3	NULL	2022-11-15 11:40:15	abcdef
+4	abcde	2022-11-15 11:40:20	efg
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 5 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-4	abcde	2022-11-15 11:40:20	efg
-5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+1	defg 	2022-11-15 11:45:10	defg
+6	def	2022-11-15 11:42:10	def
+7	def	2022-11-15 11:40:20	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "xyzz " } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -25392,7 +25395,7 @@ select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain  select * from t2 where t2.col2 < (select col4 from t1 where col1>="7" group by col4 desc) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
@@ -25402,8 +25405,8 @@ col1	col2	col3	col4
 0	abc	2022-11-15 11:40:10	abc
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain  select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -25676,7 +25679,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select * from t2 where col1>4 group by col1 having col2 in (select col4 from t1 where col2>"def" group by col2 desc having col2 < "zzz");
 col1	col2	col3	col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 4 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col2": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col2": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select col2 from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1) order by col2 desc limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	range	idx_col1,idx_col12	idx_col12	5	NULL	#	Using where with pushed condition; Using index; Using temporary; Using filesort
@@ -25693,7 +25696,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 select col4 from t2 where col1>1 group by col4 having col4< (select col4 from t1 where col2="abcdef" group by col4 desc limit 1) limit 1;
 col4
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain  select * from t2 where col1>1 group by col1 having col2< (select col4 from t1 where col2="abcdef" group by col3 order by col4 desc) order by col3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using temporary; Using filesort
@@ -25894,10 +25897,10 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	index	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition; Using index; Using pushed GROUP BY
 select *,(select col1 from t1 where col1>=7 group by col1)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 desc having col4 < "zzz" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 col1	col2	col3	col4	(select col1 from t1 where col1>=7 group by col1)
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col3": { "$gt": "2022-11-15 11:42:10" } }, { "col4": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col3": { "$gt": "2022-11-15 11:42:10" } }, { "col4": { "$lt": "zzz" } } ] } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 explain  select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -26023,7 +26026,7 @@ select *,(select col1 from t1 where col2>="bcd" order by col3 limit 0,1) from t2
 col1	col2	col3	col4	(select col1 from t1 where col2>="bcd" order by col3 limit 0,1)
 1	defg 	2022-11-15 11:45:10	defg	2
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col1": { "$lt": 10 } } ] } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col1": 1, "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "$and": [ { "col2": { "$gt": "def" } }, { "col1": { "$lt": 10 } } ] } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "bcd" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_4.t1]
 explain  select *,(select col2 from t1 where col3<"20221215114210" group by col2 order by col2 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3;
@@ -26312,8 +26315,9 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 select * from (select * from t1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
 col1	col2	col3	col4
+4	abcde	2022-11-15 11:40:20	efg
 7	def	2022-11-15 11:40:20	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
 explain  select count(1) from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using temporary; Using filesort
@@ -27216,8 +27220,8 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) INTERSECT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -27275,7 +27279,7 @@ NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select col1 from t1 where col1>1 group by col1 desc) INTERSECT (select count(1) from t2 where col1>1) order by col1 limit 1;
 col1
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_4.t2]
@@ -27286,7 +27290,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -27295,7 +27299,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	INTERSECT RESULT	<intersect1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc  limit 0,3) INTERSECT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 col1	col2	col3	col4
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) INTERSECT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -27463,11 +27467,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	
 (select * from t1 where col1>=1 group by col1 desc) EXCEPT (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
 col1	col2	col3	col4
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+6	def	2022-11-15 11:42:10	def
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain (select * from t1 where col1>1 order by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	Using where with pushed condition
@@ -27535,7 +27539,7 @@ NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 col1
 2
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t1
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_4.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_4.t2]
@@ -27547,7 +27551,7 @@ NULL	EXCEPT RESULT	<except1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>1 group by col1 desc) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1;
 col1	col2	col3	col4
 2	def	NULL	def
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col1>1 group by col1 desc  limit 0,7) EXCEPT (select * from t2 where col3>="20221115114210" order by col4 limit 2,3) order by col1 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -27559,7 +27563,7 @@ col1	col2	col3	col4
 3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
 5	abcdef	2022-11-15 11:40:15	abcdef
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_4.t2]
 explain (select * from t1 where col4>="def" order by col4 limit 2,3) EXCEPT(select * from t2 where col1>=1 group by col2 order by col2 limit 2,1) order by col3 limit 2,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -27806,7 +27810,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
@@ -27815,7 +27819,7 @@ with t as (select * from t1  where col2>"defg" group by col2 desc) select * from
 col1	col2	col3	col4
 2	xyzz 	2022-11-15 11:45:10	xyzz 
 3	xyz	2022-11-15 11:45:10	xyz 
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "defg" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col3>"20221115114212" order by col4 limit 6) select * from t group by col1 limit 2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using temporary; Using filesort
@@ -31583,7 +31587,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 with t as (select * from t1  where col2>"def" order by col2 desc) select * from t group by col3 desc;
 col1	col2	col3	col4
 1	defg 	2022-11-15 11:45:10	defg
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  with t as (select * from t1  where col2>"defg" group by col2 desc) select * from t order by col3 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort

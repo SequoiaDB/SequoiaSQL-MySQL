@@ -218,7 +218,7 @@ explain replace into t5 select * from t1 where col1>1 group by col1 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 select * from t1 where col1>1 group by col1 desc;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 select * from t5;
 col1	col2	col3	col4
 2	def	NULL	def
@@ -426,13 +426,13 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into t5(select * from t1 where col1>=1 group by col1 desc) union ALL (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 select * from t5;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
 truncate table t5;
 explain replace into replace_table7(select col4 from t1 where col1>1 order by col4 desc) union ALL (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1,3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -510,7 +510,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table7(select col2 from t1 where col1>1 group by col2 desc) union ALL (select col2 from t2 where col3>="20221115114210" order by col2 limit 1) order by col2 limit 1;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col1": 1, "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from t5;
 col1	col2	col3	col4
@@ -521,7 +521,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc  limit 1) union ALL (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -736,13 +736,13 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	
 replace into t5(select * from t1 where col1>=1 group by col1 desc) UNION (select * from t2 where col2>"def" group by col2 desc) limit 1,3;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 select * from t5;
 col1	col2	col3	col4
-2	def	NULL	def
-3	NULL	2022-11-15 11:40:15	abcdef
 4	abcde	2022-11-15 11:40:20	efg
+5	abcdef	2022-11-15 11:40:15	abcdef
+6	def	2022-11-15 11:42:10	def
 truncate table t5;
 explain replace into replace_table1(select col1 from t1 where col1>1 order by col1 desc) UNION (select col1 from t2 where col3>="20221115114210" order by col4 limit 1) order by col1 limit 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -817,7 +817,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table7(select col4 from t1 where col1>1 group by col4 desc) UNION (select col4 from t2 where col3>="20221115114210" order by col4 limit 1) order by col4 limit 1;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table7;
 col4
@@ -829,7 +829,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	UNION	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed ORDER BY; Storage engine handles access type
 NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 replace into replace_table1(select col1 from t1 where col1>1 group by col1 desc  limit 1) UNION (select col1 from t2 where col3>="20221115114210" order by col1 limit 1) order by col1 limit 1;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from t5;
 col1	col2	col3	col4
@@ -1457,25 +1457,25 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col3 desc limit 3;
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 5 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 select * from t5;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-2	def	NULL	def
+1	defg 	2022-11-15 11:45:10	defg
 3	NULL	2022-11-15 11:40:15	abcdef
+4	abcde	2022-11-15 11:40:20	efg
 truncate table t5;
 explain replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col3>="20221115114210" group by col4 desc limit 1) group by col3 desc limit 3;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gte": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "xyzz " } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 select * from t5;
 col1	col2	col3	col4
-0	abc	2022-11-15 11:40:10	abc
-4	abcde	2022-11-15 11:40:20	efg
-5	abcdef	2022-11-15 11:40:15	abcdef
+1	defg 	2022-11-15 11:45:10	defg
+6	def	2022-11-15 11:42:10	def
+7	def	2022-11-15 11:40:20	def
 truncate table t5;
 explain replace into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col3 order by col2 desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -1519,8 +1519,8 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t2	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 2	SUBQUERY	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 select * from t2 where t2.col2 < (select col4 from t1 where col1>="7" group by col4 desc) group by col3 desc limit 3;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": { "$decimal": "7" } } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "def" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 select * from t5;
 col1	col2	col3	col4
 0	abc	2022-11-15 11:40:10	abc
@@ -1864,7 +1864,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t1	ref	idx_col2	idx_col2	13	const	#	Using where with pushed condition; Using pushed GROUP BY
 replace into replace_table7 select col4 from t2 where col1>1 group by col4 having col4< (select col4 from t1 where col2="abcdef" group by col4 desc limit 1) limit 1;
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$et": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 select * from t5;
 col1	col2	col3	col4
 truncate table t5;
@@ -2561,9 +2561,10 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	<derived2>	ALL	NULL	NULL	NULL	NULL	#	Using where; Using filesort
 2	DERIVED	t1	NULL	NULL	NULL	NULL	NULL	#	Using where with pushed condition; Using pushed GROUP BY; Storage engine handles access type
 replace into t5 select * from (select * from t1 where col1>1 group by col4 desc limit 4) dt where col4>"aef" order by col4 desc limit 2,2;
-[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": {} }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 4 }]
 select * from t5;
 col1	col2	col3	col4
+4	abcde	2022-11-15 11:40:20	efg
 7	def	2022-11-15 11:40:20	def
 truncate table t5;
 explain replace into replace_table1 select count(1) from (select * from t1 where col3>="20221115114310" group by col1 order by col1 limit 2,1) dt where col2>"bcd" group by col2 order by col3;

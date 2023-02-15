@@ -822,7 +822,11 @@ class ha_sdb : public handler {
 
   bool is_in_one_query_for_cur_select();
 
-  int build_sort_condition();
+  bool check_if_supported_direct_sort(st_order *sort);
+
+  int build_order_condition(st_order *order);
+
+  int build_group_condition(st_order *group);
 
   void fix_start_end_key_if_range_scan_desc(key_range *&start_key_ptr,
                                             key_range *&end_key_ptr);
