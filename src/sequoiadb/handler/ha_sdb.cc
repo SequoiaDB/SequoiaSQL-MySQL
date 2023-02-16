@@ -1775,7 +1775,15 @@ int ha_sdb::reset() {
     collection = NULL;
   }
 
-  // release local share in handler
+  /*
+   * If the handler::share->expired is setted true by self or others, should
+   * release local share in handler and search to get the new sdb_share from
+   * the sdb_open_tables in the next statement of same handler, if
+   * handler::share->expired is not true, that means the handler will always keep
+   * the share.
+   *
+   * see the principle of soft invalidation comments in ha_sdb::ensure_stats()
+   */
   if (share && share->expired) {
     SDB_LOG_DEBUG("Release local statistics for current handler");
     share = null_ptr;
@@ -5997,8 +6005,11 @@ int ha_sdb::info(uint flag) {
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     if (flag & HA_STATUS_VARIABLE) {
-      // make sure share is not empty and has not expired
-      if (!share || share->expired) {
+      /*
+       * make sure share is not empty, see the comments in
+       * ha_sdb::ensure_stats()
+       */
+      if (!share) {
         bool is_share_created = false;
         get_sdb_share(m_path, table, share, is_share_created);
         if (!share) {
@@ -6039,7 +6050,10 @@ int ha_sdb::info(uint flag) {
   }
 
   if (flag & HA_STATUS_VARIABLE) {
-    if (!share || share->expired) {
+    /*
+     * make sure share is not empty, see the comments in ha_sdb::ensure_stats()
+     */
+    if (!share) {
       bool is_share_created = false;
       get_sdb_share(m_path, table, share, is_share_created);
       if (!share) {
@@ -6280,9 +6294,15 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
         (*glob_ssp)->expired = true;
         (*glob_ssp) = new_share_ptr;
       } else {
-        // set expired state for new shared_ptr, use only one time if current
-        // 'Sdb_share' has been removed(in 'update_shares_stats' function) from
-        // 'sdb_open_tables'
+        /*
+         * set expired state for new shared_ptr, use only one time if current
+         * 'Sdb_share' has been removed(in 'update_shares_stats' function) from
+         * 'sdb_open_tables'
+         *
+         * More precisely, the new_share_ptr is physically newly allocated, but
+         * logically the contents of the table statistics are old. So should set
+         * the new_share_ptr->expired = true here.
+         */
         new_share_ptr->expired = true;
       }
       share = new_share_ptr;
@@ -6834,8 +6854,30 @@ int ha_sdb::ensure_stats(THD *thd, int keynr) {
   DBUG_ENTER("ha_sdb::ensure_stats");
   int rc = 0;
 
-  // make sure share is not empty and has not expired
-  if (!share || share->expired) {
+  /*
+   * During the whole statement, if some one flushs and removes the Sdb_share
+   * from the sdb_open_tables.
+   *
+   * e.g.,analyze table/flush tables/... concurrently, the handler::share's
+   * statistics of this table can only do soft invalidate, should never
+   * be refreshed in the life cycle of statement.
+   *
+   * The principle of statistics soft invalidation:
+   * (1) During the current statement, the table should use the same statistics
+   *    which has been obtained and should never be refreshed until the end of
+   *    of the statement.
+   * (2) In the comming new statement, it should obtain and use the refreshed
+   *    statistics.
+
+   * make sure share is not empty.
+   * (1) if handler::share is null_ptr, should search or build and insert in the
+   *     sdb_open_tables.
+   * (2) if the sdb_share has been removed by other connections and cause this
+   *     handler::share be expired in the life cycle of the currrent statement.
+   *     We should keep the expired handler::share until the end of statement.
+   *
+   */
+  if (!share) {
     bool is_share_created = false;
     get_sdb_share(m_path, table, share, is_share_created);
     if (!share) {
@@ -7213,7 +7255,6 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
       goto error;
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
-
     thd_sdb = thd_get_thd_sdb(thd);
     // in non-transaction mode, do not exec commit or rollback.
     if (!sdb_use_transaction(thd)) {
@@ -7301,6 +7342,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
       thd_sdb->lock_count--;
       goto error;
     }
+
     /*
       When sdb_use_transaction = ON, we update shared statistics at commit.
       But if the statement is not transaction(like DDL), there is no commit,
@@ -7586,6 +7628,17 @@ int ha_sdb::ensure_index_stat(int keynr) {
     goto done;
   }
 
+  /*
+   * From the principle of statistics soft invalidation, we should never fe-
+   * tch and replace the index statistics, it should have been obtained in
+   * the same time we fetched the table statistics. Because all the stati-
+   * stics(including table and indexes) are the snapshot of the table
+   * in some exactly time, they should be completely obtained together. But we
+   * fetch the index statistics when it firstly been evaluated to avoid too
+   * much time taking if fetch all the indexes statistics with the table
+   * statistics. So we allow the replacing here.
+   */
+
   // build a new 'Sdb_share' if new index statistics is loaded into 'Sdb_share'
   // 'idx_stat_arr' in 'Sdb_share' is not allowed to change, because the
   // following situation is not safe:
@@ -7604,9 +7657,20 @@ int ha_sdb::ensure_index_stat(int keynr) {
         SDB_LOG_ERROR("Failed to build new 'Sdb_share', error: %d", rc);
         goto error;
       }
-      // set Sdb_share table_type and table statistics
-      new_share->table_type = m_sdb_table_type;
+
+      /*
+       * 1. set the new_share with the old hanlder::share.
+       * Including:
+       *  (a) the new_share's table_type and table statistics.
+       *  (b) copy the old index statistics in the handler::share to the
+       * new_share. (c) inherit the expired flag in hander::share.
+       */
       new_share->stat = share->stat;
+      for (uint i = 0; i < share->idx_count; i++) {
+        new_share->idx_stat_arr[i] = share->idx_stat_arr[i];
+      }
+
+      new_share->table_type = m_sdb_table_type;
       // point to the new Sdb_share
       new_share_ptr.reset(new_share, free_sdb_share);
 
@@ -7635,12 +7699,9 @@ int ha_sdb::ensure_index_stat(int keynr) {
         }
       }
 
-      // 3. copy old index statistics into new_share_ptr
-      for (uint i = 0; i < share->idx_count; i++) {
-        new_share_ptr->idx_stat_arr[i] = share->idx_stat_arr[i];
-      }
-
-      // 4. set current index statistics
+      /*
+       * 4. replace the current index statistics
+       */
       new_share_ptr->idx_stat_arr[keynr].reset(new_stat);
 
       // 5. update global and local shared statistics with fresh data
@@ -7658,9 +7719,29 @@ int ha_sdb::ensure_index_stat(int keynr) {
           (*glob_ssp)->expired = true;
           (*glob_ssp) = new_share_ptr;
         } else {
-          // set expired state for new shared_ptr, use only one time if current
-          // 'Sdb_share' has been removed(in 'update_shares_stats' function)
-          // from 'sdb_open_tables'
+          /*
+           * More precisely, the new_share_ptr is physically newly allocated,
+           * but logically the contents of the table statistics are old. So
+           * should set the new_share_ptr->expired = true here in the following
+           * case.
+           *
+           * set expired state for new shared_ptr, use only one time if current
+           * 'Sdb_share' has been removed(in 'update_shares_stats' function)
+           from
+           * 'sdb_open_tables',
+           *   eg, for two connections of con1(analyze table) and con2(select *
+           *       from table):
+           *   time1: <con1> external_lock()->update_stats(false)
+           *   time2: <con1> external_lock()->update_stats(true)
+           *   time3: <con1> external_lock()->ensure_index_stat(-1)
+           *   time4: <con2> open()->update_stats(false)
+           *   time5: <con2> external_lock()->update_stats(false)
+           *   time6: <con1> analyze()
+           *   time7: <con1> release_table_share() remove the Sdb_share from
+                             sdb_open_tables.
+           *   time8: <con2> external_lock()->ensure_index_stat(-1) here will
+           *                 failed to find in the sdb_open_tables.
+           */
           new_share_ptr->expired = true;
         }
         share = new_share_ptr;
