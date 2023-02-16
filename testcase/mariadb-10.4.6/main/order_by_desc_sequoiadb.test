@@ -6,8 +6,11 @@ set session optimizer_index_sort_prune=on;
 set session sequoiadb_debug_log=on;
 
 --disable_warnings
-drop table if exists reverse_order_sequoiadb;
+drop database if exists order_by_desc_sequoiadb;
 --enable_warnings
+
+create database order_by_desc_sequoiadb;
+use order_by_desc_sequoiadb;
 
 CREATE TABLE `reverse_order_sequoiadb` (
 `col_date` date DEFAULT NULL,
@@ -59,6 +62,7 @@ EXPLAIN SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 FROM 
 SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 FROM `reverse_order_sequoiadb` WHERE col_int > 8 AND col_int != 8 AND col_date >= '2000-04-07' ORDER BY field1 DESC, field2 DESC, field3 DESC;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-
+drop database order_by_desc_sequoiadb;
 --source include/uninstall_sequoiadb.inc
+
 
