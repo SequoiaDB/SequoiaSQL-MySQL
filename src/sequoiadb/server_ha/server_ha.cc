@@ -47,6 +47,7 @@
 #include "server_ha_sql_rewrite.h"
 #endif
 #include "sql_prepare.h"
+#include "debug_sync.h"
 
 // thread local key for ha_sql_stmt_info
 thread_local_key_t ha_sql_stmt_info_key;
@@ -580,6 +581,7 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   bson::BSONObj cond, obj, result;
   int sql_command = thd_sql_command(thd);
   const char *db_name = NULL, *table_name = NULL, *op_type = NULL;
+  bool add_share_lock = true;
 
   rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_LOCK_CL, lock_cl);
   if (rc) {
@@ -599,6 +601,7 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       SDB_LOG_DEBUG("HA: Add 'S' lock for database '%s'", db_name);
       rc = add_slock(lock_cl, db_name, table_name, op_type, sql_info);
       if (HA_ERR_END_OF_FILE == rc) {
+        add_share_lock = false;
         SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'U' lock for '%s:%s'",
                       db_name, table_name);
         rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
@@ -620,6 +623,7 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       SDB_LOG_DEBUG("HA: Add 'S' lock for database '%s'", db_name);
       rc = add_slock(lock_cl, db_name, table_name, op_type, sql_info);
       if (HA_ERR_END_OF_FILE == rc) {
+        add_share_lock = false;
         SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'U' lock for '%s:%s'",
                       db_name, table_name);
         rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
@@ -638,6 +642,7 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       SDB_LOG_DEBUG("HA: Add 'S' lock for database '%s'", db_name);
       rc = add_slock(lock_cl, db_name, table_name, op_type, sql_info);
       if (HA_ERR_END_OF_FILE == rc) {
+        add_share_lock = false;
         SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'X' lock for '%s:%s'",
                       db_name, table_name);
         rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
@@ -646,6 +651,9 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         goto error;
       }
     }
+  }
+  if (add_share_lock) {
+    DEBUG_SYNC(thd, "after_add_share_lock_for_databases");
   }
 done:
   return rc;
