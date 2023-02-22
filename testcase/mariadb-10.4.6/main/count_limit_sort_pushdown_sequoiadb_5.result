@@ -271,8 +271,8 @@ NULL	INTERSECT RESULT	<intersect1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesor
 (select col4 from t1_partition where col1>=1 limit 0,7) INTERSECT (select col4 from t2_partition where col2>"defg" order by col4 desc) INTERSECT (select col4 from t1_partition where col2>"defg" order by col4 desc limit 0,5) INTERSECT (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 0,7) order by col4 desc limit 1;
 col4
 xyz 
-[Note] SequoiaDB: Release local statistics for current handler
-[Note] SequoiaDB: Release local statistics for current handler
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col4": -1 }], hint[{ "": "" }], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 7 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[7], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2_partition]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col4": -1 }], hint[{ "": "" }], limit[5], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1_partition]
@@ -519,8 +519,8 @@ NULL	EXCEPT RESULT	<except1,2,3,4>	ALL	NULL	NULL	NULL	NULL	#	Using filesort
 (select * from t1 where col1>=1 limit 0,7) EXCEPT (select * from t2 where col2>"defg" order by col4 desc) EXCEPT (select * from t1 where col2>="defg" order by col4 desc limit 2,3) EXCEPT (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col3 desc limit 1;
 col1	col2	col3	col4
 4	abcde	2022-11-15 11:40:20	efg
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "defg" } }], selector[{ "col2": null }], order_by[{ "col2": -1 }], hint[{ "": "idx_col2" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gte": 1 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Release local statistics for current handler
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[7], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_5.t2]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "defg" } }], selector[{}], order_by[{ "col4": -1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb_5.t1]
