@@ -89,7 +89,7 @@ server_audit_syslog_info
 server_audit_syslog_priority	LOG_INFO
 uninstall plugin server_audit;
 Warnings:
-Warning	1620	Plugin is busy and will be uninstalled on shutdown
+Warning	1620	Reinstalling the plugin before instance shutdown may result in unpredictable result
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'set global server_audit_logging=on',0
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'create table t1(id int,name varchar(20))',0
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'show tables',0
