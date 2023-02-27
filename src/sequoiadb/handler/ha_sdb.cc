@@ -1772,6 +1772,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
   active_index = MAX_KEY;
   share = null_ptr;
+  share_newly_obtain = null_ptr;
   m_sdb_table_type = TABLE_TYPE_UNDEFINE;
   m_lock_type = TL_IGNORE;
   collection = NULL;
@@ -1831,6 +1832,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_use_group = false;
   m_start_range = NULL;
   m_is_in_group_min_max = false;
+  m_refresh_share_stats_phase = NOT_IN_REFRESH;
 }
 
 ha_sdb::~ha_sdb() {
@@ -2081,16 +2083,16 @@ int ha_sdb::reset() {
    * If the handler::share->expired is setted true by self or others, should
    * release local share in handler and search to get the new sdb_share from
    * the sdb_open_tables in the next statement of same handler, if
-   * handler::share->expired is not true, that means the handler will always keep
-   * the share.
+   * handler::share->expired is not true, that means the handler will always
+   * keep the share.
    *
    * see the principle of soft invalidation comments in ha_sdb::ensure_stats()
    */
   if (share && share->expired) {
-    SDB_LOG_DEBUG("Release local statistics for current handler");
+    DBUG_PRINT("info", ("Release local statistics for current handler, %s.%s",
+                        db_name, table_name));
     share = null_ptr;
   }
-
   // don't release bson element cache, so that we can reuse it
   m_bulk_insert_rows.clear();
   free_root(&blobroot, MYF(0));
@@ -2141,6 +2143,8 @@ int ha_sdb::reset() {
   m_use_group = false;
   m_start_range = NULL;
   m_is_in_group_min_max = false;
+  share_newly_obtain = null_ptr;
+  m_refresh_share_stats_phase = NOT_IN_REFRESH;
   DBUG_RETURN(0);
 }
 
@@ -7981,6 +7985,7 @@ int ha_sdb::info(uint flag) {
         goto error;
       }
     }
+
     if (!(flag & HA_STATUS_NO_LOCK)) {
       rc = update_stats(thd, true);
       if (0 != rc) {
@@ -8024,9 +8029,15 @@ int ha_sdb::info(uint flag) {
         continue;
       }
 
-      // statistics are needed when multi-table joining
-      if (select_lex &&
-          !sdb_is_single_table_in_cur_select(ha_thd(), select_lex)) {
+      /*
+       * (1) statistics are needed when multi-table joining
+       * (2) in the prepare share stats phase of 'refresh tables [tbl_name]
+       * stats'
+       */
+      if ((select_lex &&
+           !sdb_is_single_table_in_cur_select(ha_thd(), select_lex)) ||  // (1)
+          REFRESH_PREPARE_SHARE_STATS == m_refresh_share_stats_phase) {  // (2)
+        // collect all the keys index statistics.
         int tmp_rc = ensure_stats(thd, i);
         if (tmp_rc) {
           SDB_LOG_WARNING("Failed to load index statistics, rc: %d", tmp_rc);
@@ -8199,7 +8210,7 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
     // point to the new Sdb_share
     new_share_ptr.reset(new_share, free_sdb_share);
     /* Update shared statistics with fresh data */
-    {
+    if (m_refresh_share_stats_phase == NOT_IN_REFRESH) {
       mysql_mutex_lock(&sdb_mutex);
       boost::shared_ptr<Sdb_share> *glob_ssp =
           (boost::shared_ptr<Sdb_share> *)my_hash_search(
@@ -8226,6 +8237,8 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       }
       share = new_share_ptr;
       mysql_mutex_unlock(&sdb_mutex);
+    } else if (m_refresh_share_stats_phase == REFRESH_PREPARE_SHARE_STATS) {
+      share_newly_obtain = new_share_ptr;
     }
   }
 
@@ -8242,7 +8255,6 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
   } else {
     stats.mean_rec_length = 0;
   }
-
   DBUG_PRINT(
       "exit",
       ("stats.block_size: %u, stats.data_file_length: %llu, "
@@ -8853,9 +8865,10 @@ int ha_sdb::ensure_stats(THD *thd, int keynr) {
     goto done;
   }
 
-  DBUG_ASSERT((~(ha_rows)0) != stats.records);
-  DBUG_ASSERT((~(ha_rows)0) != (ha_rows)share->stat.total_records);
-
+  if (m_refresh_share_stats_phase == NOT_IN_REFRESH) {
+    DBUG_ASSERT((~(ha_rows)0) != stats.records);
+    DBUG_ASSERT((~(ha_rows)0) != (ha_rows)share->stat.total_records);
+  }
 done:
   DBUG_RETURN(rc);
 error:
@@ -8881,6 +8894,61 @@ int ha_sdb::extra(enum ha_extra_function operation) {
     case HA_EXTRA_GROUP_MIN_MAX:
       m_is_in_group_min_max = true;
       break;
+    case HA_EXTRA_REFRESH_TO_COLLECT_SHARE_STATS:
+      DBUG_ASSERT(m_refresh_share_stats_phase == NOT_IN_REFRESH);
+      m_refresh_share_stats_phase = REFRESH_PREPARE_SHARE_STATS;
+      break;
+    case HA_EXTRA_REFRESH_TO_REPLACE_SHARE_STATS: {
+      DBUG_ASSERT(m_refresh_share_stats_phase == REFRESH_PREPARE_SHARE_STATS);
+      boost::shared_ptr<Sdb_share> *glob_ssp = NULL;
+      m_refresh_share_stats_phase = REFRESH_REPLACE_SHARE_STATS;
+
+      /*
+       * (1) sequoiadb_execute_only_in_mysql = on need to break.
+       * (2)(3) for some table exists in mysql and not exist in sequoiadb. the
+       *     share will be empty.
+       */
+      if (sdb_execute_only_in_mysql(ha_thd()) ||  // (1)
+          !share.get() ||                         // (2)
+          !share_newly_obtain.get()) {            // (3)
+        break;                                    /* purecov: inspected */
+      }
+
+      mysql_mutex_lock(&sdb_mutex);
+      glob_ssp = (boost::shared_ptr<Sdb_share> *)my_hash_search(
+          &sdb_open_tables, (uchar *)share->table_name,
+          share->table_name_length);
+      // let the global and the local shared_ptr point to the new Sdb_share
+      if (glob_ssp) {
+        // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
+        // 'Sdb_share' in 'sdb_open_tables', because the global and the
+        // local shared_ptr may not point to the same 'Sdb_share'
+        (*glob_ssp)->expired = true;
+        (*glob_ssp) = share_newly_obtain;
+      } else {
+        // set expired state for new shared_ptr, use only one time if current
+        // 'Sdb_share' has been removed(in 'update_shares_stats' function) from
+        // 'sdb_open_tables'
+        share_newly_obtain->expired = true; /* purecov: inspected */
+      }
+      share = share_newly_obtain;
+      mysql_mutex_unlock(&sdb_mutex);
+
+      stats.block_size = (uint)share->stat.page_size;
+      stats.data_file_length =
+          (ulonglong)share->stat.total_data_pages * share->stat.page_size;
+      stats.index_file_length =
+          (ulonglong)share->stat.total_index_pages * share->stat.page_size;
+      stats.delete_length = (ulonglong)share->stat.total_data_free_space;
+      stats.records = share->stat.total_records;
+      if (stats.records != 0) {
+        stats.mean_rec_length = (ulong)(
+            (stats.data_file_length - stats.delete_length) / stats.records);
+      } else {
+        stats.mean_rec_length = 0; /* purecov: inspected */
+      }
+      break;
+    }
     // To make them effective until ::reset(), ignore this reset here.
     case HA_EXTRA_NO_IGNORE_DUP_KEY:
     case HA_EXTRA_WRITE_CANNOT_REPLACE:
@@ -9609,9 +9677,23 @@ int ha_sdb::ensure_index_stat(int keynr) {
   DBUG_ENTER("ha_sdb::ensure_index_stat");
   int rc = 0;
   Sdb_index_stat *new_stat = NULL;
+  /*
+     cur_updating_share is the share which is building and updating.
+     (1) In normal case it is the handler::share.
+     (2) In the prepare share stats of refresh tables [tbl_name] stats, it will
+         be the share_newly_obtain, which means update the index statistics in
+         newly obtain share.
+   */
+  boost::shared_ptr<Sdb_share> cur_updating_share = null_ptr;
+  if (m_refresh_share_stats_phase == NOT_IN_REFRESH) {
+    cur_updating_share = share;
+  } else if (m_refresh_share_stats_phase == REFRESH_PREPARE_SHARE_STATS) {
+    DBUG_ASSERT(null_ptr != share_newly_obtain);
+    cur_updating_share = share_newly_obtain;
+  }
   // ensure that at least one index statistics is populated if 'idx_count' in
   // 'Sdb_share' is not zero
-  if (keynr < 0 && share && share->idx_count) {
+  if (keynr < 0 && cur_updating_share && cur_updating_share->idx_count) {
     keynr = 0;
   }
   KEY *key_info = table->key_info + keynr;
@@ -9636,14 +9718,19 @@ int ha_sdb::ensure_index_stat(int keynr) {
   // following situation is not safe:
   // 1. thread #1 execute p = p3;
   // 2. thread #2 execute p3.reset();
-  if (key_info && keynr >= 0 && share && share->idx_count &&
-      keynr < (int)share->idx_count) {
-    Sdb_idx_stat_ptr ptr = share->idx_stat_arr[keynr];
+  if (key_info && keynr >= 0 && cur_updating_share &&
+      cur_updating_share->idx_count &&
+      keynr < (int)cur_updating_share->idx_count) {
+    Sdb_idx_stat_ptr ptr = cur_updating_share->idx_stat_arr[keynr];
+    /*
+      Need to build a new Sdb_share to get the new index statistics in.
+    */
     if (!is_idx_stat_valid(ptr)) {
       // 1. build a new Sdb_share
       boost::shared_ptr<Sdb_share> new_share_ptr;
       // build new Sdb_share instead of local 'share' with 'stat'
-      Sdb_share *new_share = build_new_sdb_share(m_path, share->idx_count);
+      Sdb_share *new_share = /* purecov: inspected */
+          build_new_sdb_share(m_path, cur_updating_share->idx_count);
       if (NULL == new_share) {
         rc = HA_ERR_OUT_OF_MEM;
         SDB_LOG_ERROR("Failed to build new 'Sdb_share', error: %d", rc);
@@ -9659,10 +9746,11 @@ int ha_sdb::ensure_index_stat(int keynr) {
        */
       new_share->stat = share->stat;
       for (uint i = 0; i < share->idx_count; i++) {
-        new_share->idx_stat_arr[i] = share->idx_stat_arr[i];
+        new_share->idx_stat_arr[i] = cur_updating_share->idx_stat_arr[i];
       }
 
       new_share->table_type = m_sdb_table_type;
+      new_share->stat = cur_updating_share->stat;
       // point to the new Sdb_share
       new_share_ptr.reset(new_share, free_sdb_share);
 
@@ -9691,18 +9779,16 @@ int ha_sdb::ensure_index_stat(int keynr) {
         }
       }
 
-      /*
-       * 4. replace the current index statistics
-       */
+      // 3. Replace the current index statistics
       new_share_ptr->idx_stat_arr[keynr].reset(new_stat);
 
-      // 5. update global and local shared statistics with fresh data
-      {
+      // 4. update global and local shared statistics with fresh data
+      if (m_refresh_share_stats_phase == NOT_IN_REFRESH) {
         mysql_mutex_lock(&sdb_mutex);
         boost::shared_ptr<Sdb_share> *glob_ssp =
             (boost::shared_ptr<Sdb_share> *)my_hash_search(
-                &sdb_open_tables, (uchar *)share->table_name,
-                share->table_name_length);
+                &sdb_open_tables, (uchar *)cur_updating_share->table_name,
+                cur_updating_share->table_name_length);
         // let the global and the local shared_ptr point to the new Sdb_share
         if (glob_ssp) {
           // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
@@ -9736,15 +9822,33 @@ int ha_sdb::ensure_index_stat(int keynr) {
            */
           new_share_ptr->expired = true;
         }
+        //(1) Replace the handler::share in normal case.
         share = new_share_ptr;
         mysql_mutex_unlock(&sdb_mutex);
+      } else if (m_refresh_share_stats_phase == REFRESH_PREPARE_SHARE_STATS) {
+        /*
+          (2) Use the share_newly_obtain to tempory store the new built share
+              stats, later replace the handler::share with share_newly_obtain
+              in handler::extra in the case of refresh tables [tbl_name] stats.
+        */
+        share_newly_obtain = new_share_ptr;
       }
 
-      // 6. set the first loaded 'TotalRecords' if it's not set
-      if (~(ha_rows)0 == share->first_loaded_static_total_records &&
-          0 != new_stat->static_total_records) {
-        share->first_loaded_static_total_records =
-            new_stat->static_total_records;
+      // 5. set the first loaded 'TotalRecords' if it's not set
+      if (m_refresh_share_stats_phase == NOT_IN_REFRESH) {
+        if (~(ha_rows)0 == share->first_loaded_static_total_records &&
+            0 != new_stat->static_total_records) {
+          share->first_loaded_static_total_records =
+              new_stat->static_total_records;
+        }
+      } else if (m_refresh_share_stats_phase == REFRESH_PREPARE_SHARE_STATS) {
+        if (~(ha_rows)0 ==
+                share_newly_obtain->first_loaded_static_total_records &&
+            0 != new_stat->static_total_records) { /* purecov: inspected */
+          share_newly_obtain
+              ->first_loaded_static_total_records = /* purecov: inspected */
+              new_stat->static_total_records;
+        }
       }
     }
   }
@@ -12547,6 +12651,133 @@ done:
 }
 #endif
 
+/*
+  Implements the SHOW ENGINE SEQUOIADB STATUS command. Sends the output of the
+  SequoiaDB Monitor to the client.
+*/
+int sequoiadb_show_status(handlerton *hton, THD *thd,
+                          stat_print_fn *stat_print) {
+  static const char truncated_msg[] = "... truncated...\n";
+  const long MAX_STATUS_SIZE = 1024 * 1024;  // 1M
+  const int MAX_TIMESTAMP_LEN = 13;
+  char block[IO_SIZE] = {0};
+  char *buf = block;
+  char *new_buf = NULL;
+  int used_len = 0;
+  bool ret = false;
+  DBUG_ENTER("sequoiadb_show_status");
+  assert(hton == sdb_hton);
+
+  boost::shared_ptr<Sdb_share> *tmp_ptr = NULL;
+
+  struct tm *cal_tm_ptr = NULL;
+  time_t tm;
+
+  struct tm cal_tm;
+  time(&tm);
+  localtime_r(&tm, &cal_tm);
+  cal_tm_ptr = &cal_tm;
+
+  used_len +=
+      sprintf(buf + used_len, "\n=====================================\n");
+  used_len += sprintf(buf + used_len,
+                      " SEQUOIADB MONITOR OUTPUT\n"
+                      "=====================================\n");
+  used_len += sprintf(buf + used_len,
+                      "current timestamp: %ld(%d-%02d-%02d %02d:%02d:%02d)\n",
+                      tm, cal_tm_ptr->tm_year + 1900, cal_tm_ptr->tm_mon + 1,
+                      cal_tm_ptr->tm_mday, cal_tm_ptr->tm_hour,
+                      cal_tm_ptr->tm_min, cal_tm_ptr->tm_sec);
+  used_len += sprintf(buf + used_len,
+                      "------------------\n"
+                      "Cached TABLE_SHARE\n"
+                      "------------------\n");
+  mysql_mutex_lock(&sdb_mutex);
+  used_len +=
+      sprintf(buf + used_len, "Total number of cached table_share: %lu\n",
+              sdb_open_tables.records);
+  for (uint idx = 0; idx < sdb_open_tables.records; idx++) {
+    tmp_ptr =
+        (boost::shared_ptr<Sdb_share> *)my_hash_element(&sdb_open_tables, idx);
+    DBUG_ASSERT(tmp_ptr);
+    uint len = strlen("%s, last refresh time:%ld\n") +
+               strlen((*tmp_ptr)->table_name) + MAX_TIMESTAMP_LEN;
+    if (NULL == new_buf && (used_len + len) >= IO_SIZE) {
+      /* purecov: begin tested */
+      if (NULL == sdb_multi_malloc(PSI_NOT_INSTRUMENTED,
+                                   MYF(MY_WME | MY_ZEROFILL), &new_buf,
+                                   MAX_STATUS_SIZE, NullS)) {
+        ret = true;
+        goto error;
+      }
+      memcpy(new_buf, buf, used_len);
+      buf = new_buf;
+      /* purecov: end */
+    }
+
+    if (((used_len + len) > (MAX_STATUS_SIZE - strlen(truncated_msg))) &&
+        new_buf) {
+      /* purecov: begin tested */
+      /* 2 byte is for '\n' and the last '\0'*/
+      used_len +=
+          sprintf(buf - strlen(truncated_msg) - 2, "\n%s", truncated_msg);
+      break;
+      /* purecov: end */
+    }
+
+    used_len += sprintf(buf + used_len, "%s, last refresh time:%ld\n",
+                        (*tmp_ptr)->table_name, (*tmp_ptr)->last_reset_time);
+  }
+  buf[used_len] = '\0';
+  mysql_mutex_unlock(&sdb_mutex);
+
+  if (stat_print(thd, "SequoiaDB", strlen("SequoiaDB"), "", strlen(""), buf,
+                 used_len)) {
+    /* purecov: begin tested */
+    ret = true;
+    goto error;
+    /* purecov: end */
+  }
+done:
+  if (new_buf) {
+    /* purecov: begin tested */
+    my_free(new_buf);
+    new_buf = NULL;
+    /* purecov: end */
+  }
+  ret = false;
+  DBUG_RETURN(ret);
+error:
+  goto done; /* purecov: inspected */
+}
+
+/*
+  Implements the SHOW ENGINE SEQUOIADB STATUS command.
+*/
+bool sdb_show_status(handlerton *hton, THD *thd, stat_print_fn *stat_print,
+                     enum ha_stat_type stat_type) {
+  DBUG_ENTER("sdb_show_status");
+  bool rc = FALSE;
+  assert(hton == sdb_hton);
+
+  switch (stat_type) {
+    case HA_ENGINE_STATUS:
+      /* Non-zero return value means there was an error. */
+      rc = sequoiadb_show_status(hton, thd, stat_print);
+      if (rc) {
+        goto error;
+      }
+    default:
+      /* Not handled */
+      break;
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
 static int sdb_init_func(void *p) {
   int rc = SDB_ERR_OK;
   const char *sys_var_str = NULL;
@@ -12571,10 +12802,12 @@ static int sdb_init_func(void *p) {
   sdb_hton->close_connection = sdb_close_connection;
   sdb_hton->flags = HTON_SUPPORT_LOG_TABLES;
   sdb_hton->partition_flags = sdb_partition_flags;
+  sdb_hton->show_status = sdb_show_status; /* Show status */
 #ifdef IS_MYSQL
   sdb_hton->kill_connection = sdb_kill_connection;
 #elif IS_MARIADB
   sdb_hton->kill_query = sdb_kill_query;
+
   // Overwrite the entry to create partitioned table to adapt SequoiaDB.
   handlerton *part_engine = get_installed_htons(DB_TYPE_PARTITION_DB);
   if (part_engine) {

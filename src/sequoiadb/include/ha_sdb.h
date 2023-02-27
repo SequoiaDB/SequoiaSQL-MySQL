@@ -879,8 +879,32 @@ class ha_sdb : public handler {
   uint m_dup_key_nr;
   bson::OID m_dup_oid;
   bson::BSONObj m_dup_value;
-  /*use std::shared_ptr instead of self-defined use count*/
+  /*the share currently in use, use std::shared_ptr instead of self-defined use
+   * count*/
   boost::shared_ptr<Sdb_share> share;
+  /*
+    in the case of 'refresh tables <tbl_name> stats', we do it in several steps:
+    1) acquire the table's MDL_SHARED lock which allows other connections to
+       read table metadata and modify or read table data
+    2) call ha_sdb::info() to get and build the newly <Sdb_share> which holds
+       the newly stats. the ha_sdb::share_newly_obtain is the shared_ptr of
+       newly <Sdb_share>.
+    3) upgrade the table's lock from MDL_SHARED to MDL_SHARED_NO_WRITE to blocks
+       all attempts to modify table data, allowing reads.
+    4) call ha_sdb::info() to replace the ha_sdb::share to
+    ha_sdb::share_newly_obtain.
+  */
+  boost::shared_ptr<Sdb_share> share_newly_obtain;
+  /* the flag which allows to replace handler::share from
+   * handler::share_newly_obtain*/
+  enum refresh_share_stats_phase {
+    REFRESH_PREPARE_SHARE_STATS =
+        1,  // prepare to do refresh tables <tbl_name> stats.
+    REFRESH_REPLACE_SHARE_STATS,  // replace the ha_sdb::share to the
+                                  // share_new_obtain.
+    NOT_IN_REFRESH = -1,          // not in refresh command.
+  } m_refresh_share_stats_phase;
+
   enum Sdb_table_type m_sdb_table_type;
   Item *updated_value;
   Field *updated_field;
