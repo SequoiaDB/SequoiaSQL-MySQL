@@ -42,6 +42,7 @@ while ($1)
 commit;
 --enable_query_log
 
+--sorted_result
 select * from t1 where (key1 >= 2 and key1 <= 10) or (pk >= 4 and pk <=8 );
 
 set @maxv=1000;

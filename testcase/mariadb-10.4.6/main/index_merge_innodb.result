@@ -363,14 +363,14 @@ index(key2)
 select * from t1 where (key1 >= 2 and key1 <= 10) or (pk >= 4 and pk <=8 );
 pk	key1	key2	filler	filler2
 10	10	10	filler-data	filler-data-2
-9	9	9	filler-data	filler-data-2
-8	8	8	filler-data	filler-data-2
-7	7	7	filler-data	filler-data-2
-6	6	6	filler-data	filler-data-2
-5	5	5	filler-data	filler-data-2
-4	4	4	filler-data	filler-data-2
-3	3	3	filler-data	filler-data-2
 2	2	2	filler-data	filler-data-2
+3	3	3	filler-data	filler-data-2
+4	4	4	filler-data	filler-data-2
+5	5	5	filler-data	filler-data-2
+6	6	6	filler-data	filler-data-2
+7	7	7	filler-data	filler-data-2
+8	8	8	filler-data	filler-data-2
+9	9	9	filler-data	filler-data-2
 set @maxv=1000;
 select * from t1 where
 (pk < 5) or (pk > 10 and pk < 15) or (pk >= 50 and pk < 55 ) or (pk > @maxv-10)
