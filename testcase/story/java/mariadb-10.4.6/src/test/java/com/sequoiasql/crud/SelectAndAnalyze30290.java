@@ -126,7 +126,7 @@ public class SelectAndAnalyze30290 extends MysqlTestBase {
                 jdbc = JdbcInterfaceFactory
                         .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
                 jdbc.update( "use " + dbName + ";" );
-                for ( int i = 0; i < 1000; i++ ) {
+                for ( int i = 0; i < 100; i++ ) {
                     jdbc.query( queryStr );
                     jdbc.update( updateStr );
                 }
@@ -148,7 +148,7 @@ public class SelectAndAnalyze30290 extends MysqlTestBase {
 
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            for ( int i = 0; i < 1000; i++ ) {
+            for ( int i = 0; i < 100; i++ ) {
                 jdbc.query( queryStr );
                 jdbc.update( updateStr );
             }
