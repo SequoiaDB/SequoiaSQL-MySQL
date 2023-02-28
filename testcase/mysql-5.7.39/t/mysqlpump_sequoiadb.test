@@ -11,9 +11,9 @@ create TABLE t1(id int);
 
 --echo "socket wrong"
 --exec $MYSQLPUMP -B mysqlpump_sequoiadb -S $MYSQLTEST_VARDIR/tmp/error.socket -uroot > $MYSQLTEST_VARDIR/tmp/pump.log 2>&1
---exec cat $MYSQLTEST_VARDIR/tmp/pump.log
+--exec sed 's/socket.*error.socket/error.socket/g'  $MYSQLTEST_VARDIR/tmp/pump.log
 --exec $MYSQLPUMP -B mysqlpump_sequoiadb -S $MYSQLTEST_VARDIR/tmp/error.socket -uroot --single-transaction> $MYSQLTEST_VARDIR/tmp/pump.log 2>&1
---exec cat $MYSQLTEST_VARDIR/tmp/pump.log
+--exec sed 's/socket.*error.socket/error.socket/g'  $MYSQLTEST_VARDIR/tmp/pump.log
 
 --echo "socket success"
 --exec $MYSQLPUMP -B mysqlpump_sequoiadb -S $MASTER_MYSOCK -uroot > $MYSQLTEST_VARDIR/tmp/pumpbugsdb.dump
@@ -67,4 +67,8 @@ use mysqlpump_sequoiadb;
 desc t1;
 drop database mysqlpump_sequoiadb;
 
+--remove_file $MYSQLTEST_VARDIR/tmp/pumpbugsdb.dump
+--remove_file $MYSQLTEST_VARDIR/tmp/pump.log
+
 --echo # End
+

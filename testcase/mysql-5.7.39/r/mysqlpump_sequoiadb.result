@@ -3,10 +3,10 @@ CREATE DATABASE mysqlpump_sequoiadb;
 use mysqlpump_sequoiadb;
 create TABLE t1(id int);
 "socket wrong"
-mysqlpump: Got error: 2002: Can't connect to local MySQL server through socket '/opt/sequoiasql/mysql/mysql-test/var/tmp/error.socket' (2) while connecting to the MySQL server
+mysqlpump: Got error: 2002: Can't connect to local MySQL server through error.socket' (2) while connecting to the MySQL server
 mysqlpump: [ERROR] (11) 
 Dump process encountered error and will not continue.
-mysqlpump: Got error: 2002: Can't connect to local MySQL server through socket '/opt/sequoiasql/mysql/mysql-test/var/tmp/error.socket' (2) while connecting to the MySQL server
+mysqlpump: Got error: 2002: Can't connect to local MySQL server through error.socket' (2) while connecting to the MySQL server
 mysqlpump: [ERROR] (11) 
 Dump process encountered error and will not continue.
 "socket success"
