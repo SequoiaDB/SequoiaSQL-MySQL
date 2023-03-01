@@ -5314,7 +5314,10 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
                          : m_use_default_impl;
 
   if (use_default) {
-    rc = handler::multi_range_read_next(range_info);
+    do {
+      rc = handler::multi_range_read_next(range_info);
+    } while (0 == rc && mrr_funcs.skip_index_tuple &&
+             mrr_funcs.skip_index_tuple(mrr_iter, (char *)mrr_cur_range.ptr));
     goto done;
   }
 
