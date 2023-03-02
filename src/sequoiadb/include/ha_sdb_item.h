@@ -98,6 +98,8 @@ class Sdb_not_item : public Sdb_logic_item {
   virtual const char *name() { return "$not"; }
 };
 
+my_bool sdb_item_can_ignore_warning(Item *item_val);
+
 class Sdb_func_item : public Sdb_item {
  public:
   Sdb_func_item();
@@ -117,7 +119,6 @@ class Sdb_func_item : public Sdb_item {
   uint get_para_num() { return para_num_max; }
 
  protected:
-  virtual my_bool can_ignore_warning(Item *item_val);
   void disable_warning(THD *thd);
   void enable_warning(THD *thd);
 
@@ -144,6 +145,24 @@ class Sdb_func_unkown : public Sdb_func_item {
 
  private:
   Item_func *func_item;
+};
+
+class Sdb_true_item : public Sdb_func_unkown {
+ public:
+  Sdb_true_item(Item_func *item) : Sdb_func_unkown(item) {}
+  virtual ~Sdb_true_item() {}
+
+  virtual int to_bson(bson::BSONObj &obj);
+  virtual const char *name() { return "true"; }
+};
+
+class Sdb_false_item : public Sdb_func_unkown {
+ public:
+  Sdb_false_item(Item_func *item) : Sdb_func_unkown(item) {}
+  virtual ~Sdb_false_item() {}
+
+  virtual int to_bson(bson::BSONObj &obj);
+  virtual const char *name() { return "false"; }
 };
 
 class Sdb_func_unary_op : public Sdb_func_item {
