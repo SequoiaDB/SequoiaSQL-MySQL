@@ -105,7 +105,7 @@ a	b
 8	str8
 9	str9
 10	str10
-select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a;
+select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1,col2;
 col1	col2	col3	b
 1	str1	2023-02-01 15:05:05	str1
 2	str2	2023-02-02 15:10:10	str2
@@ -118,10 +118,9 @@ col1	col2	col3	b
 8	NULL	NULL	str8
 8	str8	2023-02-08 15:40:40	str8
 9	str3	2023-02-09 15:45:45	str9
-select * from tb_normal left join tb_tmp on tb_normal.a=tb_tmp.a where tb_normal.a<=10;
+select * from tb_normal left join tb_tmp on tb_normal.a=tb_tmp.a where tb_normal.a<=10 order by tb_normal.a;
 a	b	a	b
 1	str1	1	str1
-10	str10	10	str10
 2	str2	2	str2
 3	str3	3	str3
 4	str4	4	str4
@@ -130,10 +129,10 @@ a	b	a	b
 7	str7	7	str7
 8	str8	8	str8
 9	str9	9	str9
-select a,b from tb_normal where a<=10 union (select * from tb_normal where a<=10) union (select * from tb_tmp where a<=10);
+10	str10	10	str10
+(select a,b from tb_normal where a<=10 order by a) union (select * from tb_normal where a<=10 order by a) union (select * from tb_tmp where a<=10 order by a);
 a	b
 1	str1
-10	str10
 2	str2
 3	str3
 4	str4
@@ -142,26 +141,27 @@ a	b
 7	str7
 8	str8
 9	str9
+10	str10
 select 1 union select 2 union select 3;
 1
 1
 2
 3
-select * from tb_part limit 10,10;
+select * from tb_part order by col1,col2 limit 10,10;
 col1	col2	col3	col4
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
 #结果集等于限制
 set session sequoiadb_optimizer_options='direct_count,direct_delete,direct_update,direct_sort';
-select * from tb_part order by col1 limit 10,100;
+select * from tb_part order by col1,col2 limit 10,100;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -264,7 +264,7 @@ col1	col2	col3	col4
 3	str3	2023-02-03 15:15:15	33
 3	str3	2023-02-03 15:15:15	33
 set session sequoiadb_optimizer_options='direct_count,direct_delete,direct_update,direct_sort,direct_limit';
-select * from tb_part order by col1 limit 10,100;
+select * from tb_part order by col1,col2 limit 10,100;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -672,181 +672,199 @@ a	b
 98	str98
 99	str99
 100	str100
-select col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a limit 100;
+select col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1,col2 limit 100;
 col1	col2	col3	b
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-select a,b from tb_normal where a<=30 union all (select * from tb_normal where a<=30) union all (select * from tb_tmp where a<=40);
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+(select a,b from tb_normal where a<=30 order by a) union all (select * from tb_normal where a<=30 order by a) union all (select * from tb_tmp where a<=40 order by a);
 a	b
 1	str1
-1	str1
-1	str1
-10	str10
-10	str10
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
 10	str10
 11	str11
-11	str11
-11	str11
-12	str12
-12	str12
 12	str12
 13	str13
-13	str13
-13	str13
-14	str14
-14	str14
 14	str14
 15	str15
-15	str15
-15	str15
-16	str16
-16	str16
 16	str16
 17	str17
-17	str17
-17	str17
-18	str18
-18	str18
 18	str18
 19	str19
-19	str19
-19	str19
-2	str2
-2	str2
-2	str2
-20	str20
-20	str20
 20	str20
 21	str21
-21	str21
-21	str21
-22	str22
-22	str22
 22	str22
 23	str23
-23	str23
-23	str23
-24	str24
-24	str24
 24	str24
 25	str25
-25	str25
-25	str25
-26	str26
-26	str26
 26	str26
 27	str27
-27	str27
-27	str27
-28	str28
-28	str28
 28	str28
 29	str29
-29	str29
-29	str29
-3	str3
-3	str3
-3	str3
 30	str30
+1	str1
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
 30	str30
+1	str1
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
 30	str30
 31	str31
 32	str32
@@ -857,25 +875,7 @@ a	b
 37	str37
 38	str38
 39	str39
-4	str4
-4	str4
-4	str4
 40	str40
-5	str5
-5	str5
-5	str5
-6	str6
-6	str6
-6	str6
-7	str7
-7	str7
-7	str7
-8	str8
-8	str8
-8	str8
-9	str9
-9	str9
-9	str9
 set session sql_select_result_limit=3;
 select 1 union select 2 union select 3;
 1
@@ -884,7 +884,7 @@ select 1 union select 2 union select 3;
 3
 set session sql_select_result_limit=100;
 #结果集大于限制
-select * from tb_part order by col1 limit 10,120;
+select * from tb_part order by col1,col2 limit 10,120;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -1476,250 +1476,250 @@ a	b
 118	str118
 119	str119
 120	str120
-select col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a limit 120;
+select col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1 limit 120;
 col1	col2	col3	b
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-select a,b from tb_normal where a<=40 union all (select * from tb_normal where a<=40) union all (select * from tb_tmp where a<=40);
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+(select a,b from tb_normal where a<=40 order by a) union all (select * from tb_normal where a<=40 order by a) union all (select * from tb_tmp where a<=40 order by a);
 a	b
 1	str1
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
+30	str30
+31	str31
+32	str32
+33	str33
+34	str34
+35	str35
+36	str36
+37	str37
+38	str38
+39	str39
+40	str40
 1	str1
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
+30	str30
+31	str31
+32	str32
+33	str33
+34	str34
+35	str35
+36	str36
+37	str37
+38	str38
+39	str39
+40	str40
 1	str1
-10	str10
-10	str10
-10	str10
-11	str11
-11	str11
-11	str11
-12	str12
-12	str12
-12	str12
-13	str13
-13	str13
-13	str13
-14	str14
-14	str14
-14	str14
-15	str15
-15	str15
-15	str15
-16	str16
-16	str16
-16	str16
-17	str17
-17	str17
-17	str17
-18	str18
-18	str18
-18	str18
-19	str19
-19	str19
-19	str19
 2	str2
-2	str2
-2	str2
-20	str20
-20	str20
-20	str20
-21	str21
-21	str21
-21	str21
-22	str22
-22	str22
-22	str22
-23	str23
-23	str23
-23	str23
-24	str24
-24	str24
-24	str24
-25	str25
-25	str25
-25	str25
-26	str26
-26	str26
-26	str26
-27	str27
-27	str27
-27	str27
-28	str28
-28	str28
-28	str28
-29	str29
-29	str29
-29	str29
 3	str3
-3	str3
-3	str3
-30	str30
-30	str30
-30	str30
-31	str31
-31	str31
-31	str31
-32	str32
-32	str32
-32	str32
-33	str33
-33	str33
-33	str33
-34	str34
-34	str34
-34	str34
-35	str35
-35	str35
-35	str35
-36	str36
-36	str36
-36	str36
-37	str37
-37	str37
-37	str37
-38	str38
-38	str38
-38	str38
-39	str39
-39	str39
-39	str39
 4	str4
-4	str4
-4	str4
-40	str40
-40	str40
-40	str40
-5	str5
-5	str5
 5	str5
 6	str6
-6	str6
-6	str6
-7	str7
-7	str7
 7	str7
 8	str8
-8	str8
-8	str8
 9	str9
-9	str9
-9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
+30	str30
+31	str31
+32	str32
+33	str33
+34	str34
+35	str35
+36	str36
+37	str37
+38	str38
+39	str39
+40	str40
 set session sql_select_result_limit=2;
 select 1 union select 2 union select 3;
 1
@@ -1792,7 +1792,7 @@ a	b
 8	str8
 9	str9
 10	str10
-select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a;
+select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1,col2;
 col1	col2	col3	b
 1	str1	2023-02-01 15:05:05	str1
 2	str2	2023-02-02 15:10:10	str2
@@ -1805,10 +1805,9 @@ col1	col2	col3	b
 8	NULL	NULL	str8
 8	str8	2023-02-08 15:40:40	str8
 9	str3	2023-02-09 15:45:45	str9
-select * from tb_normal left join tb_tmp on tb_normal.a=tb_tmp.a where tb_normal.a<=10;
+select * from tb_normal left join tb_tmp on tb_normal.a=tb_tmp.a where tb_normal.a<=10 order by tb_normal.a;
 a	b	a	b
 1	str1	1	str1
-10	str10	10	str10
 2	str2	2	str2
 3	str3	3	str3
 4	str4	4	str4
@@ -1817,10 +1816,10 @@ a	b	a	b
 7	str7	7	str7
 8	str8	8	str8
 9	str9	9	str9
-select a,b from tb_normal where a<=10 union (select * from tb_normal where a<=10) union (select * from tb_tmp where a<=10);
+10	str10	10	str10
+(select a,b from tb_normal where a<=10 order by a) union (select * from tb_normal where a<=10 order by a) union (select * from tb_tmp where a<=10 order by a);
 a	b
 1	str1
-10	str10
 2	str2
 3	str3
 4	str4
@@ -1829,26 +1828,27 @@ a	b
 7	str7
 8	str8
 9	str9
+10	str10
 select 1 union select 2 union select 3;
 1
 1
 2
 3
-select * from tb_part limit 10,10;
+select * from tb_part order by col1,col2 limit 10,10;
 col1	col2	col3	col4
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
-7	str7	2023-02-07 15:35:35	77
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
+1	str1	2023-02-01 15:05:05	11
 #结果集等于限制
 set session sequoiadb_optimizer_options='direct_count,direct_delete,direct_update,direct_sort';
-select * from tb_part order by col1 limit 10,100;
+select * from tb_part order by col1,col2 limit 10,100;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -1953,7 +1953,7 @@ col1	col2	col3	col4
 Warnings:
 Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
 set session sequoiadb_optimizer_options='direct_count,direct_delete,direct_update,direct_sort,direct_limit';
-select * from tb_part order by col1 limit 10,100;
+select * from tb_part order by col1,col2 limit 10,100;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -2369,183 +2369,201 @@ a	b
 100	str100
 Warnings:
 Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
-select col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a limit 100;
+select col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1,col2 limit 100;
 col1	col2	col3	b
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
 Warnings:
-select a,b from tb_normal where a<=30 union all (select * from tb_normal where a<=30) union all (select * from tb_tmp where a<=40);
+Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
+(select a,b from tb_normal where a<=30 order by a) union all (select * from tb_normal where a<=30 order by a) union all (select * from tb_tmp where a<=40 order by a);
 a	b
 1	str1
-1	str1
-1	str1
-10	str10
-10	str10
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
 10	str10
 11	str11
-11	str11
-11	str11
-12	str12
-12	str12
 12	str12
 13	str13
-13	str13
-13	str13
-14	str14
-14	str14
 14	str14
 15	str15
-15	str15
-15	str15
-16	str16
-16	str16
 16	str16
 17	str17
-17	str17
-17	str17
-18	str18
-18	str18
 18	str18
 19	str19
-19	str19
-19	str19
-2	str2
-2	str2
-2	str2
-20	str20
-20	str20
 20	str20
 21	str21
-21	str21
-21	str21
-22	str22
-22	str22
 22	str22
 23	str23
-23	str23
-23	str23
-24	str24
-24	str24
 24	str24
 25	str25
-25	str25
-25	str25
-26	str26
-26	str26
 26	str26
 27	str27
-27	str27
-27	str27
-28	str28
-28	str28
 28	str28
 29	str29
-29	str29
-29	str29
-3	str3
-3	str3
-3	str3
 30	str30
+1	str1
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
 30	str30
+1	str1
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
 30	str30
 31	str31
 32	str32
@@ -2556,27 +2574,9 @@ a	b
 37	str37
 38	str38
 39	str39
-4	str4
-4	str4
-4	str4
 40	str40
-5	str5
-5	str5
-5	str5
-6	str6
-6	str6
-6	str6
-7	str7
-7	str7
-7	str7
-8	str8
-8	str8
-8	str8
-9	str9
-9	str9
-9	str9
-Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
 Warnings:
+Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
 set session sql_select_result_limit=3;
 select 1 union select 2 union select 3;
 1
@@ -2587,7 +2587,7 @@ Warning	1226	The matched records is greater than or equal to the sql_select_resu
 Warnings:
 set session sql_select_result_limit=100;
 #结果集大于限制
-select * from tb_part order by col1 limit 10,120;
+select * from tb_part order by col1,col2 limit 10,120;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -3189,254 +3189,254 @@ a	b
 120	str120
 Warnings:
 Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
-select col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a limit 120;
+select col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1 limit 120;
 col1	col2	col3	b
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-7	str7	2023-02-07 15:35:35	str7
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	NULL	NULL	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-8	str8	2023-02-08 15:40:40	str8
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-9	str3	2023-02-09 15:45:45	str9
-Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+1	str1	2023-02-01 15:05:05	str1
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+2	str2	2023-02-02 15:10:10	str2
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
+3	str3	2023-02-03 15:15:15	str3
 Warnings:
-select a,b from tb_normal where a<=40 union all (select * from tb_normal where a<=40) union all (select * from tb_tmp where a<=40);
+Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
+(select a,b from tb_normal where a<=40 order by a) union all (select * from tb_normal where a<=40 order by a) union all (select * from tb_tmp where a<=40 order by a);
 a	b
 1	str1
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
+30	str30
+31	str31
+32	str32
+33	str33
+34	str34
+35	str35
+36	str36
+37	str37
+38	str38
+39	str39
+40	str40
 1	str1
+2	str2
+3	str3
+4	str4
+5	str5
+6	str6
+7	str7
+8	str8
+9	str9
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
+30	str30
+31	str31
+32	str32
+33	str33
+34	str34
+35	str35
+36	str36
+37	str37
+38	str38
+39	str39
+40	str40
 1	str1
-10	str10
-10	str10
-10	str10
-11	str11
-11	str11
-11	str11
-12	str12
-12	str12
-12	str12
-13	str13
-13	str13
-13	str13
-14	str14
-14	str14
-14	str14
-15	str15
-15	str15
-15	str15
-16	str16
-16	str16
-16	str16
-17	str17
-17	str17
-17	str17
-18	str18
-18	str18
-18	str18
-19	str19
-19	str19
-19	str19
 2	str2
-2	str2
-2	str2
-20	str20
-20	str20
-20	str20
-21	str21
-21	str21
-21	str21
-22	str22
-22	str22
-22	str22
-23	str23
-23	str23
-23	str23
-24	str24
-24	str24
-24	str24
-25	str25
-25	str25
-25	str25
-26	str26
-26	str26
-26	str26
-27	str27
-27	str27
-27	str27
-28	str28
-28	str28
-28	str28
-29	str29
-29	str29
-29	str29
 3	str3
-3	str3
-3	str3
-30	str30
-30	str30
-30	str30
-31	str31
-31	str31
-31	str31
-32	str32
-32	str32
-32	str32
-33	str33
-33	str33
-33	str33
-34	str34
-34	str34
-34	str34
-35	str35
-35	str35
-35	str35
-36	str36
-36	str36
-36	str36
-37	str37
-37	str37
-37	str37
-38	str38
-38	str38
-38	str38
-39	str39
-39	str39
-39	str39
 4	str4
-4	str4
-4	str4
-40	str40
-40	str40
-40	str40
-5	str5
-5	str5
 5	str5
 6	str6
-6	str6
-6	str6
-7	str7
-7	str7
 7	str7
 8	str8
-8	str8
-8	str8
 9	str9
-9	str9
-9	str9
-Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
+10	str10
+11	str11
+12	str12
+13	str13
+14	str14
+15	str15
+16	str16
+17	str17
+18	str18
+19	str19
+20	str20
+21	str21
+22	str22
+23	str23
+24	str24
+25	str25
+26	str26
+27	str27
+28	str28
+29	str29
+30	str30
+31	str31
+32	str32
+33	str33
+34	str34
+35	str35
+36	str36
+37	str37
+38	str38
+39	str39
+40	str40
 Warnings:
+Warning	1226	The matched records is greater than or equal to the sql_select_result_limit
 set session sql_select_result_limit=2;
 select 1 union select 2 union select 3;
 1
@@ -3538,7 +3538,7 @@ a	b
 8	str8
 9	str9
 10	str10
-select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a;
+select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1,col2;
 col1	col2	col3	b
 1	str1	2023-02-01 15:05:05	str1
 2	str2	2023-02-02 15:10:10	str2
@@ -3551,10 +3551,9 @@ col1	col2	col3	b
 8	NULL	NULL	str8
 8	str8	2023-02-08 15:40:40	str8
 9	str3	2023-02-09 15:45:45	str9
-select * from tb_normal left join tb_tmp on tb_normal.a=tb_tmp.a where tb_normal.a<=10;
+select * from tb_normal left join tb_tmp on tb_normal.a=tb_tmp.a where tb_normal.a<=10 order by tb_normal.a;
 a	b	a	b
 1	str1	1	str1
-10	str10	10	str10
 2	str2	2	str2
 3	str3	3	str3
 4	str4	4	str4
@@ -3563,10 +3562,10 @@ a	b	a	b
 7	str7	7	str7
 8	str8	8	str8
 9	str9	9	str9
-select a,b from tb_normal where a<=10 union (select * from tb_normal where a<=10) union (select * from tb_tmp where a<=10);
+10	str10	10	str10
+(select a,b from tb_normal where a<=10 order by a) union (select * from tb_normal where a<=10 order by a) union (select * from tb_tmp where a<=10 order by a);
 a	b
 1	str1
-10	str10
 2	str2
 3	str3
 4	str4
@@ -3575,12 +3574,13 @@ a	b
 7	str7
 8	str8
 9	str9
+10	str10
 select 1 union select 2 union select 3;
 1
 1
 2
 3
-select * from tb_part order by col1 limit 10,10;
+select * from tb_part order by col1,col2 limit 10,10;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -3726,7 +3726,7 @@ a	b
 8	str8
 9	str9
 10	str10
-select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a;
+select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1,col2;
 col1	col2	col3	b
 1	str1	2023-02-01 15:05:05	str1
 2	str2	2023-02-02 15:10:10	str2
@@ -3751,10 +3751,9 @@ a	b	a	b
 8	str8	8	str8
 9	str9	9	str9
 10	str10	10	str10
-select a,b from tb_normal where a<=10 union (select * from tb_normal where a<=10) union (select * from tb_tmp where a<=10);
+(select a,b from tb_normal where a<=10 order by a) union (select * from tb_normal where a<=10 order by a) union (select * from tb_tmp where a<=10 order by a);
 a	b
 1	str1
-10	str10
 2	str2
 3	str3
 4	str4
@@ -3763,12 +3762,13 @@ a	b
 7	str7
 8	str8
 9	str9
+10	str10
 select 1 union select 2 union select 3;
 1
 1
 2
 3
-select * from tb_part order by col1 limit 10,10;
+select * from tb_part order by col1,col2 limit 10,10;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -3869,7 +3869,7 @@ a	b
 8	str8
 9	str9
 10	str10
-select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a;
+select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1,col2;
 col1	col2	col3	b
 1	str1	2023-02-01 15:05:05	str1
 2	str2	2023-02-02 15:10:10	str2
@@ -3894,10 +3894,9 @@ a	b	a	b
 8	str8	8	str8
 9	str9	9	str9
 10	str10	10	str10
-select a,b from tb_normal where a<=10 union (select * from tb_normal where a<=10) union (select * from tb_tmp where a<=10);
+(select a,b from tb_normal where a<=10 order by a) union (select * from tb_normal where a<=10 order by a) union (select * from tb_tmp where a<=10 order by a);
 a	b
 1	str1
-10	str10
 2	str2
 3	str3
 4	str4
@@ -3906,12 +3905,13 @@ a	b
 7	str7
 8	str8
 9	str9
+10	str10
 select 1 union select 2 union select 3;
 1
 1
 2
 3
-select * from tb_part order by col1 limit 10,10;
+select * from tb_part order by col1,col2 limit 10,10;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
@@ -4012,7 +4012,7 @@ a	b
 8	str8
 9	str9
 10	str10
-select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a;
+select distinct col1,col2,col3,(select b from tb_normal where tb_part.col1=tb_normal.a) as b from tb_part left join tb_normal on tb_part.col1=tb_normal.a order by col1,col2;
 col1	col2	col3	b
 1	str1	2023-02-01 15:05:05	str1
 2	str2	2023-02-02 15:10:10	str2
@@ -4037,10 +4037,9 @@ a	b	a	b
 8	str8	8	str8
 9	str9	9	str9
 10	str10	10	str10
-select a,b from tb_normal where a<=10 union (select * from tb_normal where a<=10) union (select * from tb_tmp where a<=10);
+(select a,b from tb_normal where a<=10 order by a) union (select * from tb_normal where a<=10 order by a) union (select * from tb_tmp where a<=10 order by a);
 a	b
 1	str1
-10	str10
 2	str2
 3	str3
 4	str4
@@ -4049,12 +4048,13 @@ a	b
 7	str7
 8	str8
 9	str9
+10	str10
 select 1 union select 2 union select 3;
 1
 1
 2
 3
-select * from tb_part order by col1 limit 10,10;
+select * from tb_part order by col1,col2 limit 10,10;
 col1	col2	col3	col4
 1	str1	2023-02-01 15:05:05	11
 1	str1	2023-02-01 15:05:05	11
