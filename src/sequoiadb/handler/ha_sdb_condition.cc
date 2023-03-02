@@ -272,6 +272,11 @@ error:
 Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
   DBUG_ENTER("ha_sdb_cond_ctx::create_sdb_item()");
   Sdb_item *item = NULL;
+
+  if (!cond_item) {
+    goto done; /* purecov: inspected */
+  }
+
   switch (cond_item->functype()) {
     case Item_func::COND_AND_FUNC: {
       item = new Sdb_and_item();
@@ -339,8 +344,55 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
       break;
     }
   }
-  item->pushed_cond_set = &pushed_cond_set;
-  DBUG_PRINT("ha_sdb:info", ("create new item name:%s", item->name()));
+
+  /*
+    If there are const tables, const boolean expression may be pushdown. e.g.:
+
+    WHERE ((const_tab.a LIKE 'pattern') OR -- this is const
+           (this_tab.b = 1)) AND
+          (this_tab.c = 2)
+
+    Since the const table has been read, all the fields of it are constant.
+    In order to pushdown it, we need to evaluate the expression, and use
+    TRUE or FALSE to replace the expression.
+
+    Note that UNKNOWN_FUNC is not a boolean predicate but a value operation.
+    (+, -, *, MOD, FLOOR...)
+  */
+  if (item && item->type() != Item_func::UNKNOWN_FUNC &&
+      cond_item->const_item()) {
+    THD *thd = current_thd;
+    Dummy_error_handler dummy_handler;
+    bool is_warn_enabled = true;
+
+    delete item;
+    item = NULL;
+
+    if (!thd) {
+      goto done; /* purecov: inspected */
+    }
+
+    if (sdb_item_can_ignore_warning(cond_item)) {
+      thd->push_internal_handler(&dummy_handler);
+      is_warn_enabled = false;
+    }
+
+    if (MY_TEST(cond_item->val_int())) {
+      item = new Sdb_true_item(cond_item);
+    } else {
+      item = new Sdb_false_item(cond_item);
+    }
+
+    if (!is_warn_enabled) {
+      thd->pop_internal_handler();
+    }
+  }
+
+done:
+  if (item) {
+    item->pushed_cond_set = &pushed_cond_set;
+    DBUG_PRINT("ha_sdb:info", ("create new item name:%s", item->name()));
+  }
   DBUG_RETURN(item);
 }
 
