@@ -11,8 +11,6 @@ import org.testng.annotations.Test;
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.testcommon.*;
 
-import java.sql.SQLException;
-
 /**
  * @Descreption seqDB-30290:并发执行analyze/flush和select语句
  * @Author chenzejia
@@ -50,7 +48,7 @@ public class SelectAndAnalyze30290 extends MysqlTestBase {
         }
     }
 
-    @Test
+    @Test(enabled = false)
     public void test() throws Exception {
         jdbc.createDatabase( dbName );
         jdbc.update( "use " + dbName + ";" );
