@@ -80,6 +80,46 @@ static int get_datetime(THD *thd, Item *item_val, MYSQL_TIME *ltime) {
   return rc;
 }
 
+int Sdb_true_item::to_bson(bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  try {
+    // Use { "_id": { "$exists": 1 } } to indicate ALWAYS TRUE
+    bson::BSONObjBuilder builder(32);
+    bson::BSONObjBuilder sub_builder(builder.subobjStart(SDB_OID_FIELD));
+    sub_builder.append("$exists", 1);
+    sub_builder.done();
+    obj = builder.obj();
+  }
+  /* purecov: begin inspected */
+  SDB_EXCEPTION_CATCHER(rc, "Exception[%s] occurs when build bson obj.",
+                        e.what());
+  /* purecov: end */
+done:
+  return rc;
+error:
+  goto done; /* purecov: inspected */
+}
+
+int Sdb_false_item::to_bson(bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  try {
+    // Use { "_id": { "$exists": 0 } } to indicate ALWAYS FALSE
+    bson::BSONObjBuilder builder(32);
+    bson::BSONObjBuilder sub_builder(builder.subobjStart(SDB_OID_FIELD));
+    sub_builder.append("$exists", 0);
+    sub_builder.done();
+    obj = builder.obj();
+  }
+  /* purecov: begin inspected */
+  SDB_EXCEPTION_CATCHER(rc, "Exception[%s] occurs when build bson obj.",
+                        e.what());
+  /* purecov: end */
+done:
+  return rc;
+error:
+  goto done; /* purecov: inspected */
+}
+
 int Sdb_logic_item::rebuild_bson(bson::BSONObj &obj) {
   int rc = SDB_ERR_OK;
   try {
@@ -314,7 +354,11 @@ static void sdb_detect_para4warn(const Item *item, void *arg) {
   }
 }
 
-my_bool Sdb_func_item::can_ignore_warning(Item *item_val) {
+/**
+  Check if evaluating this item should ignore the warnings to reduce duplicate
+  warnings. Shouldn't ignore when their value would be cached.
+*/
+my_bool sdb_item_can_ignore_warning(Item *item_val) {
   my_bool rs = true;
   if (!sdb_can_item_type_ignore_warn(item_val->type())) {
     rs = false;
@@ -352,7 +396,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
   int rc = SDB_ERR_OK;
   THD *thd = current_thd;
   // When type casting is needed, some mysql functions may raise warning.
-  if (can_ignore_warning(item_val)) {
+  if (sdb_item_can_ignore_warning(item_val)) {
     disable_warning(thd);
   }
 
