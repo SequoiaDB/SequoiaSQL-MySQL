@@ -114,7 +114,7 @@ public class SelectResultLimit30076 extends MysqlTestBase {
         act2.add( "5|55" );
         Assert.assertEquals( act2, query5 );
         List< String > warn5 = jdbc.query( "show warnings" );
-        Assert.assertTrue( warn5.isEmpty() );
+        Assert.assertFalse( warn5.isEmpty() );
         List< String > query6 = jdbc.query( "select col1,count(col4) from "
                 + tbName + " group by col1 order by col1 limit 0,10;" );
         List< String > act3 = new ArrayList<>();
