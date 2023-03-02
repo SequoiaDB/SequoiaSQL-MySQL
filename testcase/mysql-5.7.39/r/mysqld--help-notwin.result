@@ -1346,6 +1346,15 @@ The following options may be given as the first argument:
  replication.
  --sql-mode=name     Syntax: sql-mode=mode[,mode[,mode...]]. See the manual
  for the complete list of valid sql modes
+ --sql-select-result-limit[=#] 
+ This variable is used with
+ sql_select_result_limit_exceed_handling as a threshold
+ for the number of results.
+ --sql-select-result-limit-exceed-handling[=name] 
+ Action performed when the result set exceeds
+ sql_select_result_limit: NONE: returns the result set;
+ WARNING: returns a result set with waning information;
+ ERROR: does not return a result set,but outputs an error.
  --stored-program-cache=# 
  The soft upper limit for number of cached stored routines
  for one connection.
@@ -1683,7 +1692,7 @@ performance-schema-max-socket-classes 10
 performance-schema-max-socket-instances -1
 performance-schema-max-sql-text-length 1024
 performance-schema-max-stage-classes 150
-performance-schema-max-statement-classes 193
+performance-schema-max-statement-classes 194
 performance-schema-max-statement-stack 10
 performance-schema-max-table-handles -1
 performance-schema-max-table-instances -1
@@ -1813,6 +1822,8 @@ spark-execute-only-in-mysql FALSE
 spark-odbc-ini-path /usr/local/odbc
 sporadic-binlog-dump-fail FALSE
 sql-mode ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+sql-select-result-limit 18446744073709551615
+sql-select-result-limit-exceed-handling NONE
 stored-program-cache 256
 super-read-only FALSE
 symbolic-links FALSE
