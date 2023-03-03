@@ -1,13 +1,10 @@
 package com.sequoiasql.crud;
 
-import com.sequoiadb.base.CollectionSpace;
-import com.sequoiadb.base.DBCollection;
-import com.sequoiadb.base.DBCursor;
-import com.sequoiadb.base.Sequoiadb;
-import com.sequoiadb.threadexecutor.ResultStore;
-import com.sequoiadb.threadexecutor.ThreadExecutor;
-import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
-import com.sequoiasql.testcommon.*;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.testng.Assert;
@@ -16,10 +13,18 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
+import com.sequoiadb.base.CollectionSpace;
+import com.sequoiadb.base.DBCollection;
+import com.sequoiadb.base.DBCursor;
+import com.sequoiadb.base.Sequoiadb;
+import com.sequoiadb.threadexecutor.ResultStore;
+import com.sequoiadb.threadexecutor.ThreadExecutor;
+import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
+import com.sequoiasql.testcommon.CommLib;
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.JdbcInterfaceFactory;
+import com.sequoiasql.testcommon.JdbcWarpperType;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
  * @Description seqDB-28186:数据查询过程中会话中断
@@ -100,18 +105,29 @@ public class Select28186 extends MysqlTestBase {
         es.run();
 
         // 查询上下文快照，预期是没有context残留的
-        BasicBSONObject matcher = new BasicBSONObject();
-        matcher.put( "Contexts.Type", "DATA" );
-        DBCursor cursor = sdb.getSnapshot( 0, matcher, null, null );
-        try {
-            if ( cursor.hasNext() ) {
-                Object context = cursor.getNext().get( "Contexts" );
-                System.out.println( context.toString() );
+        BasicBSONObject matcher = new BasicBSONObject( "Contexts.Type",
+                "DATA" );
+        boolean checkSucc = false;
+        int retryTimes = 60;
+        while ( !checkSucc ) {
+            DBCursor cursor = sdb.getSnapshot( 0, matcher, null, null );
+            try {
+                if ( retryTimes > 0 ) {
+                    if ( !cursor.hasNext() ) {
+                        break;
+                    } else {
+                        Thread.sleep( 100 );
+                        retryTimes--;
+                    }
+                } else {
+                    Object context = cursor.getNext().get( "Contexts" );
+                    Assert.fail( context.toString() );
+                }
+            } finally {
+                cursor.close();
             }
-            Assert.assertFalse( cursor.hasNext() );
-        } finally {
-            cursor.close();
         }
+
     }
 
     @AfterClass
@@ -170,6 +186,7 @@ public class Select28186 extends MysqlTestBase {
                                 .split( "\\|" );
                         if ( row[ 7 ].contains( sqlStr ) ) {
                             processId = row[ 0 ];
+                            jdbc.update( "kill query " + processId );
                             break;
                         }
                     }
@@ -183,7 +200,18 @@ public class Select28186 extends MysqlTestBase {
                     // 没有找到会话id时休眠10毫秒再进入下一次循环
                     Thread.sleep( 10 );
                 }
-                jdbc.update( "kill query " + processId );
+                if ( !processId.isEmpty() ) {
+                    processList = jdbc.query( "show processlist;" );
+                    for ( int i = 0; i < processList.size(); i++ ) {
+                        String[] row = processList.get( i ).toString()
+                                .split( "\\|" );
+                        System.out.println( processList.get( i ) );
+                        if ( row[ 7 ].contains( sqlStr ) ) {
+                            Assert.fail( "processId exists, process info: "
+                                    + processList.get( i ) );
+                        }
+                    }
+                }
             } catch ( SQLException e ) {
                 saveResult( e.getErrorCode(), e );
             }
