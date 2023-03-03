@@ -1,0 +1,158 @@
+drop database if exists refresh_sequoiadb_29898;
+create database refresh_sequoiadb_29898;
+use refresh_sequoiadb_29898;
+drop table if exists refresh_sequoiadb_29898_1;
+drop table if exists refresh_sequoiadb_29898_2;
+create table refresh_sequoiadb_29898_1(a int,b int,key(a));
+insert into refresh_sequoiadb_29898_1 values(1,1),(2,2),(3,3);
+create table refresh_sequoiadb_29898_2 like refresh_sequoiadb_29898_1;
+Warnings:
+Warning	40022	Taget table[refresh_sequoiadb_29898.refresh_sequoiadb_29898_2] exists on SequoiaDB and exacly same as source table[refresh_sequoiadb_29898.refresh_sequoiadb_29898_1].
+analyze table refresh_sequoiadb_29898_1;
+Table	Op	Msg_type	Msg_text
+refresh_sequoiadb_29898.refresh_sequoiadb_29898_1	analyze	status	OK
+analyze table refresh_sequoiadb_29898_2;
+Table	Op	Msg_type	Msg_text
+refresh_sequoiadb_29898.refresh_sequoiadb_29898_2	analyze	status	OK
+insert into refresh_sequoiadb_29898_1 values (4,4),(5,5),(6,6);
+insert into refresh_sequoiadb_29898_2 values (7,7),(8,8),(9,9);
+select * from refresh_sequoiadb_29898_1;
+a	b
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+select * from refresh_sequoiadb_29898_2;
+a	b
+7	7
+8	8
+9	9
+7	7
+8	8
+9	9
+7	7
+8	8
+9	9
+create procedure p1()
+begin
+refresh table refresh_sequoiadb_29898_1, refresh_sequoiadb_29898_2 stats;
+select * from refresh_sequoiadb_29898_1, refresh_sequoiadb_29898_2 where refresh_sequoiadb_29898_1.a=refresh_sequoiadb_29898_2.a;
+select * from refresh_sequoiadb_29898_1;
+select * from refresh_sequoiadb_29898_2;
+insert into refresh_sequoiadb_29898_1 values(7,7);
+select * from refresh_sequoiadb_29898_1;
+alter table refresh_sequoiadb_29898_1 add c varchar(10);
+show create table refresh_sequoiadb_29898_1;
+select * from refresh_sequoiadb_29898_1;
+end|
+create function func1() returns int
+begin
+declare e int default 0;
+refresh table refresh_sequoiadb_29898_1,refresh_sequoiadb_29898_2 stats;
+insert into refresh_sequoiadb_29898_1 values(11,11);
+return e;
+end;
+//
+select func1();
+func1()
+0
+call p1();
+a	b	a	b
+a	b
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+11	11
+a	b
+7	7
+8	8
+9	9
+7	7
+8	8
+9	9
+7	7
+8	8
+9	9
+a	b
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+11	11
+7	7
+Table	Create Table
+refresh_sequoiadb_29898_1	CREATE TABLE `refresh_sequoiadb_29898_1` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` varchar(10) DEFAULT NULL,
+  KEY `a` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+a	b	c
+1	1	NULL
+2	2	NULL
+3	3	NULL
+4	4	NULL
+5	5	NULL
+6	6	NULL
+1	1	NULL
+2	2	NULL
+3	3	NULL
+4	4	NULL
+5	5	NULL
+6	6	NULL
+1	1	NULL
+2	2	NULL
+3	3	NULL
+4	4	NULL
+5	5	NULL
+6	6	NULL
+11	11	NULL
+7	7	NULL
+drop function func1;
+drop procedure p1;
+drop table refresh_sequoiadb_29898_1;
+drop table refresh_sequoiadb_29898_2;
+drop database refresh_sequoiadb_29898;
