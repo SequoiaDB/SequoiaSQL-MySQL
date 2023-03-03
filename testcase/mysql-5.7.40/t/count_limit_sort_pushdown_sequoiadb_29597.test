@@ -1,0 +1,95 @@
+# Testcase: # seqDB-29597
+
+--source include/have_sequoiadb.inc
+
+--disable_warnings
+drop database if exists count_limit_sort_pushdown_sequoiadb_29597;
+--enable_warnings
+create database count_limit_sort_pushdown_sequoiadb_29597;
+use count_limit_sort_pushdown_sequoiadb_29597;
+--disable_warnings
+drop table if exists t1;
+--enable_warnings
+
+create table t1(
+  col1 int,
+  col2 varchar(10),
+  col3 datetime,
+  col4 varchar(10),
+  key idx_col1(col1),
+  key idx_col2(col2),
+  key idx_col12(col1,col2),
+  key idx_col3(col3)
+);
+
+insert into t1 values(0,'abc','20221115114010','abc');
+insert into t1 values(null,'abc','20221115114010','abc');
+insert into t1 values(5,'abcdef','20221115114015','abcdef');
+insert into t1 values(3,null,'20221115114015','abcdef');
+insert into t1 values(7,'def','20221115114020','def');
+insert into t1 values(2,'def',null,'def');
+insert into t1 values(4,'abcde','20221115114020','efg');
+insert into t1 values(0,'abcde','20221115114020',null);
+insert into t1 values(6,'def','20221115114210','def');
+insert into t1 values(1,'defg ','20221115114510','defg');
+insert into t1 values(3,'xyz','20221115114510','xyz ');
+insert into t1 values(2,'xyzz ','20221115114510','xyzz ');
+insert into t1 values(null,null,null,null);
+insert into t1 values(null,null,null,null);
+
+create view v1 as select * from t1 where col1 > 2 limit 1,10;
+
+analyze table t1;
+set session sequoiadb_debug_log=on;
+set session sql_mode='';
+
+set session sequoiadb_optimizer_options='direct_count,direct_sort,direct_limit';
+set session sequoiadb_cls_pushdown_expand=on;
+set session optimizer_switch='optimizer_sort_pushdown=on';
+set session optimizer_index_sort_prune=on;
+
+# seqDB-29597
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+--replace_column 10 # 11 #
+explain select count(*) from t1,(select * from mt1 where col1>=1 limit 2) dt;
+--sorted_result
+select count(*) from t1,(select * from mt1 where col1>=1 limit 2) dt;
+--source include/query_pushdown_condition_sequoiadb_3.inc
+
+--replace_column 10 # 11 #
+explain select count(*) from t1,(select count(col1) from mt1 where col1>=1 limit 2) dt;
+--sorted_result
+select count(*) from t1,(select count(col1) from mt1 where col1>=1 limit 2) dt;
+--source include/query_pushdown_condition_sequoiadb_5.inc
+
+--replace_column 10 # 11 #
+explain select count(*) from mt1,(select * from t1 where col1>=1 limit 2) dt;
+--sorted_result
+select count(*) from mt1,(select * from t1 where col1>=1 limit 2) dt;
+--source include/query_pushdown_condition_sequoiadb_3.inc
+
+--replace_column 10 # 11 #
+explain select count(*) from mt1,(select count(col1) from t1 where col1>=1) dt;
+--sorted_result
+select count(*) from mt1,(select count(col1) from t1 where col1>=1) dt;
+--source include/query_pushdown_condition_sequoiadb_4.inc
+
+--replace_column 10 # 11 #
+explain select count(*) from t1,(select * from mt1 where col1>=1 limit 10) dt limit 3;
+--sorted_result
+select count(*) from t1,(select * from mt1 where col1>=1 limit 10) dt limit 3;
+--source include/query_pushdown_condition_sequoiadb_2.inc
+
+--replace_column 10 # 11 #
+explain select count(*) from mt1,(select * from t1 where col1>=1 limit 10) dt limit 3;
+--sorted_result
+select count(*) from mt1,(select * from t1 where col1>=1 limit 10) dt limit 3;
+--source include/query_pushdown_condition_sequoiadb_2.inc
+
+
+--disable_warnings
+drop database if exists count_limit_sort_pushdown_sequoiadb_29597;
+--enable_warnings
+set session sql_mode=default;
+--source include/uninstall_sequoiadb.inc

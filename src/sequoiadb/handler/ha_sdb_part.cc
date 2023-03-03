@@ -3553,7 +3553,8 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
                                        ulonglong *const deleted) {
   DBUG_ENTER("ha_sdb_part::change_partitions_low");
   int rc = 0;
-  Thd_sdb *thd_sdb = NULL;
+  // MY_ATTRIBUTE((unused)) is for remove release compile warnings
+  Thd_sdb *thd_sdb MY_ATTRIBUTE((unused)) = NULL;
   Sdb_cl mcl;
   Sdb_conn *conn = NULL;
   Mapping_context_impl tbl_mapping;

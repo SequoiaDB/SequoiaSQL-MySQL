@@ -1,0 +1,788 @@
+#case 22933
+
+--source include/have_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
+
+# connect to conn1, clear user at the beginning
+connection conn1;
+--disable_warnings
+DROP USER IF EXISTS u1, u2, u3, u4, u5;
+DROP USER IF EXISTS dcl_rewrite_user1, dcl_rewrite_user2, dcl_rewrite_user3, dcl_rewrite_user4, dcl_rewrite_user5, dcl_rewrite_user6, dcl_rewrite_user7;
+set debug="d,test_point_ha_rewritten_query";
+
+let $is_mariadb = `SELECT VERSION() regexp "MariaDB"`;
+
+# create multiple users at the same time 
+CREATE USER u1 IDENTIFIED BY 'u1_pwd', u2 IDENTIFIED BY 'u2_pwd', u3 IDENTIFIED BY PASSWORD '*BB4B43988AC348E7785389DB96E151E6F20AF166', u4 IDENTIFIED BY 'u4_pwd', u5 IDENTIFIED BY PASSWORD '*435D388DA987BA3E54CEDCE714335437D9A6066B';
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER u1;
+SHOW CREATE USER u2;
+SHOW CREATE USER u3;
+SHOW CREATE USER u4;
+SHOW CREATE USER u5;
+connection conn2;
+SHOW CREATE USER u1;
+SHOW CREATE USER u2;
+SHOW CREATE USER u3;
+SHOW CREATE USER u4;
+SHOW CREATE USER u5;
+
+# alter multiple users at the same time 
+connection conn1;
+ALTER USER u1 IDENTIFIED BY 'uu1_pwd', u2 IDENTIFIED BY 'uu2_pwd', u3 IDENTIFIED BY 'uu3_pwd', u4 IDENTIFIED BY 'uu4_pwd', u5 IDENTIFIED BY 'uu5_pwd';
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER u1;
+SHOW CREATE USER u2;
+SHOW CREATE USER u3;
+SHOW CREATE USER u4;
+SHOW CREATE USER u5;
+connection conn2;
+SHOW CREATE USER u1;
+SHOW CREATE USER u2;
+SHOW CREATE USER u3;
+SHOW CREATE USER u4;
+SHOW CREATE USER u5;
+
+# grant multiple users at the same time 
+connection conn1;
+GRANT ALL PRIVILEGES on *.* TO u1 IDENTIFIED BY 'u1_pwd', u2 IDENTIFIED BY 'u2_pwd', u3 IDENTIFIED BY PASSWORD '*BB4B43988AC348E7785389DB96E151E6F20AF166', u4 IDENTIFIED BY 'u4_pwd', u5 IDENTIFIED BY PASSWORD '*435D388DA987BA3E54CEDCE714335437D9A6066B';
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER u1;
+SHOW CREATE USER u2;
+SHOW CREATE USER u3;
+SHOW CREATE USER u4;
+SHOW CREATE USER u5;
+connection conn2;
+SHOW CREATE USER u1;
+SHOW CREATE USER u2;
+SHOW CREATE USER u3;
+SHOW CREATE USER u4;
+SHOW CREATE USER u5;
+
+connection conn1;
+DROP USER IF EXISTS u1, u2, u3, u4, u5;
+
+# for MariaDB test
+if ($is_mariadb)
+{
+    connection conn1;
+    DROP ROLE IF EXISTS dcl_rewrite_r1, dcl_rewrite_r2, dcl_rewrite_r3, dcl_rewrite_r4;
+    # create user rewrite test
+    CREATE USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user2 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user3 IDENTIFIED VIA mysql_native_password;
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user3;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user3;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user4 IDENTIFIED VIA mysql_native_password USING PASSWORD('dcl_user_passwd4');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user4;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user4;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user5 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd5');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user5;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user5;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user6 IDENTIFIED VIA mysql_native_password USING '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user6;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user6;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user7 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd7') OR mysql_old_password AS PASSWORD('dcl_user_passwd7');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user7;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user7;
+
+    connection conn1;
+    # alter user rewrite test
+    ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user2 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user3 IDENTIFIED VIA mysql_native_password;
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user3;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user3;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user4 IDENTIFIED VIA mysql_native_password USING PASSWORD('dcl_user_passwd_4');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user4;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user4;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user5 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd_5');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user5;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user5;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user6 IDENTIFIED VIA mysql_native_password USING '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user6;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user6;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user7 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd_7') OR mysql_old_password AS PASSWORD('dcl_user_passwd_7');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user7;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user7;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password;
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password USING PASSWORD('dcl_user_passwd2');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password USING '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd2') OR mysql_old_password AS PASSWORD('dcl_user_passwd2');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    # grant rewrite test
+    ## GRANT ROLE test
+    CREATE ROLE dcl_rewrite_r1, dcl_rewrite_r2, dcl_rewrite_r3, dcl_rewrite_r4;
+    GRANT dcl_rewrite_r1 TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+
+    connection conn1;
+    GRANT dcl_rewrite_r1 TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1' WITH ADMIN OPTION;
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+
+    connection conn1;
+    GRANT dcl_rewrite_r1 TO dcl_rewrite_r2, dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+
+    connection conn1;
+    GRANT dcl_rewrite_r1 TO dcl_rewrite_r2, dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    GRANT dcl_rewrite_r1 TO dcl_rewrite_r2, dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd2') OR mysql_old_password AS PASSWORD('dcl_user_passwd2');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    
+    connection conn1;
+    ## NORMAL GRANT
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user2 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user3 IDENTIFIED VIA mysql_native_password;
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user3;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user3;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user4 IDENTIFIED VIA mysql_native_password USING PASSWORD('dcl_user_passwd');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user4;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user4;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user5 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user5;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user5;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user6 IDENTIFIED VIA mysql_native_password USING '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user6;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user6;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user7 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd') OR mysql_old_password AS PASSWORD('dcl_user_passwd');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user7;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user7;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1', dcl_rewrite_user2 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password;
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password USING PASSWORD('dcl_user_passwd');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password USING '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1', dcl_rewrite_user2 IDENTIFIED VIA mysql_native_password AS PASSWORD('dcl_user_passwd') OR mysql_old_password AS PASSWORD('dcl_user_passwd');
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    FLUSH PRIVILEGES;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    ## test grant role
+    DROP ROLE IF EXISTS r1;
+    CREATE ROLE r1 WITH ADMIN sdbadmin;
+    GRANT r1 TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1';
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+
+    connection conn1;
+    ## test grant package
+    CREATE DATABASE IF NOT EXISTS grant_pkg_test;
+    USE grant_pkg_test;
+    set @saved_sql_mode = @@sql_mode;
+    set sql_mode = oracle;
+    DELIMITER |;
+    CREATE OR REPLACE PACKAGE pkg1 AS
+      FUNCTION f1 ( id INT ) RETURN DECIMAL(10,2);
+      PROCEDURE sp1 ( id INT, amount DECIMAL(10,2) );
+      PROCEDURE sp2 ( id INT );
+      PROCEDURE sp3 ( name TEXT, salary DECIMAL(10,2) );
+    END; |
+    
+    DELIMITER ;|
+    GRANT ALL PRIVILEGES ON PACKAGE grant_pkg_test.pkg1 to dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1';
+    SHOW GRANTS FOR dcl_rewrite_user1;
+
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+
+    connection conn1;
+    set @@sql_mode = @saved_sql_mode;
+    DROP ROLE IF EXISTS dcl_rewrite_r1, dcl_rewrite_r2, dcl_rewrite_r3, dcl_rewrite_r4;
+}
+
+# for MySQL test
+if ($is_mariadb == 0)
+{ 
+    connection conn1;
+    ### test CREATE IUSER ###
+    CREATE USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user2 IDENTIFIED WITH 'mysql_native_password';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user3 IDENTIFIED WITH 'mysql_native_password' BY 'dcl_user_passwd3';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user3;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user3;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user4 IDENTIFIED WITH 'mysql_native_password' AS '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user4;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user4;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user5 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user5;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user5;
+
+    connection conn1;
+    DROP USER IF EXISTS dcl_rewrite_user1, dcl_rewrite_user2, dcl_rewrite_user3, dcl_rewrite_user4, dcl_rewrite_user5;
+
+    connection conn1;
+    # create multiple users
+    CREATE USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1', dcl_rewrite_user2 IDENTIFIED BY 'dcl_user_passwd_2';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user3 IDENTIFIED BY 'dcl_user_passwd3', dcl_rewrite_user4 IDENTIFIED WITH 'mysql_native_password' AS '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user3;
+    SHOW CREATE USER dcl_rewrite_user4;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user3;
+    SHOW CREATE USER dcl_rewrite_user4;
+
+    connection conn1;
+    CREATE USER dcl_rewrite_user5 IDENTIFIED BY 'dcl_user_passwd5', dcl_rewrite_user6 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user5;
+    SHOW CREATE USER dcl_rewrite_user6;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user5;
+    SHOW CREATE USER dcl_rewrite_user6;
+
+    connection conn1;
+    ### test ALTER USER ###
+    ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password_1';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user2 IDENTIFIED WITH 'mysql_native_password';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user3 IDENTIFIED WITH 'mysql_native_password' BY '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user3;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user3;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user4 IDENTIFIED WITH 'mysql_native_password' AS '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user4;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user4;
+
+    connection conn1;
+    # alter mutiple users
+    ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED BY 'dcl_user_passwd2';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user1;
+    SHOW CREATE USER dcl_rewrite_user2;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user3 IDENTIFIED BY 'dcl_user_passwd', dcl_rewrite_user4 IDENTIFIED WITH 'mysql_native_password' AS '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user3;
+    SHOW CREATE USER dcl_rewrite_user4;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user3;
+    SHOW CREATE USER dcl_rewrite_user4;
+
+    connection conn1;
+    ALTER USER dcl_rewrite_user5 IDENTIFIED BY 'dcl_user_passwd5', dcl_rewrite_user6 IDENTIFIED WITH 'mysql_native_password' BY 'dcl_user_passwd6';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW CREATE USER dcl_rewrite_user5;
+    SHOW CREATE USER dcl_rewrite_user6;
+    connection conn2;
+    SHOW CREATE USER dcl_rewrite_user5;
+    SHOW CREATE USER dcl_rewrite_user6;
+
+    connection conn1;
+    ### test GRANT ###
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd_1';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user2 IDENTIFIED WITH 'mysql_native_password';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user3 IDENTIFIED WITH 'mysql_native_password' BY 'dcl_user_passwd';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user3;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user3;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user4 IDENTIFIED WITH 'mysql_native_password' AS '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user4;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user4;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user5 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user5;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user5;
+
+    connection conn1;
+    # grant multiple users
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED BY 'dcl_user_passwd_2';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user3 IDENTIFIED BY 'dcl_user_passwd3', dcl_rewrite_user4 IDENTIFIED WITH 'mysql_native_password' AS '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user3;
+    SHOW GRANTS FOR dcl_rewrite_user4;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user3;
+    SHOW GRANTS FOR dcl_rewrite_user4;
+
+    connection conn1;
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user5 IDENTIFIED BY 'dcl_user_passwd_5', dcl_rewrite_user6 IDENTIFIED BY PASSWORD '*2053A5FDAB00477E9ABB78D3B170AA7F965C9FF4';
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user5;
+    SHOW GRANTS FOR dcl_rewrite_user6;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user5;
+    SHOW GRANTS FOR dcl_rewrite_user6;
+
+    connection conn1;
+    # test grant with grant option
+    GRANT ALL PRIVILEGES ON *.* TO dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_passwd1', dcl_rewrite_user2 IDENTIFIED BY 'dcl_user_passwd2' WITH GRANT OPTION;
+    SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+    SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+    connection conn2;
+    SHOW GRANTS FOR dcl_rewrite_user1;
+    SHOW GRANTS FOR dcl_rewrite_user2;
+}
+
+### test REQUIRE clause ###
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password1' REQUIRE NONE;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password_1' REQUIRE X509;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password1' REQUIRE SSL;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password_1' REQUIRE CIPHER 'cipher' AND ISSUER 'issuer' AND SUBJECT 'subject';
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+### test WITH clause ###
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password1' WITH MAX_QUERIES_PER_HOUR 100;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password_1' WITH MAX_UPDATES_PER_HOUR 100;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password1' WITH MAX_CONNECTIONS_PER_HOUR 100;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password_1' WITH MAX_USER_CONNECTIONS 300;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password1' WITH MAX_QUERIES_PER_HOUR 90 MAX_UPDATES_PER_HOUR 90 MAX_CONNECTIONS_PER_HOUR 90 MAX_USER_CONNECTIONS 270;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+### test PASSWORD option ###
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password_1' PASSWORD EXPIRE;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user2 IDENTIFIED BY 'dcl_user_password1' PASSWORD EXPIRE DEFAULT;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password_1' PASSWORD EXPIRE NEVER;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user4 IDENTIFIED BY 'dcl_user_password1' PASSWORD EXPIRE INTERVAL 10 DAY;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+### test LOCK option ###
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password_1' ACCOUNT LOCK;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+connection conn1;
+ALTER USER dcl_rewrite_user1 IDENTIFIED BY 'dcl_user_password1' ACCOUNT UNLOCK;
+SELECT @HA_REWRITTEN_QUERY_BEFORE_EXECUTION;
+SELECT @HA_REWRITTEN_QUERY_AFTER_EXECUTION;
+SHOW CREATE USER dcl_rewrite_user1;
+connection conn2;
+SHOW CREATE USER dcl_rewrite_user1;
+
+# drop users
+connection conn1;
+DROP USER IF EXISTS dcl_rewrite_user1, dcl_rewrite_user2, dcl_rewrite_user3, dcl_rewrite_user4, dcl_rewrite_user5, dcl_rewrite_user6, dcl_rewrite_user7;
+--source include/uninstall_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

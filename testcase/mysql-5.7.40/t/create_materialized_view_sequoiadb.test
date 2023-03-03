@@ -1,0 +1,505 @@
+#seqDB-27702 #seqDB-27703 #seqDB-27704 #seqDB-27706 #seqDB-27707 #seqDB-27708 #seqDB-27709 #seqDB-27710
+#seqDB-27711 #seqDB-27712 #seqDB-27713 #seqDB-27714 #seqDB-27716 #seqDB-27717 #seqDB-27718
+
+--source include/have_sequoiadb.inc
+
+--disable_warnings
+drop database if exists create_materialized_view_sequoiadb;
+--enable_warnings
+create database create_materialized_view_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use create_materialized_view_sequoiadb;
+
+create table t1(a int);
+insert into t1 values(1),(2),(3),(4),(5);
+create view v1 as select * from t1 where a < 3;
+
+#seqDB-27702
+create table mt1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+#seqDB-27703
+create table mt1 as select * from v1 maintained by user enable query optimization;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+create table mt1 as select * from v1 maintained by user disable query optimization;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+#seqDB-27704
+--error 1064
+create table mt1 as select * from v1 maintain by user;
+--error 1064
+create table mt1 as select * from v1 maintained by user enab query optimization;
+--error 1064
+create table mt1 as select * from v1 maintained by user disab query optimization;
+
+#seqDB-27706
+create table if not exists mt1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+
+create view v2 as select * from t1 where a < 3;
+create table if not exists mt1 as select * from v2 maintained by user;
+show create table mt1;
+
+create table t2(a int);
+create table if not exists t2 as select * from v2 maintained by user;
+show create table t2;
+drop table mt1;
+drop table t2;
+drop view v2;
+
+#seqDB-27707
+--error 1064
+create table mt1 CONNECTION="" as select * from v1 maintained by user;
+--error 1064
+create table mt1 INSERT_METHOD=NO as select * from v1 maintained by user;
+create table t2(a int);
+--error 1064
+create table mt1 UNION=(t2) as select * from v1 maintained by user;
+drop table t2;
+
+create table mt1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_bin as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+#not work
+create table mt1 AUTO_INCREMENT=10 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 AVG_ROW_LENGTH=1000 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 CHECKSUM=1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 COMMENT='this is a test' as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 COMPRESSION='NONE' as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+#not work
+create table mt1 DATA DIRECTORY='/tmp' as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 DELAY_KEY_WRITE=1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+--error 1478
+create table mt1 ENCRYPTION='Y' as select * from v1 maintained by user;
+
+create table mt1 engine=innodb as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 KEY_BLOCK_SIZE=8 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 MAX_ROWS=10 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 MIN_ROWS=10 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 PACK_KEYS=1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+#not work
+create table mt1 PASSWORD='pw' as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 ROW_FORMAT=COMPRESSED as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 STATS_AUTO_RECALC=1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 STATS_PERSISTENT=1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 STATS_SAMPLE_PAGES=100 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create TABLESPACE `ts1` add datafile 'ts1.ibd' engine=innodb;
+create table mt1 TABLESPACE ts1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+#seqDB-27708
+create table mt1 partition by hash(a) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 partition by key(a) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 partition by range columns(a)
+(partition p0 values less than(2),
+partition p1 values less than(4)) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 partition by list(a)
+(partition p0 values in (1,2),
+partition p1 values in (3,4)) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+
+create table mt1 partition by range columns(a)
+subpartition by key(a)
+subpartitions 2
+(partition p0 values less than(2),
+partition p1 values less than(4)) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+#seqDB-27709
+create table mt1(key(a)) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+alter table mt1 rename to mt1_new;
+show create table mt1_new;
+insert into mt1_new values(3);
+select * from mt1_new order by a;
+drop table mt1_new;
+
+create table mt1(unique key(a)) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+alter table mt1 rename to mt1_new;
+show create table mt1_new;
+insert into mt1_new values(3);
+select * from mt1_new order by a;
+drop table mt1_new;
+
+create table mt1(primary key(a)) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+alter table mt1 rename to mt1_new;
+show create table mt1_new;
+insert into mt1_new values(3);
+select * from mt1_new order by a;
+drop table mt1_new;
+
+create table t2(a int primary key);
+create table mt1(constraint `t1_fk` foreign key(`a`) references `mt_create_3`.`t2` (`a`)) 
+as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+alter table mt1 rename to mt1_new;
+show create table mt1_new;
+insert into mt1_new values(3);
+select * from mt1_new order by a;
+drop table mt1_new;
+drop table t2;
+
+#seqDB-27710
+create table mt1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+drop table mt1;
+drop view v1;
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+create table mt1 partition by hash(a) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+drop table mt1;
+drop view v1;
+create view v1 as select * from t1 where a < 3;
+create table mt1 partition by hash(a) as select * from v1 maintained by user;
+show create table mt1;
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+
+#seqDB-27711
+create table t2(a int, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4);
+create table t3(a int, c int);
+insert into t3 values(2,4),(4,8);
+create view v2 as select t2.b,t3.c from t2,t3 where t2.a=t3.a;
+create table mt1 as select * from v2 maintained by user;
+show create table mt1;
+show create table v2;
+create index idx on mt1(b);
+show create table mt1;
+insert into mt1 values(3,9);
+select * from mt1 order by b;
+drop table mt1;
+drop view v2;
+drop table t2;
+drop table t3;
+
+#seqDB-27712
+create view `v2%` as select * from t1 where a < 3;
+create table mt1 as select * from `v2%` maintained by user;
+show create table mt1;
+show create table `v2%`;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+drop view `v2%`;
+create view `视图` as select * from t1 where a < 3;
+create table mt1 as select * from `视图` maintained by user;
+show create table mt1;
+show create table `视图`;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+drop table mt1;
+drop view `视图`;
+
+create table `mt#` as select * from v1 maintained by user;
+show create table `mt#`;
+show create table v1;
+create index idx on `mt#`(a);
+show create table `mt#`;
+insert into `mt#` values(3);
+select * from `mt#` order by a;
+drop table `mt#`;
+create table `物化视图` as select * from v1 maintained by user;
+show create table `物化视图`;
+show create table v1;
+create index idx on `物化视图`(a);
+show create table `物化视图`;
+insert into `物化视图` values(3);
+select * from `物化视图` order by a;
+drop table `物化视图`;
+
+#seqDB-27713
+--error 1064
+create temporary table mt1 as select * from v1 maintained by user;
+
+#seqDB-27714
+--error 1064
+create table mt1(a int) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int not null default 10) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int auto_increment) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int unique key(a)) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int primary key(a)) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int comment 'test') as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int collate utf8mb4_general_ci) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int column_format fixed) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int column_format dynamic) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int column_format default) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int storage disk) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int storage memory) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int generated always as year(now()) stored) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int generated always as year(now()) virtual) as select * from v1 maintained by user;
+--error 1064
+create table mt1(a int, check(a>0)) as select * from v1 maintained by user;
+
+#seqDB-27716
+--error 1064
+create table mt1 ignore as select * from v1 maintained by user;
+--error 1064
+create table mt1 replace as select * from v1 maintained by user;
+
+#seqDB-27717
+create table mt1 as select * from v1 maintained by user;
+--error 138
+create table mt2 as select * from v1 maintained by user;
+create view v2 as select * from t1 where a < 3;
+--error 1050
+create table mt1 as select * from v2 maintained by user;
+drop view v2;
+drop table mt1;
+
+#seqDB-27718
+--error 1146
+create table mt1 as select * from v2 maintained by user;
+create table t2(a int);
+--error 138
+create table mt1 as select * from t2 maintained by user;
+drop table t2;
+
+drop view v1;
+drop database create_materialized_view_sequoiadb;
+--source include/uninstall_sequoiadb.inc

@@ -3959,7 +3959,8 @@ void ha_sdb::build_single_equal_range(bson::BSONObjBuilder &rang_equal_blder,
     BSONElement elem = it.next();
     DBUG_ASSERT(Object == elem.type());
     BSONObj e_obj = elem.Obj();
-    int op_type = e_obj.firstElement().getGtLtOp(-1);
+    // MY_ATTRIBUTE((unused)) is for remove release compile warnings
+    int op_type MY_ATTRIBUTE((unused)) = e_obj.firstElement().getGtLtOp(-1);
     DBUG_ASSERT(Undefined != elem.type());
     DBUG_ASSERT(BSONObj::opISNULL != op_type);
     // int pos to char
