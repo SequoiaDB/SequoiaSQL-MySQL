@@ -23,11 +23,8 @@ call p1(5);
 
 set session sql_select_result_limit_exceed_handling=1;
 call p1(1);
-
---disable_warnings
 call p1(3);
 call p1(5);
---enable_warnings
 
 set session sql_select_result_limit_exceed_handling=2;
 
