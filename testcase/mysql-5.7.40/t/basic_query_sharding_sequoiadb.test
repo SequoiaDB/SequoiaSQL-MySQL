@@ -419,8 +419,8 @@ INSERT INTO t1 VALUES ("2000-02-05", "2002-10-21 00:00:00", "1994-03-02 10:11:12
 SELECT * FROM t1 WHERE d > DATE_FORMAT(dt, "%Y-%m-%d");
 --sorted_result
 SELECT d,dt,tm FROM t1 WHERE TIME_FORMAT(tm, '%H') >= 20;
---sorted_result
-SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59');
+
+SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59') ORDER BY d;
 --sorted_result
 SELECT t,tm FROM t1 WHERE TIME_TO_SEC(tm) > 100000;
 --sorted_result
@@ -457,8 +457,8 @@ SELECT d,t FROM t1 WHERE t >= TIMESTAMPADD(HOUR,8820,d);
 SELECT * FROM t1 WHERE TIMESTAMPDIFF(day,dt,t) > 0;
 --sorted_result
 SELECT * FROM t1 WHERE LAST_DAY(d) < "2005-12-31" AND FROM_DAYS(TO_DAYS(t)) > "1999-12-01";
---sorted_result
-SELECT * FROM t1 WHERE t < LOCALTIMESTAMP() AND t <> UTC_TIMESTAMP();
+
+SELECT * FROM t1 WHERE t < LOCALTIMESTAMP() AND t <> UTC_TIMESTAMP() ORDER BY d;
 --sorted_result
 SELECT * FROM t1 WHERE MONTHNAME(STR_TO_DATE(d,'%Y-%m-%d')) >= 'March';
 --sorted_result
@@ -477,7 +477,7 @@ CREATE INDEX tm ON t1(tm);
 SELECT * FROM t1 WHERE d > DATE_FORMAT(dt, "%Y-%m-%d");
 --sorted_result
 SELECT d,dt,tm FROM t1 WHERE TIME_FORMAT(tm, '%H') >= 20;
-SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59');
+SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59') ORDER BY d;
 --sorted_result
 SELECT t,tm FROM t1 WHERE TIME_TO_SEC(tm) > 100000;
 --sorted_result
@@ -513,7 +513,7 @@ SELECT d,t FROM t1 WHERE t >= TIMESTAMPADD(HOUR,8820,d);
 SELECT * FROM t1 WHERE TIMESTAMPDIFF(day,dt,t) > 0;
 --sorted_result
 SELECT * FROM t1 WHERE LAST_DAY(d) < "2005-12-31" AND FROM_DAYS(TO_DAYS(t)) > "1999-12-01";
-SELECT * FROM t1 WHERE t < LOCALTIMESTAMP() AND t <> UTC_TIMESTAMP();
+SELECT * FROM t1 WHERE t < LOCALTIMESTAMP() AND t <> UTC_TIMESTAMP() ORDER BY d;
 --sorted_result
 SELECT * FROM t1 WHERE MONTHNAME(STR_TO_DATE(d,'%Y-%m-%d')) >= 'March';
 --sorted_result
@@ -691,7 +691,7 @@ SELECT a, SUM(b) AS b1 FROM t1 GROUP BY a HAVING SUM(b) > 10 AND a < 50;
 SELECT b FROM t3 WHERE a >= 20 AND b <= 'f' GROUP BY b;
 --source include/turn_off_only_full_group_by.inc
 --sorted_result
-SELECT DISTINCT a, b, c, d, e, f FROM t1 WHERE a > 31 GROUP BY 'const';
+SELECT DISTINCT max(a), max(b), max(c), max(d), max(e), max(f) FROM t1 WHERE a > 31 GROUP BY 'const';
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
 --sorted_result
 SELECT c DIV 1 AS cc, a FROM t1 GROUP BY cc,a;
