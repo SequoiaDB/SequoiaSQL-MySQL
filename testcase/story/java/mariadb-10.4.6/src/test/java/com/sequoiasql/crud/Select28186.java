@@ -128,6 +128,16 @@ public class Select28186 extends MysqlTestBase {
             }
         }
 
+        List< String > processList = jdbc1.query( "show processlist;" );
+        for ( int i = 0; i < processList.size(); i++ ) {
+            String[] row = processList.get( i ).toString().split( "\\|" );
+            System.out.println( processList.get( i ) );
+            if ( row[ 7 ].contains( sql ) ) {
+                Assert.fail( "processId exists, process info: "
+                        + processList.get( i ) );
+            }
+        }
+
     }
 
     @AfterClass
@@ -199,18 +209,6 @@ public class Select28186 extends MysqlTestBase {
                     }
                     // 没有找到会话id时休眠10毫秒再进入下一次循环
                     Thread.sleep( 10 );
-                }
-                if ( !processId.isEmpty() ) {
-                    processList = jdbc.query( "show processlist;" );
-                    for ( int i = 0; i < processList.size(); i++ ) {
-                        String[] row = processList.get( i ).toString()
-                                .split( "\\|" );
-                        System.out.println( processList.get( i ) );
-                        if ( row[ 7 ].contains( sqlStr ) ) {
-                            Assert.fail( "processId exists, process info: "
-                                    + processList.get( i ) );
-                        }
-                    }
                 }
             } catch ( SQLException e ) {
                 saveResult( e.getErrorCode(), e );
