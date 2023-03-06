@@ -24,21 +24,21 @@ analyze table refresh_sequoiadb_29898_2;
 insert into refresh_sequoiadb_29898_1 values (4,4),(5,5),(6,6);
 insert into refresh_sequoiadb_29898_2 values (7,7),(8,8),(9,9);
 
-select * from refresh_sequoiadb_29898_1;
-select * from refresh_sequoiadb_29898_2;
+select * from refresh_sequoiadb_29898_1 order by a;
+select * from refresh_sequoiadb_29898_2 order by a;
 
 delimiter |;
 create procedure p1()
 begin
   refresh table refresh_sequoiadb_29898_1, refresh_sequoiadb_29898_2 stats;
-  select * from refresh_sequoiadb_29898_1, refresh_sequoiadb_29898_2 where refresh_sequoiadb_29898_1.a=refresh_sequoiadb_29898_2.a;
-  select * from refresh_sequoiadb_29898_1;
-  select * from refresh_sequoiadb_29898_2;
+  select * from refresh_sequoiadb_29898_1, refresh_sequoiadb_29898_2 where refresh_sequoiadb_29898_1.a=refresh_sequoiadb_29898_2.a order by refresh_sequoiadb_29898_1.a;
+  select * from refresh_sequoiadb_29898_1 order by a;
+  select * from refresh_sequoiadb_29898_2 order by a;
   insert into refresh_sequoiadb_29898_1 values(7,7);
-  select * from refresh_sequoiadb_29898_1;
+  select * from refresh_sequoiadb_29898_1 order by a;
   alter table refresh_sequoiadb_29898_1 add c varchar(10);
   show create table refresh_sequoiadb_29898_1;
-  select * from refresh_sequoiadb_29898_1;
+  select * from refresh_sequoiadb_29898_1 order by a;
 end|
 delimiter ;|
 
