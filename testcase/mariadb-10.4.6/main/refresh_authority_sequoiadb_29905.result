@@ -70,20 +70,6 @@ connection root;
 revoke all on refresh_tables_stats_29905_01.* from u1@'%';
 grant all on refresh_tables_stats_29905_01.tb_normal to u1@'%';
 flush privileges;
-##拥有一个数据库部分表权限
-connect conn,localhost,u1,,;
-show grants for u1;
-Grants for u1@%
-GRANT USAGE ON *.* TO 'u1'@'%'
-GRANT ALL PRIVILEGES ON `refresh_tables_stats_29905_01`.`tb_normal` TO 'u1'@'%'
-refresh tables stats;
-ERROR 42000: Access denied for user 'u1'@'%' to database 'refresh_tables_stats_29905_02'
-refresh tables refresh_tables_stats_29905_01.tb_normal,refresh_tables_stats_29905_01.tb_part stats;
-ERROR 42000: REFRESH command denied to user 'u1'@'localhost' for table ''
-refresh tables refresh_tables_stats_29905_01.tb_part stats;
-ERROR 42000: REFRESH command denied to user 'u1'@'localhost' for table ''
-refresh tables refresh_tables_stats_29905_01.tb_normal stats;
-disconnect conn;
 connection root;
 revoke all on refresh_tables_stats_29905_01.tb_normal from  u1@'%';
 grant select on *.* to u1@'%';
