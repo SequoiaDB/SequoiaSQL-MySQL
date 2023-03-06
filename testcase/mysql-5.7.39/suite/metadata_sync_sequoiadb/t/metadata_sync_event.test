@@ -40,7 +40,7 @@ CREATE EVENT e_yearly
     ON SCHEDULE
       EVERY 1 YEAR
       STARTS '2020-02-02 20:00:02' + INTERVAL 1 YEAR
-      ENDS '2022-02-02 20:00:02' + INTERVAL 13 MONTH
+      ENDS '2035-12-31 23:59:59' + INTERVAL 13 MONTH
     COMMENT 'Saves total number of sessions then clears the table each day'
     DO
       BEGIN
@@ -54,6 +54,14 @@ CREATE EVENT e_call_myproc
     ON SCHEDULE
       AT CURRENT_TIMESTAMP + INTERVAL 1 DAY
     DO CALL myproc(5, 27);
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/ /SCHEDULE AT '.*'/SCHEDULE AT 'y'/
+SHOW CREATE EVENT e_hourly;
+--replace_regex /STARTS '.*'/STARTS 'y'/
+SHOW CREATE EVENT e_daily;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/ /STARTS '.*'/STARTS 'y'/ /ENDS '.*'/ENDS 'y'/
+SHOW CREATE EVENT e_yearly;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/ /SCHEDULE AT '.*'/SCHEDULE AT 'y'/
+SHOW CREATE EVENT e_call_myproc;
 
 # check metadatas after create
 connection conn2;
@@ -97,6 +105,16 @@ ALTER EVENT e_yearly
        SELECT user,host FROM mysql.user;
     END |
 DELIMITER ;|
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/ /STARTS '.*'/STARTS 'y'/
+SHOW CREATE EVENT e_hourly;
+--error ER_EVENT_DOES_NOT_EXIST
+SHOW CREATE EVENT e_daily;
+--replace_regex /STARTS '.*'/STARTS 'y'/
+SHOW CREATE EVENT e_daily_new;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/ /SCHEDULE AT '.*'/SCHEDULE AT 'y'/
+SHOW CREATE EVENT e_yearly;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/ /SCHEDULE AT '.*'/SCHEDULE AT 'y'/
+SHOW CREATE EVENT e_call_myproc;
 
 # check metadatas after alter
 connection conn1;
