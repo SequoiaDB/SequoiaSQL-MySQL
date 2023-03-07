@@ -406,13 +406,13 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
-[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like (123 not regexp '^1') order by a;
 a
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
-[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t2 where a like ((a) not regexp '^a');
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t2]
@@ -854,7 +854,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 = 0 ) order by a;
 a
 0
@@ -862,7 +862,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 != 0 ) order by a;
 a
 1
@@ -870,7 +870,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 != 1 ) order by a;
 a
 0
@@ -878,7 +878,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 0 < 1 ) order by a;
 a
 1
@@ -886,7 +886,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 < 0 ) order by a;
 a
 0
@@ -894,7 +894,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 0 <= 1 ) order by a;
 a
 1
@@ -902,7 +902,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 <= 0 ) order by a;
 a
 0
@@ -910,7 +910,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 > 0 ) order by a;
 a
 1
@@ -918,7 +918,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 0 > 1 ) order by a;
 a
 0
@@ -926,7 +926,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 >= 0 ) order by a;
 a
 1
@@ -934,7 +934,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 0 >= 1 ) order by a;
 a
 0
@@ -942,7 +942,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 2 between 1 and 3 ) order by a;
 a
 1
@@ -950,7 +950,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 4 between 1 and 3 ) order by a;
 a
 0
@@ -958,7 +958,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 2 in (1,2,3) ) order by a;
 a
 1
@@ -966,7 +966,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 4 in (1,2,3) ) order by a;
 a
 0
@@ -974,7 +974,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( null is null ) order by a;
 a
 1
@@ -982,7 +982,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 is null ) order by a;
 a
 0
@@ -990,7 +990,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 is not null ) order by a;
 a
 1
@@ -998,7 +998,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( null is not null ) order by a;
 a
 0
@@ -1006,7 +1006,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 'bread' like 'b%' ) order by a;
 a
 1
@@ -1014,7 +1014,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 12 like 13 ) order by a;
 a
 0
@@ -1022,7 +1022,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 'bread' not like 'c%' ) order by a;
 a
 1
@@ -1030,7 +1030,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 12 not like 12 ) order by a;
 a
 0
@@ -1038,7 +1038,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 'abc' sounds like 'abcd' ) order by a;
 a
 0
@@ -1046,7 +1046,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^0$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select * from t1 where a like ( 1 sounds like 1 ) order by a;
 a
 1
@@ -1054,7 +1054,7 @@ a
 1
 1
 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select aes_decrypt(aes_encrypt('abc','key'),'key'),aes_decrypt(aes_encrypt(123,'key'),'key');
 aes_decrypt(aes_encrypt('abc','key'),'key')	aes_decrypt(aes_encrypt(123,'key'),'key')
 abc	123
