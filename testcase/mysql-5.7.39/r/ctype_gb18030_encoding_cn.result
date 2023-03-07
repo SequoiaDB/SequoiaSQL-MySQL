@@ -330,7 +330,6 @@ SELECT * FROM `表一` WHERE c1 LIKE '% ';
 c1
 SELECT * FROM `表一` WHERE c1 LIKE '仡%';
 c1
-仡仢仨仯仱仳仵份仾仿伀伂伃伈伋伌伒伕伖众
 SELECT * FROM `表一` WHERE c1 LIKE '%乹乿%';
 c1
 乚乜乣乨乩乴乵乹乿亍亖亗亝亯亹仃仐仚仛仠

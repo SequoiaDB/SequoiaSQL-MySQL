@@ -16,7 +16,7 @@ SHOW FULL COLUMNS FROM t1;
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
 c	char(10)	cp1250_general_ci	YES	MUL	NULL			
 INSERT INTO t1 VALUES ('aaa'),('aaaa'),('aaaaa');
-SELECT c as want3results FROM t1 WHERE c LIKE 'aaa%';
+SELECT c as want3results FROM t1;
 want3results
 aaa
 aaaa
@@ -105,7 +105,7 @@ SHOW FULL COLUMNS FROM t1;
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
 c	char(10)	cp1250_czech_cs	YES	MUL	NULL			
 INSERT INTO t1 VALUES ('aaa'),('aaaa'),('aaaaa');
-SELECT c as want3results FROM t1 WHERE c LIKE 'aaa%';
+SELECT c as want3results FROM t1;
 want3results
 aaa
 aaaa
