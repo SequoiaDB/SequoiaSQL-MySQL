@@ -1,4 +1,4 @@
-#Case 30316
+#Case 30361
 --source include/have_sequoiadb.inc
 
 --disable_warnings
