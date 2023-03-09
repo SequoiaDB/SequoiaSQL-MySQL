@@ -1250,7 +1250,7 @@ DELETE FROM t2 LIMIT 2;
 --sorted_result
 SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 --sorted_result
-SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
+SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' ORDER BY id LIMIT 2 OFFSET 3;
 #seqDB-23021
 --sorted_result
 SELECT * FROM t1 WHERE id IN (1,2,5,6,8,11) LIMIT 3,2; 

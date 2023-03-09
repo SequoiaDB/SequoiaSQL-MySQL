@@ -1130,7 +1130,6 @@ select * from t5 where a like md5('abc');
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t5]
 select * from t1 where a like random_bytes(1);
-a
 [Note] SequoiaDB: Query message: condition[{""}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown_sequoiadb_1.t1]
 select sha('abc'),sha(123);
 sha('abc')	sha(123)
