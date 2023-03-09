@@ -14331,10 +14331,10 @@ SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 id	a	c
 2	-99	bc
 3	-99	123
-SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
+SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' ORDER BY id LIMIT 2 OFFSET 3;
 id	a	c
-11	1	bc
 4	-99	tf
+8	5	jk
 SELECT * FROM t1 WHERE id IN (1,2,5,6,8,11) LIMIT 3,2;
 id	a	c
 6	15	9a
