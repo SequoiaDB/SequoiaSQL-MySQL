@@ -89,18 +89,17 @@ revoke all on refresh_tables_stats_29905_01.* from u1@'%';
 grant all on refresh_tables_stats_29905_01.tb_normal to u1@'%';
 flush privileges;
 
-#暂时屏蔽，待报错信息修改，问题单：http://jira.web:8080/browse/SEQUOIASQLMAINSTREAM-1711
-#--echo ##拥有一个数据库部分表权限
-#connect(conn,localhost,u1,,);
-#show grants for u1;
-#--error 1044
-#refresh tables stats;
-#--error 1142
-#refresh tables refresh_tables_stats_29905_01.tb_normal,refresh_tables_stats_29905_01.tb_part stats;
-#--error 1142
-#refresh tables refresh_tables_stats_29905_01.tb_part stats;
-#refresh tables refresh_tables_stats_29905_01.tb_normal stats;
-#disconnect conn;
+--echo ##拥有一个数据库部分表权限
+connect(conn,localhost,u1,,);
+show grants for u1;
+--error 1044
+refresh tables stats;
+--error 1142
+refresh tables refresh_tables_stats_29905_01.tb_normal,refresh_tables_stats_29905_01.tb_part stats;
+--error 1142
+refresh tables refresh_tables_stats_29905_01.tb_part stats;
+refresh tables refresh_tables_stats_29905_01.tb_normal stats;
+disconnect conn;
 
 connection root;
 revoke all on refresh_tables_stats_29905_01.tb_normal from  u1@'%';
