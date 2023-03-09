@@ -29,68 +29,64 @@ a	b
 9	9
 create procedure p1()
 begin
-refresh table refresh_sequoiadb_29898_1, refresh_sequoiadb_29898_2 stats;
-select * from refresh_sequoiadb_29898_1, refresh_sequoiadb_29898_2 where refresh_sequoiadb_29898_1.a=refresh_sequoiadb_29898_2.a order by refresh_sequoiadb_29898_1.a;
+refresh tables refresh_sequoiadb_29898_1, refresh_sequoiadb_29898_2 stats;
 select * from refresh_sequoiadb_29898_1 order by a;
 select * from refresh_sequoiadb_29898_2 order by a;
-insert into refresh_sequoiadb_29898_1 values(7,7);
+end //
+ERROR 0A000: REFRESH TABLES is not allowed in stored procedures
+create procedure p2()
+begin
+refresh tables stats;
 select * from refresh_sequoiadb_29898_1 order by a;
-alter table refresh_sequoiadb_29898_1 add c varchar(10);
-show create table refresh_sequoiadb_29898_1;
-select * from refresh_sequoiadb_29898_1 order by a;
-end|
+select * from refresh_sequoiadb_29898_2 order by a;
+end //
+ERROR 0A000: REFRESH TABLES is not allowed in stored procedures
 create function func1() returns int
 begin
 declare e int default 0;
-refresh table refresh_sequoiadb_29898_1,refresh_sequoiadb_29898_2 stats;
-insert into refresh_sequoiadb_29898_1 values(11,11);
+refresh tables refresh_sequoiadb_29898_1,refresh_sequoiadb_29898_2 stats;
+select * from refresh_sequoiadb_29898_1 order by a;
+select * from refresh_sequoiadb_29898_2 order by a;
 return e;
-end;
-//
-select func1();
-func1()
-0
-call p1();
-a	b	a	b
-a	b
-1	1
-2	2
-3	3
-4	4
-5	5
-6	6
-11	11
-a	b
-7	7
-8	8
-9	9
-a	b
-1	1
-2	2
-3	3
-4	4
-5	5
-6	6
-7	7
-11	11
-Table	Create Table
-refresh_sequoiadb_29898_1	CREATE TABLE `refresh_sequoiadb_29898_1` (
-  `a` int(11) DEFAULT NULL,
-  `b` int(11) DEFAULT NULL,
-  `c` varchar(10) DEFAULT NULL,
-  KEY `a` (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
-a	b	c
-1	1	NULL
-2	2	NULL
-3	3	NULL
-4	4	NULL
-5	5	NULL
-6	6	NULL
-7	7	NULL
-11	11	NULL
-drop function func1;
-drop procedure p1;
+end //
+ERROR 0A000: REFRESH TABLES is not allowed in stored procedures
+create function func2() returns int
+begin
+declare e int default 0;
+refresh tables stats;
+select * from refresh_sequoiadb_29898_1 order by a;
+select * from refresh_sequoiadb_29898_2 order by a;
+return e;
+end //
+ERROR 0A000: REFRESH TABLES is not allowed in stored procedures
+create trigger my_trigger after insert on refresh_sequoiadb_29898_1 for each row 
+begin 
+refresh tables stats;
+select * from refresh_sequoiadb_29898_1 order by a;
+select * from refresh_sequoiadb_29898_2 order by a;
+end //
+ERROR 0A000: REFRESH TABLES is not allowed in stored procedures
+create trigger my_trigger after insert on refresh_sequoiadb_29898_1 for each row 
+begin 
+refresh tables refresh_sequoiadb_29898_1,refresh_sequoiadb_29898_2 stats;
+select * from refresh_sequoiadb_29898_1 order by a;
+select * from refresh_sequoiadb_29898_2 order by a;
+end //
+ERROR 0A000: REFRESH TABLES is not allowed in stored procedures
+create event my_event on schedule every 1 minute do 
+begin
+refresh tables stats;
+select * from refresh_sequoiadb_29898_1 order by a;
+select * from refresh_sequoiadb_29898_2 order by a;
+end //
+ERROR 0A000: REFRESH TABLES is not allowed in stored procedures
+create event my_event on schedule every 1 minute do 
+begin
+refresh tables refresh_sequoiadb_29898_1,refresh_sequoiadb_29898_2 stats;
+select * from refresh_sequoiadb_29898_1 order by a;
+select * from refresh_sequoiadb_29898_2 order by a;
+end //
+ERROR 0A000: REFRESH TABLES is not allowed in stored procedures
 drop table refresh_sequoiadb_29898_1;
 drop table refresh_sequoiadb_29898_2;
 drop database refresh_sequoiadb_29898;
