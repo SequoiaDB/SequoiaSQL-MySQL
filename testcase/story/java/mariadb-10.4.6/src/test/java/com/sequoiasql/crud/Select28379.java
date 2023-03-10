@@ -17,8 +17,8 @@ import java.util.List;
  * @Description seqDB-28379:多范围查询时，end_range 右边界对于字符类型字段忽略条件
  * @Author xiaozhenfan
  * @CreateDate 2022/10/25
- * @UpdateAuthor xiaozhenfan
- * @UpdateDate 2022/10/25
+ * @UpdateAuthor zuodingquan
+ * @UpdateDate 2023/03/09
  */
 public class Select28379 extends MysqlTestBase {
     private String dbName = "db_28379";
@@ -193,16 +193,31 @@ public class Select28379 extends MysqlTestBase {
 
         // 在sql端analyze table
         jdbc.update( "analyze table " + tbName + ";" );
-        // 执行多范围查询,预期为查询操作执行成功
-        List< String > act = jdbc.query( "select count(*) from " + tbName
+        // 设置开关sequoiadb_lossy_end_range=off（range 索引扫描时忽略右边界索引条件）
+        jdbc.update("set session sequoiadb_lossy_end_range=off;");
+        // 执行多范围查询,预期为查询操作执行成功 , 当前开关状态sequoiadb_lossy_end_range=off
+        List< String > act1 = jdbc.query( "select count(*) from " + tbName
                 + " where ols_card_nbr = '123' and ols_tx_posting_date between 20210101 and 20220202 and ols_tx_code in (2003,2005);" );
+
+        // 在sql端analyze table
+        jdbc.update( "analyze table " + tbName + ";" );
+        // 设置开关sequoiadb_lossy_end_range=on（range 索引扫描时忽略右边界索引条件）
+        jdbc.update("set session sequoiadb_lossy_end_range=on;");
+        // 执行多范围查询,预期为查询操作执行成功 , 当前开关状态sequoiadb_lossy_end_range=on
+        List< String > act2 = jdbc.query( "select count(*) from " + tbName
+                + " where ols_card_nbr = '123' and ols_tx_posting_date between 20210101 and 20220202 and ols_tx_code in (2003,2005);" );
+
         // 校验结果都数据正确性
-        Assert.assertEquals( act.get( 0 ), "880" );
+        Assert.assertEquals(act1.get(0) , "880");
+        // 校验开关比对的结果正确性
+        Assert.assertEquals(act2.get(0) , "880");
     }
 
     @AfterClass
     public void tearDown() throws Exception {
         try {
+            //设置开关为默认值
+            jdbc.update("set session sequoiadb_lossy_end_range=default;");
             jdbc.dropDatabase( dbName );
         } finally {
             sdb.close();
