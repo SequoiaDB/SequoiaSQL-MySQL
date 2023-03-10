@@ -5301,7 +5301,7 @@ error:
 
 int ha_sdb::multi_range_read_next(range_id_t *range_info) {
   DBUG_ENTER("ha_sdb::multi_range_read_next()");
-  int rc = 0;
+  int rc = SDB_OK;
   sdb_key_range_info *cur_range = NULL;
 
   // add for self test to prefer range scan,
@@ -5322,9 +5322,11 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
   }
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
+    /* purecov: begin inspected */
     rc = HA_ERR_END_OF_FILE;
     table->status = STATUS_NOT_FOUND;
     goto error;
+    /* purecov: end */
   }
 
   /*
@@ -5335,18 +5337,29 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
   if (first_read) {
   continue_to_next_ranges:
     rc = multi_range_read_next_first();
-    if (0 != rc) {
+    if (SDB_OK != rc) {
       /*
-        1: EOF of the batch ranges.
-        2: range is full means there are still ranges unprocessed,
-           need another batch ranges read
+        (1) EOF of the batch ranges.
+        (2) range is full means there are still ranges unprocessed,
+            need another batch ranges read
       */
-      if (HA_ERR_END_OF_FILE == rc &&  //(1)
-          m_last_range_obj_is_full     //(2)
+      if (HA_ERR_END_OF_FILE == rc &&  // (1)
+          m_last_range_obj_is_full     // (2)
       ) {
+        /* purecov: begin inspected */
         table->status = 0;
         goto continue_to_next_ranges;
+        /* purecov: end */
       }
+
+      if (HA_ERR_END_OF_FILE != rc) {
+        /* purecov: begin inspected */
+        table->status = STATUS_NOT_FOUND;
+        handle_sdb_error(rc, MYF(0));
+        /* purecov: end */
+      }
+      /* EOF */
+      goto error;
     }
   } else {
   skip_and_continue_next_one:
@@ -5368,16 +5381,27 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
     }
 
     rc = index_next(table->record[0]);
-    if (rc != 0) {
+    if (SDB_OK != rc) {
       /*
-        1: EOF of the batch ranges.
-        2: range is full means there are still ranges unprocessed,
+        (1) EOF of the batch ranges.
+        (2) range is full means there are still ranges unprocessed,
            need another batch ranges read
       */
-      if (HA_ERR_END_OF_FILE == rc && m_last_range_obj_is_full) {
+      if (HA_ERR_END_OF_FILE == rc &&  // (1)
+          m_last_range_obj_is_full) {  // (2)
+        /* purecov: begin inspected */
         table->status = 0;
         goto continue_to_next_ranges;
+        /* purecov: end */
       }
+
+      if (HA_ERR_END_OF_FILE != rc) {
+        /* purecov: begin inspected */
+        table->status = STATUS_NOT_FOUND;
+        handle_sdb_error(rc, MYF(0));
+        /* purecov: end */
+      }
+      /* EOF */
       goto error;
     }
   }
