@@ -58,7 +58,7 @@ public class StatsRefresh_29913 extends MysqlTestBase {
         jdbc.update( "flush tables;" );
 
         // 创建分区表和普通表并插入数据
-        StatsRefreshUtils.createTbAndInit( jdbc, dbName, tb_part, tb_normal );
+        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part, tb_normal );
 
         // sdb侧刷新统计信息
         sdb.analyze();

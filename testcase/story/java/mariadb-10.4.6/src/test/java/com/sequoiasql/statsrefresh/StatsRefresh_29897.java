@@ -64,12 +64,12 @@ public class StatsRefresh_29897 extends MysqlTestBase {
         jdbc.update( "flush tables;" );
 
         // 创建分区表和普通表并插入数据
-        StatsRefreshUtils.createTbAndInit( jdbc, dbName1, tb_part, tb_normal );
+        StatsRefreshUtils.createTableAndInsert( jdbc, dbName1, tb_part, tb_normal );
         jdbc.update(
                 "create temporary table " + tb_tmp + " like " + tb_normal );
         jdbc.update( "insert into " + tb_tmp
                 + " values(1,'sequoiadb'),(2,'sequoiadb'),(112,'sequoiadb'),(4,'sequoiadb');" );
-        StatsRefreshUtils.createTbAndInit( jdbc, dbName2, tb_part, tb_normal );
+        StatsRefreshUtils.createTableAndInsert( jdbc, dbName2, tb_part, tb_normal );
         jdbc.update(
                 "create temporary table " + tb_tmp + " like " + tb_normal );
         jdbc.update( "insert into " + tb_tmp
