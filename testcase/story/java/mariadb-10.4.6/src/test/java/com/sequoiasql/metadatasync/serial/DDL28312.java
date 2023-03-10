@@ -45,7 +45,7 @@ public class DDL28312 extends MysqlTestBase {
         }
     }
 
-    @Test(enabled = false) // SEQUOIASQLMAINSTREAM-1597
+    @Test // SEQUOIASQLMAINSTREAM-1597
     public void test() throws Exception {
         // 构造回收站已满的场景
         jdbc.update( "create database " + dbName + ";" );
