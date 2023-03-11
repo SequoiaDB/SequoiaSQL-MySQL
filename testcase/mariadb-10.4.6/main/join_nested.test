@@ -1414,3 +1414,7 @@ DROP TABLE t1,t2,t3;
 set join_cache_level= @save_join_cache_level;
 
 set optimizer_switch=@save_optimizer_switch;
+
+--disable_warnings
+DROP TABLE IF EXISTS t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
+--enable_warnings

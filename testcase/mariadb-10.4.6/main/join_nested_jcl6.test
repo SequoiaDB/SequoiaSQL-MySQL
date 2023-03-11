@@ -14,6 +14,12 @@ show variables like 'join_cache_level';
 set @optimizer_switch_for_join_nested_test=@@optimizer_switch;
 set @join_cache_level_for_join_nested_test=@@join_cache_level;
 
+--disable_warnings
+DROP DATABASE IF EXISTS test_join_nested_jcl6;
+--enable_warnings
+
+CREATE DATABASE test_join_nested_jcl6;
+USE test_join_nested_jcl6;
 --source join_nested.test
 
 #
@@ -110,3 +116,4 @@ show variables like 'join_cache_level';
 set @@optimizer_switch=@save_optimizer_switch_jcl6;
 set @optimizer_switch_for_join_nested_test=NULL;
 set @join_cache_level_for_join_nested_test=NULL;
+DROP DATABASE test_join_nested_jcl6;
