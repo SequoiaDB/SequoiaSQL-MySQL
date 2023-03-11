@@ -122,7 +122,7 @@ public class StatsRefresh_29914 extends MysqlTestBase {
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             try {
                 jdbc.update( "use " + dbName + ";" );
-                jdbc.update( str );
+                jdbc.update( sqlStr );
             } catch ( SQLException e ) {
                 if ( e.getErrorCode() != 1213 ) {
                     throw e;
