@@ -1,10 +1,8 @@
 
 --disable_warnings
-#DROP TABLE IF EXISTS t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
-drop database if exists test_join_nested;
+DROP TABLE IF EXISTS t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
 --enable_warnings
-create database test_join_nested;
-use test_join_nested;
+
 SET @save_optimizer_switch=@@optimizer_switch;
 SET optimizer_switch=ifnull(@optimizer_switch_for_join_nested_test,'outer_join_with_cache=off');
 if (`select @join_cache_level_for_join_nested_test is null`)
@@ -1422,4 +1420,6 @@ DROP TABLE t1,t2,t3;
 set join_cache_level= @save_join_cache_level;
 
 set optimizer_switch=@save_optimizer_switch;
-drop database test_join_nested;
+--disable_warnings
+DROP TABLE IF EXISTS t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
+--enable_warnings
