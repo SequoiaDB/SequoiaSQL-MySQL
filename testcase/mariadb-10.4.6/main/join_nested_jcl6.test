@@ -14,8 +14,6 @@ show variables like 'join_cache_level';
 set @optimizer_switch_for_join_nested_test=@@optimizer_switch;
 set @join_cache_level_for_join_nested_test=@@join_cache_level;
 
---source join_nested.test
-
 #
 #
 # BUG#35835: queries with nested outer joins with BKA enabled
@@ -26,6 +24,9 @@ DROP DATABASE IF EXISTS test_join_nested_jcl6;
 
 CREATE DATABASE test_join_nested_jcl6;
 USE test_join_nested_jcl6;
+
+--source join_nested.test
+
 CREATE TABLE t5 (a int, b int, c int, PRIMARY KEY(a), KEY b_i (b));
 CREATE TABLE t6 (a int, b int, c int, PRIMARY KEY(a), KEY b_i (b));
 CREATE TABLE t7 (a int, b int, c int, PRIMARY KEY(a), KEY b_i (b));
