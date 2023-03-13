@@ -22,6 +22,7 @@
 #include "ha_sdb_condition.h"
 #include "ha_sdb_errcode.h"
 #include "ha_sdb_util.h"
+#include "ha_sdb_conf.h"
 
 ha_sdb_cond_ctx::ha_sdb_cond_ctx(TABLE *cur_table, THD *ha_thd,
                                  my_bitmap_map *pushed_cond_buff,
@@ -362,30 +363,35 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
   if (item && item->type() != Item_func::UNKNOWN_FUNC &&
       cond_item->type() == Item::FUNC_ITEM &&
       cond_item->const_item()) {
-    THD *thd = current_thd;
-    Dummy_error_handler dummy_handler;
-    bool is_warn_enabled = true;
+    if (current_thd && sdb_support_cond_const_bool(current_thd)) {
+      THD *thd = current_thd;
+      Dummy_error_handler dummy_handler;
+      bool is_warn_enabled = true;
 
-    delete item;
-    item = NULL;
+      delete item;
+      item = NULL;
 
-    if (!thd) {
-      goto done; /* purecov: inspected */
-    }
+      if (!thd) {
+        goto done; /* purecov: inspected */
+      }
 
-    if (sdb_item_can_ignore_warning(cond_item)) {
-      thd->push_internal_handler(&dummy_handler);
-      is_warn_enabled = false;
-    }
+      if (sdb_item_can_ignore_warning(cond_item)) {
+        thd->push_internal_handler(&dummy_handler);
+        is_warn_enabled = false;
+      }
 
-    if (MY_TEST(cond_item->val_int())) {
-      item = new Sdb_true_item(cond_item);
+      if (MY_TEST(cond_item->val_int())) {
+        item = new Sdb_true_item(cond_item);
+      } else {
+        item = new Sdb_false_item(cond_item);
+      }
+
+      if (!is_warn_enabled) {
+        thd->pop_internal_handler();
+      }
+
     } else {
-      item = new Sdb_false_item(cond_item);
-    }
-
-    if (!is_warn_enabled) {
-      thd->pop_internal_handler();
+      item = NULL;
     }
   }
 

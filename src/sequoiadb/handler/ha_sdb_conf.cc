@@ -543,6 +543,14 @@ static MYSQL_THDVAR_STR(
     /*表及索引统计信息替换文件的路径。*/,
     NULL, NULL, SDB_DEFAULT_DIAG_INFO_PATH);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    support_cond_const_bool, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Whether support pushing always true / false condition down. "
+    "(Default: ON)"
+    /* 是否支持下压永真永假条件 */,
+    NULL, NULL, TRUE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -583,6 +591,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(mapping_unit_count),
     MYSQL_SYSVAR(stats_flush_time_threshold),
     MYSQL_SYSVAR(diag_info_path),
+    MYSQL_SYSVAR(support_cond_const_bool),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -804,4 +813,8 @@ int sdb_stats_flush_time_threshold(THD *thd) {
 
 char *sdb_get_diag_info_path(THD *thd) {
   return THDVAR(thd, diag_info_path);
+}
+
+bool sdb_support_cond_const_bool(THD *thd) {
+  return THDVAR(thd, support_cond_const_bool);
 }
