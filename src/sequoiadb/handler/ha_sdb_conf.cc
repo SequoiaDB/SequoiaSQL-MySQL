@@ -593,6 +593,14 @@ static MYSQL_THDVAR_BOOL(
     /* 是否在 ::multi_range_read_info[_const] 函数完成所有 mrr 选择工作 */,
     NULL, NULL, TRUE);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    support_cond_const_bool, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Whether support pushing always true / false condition down. "
+    "(Default: ON)"
+    /* 是否支持下压永真永假条件 */,
+    NULL, NULL, TRUE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -639,6 +647,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(support_cond_not),
     MYSQL_SYSVAR(build_sort_cond_on_runtime),
     MYSQL_SYSVAR(choose_all_in_mrr_info),
+    MYSQL_SYSVAR(support_cond_const_bool),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -884,4 +893,8 @@ bool sdb_build_sort_cond_on_runtime(THD *thd) {
 
 bool sdb_choose_all_in_mrr_info(THD *thd) {
   return THDVAR(thd, choose_all_in_mrr_info);
+}
+
+bool sdb_support_cond_const_bool(THD *thd) {
+  return THDVAR(thd, support_cond_const_bool);
 }
