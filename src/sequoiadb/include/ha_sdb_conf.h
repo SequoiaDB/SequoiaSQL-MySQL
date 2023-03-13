@@ -107,6 +107,7 @@ int sdb_cls_pushdown_expand(THD *thd);
 bool sdb_support_cond_not(THD *thd);
 bool sdb_choose_all_in_mrr_info(THD *thd);
 bool sdb_build_sort_cond_on_runtime(THD *thd);
+bool sdb_support_cond_const_bool(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;
