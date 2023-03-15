@@ -40,6 +40,7 @@ create user u1;
 grant all on *.* to u1@'%';
 flush privileges;
 ##拥有全部权限
+set session refresh_all_cached_tables_supported=on;
 show grants for u1;
 Grants for u1@%
 GRANT ALL PRIVILEGES ON *.* TO 'u1'@'%'
@@ -50,6 +51,7 @@ revoke all on *.* from  u1@'%';
 grant all on refresh_tables_stats_29905_01.* to u1@'%';
 flush privileges;
 ##拥有某个数据库权限
+set session refresh_all_cached_tables_supported=on;
 show grants for u1;
 Grants for u1@%
 GRANT USAGE ON *.* TO 'u1'@'%'
@@ -64,6 +66,7 @@ revoke all on refresh_tables_stats_29905_01.* from u1@'%';
 grant all on refresh_tables_stats_29905_01.tb_normal to u1@'%';
 flush privileges;
 ##拥有一个数据库部分表权限
+set session refresh_all_cached_tables_supported=on;
 show grants for u1;
 Grants for u1@%
 GRANT USAGE ON *.* TO 'u1'@'%'
@@ -79,6 +82,7 @@ revoke all on refresh_tables_stats_29905_01.tb_normal from  u1@'%';
 grant select on *.* to u1@'%';
 flush privileges;
 ##只有查询权限
+set session refresh_all_cached_tables_supported=on;
 show grants for u1;
 Grants for u1@%
 GRANT SELECT ON *.* TO 'u1'@'%'
@@ -89,6 +93,7 @@ revoke select on *.* from u1@'%';
 grant update on *.* to u1@'%';
 flush privileges;
 ##只有更新权限
+set session refresh_all_cached_tables_supported=on;
 show grants for u1;
 Grants for u1@%
 GRANT UPDATE ON *.* TO 'u1'@'%'
@@ -99,6 +104,7 @@ revoke update on *.* from u1@'%';
 grant insert on *.* to u1@'%';
 flush privileges;
 ##只有插入权限
+set session refresh_all_cached_tables_supported=on;
 show grants for u1;
 Grants for u1@%
 GRANT INSERT ON *.* TO 'u1'@'%'
@@ -109,6 +115,7 @@ revoke insert on *.* from u1@'%';
 grant delete on *.* to u1@'%';
 flush privileges;
 ##只有删除权限
+set session refresh_all_cached_tables_supported=on;
 show grants for u1;
 Grants for u1@%
 GRANT DELETE ON *.* TO 'u1'@'%'

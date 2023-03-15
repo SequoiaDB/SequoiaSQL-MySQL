@@ -4,6 +4,8 @@
 drop database if exists refresh_sequoiadb_30328;
 --enable_warnings
 
+set session refresh_all_cached_tables_supported=on;
+
 flush tables;
 create database refresh_sequoiadb_30328;
 drop database refresh_sequoiadb_30328;
