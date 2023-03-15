@@ -30,30 +30,78 @@ insert into t1 values(null, null, null, 4);
 insert into t1 values(null, null, null, 4);
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt1.a is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt1.a is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where; Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where; Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt1.a is null and tt1.b is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt1.a is null and tt1.b is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	10	const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`b`)); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where; Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	10	const,const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`b`); Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt1.a is null and tt1.b is null and tt1.c is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt1.a is null and tt1.b is null and tt1.c is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	15	const,const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`b`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`c`)); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where; Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null and tt2.c is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null and tt2.c is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	15	const,const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`b`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`c`)); Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt1.a is null and tt1.b is null and tt1.c is null and tt1.d is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt1.a is null and tt1.b is null and tt1.c is null and tt1.d is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	20	const,const,const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`b`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`c`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`d`)); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where; Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null and tt2.c is null and tt2.d is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null and tt2.c is null and tt2.d is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	20	const,const,const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`b`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`c`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`d`)); Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b =4 and tt2.c is null and tt2.d is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b =4 and tt2.c is null and tt2.d is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	20	const,const,const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`c`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`d`)); Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a =4 and tt2.b is null and tt2.c is null and tt2.d is null;
 a	b	c	d	a	b	c	d
 4	NULL	NULL	NULL	4	NULL	NULL	NULL
 4	NULL	NULL	NULL	4	NULL	NULL	NULL
 4	NULL	NULL	NULL	4	NULL	NULL	NULL
 4	NULL	NULL	NULL	4	NULL	NULL	NULL
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a =4 and tt2.b is null and tt2.c is null and tt2.d is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	20	const,const,const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`b`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`c`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`d`)); Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null and tt2.c =4 and tt2.d is null;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null and tt2.c =4 and tt2.d is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	20	const,const,const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`b`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`d`)); Using index; Using join buffer (Batched Key Access)
 select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null and tt2.c is null and tt2.d =4;
 a	b	c	d	a	b	c	d
+explain select * from t1 tt1 join t1 tt2 where tt1.a=tt2.a and tt2.a is null and tt2.b is null and tt2.c is null and tt2.d =4;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tt1	NULL	ref	a,a_2,a_3,a_4	a_4	5	const	2	100.00	Using where with pushed condition isnull(`multi_key_bka_sequoiadb_30423`.`tt1`.`a`); Using index
+1	SIMPLE	tt2	NULL	ref	a,a_2,a_3,a_4	a_4	20	const,const,const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`b`) and isnull(`multi_key_bka_sequoiadb_30423`.`tt2`.`c`)); Using index; Using join buffer (Batched Key Access)
 drop database multi_key_bka_sequoiadb_30423;
