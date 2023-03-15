@@ -28,8 +28,9 @@
     </listeners>
 
     <test name="normaltest" parallel="classes" thread-count="5">
-        <packages>
-            <package name="com.sequoiasql.datasrc"/>
+	<packages>
+            <!--CI-1688 CI上数据源用例调整下线-->
+	    <!--<package name="com.sequoiasql.datasrc"/>-->
             <package name="com.sequoiasql.index"/>
             <package name="com.sequoiasql.crud"/>
             <package name="com.sequoiasql.ddl"/>
