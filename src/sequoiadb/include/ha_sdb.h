@@ -134,7 +134,7 @@ class sdb_batched_keys_ranges {
 
   int fill_ranges_buf(KEY_MULTI_RANGE &cur_range);
 
-  void build_probing_key();
+  bool build_probing_key();
 
   sdb_key_range_info *ranges_buf_first();
 

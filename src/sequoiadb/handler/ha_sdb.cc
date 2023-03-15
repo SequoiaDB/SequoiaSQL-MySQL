@@ -1729,7 +1729,8 @@ error:
   goto done;
 }
 
-void sdb_batched_keys_ranges::build_probing_key() {
+bool sdb_batched_keys_ranges::build_probing_key() {
+  bool null_reject = false;
   const KEY *key_info = m_table->key_info + m_active_index;
   const KEY_PART_INFO *key_part = key_info->key_part;
   /* clear the probing key.*/
@@ -1740,6 +1741,19 @@ void sdb_batched_keys_ranges::build_probing_key() {
   DBUG_ASSERT(table_ref);
   for (uint i = 0; i < table_ref->key_parts; i++, key_part++) {
     Field *fld = m_table->field[key_part->fieldnr - 1];
+    /* null rejecting, see add_not_null_conds() */
+    /*
+     * (1) key_part of table_ref is nullable.
+     * (2) the key_part of table_ref is null rejecting.
+     * (3) the field is null.
+     */
+    if (key_part->null_bit && table_ref->null_rejecting &&       // (1)
+        (table_ref->null_rejecting & ((key_part_map)1 << i)) &&  // (2)
+        fld->is_real_null()) {                                   // (3)
+      null_reject = true;
+      goto done;
+    }
+
     uchar *fld_ptr = fld->ptr;
     int fld_start_pos = 0;
     if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
@@ -1751,18 +1765,28 @@ void sdb_batched_keys_ranges::build_probing_key() {
     memcpy(key_probing_ptr, fld_ptr + fld_start_pos, key_part->length);
     key_probing_ptr += key_part->length;
   }
+done:
+  return null_reject;
 }
 
 sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_first() {
+  bool null_reject = false;
   const HASH *ranges_buf = &m_ranges_buf;
-  build_probing_key();
+  null_reject = build_probing_key();
+  if (null_reject) {
+    return NULL;
+  }
   return (sdb_key_range_info *)my_hash_first(ranges_buf, m_key_probing,
                                              m_key_length, &m_state);
 }
 
 sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_next() {
+  bool null_reject = false;
   const HASH *ranges_buf = &m_ranges_buf;
-  build_probing_key();
+  null_reject = build_probing_key();
+  if (null_reject) {
+    return NULL;
+  }
   return (sdb_key_range_info *)my_hash_next(ranges_buf, m_key_probing,
                                             m_key_length, &m_state);
 }
