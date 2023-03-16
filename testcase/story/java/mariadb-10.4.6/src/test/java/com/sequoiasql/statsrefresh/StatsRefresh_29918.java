@@ -61,9 +61,11 @@ public class StatsRefresh_29918 extends MysqlTestBase {
 
         // 清除其他数据表的sdb缓存，避免对用例造成影响
         jdbc1.update( "flush tables;" );
-
+        // 设置支持不指定表名refresh
+        jdbc1.update( "set session refresh_all_cached_tables_supported=on;" );
         // 创建分区表和普通表并插入数据
-        StatsRefreshUtils.createTableAndInsert( jdbc1, dbName, tb_part, tb_normal );
+        StatsRefreshUtils.createTableAndInsert( jdbc1, dbName, tb_part,
+                tb_normal );
         jdbc2.update( "use " + dbName + ";" );
 
         // sdb侧刷新统计信息
@@ -84,9 +86,10 @@ public class StatsRefresh_29918 extends MysqlTestBase {
                 dbName, tb_part ) );
 
         // 预期查询成功
-        ArrayList< String > query = jdbc2.query( "select " + tb_normal + ".b,"
-                + tb_part + ".c from " + tb_normal + "," + tb_part + " where "
-                + tb_normal + ".a=" + tb_part + ".a order by " + tb_part + ".c;" );
+        ArrayList< String > query = jdbc2
+                .query( "select " + tb_normal + ".b," + tb_part + ".c from "
+                        + tb_normal + "," + tb_part + " where " + tb_normal
+                        + ".a=" + tb_part + ".a order by " + tb_part + ".c;" );
         ArrayList< String > act = new ArrayList<>();
         act.add( "sequoiadb|2002-01-01" );
         act.add( "sequoiadb|2004-01-01" );

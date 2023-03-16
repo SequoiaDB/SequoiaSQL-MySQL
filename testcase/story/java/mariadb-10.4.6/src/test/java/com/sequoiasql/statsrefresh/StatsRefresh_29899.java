@@ -1,7 +1,5 @@
 package com.sequoiasql.statsrefresh;
 
-import java.util.ArrayList;
-
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -57,10 +55,13 @@ public class StatsRefresh_29899 extends MysqlTestBase {
 
         // 清除其他数据表的sdb缓存，避免对用例造成影响
         jdbc.update( "flush tables;" );
-
+        // 设置支持不指定表名refresh
+        jdbc.update( "set session refresh_all_cached_tables_supported=on;" );
         // 创建分区表和普通表并插入数据
-        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part, tb_normal );
-        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part1, tb_normal1 );
+        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part,
+                tb_normal );
+        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part1,
+                tb_normal1 );
 
         // sdb侧刷新统计信息
         sdb.analyze();

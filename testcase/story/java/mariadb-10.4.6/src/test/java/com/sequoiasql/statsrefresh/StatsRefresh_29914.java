@@ -118,9 +118,12 @@ public class StatsRefresh_29914 extends MysqlTestBase {
 
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            JdbcInterface jdbc = JdbcInterfaceFactory
-                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            JdbcInterface jdbc = null;
             try {
+                jdbc = JdbcInterfaceFactory
+                        .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+                jdbc.update(
+                        "set session refresh_all_cached_tables_supported=on;" );
                 jdbc.update( "use " + dbName + ";" );
                 jdbc.update( sqlStr );
             } catch ( SQLException e ) {

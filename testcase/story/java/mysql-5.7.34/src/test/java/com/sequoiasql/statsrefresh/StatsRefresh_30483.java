@@ -1,8 +1,5 @@
 package com.sequoiasql.statsrefresh;
 
-import java.util.ArrayList;
-
-import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -60,8 +57,8 @@ public class StatsRefresh_30483 extends MysqlTestBase {
         jdbc.update( "flush tables;" );
 
         // 创建分区表和普通表并插入数据
-        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part, tb_normal );
-
+        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part,
+                tb_normal );
 
         String refresh_sql1 = "refresh tables stats;";
         String refresh_sql2 = "refresh tables " + tb_normal + "," + tb_part
@@ -69,7 +66,6 @@ public class StatsRefresh_30483 extends MysqlTestBase {
         String refresh_sql3 = "refresh tables " + tb_part + " stats;";
         String analyze_sql1 = "analyze table " + tb_normal + ";";
         String analyze_sql2 = "analyze table " + tb_part + ";";
-
 
         Operate analyze1 = new Operate( analyze_sql1 );
         Operate analyze2 = new Operate( analyze_sql2 );
@@ -109,7 +105,8 @@ public class StatsRefresh_30483 extends MysqlTestBase {
             try {
                 jdbc = JdbcInterfaceFactory
                         .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-                jdbc.update("set session refresh_all_cached_tables_supported=on");
+                jdbc.update(
+                        "set session refresh_all_cached_tables_supported=on" );
                 jdbc.update( "use " + dbName + ";" );
                 for ( int i = 0; i < 100; i++ ) {
                     jdbc.update( sqlStr );
