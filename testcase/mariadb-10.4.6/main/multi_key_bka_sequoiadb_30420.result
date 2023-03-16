@@ -1219,14 +1219,14 @@ select STRAIGHT_JOIN * from `t1` as table1 JOIN `t2` as table2 on table1.`col_in
 col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11	col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11
 explain select STRAIGHT_JOIN * from `t1` as table1 JOIN `t2` as table2 on table1.`col_int_11`=table2.`col_int_11` where table1.`col_int_11` IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	table1	ref	index_01,index_02,index_03,index_04,index_05	index_01	5	const	2	Using where with pushed condition
-1	SIMPLE	table2	ref	index_01,index_02,index_03,index_04,index_05	index_01	5	const	2	Using where
+1	SIMPLE	table1	range	index_01,index_02,index_03,index_04,index_05	index_04	5	NULL	2	Using where with pushed condition
+1	SIMPLE	table2	ref	index_01,index_02,index_03,index_04,index_05	index_01	5	multi_key_bka_sequoiadb_30420.table1.col_int_11	2	
 select STRAIGHT_JOIN * from `t1` as table1 JOIN `t2` as table2 on table1.`col_int_11`=table2.`col_int_18` where table1.`col_int_11` IS NULL;
 col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11	col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11
 explain select STRAIGHT_JOIN * from `t1` as table1 JOIN `t2` as table2 on table1.`col_int_11`=table2.`col_int_18` where table1.`col_int_11` IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	table1	ref	index_01,index_02,index_03,index_04,index_05	index_01	5	const	2	Using where with pushed condition
-1	SIMPLE	table2	ref	index_06	index_06	5	const	2	Using where
+1	SIMPLE	table1	range	index_01,index_02,index_03,index_04,index_05	index_04	5	NULL	2	Using where with pushed condition
+1	SIMPLE	table2	ref	index_06	index_06	5	multi_key_bka_sequoiadb_30420.table1.col_int_11	2	
 set session optimizer_switch= "mrr=on,mrr_cost_based=off";
 select * from `t2` as table1 JOIN `t1` as table2 on table1.`col_varchar_28`=table2.`col_varchar_28` where table1.`col_int_11` BETWEEN 2 AND ( 2 + 7 ) and table2.`col_int_11` IS NULL;
 col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11	col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11
@@ -1238,14 +1238,14 @@ select STRAIGHT_JOIN * from `t1` as table1 JOIN `t2` as table2 on table1.`col_in
 col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11	col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11
 explain select STRAIGHT_JOIN * from `t1` as table1 JOIN `t2` as table2 on table1.`col_int_11`=table2.`col_int_11` where table1.`col_int_11` IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	table1	ref	index_01,index_02,index_03,index_04,index_05	index_01	5	const	2	Using where with pushed condition
-1	SIMPLE	table2	ref	index_01,index_02,index_03,index_04,index_05	index_01	5	const	2	Using index condition(BKA); Using where; Using join buffer (flat, BKAH join); Using MRR
+1	SIMPLE	table1	range	index_01,index_02,index_03,index_04,index_05	index_04	5	NULL	2	Using where with pushed condition
+1	SIMPLE	table2	ref	index_01,index_02,index_03,index_04,index_05	index_01	5	multi_key_bka_sequoiadb_30420.table1.col_int_11	2	Using join buffer (flat, BKAH join); Using MRR
 select STRAIGHT_JOIN * from `t1` as table1 JOIN `t2` as table2 on table1.`col_int_11`=table2.`col_int_18` where table1.`col_int_11` IS NULL;
 col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11	col_int_18	col_varchar_16	col_varchar_28	pk	col_int_11
 explain select STRAIGHT_JOIN * from `t1` as table1 JOIN `t2` as table2 on table1.`col_int_11`=table2.`col_int_18` where table1.`col_int_11` IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	table1	ref	index_01,index_02,index_03,index_04,index_05	index_01	5	const	2	Using where with pushed condition
-1	SIMPLE	table2	ref	index_06	index_06	5	const	2	Using index condition(BKA); Using where; Using join buffer (flat, BKAH join); Using MRR
+1	SIMPLE	table1	range	index_01,index_02,index_03,index_04,index_05	index_04	5	NULL	2	Using where with pushed condition
+1	SIMPLE	table2	ref	index_06	index_06	5	multi_key_bka_sequoiadb_30420.table1.col_int_11	2	Using join buffer (flat, BKAH join); Using MRR
 drop table t1;
 drop table t2;
 CREATE TABLE `t1` (
