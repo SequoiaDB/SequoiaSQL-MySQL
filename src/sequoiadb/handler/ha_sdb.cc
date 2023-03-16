@@ -1732,6 +1732,7 @@ error:
 
 bool sdb_batched_keys_ranges::build_probing_key() {
   bool null_reject = false;
+  THD *thd = (m_table && m_table->in_use) ? m_table->in_use : current_thd;
   const KEY *key_info = m_table->key_info + m_active_index;
   const KEY_PART_INFO *key_part = key_info->key_part;
   /* clear the probing key.*/
@@ -1742,15 +1743,17 @@ bool sdb_batched_keys_ranges::build_probing_key() {
   DBUG_ASSERT(table_ref);
   for (uint i = 0; i < table_ref->key_parts; i++, key_part++) {
     Field *fld = m_table->field[key_part->fieldnr - 1];
-    /* null rejecting, see add_not_null_conds() */
     /*
-     * (1) key_part of table_ref is nullable.
-     * (2) the key_part of table_ref is null rejecting.
-     * (3) the field is null.
+     * null rejecting, see add_not_null_conds()
+     * (1) sequoiadb_enable_null_reject_for_bka_join is ON.
+     * (2) key_part of table_ref is nullable.
+     * (3) the key_part of table_ref is null rejecting.
+     * (4) the field is null.
      */
-    if (key_part->null_bit && table_ref->null_rejecting &&       // (1)
-        (table_ref->null_rejecting & ((key_part_map)1 << i)) &&  // (2)
-        fld->is_real_null()) {                                   // (3)
+    if (thd && sdb_enable_null_reject_for_bka_join(thd) &&       // (1)
+        key_part->null_bit && table_ref->null_rejecting &&       // (2)
+        (table_ref->null_rejecting & ((key_part_map)1 << i)) &&  // (3)
+        fld->is_real_null()) {                                   // (4)
       null_reject = true;
       goto done;
     }

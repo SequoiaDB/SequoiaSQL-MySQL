@@ -601,6 +601,14 @@ static MYSQL_THDVAR_BOOL(
     /* 是否支持下压永真永假条件 */,
     NULL, NULL, TRUE);
 
+// SDB_DOC_OPT = IGNORE
+static MYSQL_THDVAR_BOOL(
+    enable_null_reject_for_bka_join, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "Whether enable null reject for batched keys access join or not. "
+    "(Default: ON)"
+    /* 是否在 BKA JOIN 中启用 null_reject */,
+    NULL, NULL, TRUE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -648,6 +656,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(build_sort_cond_on_runtime),
     MYSQL_SYSVAR(choose_all_in_mrr_info),
     MYSQL_SYSVAR(support_cond_const_bool),
+    MYSQL_SYSVAR(enable_null_reject_for_bka_join),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -897,4 +906,8 @@ bool sdb_choose_all_in_mrr_info(THD *thd) {
 
 bool sdb_support_cond_const_bool(THD *thd) {
   return THDVAR(thd, support_cond_const_bool);
+}
+
+bool sdb_enable_null_reject_for_bka_join(THD *thd) {
+  return THDVAR(thd, enable_null_reject_for_bka_join);
 }
