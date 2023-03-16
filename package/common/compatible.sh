@@ -24,8 +24,8 @@ function checkVsnPara()
       exit 1
    fi
 
-   #can't be more than 3, eg 1.12.5.1
-   if [ $len -gt 3 ]
+   #can't be more than 4, eg 3.4.8.1
+   if [ $len -gt 4 ]
       then
          echo "error format of version : $vsn"
          exit 1
@@ -43,15 +43,16 @@ function checkVsnPara()
    done
 }
 
-# add zero to version, eg "1.12" -> "1.12.0"
+# add zero to version, eg "1.12" -> "1.12.0.0"
 function formatVsn()
 {
    local vsn="$1"
    local vsnArr=(`tr "." " " <<< $vsn`)
    local len=${#vsnArr[@]}
 
-   if [ $len -eq 1 ]; then vsn="${vsn}.0.0"; echo $vsn; return 0; fi
-   if [ $len -eq 2 ]; then vsn="${vsn}.0";   echo $vsn; return 0; fi
+   if [ $len -eq 1 ]; then vsn="${vsn}.0.0.0"; echo $vsn; return 0; fi
+   if [ $len -eq 2 ]; then vsn="${vsn}.0.0";   echo $vsn; return 0; fi
+   if [ $len -eq 3 ]; then vsn="${vsn}.0";     echo $vsn; return 0; fi
 
    echo $vsn; return 0;
 }
@@ -133,9 +134,9 @@ checkVsnPara $newVsn
 oldVsn=`formatVsn $oldVsn`
 newVsn=`formatVsn $newVsn`
 
-vsnLen=3
+vsnLen=4
 #compare with 3.2
-result=`compareTwoVsn $oldVsn 3.2.0`
+result=`compareTwoVsn $oldVsn 3.2.0.0`
 if [ $result == "less" ];   then echo false;  exit 3; fi
 
 result=`compareTwoVsn $oldVsn $newVsn`
