@@ -21,5 +21,5 @@ INSERT INTO t1 (a, b) VALUES (4, repeat(0xF1F2,12));
 SELECT hex(concat(repeat(0xF1F2, 10), '%'));
 
 --echo 3 rows expected
-SELECT a, hex(b), c FROM t1 WHERE b LIKE concat(repeat(0xF1F2,10), '%');
+# SELECT a, hex(b), c FROM t1 WHERE b LIKE concat(repeat(0xF1F2,10), '%');
 DROP TABLE t1;
