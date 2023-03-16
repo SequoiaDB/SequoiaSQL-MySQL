@@ -1102,7 +1102,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain  replace into replace_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
 --sorted_result
-select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
+select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4,col1 limit 0,1) order by col4 desc;
 --source include/query_pushdown_condition_sequoiadb_3.inc
  --sorted_result
 select * from replace_table7;

@@ -1857,24 +1857,19 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 1	REPLACE	replace_table7	NULL	ALL	NULL	NULL	NULL	NULL	#	#	NULL
 1	PRIMARY	t2_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t2_partition`.`col1` < (/* select#2 */ select `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` from `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition` where (`count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` >= 5) order by `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col4` limit 0,1)); Using filesort
 2	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	NULL	idx_col1,idx_col12	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` >= 5); Using pushed ORDER BY; Storage engine handles access type
-select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
+select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4,col1 limit 0,1) order by col4 desc;
 col4
 NULL
 abc
 abcdef
-abcdef
-def
-def
-def
 def
 defg
 efg
 xyz 
 xyz 
-xyz 
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 5 } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 5 } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 10 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 5 } }], selector[{}], order_by[{ "col4": 1, "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2_partition]
 select * from replace_table7;
 col4
 truncate table replace_table7;
