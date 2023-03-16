@@ -5443,9 +5443,8 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
       }
       *range_info = (char *)cur_range->ptr;
     } else if (SDB_OK == rc) {
-      /* The current record cannot be matched with any records in the
-         join_buffer using the hash method, go through the next record. */
-      goto skip_and_continue_next_one;
+      /* should never happen */
+      assert(0);
     } else if (HA_ERR_END_OF_FILE != rc) {
       /* purecov: begin inspected */
       table->status = STATUS_NOT_FOUND;
