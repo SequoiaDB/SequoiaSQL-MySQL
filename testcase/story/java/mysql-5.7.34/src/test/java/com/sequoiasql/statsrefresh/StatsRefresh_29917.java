@@ -12,6 +12,8 @@ import com.sequoiadb.threadexecutor.ThreadExecutor;
 import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
 import com.sequoiasql.testcommon.*;
 
+import java.sql.SQLException;
+
 /**
  * @Descreption seqDB-29917:并发执行refresh语句
  * @Author chenzejia
@@ -56,9 +58,11 @@ public class StatsRefresh_29917 extends MysqlTestBase {
 
         // 清除其他数据表的sdb缓存，避免对用例造成影响
         jdbc.update( "flush tables;" );
-
+        // 设置支持不指定表名refresh
+        jdbc.update( "set session refresh_all_cached_tables_supported=on;" );
         // 创建分区表和普通表并插入数据
-        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part, tb_normal );
+        StatsRefreshUtils.createTableAndInsert( jdbc, dbName, tb_part,
+                tb_normal );
 
         // sdb侧刷新统计信息
         sdb.analyze();
@@ -128,7 +132,13 @@ public class StatsRefresh_29917 extends MysqlTestBase {
 
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            jdbc.update( sqlStr );
+            try {
+                jdbc.update( sqlStr );
+            } catch ( SQLException e ) {
+                if ( e.getErrorCode() != 1213 ) {
+                    throw e;
+                }
+            }
         }
     }
 
@@ -142,11 +152,18 @@ public class StatsRefresh_29917 extends MysqlTestBase {
 
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            JdbcInterface jdbc = JdbcInterfaceFactory
-                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            JdbcInterface jdbc = null;
             try {
+                jdbc = JdbcInterfaceFactory
+                        .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+                jdbc.update(
+                        "set session refresh_all_cached_tables_supported=on;" );
                 jdbc.update( "use " + dbName + ";" );
                 jdbc.update( sqlStr );
+            } catch ( SQLException e ) {
+                if ( e.getErrorCode() != 1213 ) {
+                    throw e;
+                }
             } finally {
                 jdbc.close();
             }

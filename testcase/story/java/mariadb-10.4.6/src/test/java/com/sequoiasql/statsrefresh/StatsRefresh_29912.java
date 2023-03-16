@@ -7,9 +7,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import com.sequoiadb.base.Sequoiadb;
-import com.sequoiadb.threadexecutor.ResultStore;
-import com.sequoiadb.threadexecutor.ThreadExecutor;
-import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
 import com.sequoiasql.testcommon.*;
 
 /**
@@ -63,10 +60,11 @@ public class StatsRefresh_29912 extends MysqlTestBase {
 
         // 清除其他数据表的sdb缓存，避免对用例造成影响
         jdbc1.update( "flush tables;" );
-        jdbc2.update( "flush tables;" );
-
+        // 设置支持不指定表名refresh
+        jdbc1.update( "set session refresh_all_cached_tables_supported=on;" );
         // 创建分区表和普通表并插入数据
-        StatsRefreshUtils.createTableAndInsert( jdbc1, dbName, tb_part, tb_normal );
+        StatsRefreshUtils.createTableAndInsert( jdbc1, dbName, tb_part,
+                tb_normal );
         jdbc2.update( "use " + dbName + ";" );
 
         // sdb侧刷新统计信息
@@ -77,18 +75,11 @@ public class StatsRefresh_29912 extends MysqlTestBase {
                 + " stats;";
         String refresh_sql3 = "refresh tables " + tb_part + " stats;";
 
-        Refresh refresh1 = new Refresh( refresh_sql1, jdbc1 );
-        Refresh refresh2 = new Refresh( refresh_sql2, jdbc1 );
-        Refresh refresh3 = new Refresh( refresh_sql3, jdbc1 );
-
-        ThreadExecutor es1 = new ThreadExecutor();
-        es1.addWorker( refresh1 );
-        es1.addWorker( refresh2 );
-        es1.addWorker( refresh3 );
-
         long currentTime1 = StatsRefreshUtils.getMysqlTime( jdbc1 );
 
-        es1.run();
+        jdbc1.update( refresh_sql1 );
+        jdbc1.update( refresh_sql2 );
+        jdbc1.update( refresh_sql3 );
 
         // 实例1统计信息刷新成功
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc1, currentTime1,
@@ -97,12 +88,10 @@ public class StatsRefresh_29912 extends MysqlTestBase {
                 dbName, tb_part ) );
 
         // 实例2统计信息未刷新
-        Long lastRefreshTime1 = StatsRefreshUtils.getLastRefreshTime( jdbc2,
-                dbName, tb_normal );
-        Long lastRefreshTime2 = StatsRefreshUtils.getLastRefreshTime( jdbc2,
-                dbName, tb_part );
-        Assert.assertNull( lastRefreshTime1 );
-        Assert.assertNull( lastRefreshTime2 );
+        Assert.assertFalse( StatsRefreshUtils.isRefresh( jdbc2, currentTime1,
+                dbName, tb_normal ) );
+        Assert.assertFalse( StatsRefreshUtils.isRefresh( jdbc2, currentTime1,
+                dbName, tb_part ) );
 
     }
 
@@ -114,21 +103,6 @@ public class StatsRefresh_29912 extends MysqlTestBase {
             sdb.close();
             jdbc1.close();
             jdbc2.close();
-        }
-    }
-
-    private class Refresh extends ResultStore {
-        private String sqlStr;
-        private JdbcInterface jdbc;
-
-        public Refresh( String sqlStr, JdbcInterface jdbc ) {
-            this.sqlStr = sqlStr;
-            this.jdbc = jdbc;
-        }
-
-        @ExecuteOrder(step = 1)
-        public void exec() throws Exception {
-            jdbc.update( sqlStr );
         }
     }
 }

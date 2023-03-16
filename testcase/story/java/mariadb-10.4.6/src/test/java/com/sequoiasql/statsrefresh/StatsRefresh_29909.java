@@ -12,6 +12,8 @@ import com.sequoiadb.threadexecutor.ThreadExecutor;
 import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
 import com.sequoiasql.testcommon.*;
 
+import java.sql.SQLException;
+
 /**
  * @Descreption seqDB-29909:多个实例并发执行DQL语句和refresh语句
  * @Author chenzejia
@@ -63,9 +65,12 @@ public class StatsRefresh_29909 extends MysqlTestBase {
         // 清除其他数据表的sdb缓存，避免对用例造成影响
         jdbc1.update( "flush tables;" );
         jdbc2.update( "flush tables;" );
-
+        // 设置支持不指定表名refresh
+        jdbc1.update( "set session refresh_all_cached_tables_supported=on;" );
+        jdbc2.update( "set session refresh_all_cached_tables_supported=on;" );
         // 创建分区表和普通表并插入数据
-        StatsRefreshUtils.createTableAndInsert( jdbc1, dbName, tb_part, tb_normal );
+        StatsRefreshUtils.createTableAndInsert( jdbc1, dbName, tb_part,
+                tb_normal );
         jdbc2.update( "use " + dbName + ";" );
 
         // sdb侧刷新统计信息
@@ -75,7 +80,7 @@ public class StatsRefresh_29909 extends MysqlTestBase {
                 + ".c from " + tb_normal + "," + tb_part + " where " + tb_normal
                 + ".a=" + tb_part + ".a;";
         String select_sql2 = "select * from " + tb_part + ";";
-        String refresh_sql1 = "refresh tables stats;";
+        String refresh_sql1 = "refresh tables  stats;";
         String refresh_sql2 = "refresh tables " + tb_normal + "," + tb_part
                 + " stats;";
         String refresh_sql3 = "refresh tables " + tb_part + " stats;";
@@ -181,7 +186,7 @@ public class StatsRefresh_29909 extends MysqlTestBase {
         private JdbcInterface jdbc;
 
         public SingleConn( String querySql, String refreshSql,
-                           JdbcInterface jdbc ) {
+                JdbcInterface jdbc ) {
             this.querySql = querySql;
             this.refreshSql = refreshSql;
             this.jdbc = jdbc;
@@ -189,11 +194,16 @@ public class StatsRefresh_29909 extends MysqlTestBase {
 
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            for ( int i = 0; i < 50; i++ ) {
-                jdbc.query( querySql );
-                jdbc.update( refreshSql );
+            try {
+                for ( int i = 0; i < 50; i++ ) {
+                    jdbc.query( querySql );
+                    jdbc.update( refreshSql );
+                }
+            } catch ( SQLException e ) {
+                if ( e.getErrorCode() != 1213 ) {
+                    throw e;
+                }
             }
-
         }
     }
 
@@ -204,7 +214,7 @@ public class StatsRefresh_29909 extends MysqlTestBase {
         private JdbcWarpperType jdbcWarpperType;
 
         public MultiConn( String querySql, String refreshSql,
-                          JdbcWarpperType jdbcWarpperType ) {
+                JdbcWarpperType jdbcWarpperType ) {
             this.querySql = querySql;
             this.refreshSql = refreshSql;
             this.jdbcWarpperType = jdbcWarpperType;
@@ -212,12 +222,19 @@ public class StatsRefresh_29909 extends MysqlTestBase {
 
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            JdbcInterface jdbc = JdbcInterfaceFactory.build( jdbcWarpperType );
+            JdbcInterface jdbc = null;
             try {
+                jdbc = JdbcInterfaceFactory.build( jdbcWarpperType );
+                jdbc.update(
+                        "set session refresh_all_cached_tables_supported=on;" );
                 jdbc.update( "use " + dbName + ";" );
                 for ( int i = 0; i < 50; i++ ) {
                     jdbc.query( querySql );
                     jdbc.update( refreshSql );
+                }
+            } catch ( SQLException e ) {
+                if ( e.getErrorCode() != 1213 ) {
+                    throw e;
                 }
             } finally {
                 jdbc.close();

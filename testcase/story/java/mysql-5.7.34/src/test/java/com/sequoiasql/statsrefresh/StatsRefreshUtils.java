@@ -94,8 +94,8 @@ public class StatsRefreshUtils extends MysqlTestBase {
      * @param tb_normal
      * @throws Exception
      */
-    public static void createTableAndInsert(JdbcInterface jdbc, String dbName,
-                                            String tb_part, String tb_normal ) throws Exception {
+    public static void createTableAndInsert( JdbcInterface jdbc, String dbName,
+            String tb_part, String tb_normal ) throws Exception {
         jdbc.update( "use " + dbName + ";" );
         jdbc.update( "create table " + tb_normal
                 + "(a int primary key,b varchar(128),key (b));" );
