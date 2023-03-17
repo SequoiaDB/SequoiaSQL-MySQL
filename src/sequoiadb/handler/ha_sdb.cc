@@ -1750,10 +1750,22 @@ bool sdb_batched_keys_ranges::build_probing_key() {
      * (3) the key_part of table_ref is null rejecting.
      * (4) the field is null.
      */
-    if (thd && sdb_enable_null_reject_for_bka_join(thd) &&       // (1)
-        key_part->null_bit && table_ref->null_rejecting &&       // (2)
-        (table_ref->null_rejecting & ((key_part_map)1 << i)) &&  // (3)
-        fld->is_real_null()) {                                   // (4)
+    bool is_keypart_null_rejecting = false;
+    if (table_ref->items[i]->const_item()) {
+      if (table_ref->items[i]->real_item()->type() != Item::NULL_ITEM) {
+        is_keypart_null_rejecting = true;
+      } else {
+        is_keypart_null_rejecting = false;
+      }
+    } else {
+      is_keypart_null_rejecting =
+          (table_ref->null_rejecting & ((key_part_map)1 << i));
+    }
+
+    if (thd && sdb_enable_null_reject_for_bka_join(thd) &&  // (1)
+        key_part->null_bit &&                               // (2)
+        is_keypart_null_rejecting &&                        // (3)
+        fld->is_real_null()) {                              // (4)
       null_reject = true;
       goto done;
     }
