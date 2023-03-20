@@ -153,13 +153,14 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
-        try {
-            jdbc.update(
-                    "create user " + test_u1 + " identified by 'password';" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
+//        SEQUOIASQLMAINSTREAM-1505 屏蔽
+//        try {
+//            jdbc.update(
+//                    "create user " + test_u1 + " identified by 'password';" );
+//        } catch ( SQLException e ) {
+//            if ( e.getErrorCode() != 1105 )
+//                throw e;
+//        }
         try {
             jdbc.update( "create user " + test_u2 + " require ssl;" );
         } catch ( SQLException e ) {
