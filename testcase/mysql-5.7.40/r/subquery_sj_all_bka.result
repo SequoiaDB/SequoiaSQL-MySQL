@@ -1,3 +1,6 @@
+drop database if exists subquery_sj_all_bka;
+create database subquery_sj_all_bka;
+use subquery_sj_all_bka;
 set optimizer_switch='batched_key_access=on,mrr_cost_based=off';
 set optimizer_switch='semijoin=on,materialization=on,firstmatch=on,loosescan=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=off';
 set @old_opt_switch=@@optimizer_switch;
@@ -7310,3 +7313,4 @@ a	b
 DROP TABLE t;
 set optimizer_switch=default;
 set optimizer_switch=default;
+drop database subquery_sj_all_bka;
