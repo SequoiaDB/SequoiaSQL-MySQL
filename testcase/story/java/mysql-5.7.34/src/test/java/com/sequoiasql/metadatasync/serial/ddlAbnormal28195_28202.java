@@ -3,7 +3,6 @@ package com.sequoiasql.metadatasync.serial;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -11,12 +10,12 @@ import org.testng.annotations.Test;
 
 import com.sequoiadb.base.DBCollection;
 import com.sequoiadb.base.Sequoiadb;
+import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 import com.sequoiasql.testcommon.CommLib;
 import com.sequoiasql.testcommon.JdbcInterface;
 import com.sequoiasql.testcommon.JdbcInterfaceFactory;
 import com.sequoiasql.testcommon.JdbcWarpperType;
 import com.sequoiasql.testcommon.MysqlTestBase;
-import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 
 /**
  * @Description seqDB-28195:create对象时异常，查看pending log
@@ -153,14 +152,15 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
-//        SEQUOIASQLMAINSTREAM-1505 屏蔽
-//        try {
-//            jdbc.update(
-//                    "create user " + test_u1 + " identified by 'password';" );
-//        } catch ( SQLException e ) {
-//            if ( e.getErrorCode() != 1105 )
-//                throw e;
-//        }
+        try {
+            // SEQUOIASQLMAINSTREAM-1505 暂时屏蔽 " identified by 'password';"
+            // jdbc.update(
+            // "create user " + test_u1 + " identified by 'password';" );
+            jdbc.update( "create user " + test_u1 + ";" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
         try {
             jdbc.update( "create user " + test_u2 + " require ssl;" );
         } catch ( SQLException e ) {
