@@ -35,20 +35,28 @@ public class MetaDataMapping24577 extends MysqlTestBase {
 
     @BeforeClass
     public void setUp() throws Exception {
-        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        if ( CommLib.isStandAlone( sdb ) ) {
-            throw new SkipException( "is standalone skip testcase" );
+        try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            if ( CommLib.isStandAlone( sdb ) ) {
+                throw new SkipException( "is standalone skip testcase" );
+            }
+            jdbc = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbc.dropDatabase( csName );
+            jdbc.createDatabase( csName );
+            String table1 = "create table " + csName + "." + clName1
+                    + "(a int,b int) partition by range(a) subpartition by hash(b) subpartitions 3 (partition p1 values less than(1500),partition p2 values less than maxvalue);";
+            jdbc.update( table1 );
+            String table2 = "create table " + csName + "." + clName2
+                    + "(a int,b int) partition by range(a) subpartition by key(b) subpartitions 3 (partition p1 values less than(1500),partition p2 values less than maxvalue);";
+            jdbc.update( table2 );
+        } catch ( Exception e ) {
+            if ( sdb != null )
+                sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
+            throw e;
         }
-        jdbc = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbc.dropDatabase( csName );
-        jdbc.createDatabase( csName );
-        String table1 = "create table " + csName + "." + clName1
-                + "(a int,b int) partition by range(a) subpartition by hash(b) subpartitions 3 (partition p1 values less than(1500),partition p2 values less than maxvalue);";
-        jdbc.update( table1 );
-        String table2 = "create table " + csName + "." + clName2
-                + "(a int,b int) partition by range(a) subpartition by key(b) subpartitions 3 (partition p1 values less than(1500),partition p2 values less than maxvalue);";
-        jdbc.update( table2 );
     }
 
     @Test

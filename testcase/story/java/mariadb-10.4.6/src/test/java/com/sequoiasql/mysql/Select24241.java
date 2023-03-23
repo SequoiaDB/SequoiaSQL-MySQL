@@ -1,8 +1,3 @@
-/**
- * @Descreption   seqDB-24241:驱动调用 prepare stmt操作
- * @Author YinXiaoXia
- * @Date 2022/4/24
- */
 package com.sequoiasql.mysql;
 
 import java.sql.DriverManager;
@@ -12,7 +7,6 @@ import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import com.mysql.jdbc.Driver;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
 import com.sequoiadb.base.Sequoiadb;
@@ -22,12 +16,17 @@ import com.sequoiasql.testcommon.JdbcInterfaceFactory;
 import com.sequoiasql.testcommon.JdbcWarpperType;
 import com.sequoiasql.testcommon.MysqlTestBase;
 
+/**
+ * @Descreption seqDB-24241:驱动调用 prepare stmt操作
+ * @Author YinXiaoXia
+ * @Date 2022/4/24
+ */
 public class Select24241 extends MysqlTestBase {
     private String dbName = "db_24241";
     private String tbName = "tb_24241";
     private Sequoiadb sdb;
     private JdbcInterface jdbc;
-    
+
     @BeforeClass
     public void setUp() throws Exception {
         try {
@@ -46,6 +45,7 @@ public class Select24241 extends MysqlTestBase {
             if ( jdbc != null ) {
                 jdbc.close();
             }
+            throw e;
         }
     }
 

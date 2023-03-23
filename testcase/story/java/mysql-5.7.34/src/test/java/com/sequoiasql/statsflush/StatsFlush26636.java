@@ -56,6 +56,7 @@ public class StatsFlush26636 extends MysqlTestBase {
             if ( jdbc2 != null ) {
                 jdbc2.close();
             }
+            throw e;
         }
     }
 

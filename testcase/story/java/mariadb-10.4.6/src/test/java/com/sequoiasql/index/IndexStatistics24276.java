@@ -33,31 +33,40 @@ public class IndexStatistics24276 extends MysqlTestBase {
 
     @BeforeClass
     private void setUp() throws Exception {
-        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        if ( CommLib.isStandAlone( sdb ) ) {
-            throw new SkipException( "Standalone mode, skip the testcase." );
+        try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            if ( CommLib.isStandAlone( sdb ) ) {
+                throw new SkipException(
+                        "Standalone mode, skip the testcase." );
+            }
+
+            jdbcWarpperMgr = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbcWarpperMgr.dropDatabase( csName );
+            jdbcWarpperMgr.createDatabase( csName );
+            jdbcWarpperMgr.update( "create table " + fullCLName
+                    + " (a int(11)  DEFAULT NULL, b int(11)  DEFAULT NULL,KEY idxA(a),KEY idxB(b));" );
+
+            List< BSONObject > insertor = new ArrayList<>();
+            insertor.add( ( BSONObject ) JSON.parse(
+                    "{_id: { '$oid': '5d397d4ea17f2bfc0414f004' },a:9,b:10}" ) );
+            insertor.add( ( BSONObject ) JSON.parse(
+                    "{_id: { '$oid': '5d397d4ea17f2bfc0414f001' },a:10,b:9}" ) );
+            insertor.add( ( BSONObject ) JSON.parse(
+                    "{_id: { '$oid': '5d397d4ea17f2bfc0414f002' },a:10,b:10}" ) );
+            insertor.add( ( BSONObject ) JSON.parse(
+                    "{_id: { '$oid': '5d397d4ea17f2bfc0414f003' },a:10,b:9}" ) );
+
+            DBCollection cl = sdb.getCollectionSpace( csName )
+                    .getCollection( clName );
+            cl.insert( insertor );
+        } catch ( Exception e ) {
+            if ( sdb != null )
+                sdb.close();
+            if ( jdbcWarpperMgr != null )
+                jdbcWarpperMgr.close();
+            throw e;
         }
-
-        jdbcWarpperMgr = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbcWarpperMgr.dropDatabase( csName );
-        jdbcWarpperMgr.createDatabase( csName );
-        jdbcWarpperMgr.update( "create table " + fullCLName
-                + " (a int(11)  DEFAULT NULL, b int(11)  DEFAULT NULL,KEY idxA(a),KEY idxB(b));" );
-
-        List< BSONObject > insertor = new ArrayList<>();
-        insertor.add( ( BSONObject ) JSON.parse(
-                "{_id: { '$oid': '5d397d4ea17f2bfc0414f004' },a:9,b:10}" ) );
-        insertor.add( ( BSONObject ) JSON.parse(
-                "{_id: { '$oid': '5d397d4ea17f2bfc0414f001' },a:10,b:9}" ) );
-        insertor.add( ( BSONObject ) JSON.parse(
-                "{_id: { '$oid': '5d397d4ea17f2bfc0414f002' },a:10,b:10}" ) );
-        insertor.add( ( BSONObject ) JSON.parse(
-                "{_id: { '$oid': '5d397d4ea17f2bfc0414f003' },a:10,b:9}" ) );
-
-        DBCollection cl = sdb.getCollectionSpace( csName )
-                .getCollection( clName );
-        cl.insert( insertor );
     }
 
     @Test

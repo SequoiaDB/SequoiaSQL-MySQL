@@ -65,6 +65,9 @@ public class CommentMapping25596 extends MysqlTestBase {
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
+            if ( jdbc != null ) {
+                jdbc.close();
+            }
             throw e;
         }
     }
