@@ -32,28 +32,38 @@ public class MetaDataMapping24587 extends MysqlTestBase {
 
     @BeforeClass
     public void setUp() throws Exception {
-        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        if ( CommLib.isStandAlone( sdb ) ) {
-            throw new SkipException( "is standalone skip testcase" );
+        try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            if ( CommLib.isStandAlone( sdb ) ) {
+                throw new SkipException( "is standalone skip testcase" );
+            }
+            jdbcSql = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbcSql.dropDatabase( csName );
+            jdbcSql.createDatabase( csName );
+            jdbcAnotherSql = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfAnother1 );
+            jdbcAnotherSql.dropDatabase( csName );
+            jdbcAnotherSql.createDatabase( csName );
+            String table1 = "create table " + csName + "." + clName
+                    + "(a int,b int) partition by range(a) (partition p1 values less than(1500),partition p2 values less than maxvalue);";
+            jdbcSql.update( table1 );
+            String table2 = "create table " + csName + "." + clName
+                    + "(a int,b int) partition by list(a) (partition p1 values in (1000),partition p2 values in (2000));";
+            jdbcAnotherSql.update( table2 );
+            jdbcSql.update( "insert into " + csName + "." + clName
+                    + " values(1000,2000),(2000,2000)" );
+            jdbcAnotherSql.update( "insert into " + csName + "." + clName
+                    + " values(1000,2000),(2000,2000)" );
+        } catch ( Exception e ) {
+            if ( sdb != null )
+                sdb.close();
+            if ( jdbcSql != null )
+                jdbcSql.close();
+            if ( jdbcAnotherSql != null )
+                jdbcAnotherSql.close();
+            throw e;
         }
-        jdbcSql = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbcSql.dropDatabase( csName );
-        jdbcSql.createDatabase( csName );
-        jdbcAnotherSql = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfAnother1 );
-        jdbcAnotherSql.dropDatabase( csName );
-        jdbcAnotherSql.createDatabase( csName );
-        String table1 = "create table " + csName + "." + clName
-                + "(a int,b int) partition by range(a) (partition p1 values less than(1500),partition p2 values less than maxvalue);";
-        jdbcSql.update( table1 );
-        String table2 = "create table " + csName + "." + clName
-                + "(a int,b int) partition by list(a) (partition p1 values in (1000),partition p2 values in (2000));";
-        jdbcAnotherSql.update( table2 );
-        jdbcSql.update( "insert into " + csName + "." + clName
-                + " values(1000,2000),(2000,2000)" );
-        jdbcAnotherSql.update( "insert into " + csName + "." + clName
-                + " values(1000,2000),(2000,2000)" );
     }
 
     @Test

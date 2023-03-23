@@ -35,7 +35,7 @@ public class Alter26331 extends MysqlTestBase {
     private JdbcInterface jdbc;
     private CollectionSpace cs1 = null;
     private CollectionSpace cs2 = null;
-    
+
     @BeforeClass
     public void setUp() throws Exception {
         try {
@@ -55,10 +55,12 @@ public class Alter26331 extends MysqlTestBase {
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
             throw e;
         }
     }
-    
+
     @Test
     public void test1() throws Exception {
         // sdb端在两个不同的cs下分别创建主子表，主表挂载子表
@@ -69,33 +71,37 @@ public class Alter26331 extends MysqlTestBase {
         options.put( "ShardingKey", new BasicBSONObject( "id", 1 ) );
         options.put( "ShardingType", "range" );
         DBCollection maincl = cs1.createCollection( clName, options );
-        
+
         cs2.createCollection( clName );
         BasicBSONObject clBound = new BasicBSONObject();
         clBound.put( "LowBound", new BasicBSONObject( "id", 0 ) );
         clBound.put( "UpBound", new BasicBSONObject( "id", 10 ) );
         maincl.attachCollection( csName2 + "." + clName, clBound );
-        
-        //sql端创建与主表所在cs同名的库
+
+        // sql端创建与主表所在cs同名的库
         jdbc.createDatabase( csName1 );
-        
-        //在此库下创建与sdb主表同名的表，插入数据
-        jdbc.update( "create table " + csName1+ "."+ clName + "(id int,name varchar(10));");
-        jdbc.update( "insert into " + csName1 + "." + clName + " values(2,'2');" );
+
+        // 在此库下创建与sdb主表同名的表，插入数据
+        jdbc.update( "create table " + csName1 + "." + clName
+                + "(id int,name varchar(10));" );
+        jdbc.update(
+                "insert into " + csName1 + "." + clName + " values(2,'2');" );
         List< String > act1 = jdbc.query(
                 "select * from " + csName1 + "." + clName + " order by id;" );
         List< String > exp1 = new ArrayList<>();
         exp1.add( "2|2" );
         Assert.assertEquals( act1, exp1 );
-        
-        //修改表的字段名,检查表结构和数据正确性
-        jdbc.update( "alter table " + csName1+ "."+ clName + " change name name_bak varchar(10);");
-        List< String > act2 = jdbc.query("show create table " + csName1 + "." + clName + ";");
+
+        // 修改表的字段名,检查表结构和数据正确性
+        jdbc.update( "alter table " + csName1 + "." + clName
+                + " change name name_bak varchar(10);" );
+        List< String > act2 = jdbc
+                .query( "show create table " + csName1 + "." + clName + ";" );
         List< String > exp2 = new ArrayList<>();
-        exp2.add( clName + "|CREATE TABLE `" + clName + "` (\n" +
-                "  `id` int(11) DEFAULT NULL,\n" +
-                "  `name_bak` varchar(10) COLLATE utf8mb4_bin DEFAULT NULL\n" +
-                ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );
+        exp2.add( clName + "|CREATE TABLE `" + clName + "` (\n"
+                + "  `id` int(11) DEFAULT NULL,\n"
+                + "  `name_bak` varchar(10) COLLATE utf8mb4_bin DEFAULT NULL\n"
+                + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );
         Assert.assertEquals( act2, exp2 );
         List< String > act3 = jdbc.query(
                 "select * from " + csName1 + "." + clName + " order by id;" );
@@ -103,7 +109,7 @@ public class Alter26331 extends MysqlTestBase {
         exp3.add( "2|2" );
         Assert.assertEquals( act3, exp3 );
     }
-    
+
     @AfterClass
     public void tearDown() throws Exception {
         try {

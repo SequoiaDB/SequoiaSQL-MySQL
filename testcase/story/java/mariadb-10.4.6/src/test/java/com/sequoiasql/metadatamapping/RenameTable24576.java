@@ -36,37 +36,45 @@ public class RenameTable24576 extends MysqlTestBase {
 
     @BeforeClass
     private void setUp() throws Exception {
-        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        if ( CommLib.isStandAlone( sdb ) ) {
-            throw new SkipException( "Standalone, skip testcase." );
+        try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            if ( CommLib.isStandAlone( sdb ) ) {
+                throw new SkipException( "Standalone, skip testcase." );
+            }
+
+            jdbc = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbc.dropDatabase( dbName );
+            jdbc.createDatabase( dbName );
+
+            tableNames.add( "tb_24576_0" );
+            tableNames.add( "tb_24576_1" );
+            tableNames.add( "tb_24576_2" );
+            tableNames.add( "tb_24576_3" );
+
+            String table1 = "CREATE TABLE " + dbName + "." + tableNames.get( 0 )
+                    + " ( id INT NOT NULL, a INT NOT NULL ) "
+                    + "PARTITION BY RANGE COLUMNS (a) "
+                    + "SUBPARTITION BY KEY (id) SUBPARTITIONS 2 ( "
+                    + "PARTITION p0 VALUES LESS THAN (0), "
+                    + "PARTITION p1 VALUES LESS THAN (10), "
+                    + "PARTITION p2 VALUES LESS THAN (20), "
+                    + "PARTITION p3 VALUES LESS THAN (30), "
+                    + "PARTITION p4 VALUES LESS THAN (40), "
+                    + "PARTITION p5 VALUES LESS THAN (50) );";
+            jdbc.update( table1 );
+
+            String table2 = "CREATE TABLE " + dbName + "." + tableNames.get( 1 )
+                    + " ( id INT NOT NULL, a INT NOT NULL ) "
+                    + "PARTITION BY HASH (a) PARTITIONS 6;";
+            jdbc.update( table2 );
+        } catch ( Exception e ) {
+            if ( sdb != null )
+                sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
+            throw e;
         }
-
-        jdbc = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbc.dropDatabase( dbName );
-        jdbc.createDatabase( dbName );
-
-        tableNames.add( "tb_24576_0" );
-        tableNames.add( "tb_24576_1" );
-        tableNames.add( "tb_24576_2" );
-        tableNames.add( "tb_24576_3" );
-
-        String table1 = "CREATE TABLE " + dbName + "." + tableNames.get( 0 )
-                + " ( id INT NOT NULL, a INT NOT NULL ) "
-                + "PARTITION BY RANGE COLUMNS (a) "
-                + "SUBPARTITION BY KEY (id) SUBPARTITIONS 2 ( "
-                + "PARTITION p0 VALUES LESS THAN (0), "
-                + "PARTITION p1 VALUES LESS THAN (10), "
-                + "PARTITION p2 VALUES LESS THAN (20), "
-                + "PARTITION p3 VALUES LESS THAN (30), "
-                + "PARTITION p4 VALUES LESS THAN (40), "
-                + "PARTITION p5 VALUES LESS THAN (50) );";
-        jdbc.update( table1 );
-
-        String table2 = "CREATE TABLE " + dbName + "." + tableNames.get( 1 )
-                + " ( id INT NOT NULL, a INT NOT NULL ) "
-                + "PARTITION BY HASH (a) PARTITIONS 6;";
-        jdbc.update( table2 );
     }
 
     @Test
@@ -204,7 +212,8 @@ public class RenameTable24576 extends MysqlTestBase {
             } catch ( SQLException e ) {
                 saveResult( e.getErrorCode(), e );
                 if ( e.getErrorCode() != 1050 && e.getErrorCode() != 1117
-                        && e.getErrorCode() != 1017 && e.getErrorCode() != 1146 ) {
+                        && e.getErrorCode() != 1017
+                        && e.getErrorCode() != 1146 ) {
                     throw e;
                 }
             }

@@ -33,18 +33,28 @@ public class MetaDataMapping24586 extends MysqlTestBase {
 
     @BeforeClass
     public void setUp() throws Exception {
-        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        if ( CommLib.isStandAlone( sdb ) ) {
-            throw new SkipException( "is standalone skip testcase" );
+        try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            if ( CommLib.isStandAlone( sdb ) ) {
+                throw new SkipException( "is standalone skip testcase" );
+            }
+            jdbcSql = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbcSql.dropDatabase( csName );
+            jdbcSql.createDatabase( csName );
+            jdbcAnotherSql = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfAnother1 );
+            jdbcAnotherSql.dropDatabase( csName );
+            jdbcAnotherSql.createDatabase( csName );
+        } catch ( Exception e ) {
+            if ( sdb != null )
+                sdb.close();
+            if ( jdbcSql != null )
+                jdbcSql.close();
+            if ( jdbcAnotherSql != null )
+                jdbcAnotherSql.close();
+            throw e;
         }
-        jdbcSql = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbcSql.dropDatabase( csName );
-        jdbcSql.createDatabase( csName );
-        jdbcAnotherSql = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfAnother1 );
-        jdbcAnotherSql.dropDatabase( csName );
-        jdbcAnotherSql.createDatabase( csName );
     }
 
     @Test

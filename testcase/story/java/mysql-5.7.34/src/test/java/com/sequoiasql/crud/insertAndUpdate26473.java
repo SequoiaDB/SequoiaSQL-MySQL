@@ -45,7 +45,8 @@ public class insertAndUpdate26473 extends MysqlTestBase {
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
-            jdbc.close();
+            if ( jdbc != null )
+                jdbc.close();
             throw e;
         }
     }
@@ -73,8 +74,8 @@ public class insertAndUpdate26473 extends MysqlTestBase {
         es1.run();
 
         // 检查表及数据
-        List< String > act1 = jdbc
-                .query( "select * from " + dbName + "." + tbName + " order by a;" );
+        List< String > act1 = jdbc.query(
+                "select * from " + dbName + "." + tbName + " order by a;" );
         List< String > exp1 = new ArrayList<>();
         exp1.add( "2|2" );
         exp1.add( "3|1" );
@@ -95,7 +96,7 @@ public class insertAndUpdate26473 extends MysqlTestBase {
             Assert.fail( "The insert1 thread failed, error code is "
                     + insert1.getRetCode() );
         }
-        
+
         // 插入冲突记录与更新原记录并发，更新的字段为普通字段
         String sqlStr3 = "insert into " + dbName + "." + tbName
                 + " values (2,2) on duplicate key update b=b+1;";

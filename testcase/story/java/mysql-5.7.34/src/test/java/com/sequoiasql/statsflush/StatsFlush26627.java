@@ -56,6 +56,7 @@ public class StatsFlush26627 extends MysqlTestBase {
             if ( jdbc2 != null ) {
                 jdbc2.close();
             }
+            throw e;
         }
     }
 
@@ -63,14 +64,10 @@ public class StatsFlush26627 extends MysqlTestBase {
     public void test() throws Exception {
         String tbName1 = "tb_26627_1";
         String tbName2 = "tb_26627_2";
-        int insertRecordsNum = 10000001;
-        int changeRecordsNum = 500001;
-        if ( jdbc1.query( "select version();" ).toString()
-                .contains( "debug" ) ) {
-            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
-            insertRecordsNum = 1001;
-            changeRecordsNum = 51;
-        }
+        int insertRecordsNum = 1001;
+        int changeRecordsNum = 51;
+        jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -117,8 +114,8 @@ public class StatsFlush26627 extends MysqlTestBase {
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
 
         // 变化的数据量大于10%，查看实例2中查询表tbName1的访问计划跟实例1的相同
-        jdbc1.update(
-                "delete from " + tbName1 + " where id<=" + changeRecordsNum + ";" );
+        jdbc1.update( "delete from " + tbName1 + " where id<="
+                + changeRecordsNum + ";" );
         // 等待统计信息在另一个实例中refresh,refresh完成后两实例查到的访问计划一致
         StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain );
 

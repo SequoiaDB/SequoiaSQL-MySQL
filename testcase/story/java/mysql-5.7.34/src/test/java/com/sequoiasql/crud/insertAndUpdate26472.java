@@ -46,7 +46,8 @@ public class insertAndUpdate26472 extends MysqlTestBase {
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
-            jdbc.close();
+            if ( jdbc != null )
+                jdbc.close();
             throw e;
         }
     }
@@ -81,10 +82,11 @@ public class insertAndUpdate26472 extends MysqlTestBase {
                 exp = Arrays.asList( "2", "3" );
                 Assert.assertEquals( act, exp );
             } else {
-                Assert.fail( "The insert2 thread failed not as expected, error code is "
-                        + insert2.getRetCode() );
+                Assert.fail(
+                        "The insert2 thread failed not as expected, error code is "
+                                + insert2.getRetCode() );
             }
-        } else if ( insert1.getRetCode() == 1062) {
+        } else if ( insert1.getRetCode() == 1062 ) {
             if ( insert2.getRetCode() == 0 ) {
                 exp = Arrays.asList( "1", "3" );
                 Assert.assertEquals( act, exp );
@@ -93,8 +95,9 @@ public class insertAndUpdate26472 extends MysqlTestBase {
                         + insert2.getRetCode() );
             }
         } else {
-            Assert.fail( "The insert1 thread failed not as expected, error code is "
-                    + insert1.getRetCode() );
+            Assert.fail(
+                    "The insert1 thread failed not as expected, error code is "
+                            + insert1.getRetCode() );
         }
     }
 

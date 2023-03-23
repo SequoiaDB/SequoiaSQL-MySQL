@@ -57,6 +57,7 @@ public class StatsFlush26626 extends MysqlTestBase {
             if ( jdbc2 != null ) {
                 jdbc2.close();
             }
+            throw e;
         }
     }
 
@@ -65,12 +66,9 @@ public class StatsFlush26626 extends MysqlTestBase {
         String tbName1 = "tb_26626_1";
         String tbName2 = "tb_26626_2";
         int insertRecordsNum = 600;
-        int changeRecordsNum = 250001;
-        if ( jdbc1.query( "select version();" ).toString()
-                .contains( "debug" ) ) {
-            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
-            changeRecordsNum = 26;
-        }
+        int changeRecordsNum = 26;
+        jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );

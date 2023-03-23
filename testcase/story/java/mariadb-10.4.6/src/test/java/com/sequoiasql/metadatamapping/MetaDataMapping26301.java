@@ -42,6 +42,8 @@ public class MetaDataMapping26301 extends MysqlTestBase {
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
             throw e;
         }
     }
@@ -82,7 +84,7 @@ public class MetaDataMapping26301 extends MysqlTestBase {
             }
         }
         cursor1.close();
-        
+
         // 验证映射表记录数的正确性
         int expCount1 = 10;
         int actCount1 = 0;

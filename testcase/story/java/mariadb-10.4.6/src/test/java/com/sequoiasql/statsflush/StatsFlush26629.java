@@ -56,6 +56,7 @@ public class StatsFlush26629 extends MysqlTestBase {
             if ( jdbc2 != null ) {
                 jdbc2.close();
             }
+            throw e;
         }
     }
 
@@ -63,14 +64,10 @@ public class StatsFlush26629 extends MysqlTestBase {
     public void test() throws Exception {
         String tbName1 = "tb_26629_1";
         String tbName2 = "tb_26629_2";
-        int insertRecordsNum = 100000001;
-        int changeRecordsNum = 250001;
-        if ( jdbc1.query( "select version();" ).toString()
-                .contains( "debug" ) ) {
-            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
-            insertRecordsNum = 1001;
-            changeRecordsNum = 26;
-        }
+        int insertRecordsNum = 1001;
+        int changeRecordsNum = 26;
+        jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -119,8 +116,8 @@ public class StatsFlush26629 extends MysqlTestBase {
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
 
         // 变化的数据量大于50但小于数据总量的10%
-        jdbc1.update(
-                "delete from " + tbName1 + " where id<= " + changeRecordsNum + ";" );
+        jdbc1.update( "delete from " + tbName1 + " where id<= "
+                + changeRecordsNum + ";" );
         // 等待统计信息在另一个实例中refresh
         StatsFlushUtils.waitStatsFlush( jdbc1 );
         // 此時实例1中查询表tbName1的访问计划改变
