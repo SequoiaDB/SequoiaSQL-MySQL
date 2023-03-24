@@ -56,6 +56,7 @@ public class StatsFlush26631 extends MysqlTestBase {
             if ( jdbc2 != null ) {
                 jdbc2.close();
             }
+            throw e;
         }
     }
 
@@ -64,12 +65,9 @@ public class StatsFlush26631 extends MysqlTestBase {
         String tbName1 = "tb_26631_1";
         String tbName2 = "tb_26631_2";
         int insertRecordsNum = 600;
-        int changeRecordsNum = 500001;
-        if ( jdbc1.query( "select version();" ).toString()
-                .contains( "debug" ) ) {
-            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
-            changeRecordsNum = 51;
-        }
+        int changeRecordsNum = 51;
+        jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -101,7 +99,8 @@ public class StatsFlush26631 extends MysqlTestBase {
 
         // 其中一个实例做update，操作匹配到的记录数超过50，但实际记录未发生改变；
         jdbc1.update( "update " + tbName1 + " set cust_no=\"123\" where id >"
-                + changeRecordsNum * 14 + " and id<=" + changeRecordsNum * 15 + ";" );
+                + changeRecordsNum * 14 + " and id<=" + changeRecordsNum * 15
+                + ";" );
         StatsFlushUtils.waitStatsFlush( jdbc1 );
         // 查看实例1、2中查询表tbName1的访问计划没有改变
         Assert.assertEquals( jdbc1.< Character > query( queryExplain ),
@@ -110,8 +109,9 @@ public class StatsFlush26631 extends MysqlTestBase {
                 explainList1 );
 
         // 其中一个实例做delete，操作匹配到的记录数超过50，但实际记录未发生改变；
-        jdbc1.update( "delete from " + tbName1 + " where id >" + changeRecordsNum * 14
-                + " and id<=" + changeRecordsNum * 15 + ";" );
+        jdbc1.update(
+                "delete from " + tbName1 + " where id >" + changeRecordsNum * 14
+                        + " and id<=" + changeRecordsNum * 15 + ";" );
         StatsFlushUtils.waitStatsFlush( jdbc1 );
         // 查看实例1、2中查询表tbName1的访问计划没有改变
         Assert.assertEquals( jdbc1.< Character > query( queryExplain ),

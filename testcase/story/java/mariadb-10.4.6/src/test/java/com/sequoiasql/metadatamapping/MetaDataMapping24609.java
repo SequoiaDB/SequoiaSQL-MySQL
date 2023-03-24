@@ -38,21 +38,30 @@ public class MetaDataMapping24609 extends MysqlTestBase {
 
     @BeforeClass
     public void setUp() throws Exception {
-        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        if ( CommLib.isStandAlone( sdb ) ) {
-            throw new SkipException( "is standalone skip testcase" );
-        }
-        if ( sdb.isCollectionSpaceExist( dbName ) ) {
-            sdb.dropCollectionSpace( dbName );
-        }
+        try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            if ( CommLib.isStandAlone( sdb ) ) {
+                throw new SkipException( "is standalone skip testcase" );
+            }
+            if ( sdb.isCollectionSpaceExist( dbName ) ) {
+                sdb.dropCollectionSpace( dbName );
+            }
 
-        jdbc = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbc.dropDatabase( dbName );
-        jdbc.createDatabase( dbName );
+            jdbc = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbc.dropDatabase( dbName );
+            jdbc.createDatabase( dbName );
 
-        instGroupName = MetaDataMappingUtils
-                .getInstGroupName( sdb, MysqlTestBase.mysql1 ).toUpperCase();
+            instGroupName = MetaDataMappingUtils
+                    .getInstGroupName( sdb, MysqlTestBase.mysql1 )
+                    .toUpperCase();
+        } catch ( Exception e ) {
+            if ( sdb != null )
+                sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
+            throw e;
+        }
     }
 
     @Test

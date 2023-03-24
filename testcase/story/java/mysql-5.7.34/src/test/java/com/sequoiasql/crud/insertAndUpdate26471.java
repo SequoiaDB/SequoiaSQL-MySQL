@@ -44,7 +44,8 @@ public class insertAndUpdate26471 extends MysqlTestBase {
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
-            jdbc.close();
+            if ( jdbc != null )
+                jdbc.close();
             throw e;
         }
     }
@@ -72,8 +73,8 @@ public class insertAndUpdate26471 extends MysqlTestBase {
         es1.run();
 
         // 检查表及数据
-        List< String > act1 = jdbc
-                .query( "select * from " + dbName + "." + tbName + " order by a;" );
+        List< String > act1 = jdbc.query(
+                "select * from " + dbName + "." + tbName + " order by a;" );
         List< String > exp1 = new ArrayList<>();
         exp1.add( "1|1" );
         exp1.add( "2|1" );
@@ -107,8 +108,8 @@ public class insertAndUpdate26471 extends MysqlTestBase {
         es2.run();
 
         // 检查表及数据
-        List< String > act2 = jdbc
-                .query( "select * from " + dbName + "." + tbName + " order by a;" );
+        List< String > act2 = jdbc.query(
+                "select * from " + dbName + "." + tbName + " order by a;" );
         List< String > exp3 = new ArrayList<>();
         exp3.add( "1|4" );
         exp3.add( "2|1" );

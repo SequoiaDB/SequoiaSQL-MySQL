@@ -56,6 +56,7 @@ public class StatsFlush26632 extends MysqlTestBase {
             if ( jdbc2 != null ) {
                 jdbc2.close();
             }
+            throw e;
         }
     }
 
@@ -66,12 +67,9 @@ public class StatsFlush26632 extends MysqlTestBase {
         String tbName3 = "tb_26632_3";
         String tbName4 = "tb_26632_4";
         int insertRecordsNum = 600;
-        int changeRecordsNum = 250000;
-        if ( jdbc1.query( "select version();" ).toString()
-                .contains( "debug" ) ) {
-            jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
-            changeRecordsNum = 25;
-        }
+        int changeRecordsNum = 25;
+        jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
+
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -121,8 +119,8 @@ public class StatsFlush26632 extends MysqlTestBase {
 
         // 其中一个实例对表tbName1做delete、insert混合操作累计变化的数据量即将达到自动清理条件，接近50w（debug包为50）
         StatsFlushUtils.insertData1( jdbc1, tbName1, changeRecordsNum - 1 );
-        jdbc1.update(
-                "delete from " + tbName1 + " where id<=" + changeRecordsNum + ";" );
+        jdbc1.update( "delete from " + tbName1 + " where id<="
+                + changeRecordsNum + ";" );
 
         // 用户做analyze操作
         jdbc1.update( "analyze table " + tbName1 + ";" );
@@ -132,8 +130,8 @@ public class StatsFlush26632 extends MysqlTestBase {
 
         // 其中一个实例做delete、insert混合操作累计变化的数据量即将达到自动清理条件，接近50w（debug包为50）
         StatsFlushUtils.insertData1( jdbc1, tbName3, changeRecordsNum - 1 );
-        jdbc1.update(
-                "delete from " + tbName3 + " where id<=" + changeRecordsNum + ";" );
+        jdbc1.update( "delete from " + tbName3 + " where id<="
+                + changeRecordsNum + ";" );
 
         // 用户做flush操作
         jdbc1.update( "flush table " + tbName3 + ";" );

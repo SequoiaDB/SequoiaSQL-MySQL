@@ -48,6 +48,7 @@ public class SelectAndAnalyze30290 extends MysqlTestBase {
         }
     }
 
+    // ci不支持传入非实例组实例问题，暂时屏蔽，问题单号：http://jira.web:8080/browse/CI-1600
     @Test(enabled = false)
     public void test() throws Exception {
         jdbc.createDatabase( dbName );

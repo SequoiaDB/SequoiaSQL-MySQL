@@ -56,10 +56,10 @@ public class Insert25415 extends MysqlTestBase {
             // 设置事务隔离级别为RC
             jdbc.setTransactionIsolatrion( 1 );
         } catch ( Exception e ) {
-            jdbc.setAutoCommit( false );
-            jdbc.setTransactionIsolatrion( 2 );
             if ( sdb != null )
                 sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
             throw e;
         }
     }

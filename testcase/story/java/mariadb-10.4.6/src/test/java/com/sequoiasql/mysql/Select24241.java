@@ -46,6 +46,7 @@ public class Select24241 extends MysqlTestBase {
             if ( jdbc != null ) {
                 jdbc.close();
             }
+            throw e;
         }
     }
 

@@ -39,6 +39,7 @@ public class DDL28709 extends MysqlTestBase {
                 sdb.close();
             if ( jdbc != null )
                 jdbc.close();
+            throw e;
         }
     }
 

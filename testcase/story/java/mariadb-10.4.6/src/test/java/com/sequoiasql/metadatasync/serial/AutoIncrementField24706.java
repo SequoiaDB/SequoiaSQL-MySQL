@@ -28,24 +28,34 @@ public class AutoIncrementField24706 extends MysqlTestBase {
 
     @BeforeClass
     private void setUp() throws Exception {
-        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        if ( CommLib.isStandAlone( sdb ) ) {
-            throw new SkipException( "Standalone mode, skip the testcase." );
+        try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            if ( CommLib.isStandAlone( sdb ) ) {
+                throw new SkipException(
+                        "Standalone mode, skip the testcase." );
+            }
+            // 获取jdbc链接
+            jdbcWarpperMgr = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbcWarpperMgr2 = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
+
+            // 创建测试库
+            jdbcWarpperMgr.dropDatabase( dbName );
+            jdbcWarpperMgr.createDatabase( dbName );
+
+            // 建表
+            jdbcWarpperMgr.update( "create table " + fullTableName
+                    + "(a int auto_increment key)COMMENT='sequoiadb:{auto_partition:false}';" );
+        } catch ( Exception e ) {
+            if ( sdb != null )
+                sdb.close();
+            if ( jdbcWarpperMgr != null )
+                jdbcWarpperMgr.close();
+            if ( jdbcWarpperMgr2 != null )
+                jdbcWarpperMgr2.close();
+            throw e;
         }
-        // 获取jdbc链接
-        jdbcWarpperMgr = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbcWarpperMgr2 = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
-
-        // 创建测试库
-        jdbcWarpperMgr.dropDatabase(dbName);
-        jdbcWarpperMgr.createDatabase(dbName);
-
-        // 建表
-        jdbcWarpperMgr.update( "create table " + fullTableName
-                + "(a int auto_increment key)COMMENT='sequoiadb:{auto_partition:false}';" );
-
     }
 
     @Test
@@ -80,7 +90,7 @@ public class AutoIncrementField24706 extends MysqlTestBase {
     @AfterClass
     private void tearDown() throws Exception {
         try {
-            jdbcWarpperMgr.dropDatabase(dbName);
+            jdbcWarpperMgr.dropDatabase( dbName );
         } finally {
             jdbcWarpperMgr.close();
             sdb.close();

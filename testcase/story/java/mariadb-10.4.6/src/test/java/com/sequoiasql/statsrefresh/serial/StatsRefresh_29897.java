@@ -51,6 +51,7 @@ public class StatsRefresh_29897 extends MysqlTestBase {
             if ( jdbc != null ) {
                 jdbc.close();
             }
+            throw e;
         }
     }
 

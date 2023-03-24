@@ -33,24 +33,32 @@ public class MetaDataMapping24579 extends MysqlTestBase {
 
     @BeforeClass
     public void setUp() throws Exception {
-        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        if ( CommLib.isStandAlone( sdb ) ) {
-            throw new SkipException( "is standalone skip testcase" );
+        try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            if ( CommLib.isStandAlone( sdb ) ) {
+                throw new SkipException( "is standalone skip testcase" );
+            }
+            jdbc = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbc.dropDatabase( csName );
+            jdbc.createDatabase( csName );
+            String table1 = "create table " + csName + "." + clName1
+                    + "(a int,b int) partition by range(a) (partition p1 values less than(1500),partition p2 values less than(3000));";
+            jdbc.update( table1 );
+            String table2 = "create table " + csName + "." + clName2
+                    + "(a int,b int) partition by list(a) (partition p1 values in (1000,1200),partition p2 values in (2000));";
+            jdbc.update( table2 );
+            jdbc.update( "insert into " + csName + "." + clName1
+                    + " values(1000,2000),(2000,2000)" );
+            jdbc.update( "insert into " + csName + "." + clName2
+                    + " values(1000,2000),(2000,2000)" );
+        } catch ( Exception e ) {
+            if ( sdb != null )
+                sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
+            throw e;
         }
-        jdbc = JdbcInterfaceFactory
-                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbc.dropDatabase( csName );
-        jdbc.createDatabase( csName );
-        String table1 = "create table " + csName + "." + clName1
-                + "(a int,b int) partition by range(a) (partition p1 values less than(1500),partition p2 values less than(3000));";
-        jdbc.update( table1 );
-        String table2 = "create table " + csName + "." + clName2
-                + "(a int,b int) partition by list(a) (partition p1 values in (1000,1200),partition p2 values in (2000));";
-        jdbc.update( table2 );
-        jdbc.update( "insert into " + csName + "." + clName1
-                + " values(1000,2000),(2000,2000)" );
-        jdbc.update( "insert into " + csName + "." + clName2
-                + " values(1000,2000),(2000,2000)" );
     }
 
     @Test

@@ -1,4 +1,5 @@
 package com.sequoiasql.metadatasync.serial;
+
 import java.sql.SQLException;
 import java.util.List;
 
@@ -64,6 +65,8 @@ public class ddlAbnormal28200 extends MysqlTestBase {
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
             throw e;
         }
     }

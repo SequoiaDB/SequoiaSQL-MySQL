@@ -49,8 +49,10 @@ public class CommentMapping25542 extends MysqlTestBase {
             jdbc.dropDatabase( dbName );
         } catch ( Exception e ) {
             if ( sdb != null )
-               sdb.close();
-            throw e;   
+                sdb.close();
+            if ( jdbc != null )
+                jdbc.close();
+            throw e;
         }
     }
 
@@ -95,8 +97,8 @@ public class CommentMapping25542 extends MysqlTestBase {
         // DDL操作
         jdbc.update( "alter table " + dbName + "." + tbName + " rename to "
                 + dbName + "." + tbNameNew );
-        List< String > act4 = jdbc.query(
-                "show create table " + dbName + "." + tbNameNew );
+        List< String > act4 = jdbc
+                .query( "show create table " + dbName + "." + tbNameNew );
         List< String > exp4 = new ArrayList<>();
         exp4.add( tbNameNew + "|CREATE TABLE `" + tbNameNew
                 + "` (\n  `a` int(11) DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT"
