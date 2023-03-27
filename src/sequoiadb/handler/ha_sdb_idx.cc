@@ -666,6 +666,14 @@ error:
   goto done;
 }
 
+bool sdb_is_key_buf_same(KEY *key_info, const key_range *key1,
+                         const key_range *key2) {
+  return (key1->keypart_map == key2->keypart_map &&
+          key1->length == key2->length &&
+          0 == key_buf_cmp(key_info, my_bit_log2(key1->keypart_map + 1),
+                           key1->key, key2->key));
+}
+
 // This function is modified from ha_federated::create_where_from_key.
 int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                                   const key_range *start_key,
@@ -730,11 +738,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                 if (i > 0 && eq_range_arg) {
                   /* Only if key value of start_key is equal key value of
                     end_key can break */
-                  if (start_key->keypart_map == end_key->keypart_map &&
-                      start_key->length == end_key->length &&
-                      0 == key_buf_cmp(key_info,
-                                       my_bit_log2(start_key->keypart_map + 1),
-                                       start_key->key, end_key->key)) {
+                  if (sdb_is_key_buf_same(key_info, start_key, end_key)) {
                     goto prepare_for_next_key_part;
                   }
                 }
@@ -766,7 +770,8 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
         }
 
         switch (ranges[i]->flag) {
-          case HA_READ_KEY_EXACT: {
+          case HA_READ_KEY_EXACT:
+          case HA_READ_PREFIX_LAST: {
             DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_EXACT %d", i));
             const char *op_str = "$et";
             rc = create_condition(field, key_part, key_ptr, op_str,
@@ -784,11 +789,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             if (i > 0 && eq_range_arg) {
               /* Only if key value of start_key is equal key value of end_key
                 can break */
-              if (start_key->keypart_map == end_key->keypart_map &&
-                  start_key->length == end_key->length &&
-                  0 == key_buf_cmp(key_info,
-                                   my_bit_log2(start_key->keypart_map + 1),
-                                   start_key->key, end_key->key)) {
+              if (sdb_is_key_buf_same(key_info, start_key, end_key)) {
                 break;
               }
             }
@@ -839,7 +840,6 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             }
           }
           case HA_READ_KEY_OR_PREV:
-          case HA_READ_PREFIX_LAST:
           case HA_READ_PREFIX_LAST_OR_PREV: {
             DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_OR_PREV %d", i));
             const char *op_str = "$lte";

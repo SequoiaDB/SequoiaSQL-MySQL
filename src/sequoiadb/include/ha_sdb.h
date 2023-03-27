@@ -575,6 +575,10 @@ class ha_sdb : public handler {
 
   uint get_engine_optim_flag();
 
+#ifdef IS_MARIADB
+  int prepare_range_scan(const key_range *start_key, const key_range *end_key);
+#endif
+
  protected:
   int ensure_collection(THD *thd);
 
@@ -824,6 +828,9 @@ class ha_sdb : public handler {
 
   int build_group_condition(st_order *group);
 
+  void fix_start_end_key_if_range_scan_desc(key_range *&start_key_ptr,
+                                            key_range *&end_key_ptr);
+
  private:
   // swap table if swap_table is true
   int rename_or_swap_table(const char *from, const char *to, bool swap_table);
@@ -915,6 +922,10 @@ class ha_sdb : public handler {
   bool m_index_need_sorted;
   bool m_use_group;
   sdb_idx_access_method m_method;
+  /* Same as handler::end_key but for start. Reverse-ordered scans need it */
+  key_range m_save_start_range;
+  key_range *m_start_range;
+
   bool m_is_in_group_min_max;
 };
 #endif

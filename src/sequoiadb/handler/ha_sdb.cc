@@ -49,6 +49,7 @@
 #include <json_dom.h>
 #elif IS_MARIADB
 #include "ha_sdb_seq.h"
+#include "key.h"
 #endif
 
 using namespace sdbclient;
@@ -1870,6 +1871,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_null_rejecting = false;
   m_index_need_sorted = true;
   m_use_group = false;
+  m_start_range = NULL;
   m_is_in_group_min_max = false;
   m_refresh_share_stats_phase = NOT_IN_REFRESH;
 }
@@ -2178,6 +2180,7 @@ int ha_sdb::reset() {
   m_null_rejecting = false;
   m_index_need_sorted = true;
   m_use_group = false;
+  m_start_range = NULL;
   m_is_in_group_min_max = false;
   share_newly_obtain = null_ptr;
   m_refresh_share_stats_phase = NOT_IN_REFRESH;
@@ -6816,6 +6819,49 @@ error:
   goto done;
 }
 
+/**
+  When range scan in DESC direction, ::index_read_map() would only recieve the
+  max range by start key. To get the min range information, we need to rely
+  on other interfaces.
+
+  * For MariaDB, we save the min range into ha_sdb::m_start_range when
+    ::prepare_range_scan() called.
+  * For MySQL, it pass the min range by handler::end_range and
+    range_scan_direction. When ASC, end_range is bigger than start_range;
+    Else it is at opposite.
+
+  Here we need to set the start key as the min range, and set the end key
+  as the max range.
+*/
+void ha_sdb::fix_start_end_key_if_range_scan_desc(key_range *&start_key_ptr,
+                                                  key_range *&end_key_ptr) {
+#ifdef IS_MARIADB
+  KEY *key_info = table->key_info + active_index;
+  if (m_start_range && start_key_ptr && end_key_ptr &&
+      sdb_is_key_buf_same(key_info, start_key_ptr, end_key_ptr)) {
+    // Get the real start key. m_start_range is from ::prepare_range_scan()
+    start_key_ptr = m_start_range;
+
+    /*
+      Here rewrite the search flag of exact search. Because
+      1. it is simplified;
+      2. in sdb_create_condition_from_key(), if key buffer value is the same
+         end key($lte) may be ignore, which will lead to $et becoming $gte.
+    */
+    if (eq_range && HA_READ_KEY_OR_NEXT == start_key_ptr->flag &&
+        HA_READ_AFTER_KEY == end_key_ptr->flag &&
+        sdb_is_key_buf_same(key_info, start_key_ptr, end_key_ptr)) {
+      start_key_ptr->flag = HA_READ_KEY_EXACT;
+      end_key_ptr = NULL;
+    }
+  }
+#elif defined IS_MYSQL
+  if (start_key_ptr && end_key_ptr && RANGE_SCAN_DESC == range_scan_direction) {
+    swap_variables(key_range *, start_key_ptr, end_key_ptr);
+  }
+#endif
+}
+
 int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
                            key_part_map keypart_map,
                            enum ha_rkey_function find_flag) {
@@ -6846,14 +6892,19 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   if (NULL != key_ptr && active_index < MAX_KEY) {
     key_info = table->key_info + active_index;
     key_range start_key;
+    key_range *start_key_ptr = &start_key;
+    key_range *end_key_ptr = end_range;
+
     start_key.key = key_ptr;
     start_key.length = calculate_key_len(table, active_index, keypart_map);
     start_key.keypart_map = keypart_map;
     start_key.flag = find_flag;
 
-    rc = sdb_create_condition_from_key(table, key_info, &start_key, end_range,
-                                       (NULL != end_range) ? eq_range : 0,
-                                       start_cond_idx, end_cond_idx);
+    fix_start_end_key_if_range_scan_desc(start_key_ptr, end_key_ptr);
+
+    rc = sdb_create_condition_from_key(
+        table, key_info, start_key_ptr, end_key_ptr,
+        (NULL != end_range) ? eq_range : 0, start_cond_idx, end_cond_idx);
     if (0 != rc) {
       SDB_LOG_ERROR("Failed to build index match object. rc: %d", rc);
       goto error;
@@ -12106,6 +12157,23 @@ uint ha_sdb::get_engine_optim_flag() {
   }
   return flag;
 }
+
+#ifdef IS_MARIADB
+int ha_sdb::prepare_range_scan(const key_range *start_key,
+                               const key_range *end_key) {
+  range_key_part = table->key_info[active_index].key_part;
+
+  if (start_key) {
+    m_save_start_range = *start_key;
+    m_start_range = &m_save_start_range;
+  } else {
+    m_start_range = NULL;
+  }
+
+  set_end_range(end_key);
+  return 0;
+}
+#endif
 
 static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
                                    MEM_ROOT *mem_root) {
