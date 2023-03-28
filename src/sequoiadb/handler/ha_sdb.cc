@@ -6021,10 +6021,9 @@ int ha_sdb::info(uint flag) {
   }
 #endif
 
-  if (first_info) {
+  if (first_info && thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
     m_use_group = sdb_get_join_group_list(ha_thd());
-    if (thd_sql_command(ha_thd()) == SQLCOM_SELECT &&
-        sdb_is_single_table(ha_thd()) &&
+    if (sdb_is_single_table(ha_thd()) &&
         ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_SORT) &&
          sdb_check_condition_pushdown_switch(ha_thd()))) {
       rc = sdb_handle_sort_condition(
