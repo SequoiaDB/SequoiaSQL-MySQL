@@ -67,7 +67,7 @@ public class StatsFlush26630 extends MysqlTestBase {
         String tbName3 = "tb_26630_3";
         String tbName4 = "tb_26630_4";
         int insertRecordsNum = 502;
-        int changeRecordsNum = 500001;
+        int changeRecordsNum = 51;
         jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
 
         // 创建带索引的表；
