@@ -80,12 +80,26 @@ typedef enum sdb_index_stat_level {
   SDB_STATS_LVL_MCV = 2
 } sdb_index_stat_level;
 
+typedef enum sdb_sql_exec_mode {
+  // Equivalent to 'sequoiadb_execute_only_in_mysql' is set to 0
+  SDB_SQL_EXEC_MODE_COMMON,
+  // Equivalent to 'sequoiadb_execute_only_in_mysql' is set to 1
+  SDB_SQL_EXEC_MODE_ONLY_IN_SINGLE_SQL,
+  // DDL executed in this mode will be synchronized to other SQL nodes
+  SDB_SQL_EXEC_MODE_SYNC_DDL_IN_SQL_NODES
+} sdb_sql_exec_mode;
+
 int sdb_encrypt_password();
 bool sdb_has_password_str();
 int sdb_get_password(String &res);
 uint sdb_selector_pushdown_threshold(THD *thd);
 bool sdb_execute_only_in_mysql(THD *thd);
-void sdb_set_execute_only_in_mysql(THD *thd, bool val);
+void sdb_set_execute_only_in_mysql(THD *thd, bool val,
+                                   bool cascade_update = true);
+void *sdb_execution_mode_ptr(THD *thd);
+void *sdb_execute_only_in_mysql_ptr(THD *thd);
+int sdb_execution_mode(THD *thd);
+void sdb_set_execution_mode(THD *thd, int val, bool cascade_update = true);
 longlong sdb_alter_table_overhead_threshold(THD *thd);
 ulonglong sdb_get_optimizer_options(THD *thd);
 ulonglong sdb_get_support_mode(THD *thd);
@@ -149,5 +163,6 @@ extern mysql_var_update_func sdb_set_preferred_instance_mode;
 extern mysql_var_update_func sdb_set_preferred_strict;
 extern mysql_var_update_func sdb_set_preferred_period;
 extern mysql_var_check_func sdb_connection_addr_check;
-
+extern mysql_var_update_func sdb_set_exec_mode;
+extern mysql_var_update_func sdb_set_exec_only_in_mysql;
 #endif
