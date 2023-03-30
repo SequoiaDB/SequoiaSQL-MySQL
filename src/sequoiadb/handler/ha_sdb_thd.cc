@@ -55,6 +55,52 @@ void sdb_update_sys_var_str(const struct st_mysql_sys_var *var,
 #endif
 }
 
+static void sdb_update_exec_mode(THD *thd, struct st_mysql_sys_var *var,
+                                 void *tgt, const void *save) {
+  if (NULL == tgt || NULL == save || NULL == thd) {
+    // Should never been here.
+    DBUG_ASSERT(0);
+  } else if (tgt != sdb_execution_mode_ptr(NULL)) {
+    int new_value = *(int *)save;
+    *(int *)tgt = new_value;
+    sdb_set_execute_only_in_mysql(thd, new_value, false);
+  } else {
+    // GLOBAL 'sequoiadb_execution_mode' is not allowed to change
+    push_warning(thd, Sql_condition::SL_WARNING, ER_LOCAL_VARIABLE,
+                 "Variable 'sequoiadb_execution_mode' is a SESSION variable "
+                 "and can't be used with SET GLOBAL");
+  }
+}
+
+static void sdb_update_exec_only_in_mysql(THD *thd,
+                                          struct st_mysql_sys_var *var,
+                                          void *tgt, const void *save) {
+  if (NULL == tgt || NULL == save || NULL == thd) {
+    // Should never been here.
+    DBUG_ASSERT(0);
+  } else if (tgt != sdb_execute_only_in_mysql_ptr(NULL)) {
+    bool new_value = *(bool *)save;
+    *(bool *)tgt = *(bool *)save;
+
+    if (sdb_execution_mode(thd) <= SDB_SQL_EXEC_MODE_ONLY_IN_SINGLE_SQL) {
+      sdb_set_execution_mode(thd, new_value, false);
+    } else if (!new_value) { // mode > SDB_SQL_EXEC_MODE_ONLY_IN_SINGLE_SQL
+      // 'sequoiadb_execute_only_in_mysql' is set to OFF
+      // set 'sequoiadb_execution_mode' to 0
+      sdb_set_execution_mode(thd, new_value, false);
+    }
+    push_warning_printf(
+        thd, Sql_condition::SL_WARNING, ER_WARN_DEPRECATED_SYNTAX,
+        ER_THD(thd, ER_WARN_DEPRECATED_SYNTAX),
+        "sequoiadb_execute_only_in_mysql", "'sequoiadb_execution_mode'");
+  } else {
+    // GLOBAL 'sequoiadb_execute_only_in_mysql' is not allowed to change
+    push_warning(thd, Sql_condition::SL_WARNING, ER_LOCAL_VARIABLE,
+                 "Variable 'sequoiadb_execute_only_in_mysql' is a SESSION "
+                 "variable and can't be used with SET GLOBAL");
+  }
+}
+
 static void sdb_set_conn_addr(THD *thd, struct st_mysql_sys_var *var, void *tgt,
                               const void *save) {
   bool addr_changed = false;
@@ -720,6 +766,8 @@ void sdb_init_vars_check_and_update_funcs() {
   sdb_set_preferred_strict = &sdb_set_prefer_strict;
   sdb_set_preferred_period = &sdb_set_prefer_period;
   sdb_connection_addr_check = &sdb_conn_addr_check;
+  sdb_set_exec_mode = &sdb_update_exec_mode;
+  sdb_set_exec_only_in_mysql = &sdb_update_exec_only_in_mysql;
 }
 uchar *thd_sdb_share_get_key(THD_SDB_SHARE *thd_sdb_share, size_t *length,
                              my_bool not_used MY_ATTRIBUTE((unused))) {

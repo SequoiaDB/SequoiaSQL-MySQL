@@ -119,6 +119,8 @@ mysql_var_update_func sdb_set_preferred_instance_mode = NULL;
 mysql_var_update_func sdb_set_preferred_strict = NULL;
 mysql_var_update_func sdb_set_preferred_period = NULL;
 mysql_var_check_func sdb_connection_addr_check = NULL;
+mysql_var_update_func sdb_set_exec_mode = NULL;
+mysql_var_update_func sdb_set_exec_only_in_mysql = NULL;
 
 static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
                                   void *save, struct st_mysql_value *value) {
@@ -285,6 +287,21 @@ static void sdb_preferred_period_update(THD *thd, struct st_mysql_sys_var *var,
   }
 }
 
+static void sdb_exec_mode_update(THD *thd, struct st_mysql_sys_var *var,
+                                      void *var_ptr, const void *save) {
+  if (sdb_set_exec_mode) {
+    sdb_set_exec_mode(thd, var, var_ptr, save);
+  }
+}
+
+static void sdb_exec_only_in_mysql_update(THD *thd,
+                                          struct st_mysql_sys_var *var,
+                                          void *var_ptr, const void *save) {
+  if (sdb_set_exec_only_in_mysql) {
+    sdb_set_exec_only_in_mysql(thd, var, var_ptr, save);
+  }
+}
+
 // Please declare configuration in the format below:
 // [// SDB_DOC_OPT = IGNORE]
 // static MYSQL_XXXVAR_XXX(name, varname, opt,
@@ -405,7 +422,7 @@ static MYSQL_THDVAR_UINT(selector_pushdown_threshold, PLUGIN_VAR_OPCMDARG,
 static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_OPCMDARG,
                          "Commands execute only in mysql. (Default: OFF)"
                          /*DDL 命令只在 MySQL 执行，不下压到 SequoiaDB 执行。*/,
-                         NULL, NULL, FALSE);
+                         NULL, sdb_exec_only_in_mysql_update, FALSE);
 
 static MYSQL_THDVAR_BOOL(rollback_on_timeout, PLUGIN_VAR_OPCMDARG,
                          "Roll back the complete transaction on lock wait "
@@ -609,6 +626,11 @@ static MYSQL_THDVAR_BOOL(
     /* 是否在 BKA JOIN 中启用 null_reject */,
     NULL, NULL, TRUE);
 
+static MYSQL_THDVAR_UINT(execution_mode, PLUGIN_VAR_NOCMDOPT,
+                         "Execution mode of SQL statement. (Default: 0)"
+                         /* SQL 语句的执行模式 [0, 2]。*/,
+                         NULL, sdb_exec_mode_update, 0, 0, 2, 1);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -657,6 +679,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(choose_all_in_mrr_info),
     MYSQL_SYSVAR(support_cond_const_bool),
     MYSQL_SYSVAR(enable_null_reject_for_bka_join),
+    MYSQL_SYSVAR(execution_mode),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -804,6 +827,25 @@ uint sdb_selector_pushdown_threshold(THD *thd) {
   return THDVAR(thd, selector_pushdown_threshold);
 }
 
+int sdb_execution_mode(THD *thd) {
+  return THDVAR(thd, execution_mode);
+}
+
+void *sdb_execution_mode_ptr(THD *thd) {
+  return &(THDVAR(thd, execution_mode));
+}
+
+void *sdb_execute_only_in_mysql_ptr(THD *thd) {
+  return &(THDVAR(thd, execute_only_in_mysql));
+}
+
+void sdb_set_execution_mode(THD *thd, int val, bool cascade_update) {
+  THDVAR(thd, execution_mode) = val;
+  if (cascade_update && thd && val < SDB_SQL_EXEC_MODE_SYNC_DDL_IN_SQL_NODES) {
+    sdb_set_execute_only_in_mysql(thd, val);
+  }
+}
+
 /*
    will not open collection on sdb, make sure called before
    collection's action.
@@ -812,8 +854,12 @@ bool sdb_execute_only_in_mysql(THD *thd) {
   return THDVAR(thd, execute_only_in_mysql);
 }
 
-void sdb_set_execute_only_in_mysql(THD *thd, bool val) {
+void sdb_set_execute_only_in_mysql(THD *thd, bool val, bool cascade_update) {
   THDVAR(thd, execute_only_in_mysql) = val;
+  if (cascade_update && thd &&
+      THDVAR(thd, execution_mode) < SDB_SQL_EXEC_MODE_SYNC_DDL_IN_SQL_NODES) {
+    THDVAR(thd, execution_mode) = val;
+  }
 }
 
 longlong sdb_alter_table_overhead_threshold(THD *thd) {

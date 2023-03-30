@@ -4848,7 +4848,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   }
 
   // if 'sequoiadb_execute_only_in_mysql' has been set, goto done
-  if (sdb_execute_only_in_mysql(thd)) {
+  if (SDB_SQL_EXEC_MODE_ONLY_IN_SINGLE_SQL == sdb_execution_mode(thd)) {
     goto done;
   }
 
