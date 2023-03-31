@@ -105,6 +105,9 @@ show create trigger metadata_sync_show_parallel.t1_bi;
 drop table metadata_sync_show_parallel.t1;
 
 connection conn1;
+--disable_warnings
+drop user if exists 'metadata_sync_user_23109'; 
+--enable_warnings
 create user 'metadata_sync_user_23109'@'%' IDENTIFIED BY 'metadata_sync_user_23109';
 flush privileges;
 
