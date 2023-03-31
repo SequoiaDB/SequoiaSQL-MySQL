@@ -1165,7 +1165,6 @@ The following options may be given as the first argument:
  (Defaults to on; use --skip-sequoiadb-use-transaction to disable.)
  --sequoiadb-user[=name] 
  SequoiaDB authentication user. (Default: "")
- --server-ha-dml-max-retry-count[=#] 
  --server-ha-inst-group-key[=name] 
  Instance group key used to decrypt instance group
  password. (Default: "")
