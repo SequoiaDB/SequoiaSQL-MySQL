@@ -1,4 +1,6 @@
 SET sequoiadb_execute_only_in_mysql = ON;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 CREATE TABLE t1 ( a INT, c CHAR(16), PRIMARY KEY(a,c) )
 PARTITION BY RANGE COLUMNS (a,c) (
 PARTITION p1 VALUES LESS THAN (10,'h'),
@@ -21,6 +23,8 @@ SELECT * FROM t1 ORDER BY a;
 a	c
 DROP TABLE t1;
 SET sequoiadb_execute_only_in_mysql = OFF;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 CREATE TABLE `t1#ExecuteOnly#List#Expr` ( id INT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED )
 PARTITION BY LIST (b) (
 PARTITION ptest1 VALUES IN (-4,40,9,-1,0,100,11),
@@ -42,6 +46,8 @@ t1#ExecuteOnly#List#Expr	CREATE TABLE `t1#ExecuteOnly#List#Expr` (
  PARTITION ytest4 VALUES IN (6,16,-7,12,-13,10,101,-99) ENGINE = SequoiaDB) */
 INSERT INTO `t1#ExecuteOnly#List#Expr` PARTITION (otest2,qtest3,ytest4)(id,a) VALUES (0,0),(40,40),(11,11),(13,13),(12,12),(-8,-8),(100,100),(9,9),(2,2);
 SET sequoiadb_execute_only_in_mysql = ON;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 UPDATE `t1#ExecuteOnly#List#Expr` PARTITION (ptest1,otest2,ytest4) SET id = id*2 WHERE a >= 10;
 SELECT * FROM `t1#ExecuteOnly#List#Expr` PARTITION (otest2,qtest3,ytest4) WHERE a IN (2,99,11) ORDER BY id;
 id	a	b
@@ -73,6 +79,8 @@ otest2	LIST	b	18446744073709551615
 qtest3	LIST	b	18446744073709551615
 ytest4	LIST	b	18446744073709551615
 SET sequoiadb_execute_only_in_mysql = OFF;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 SELECT * FROM `t1#ExecuteOnly#List#Expr` PARTITION (ptest1,otest2,qtest3,ytest4) ORDER BY id;
 id	a	b
 -8	-8	-7
@@ -93,6 +101,8 @@ otest2	LIST	b	2
 qtest3	LIST	b	2
 ytest4	LIST	b	2
 SET sequoiadb_execute_only_in_mysql = ON;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 ALTER TABLE `t1#ExecuteOnly#List#Expr` ADD PARTITION (
 PARTITION pmore1 VALUES IN (-3,19,21,-2,97),
 PARTITION pmore2 VALUES IN (32,28,15,4,-10)
@@ -188,8 +198,12 @@ ptest1	LIST	b	18446744073709551615
 pmoren2	LIST	b	18446744073709551615
 pmoren3	LIST	b	18446744073709551615
 SET sequoiadb_execute_only_in_mysql = OFF;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 DROP TABLE `t1#ExecuteOnly#List#Expr`,`t1#ExecuteOnly#List#Expr#P#ptest1`;
 SET sequoiadb_execute_only_in_mysql = ON;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 CREATE TABLE `t1#ExecuteOnly#Hash` ( id FLOAT, b INT GENERATED ALWAYS AS (id+1) STORED )
 PARTITION BY HASH( CEILING(b) ) PARTITIONS 16;
 SHOW CREATE TABLE `t1#ExecuteOnly#Hash`;
@@ -375,3 +389,5 @@ SELECT * FROM t1 ORDER BY age;
 age	city
 DROP TABLE t1;
 SET sequoiadb_execute_only_in_mysql = OFF;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
