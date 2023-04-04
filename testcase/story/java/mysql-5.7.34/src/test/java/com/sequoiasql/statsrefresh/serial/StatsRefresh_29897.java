@@ -123,8 +123,13 @@ public class StatsRefresh_29897 extends MysqlTestBase {
                 dbName1, tb_normal ) );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime3,
                 dbName1, tb_part ) );
+        // CI-1801 增加打印相关时间信息
+        Long lastRefreshTime = StatsRefreshUtils.getLastRefreshTime( jdbc,
+                dbName2, tb_normal );
+        String message = "lastRefreshTime: " + lastRefreshTime
+                + " timeBeforeRefresh: " + currentTime3;
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime3,
-                dbName2, tb_normal ) );
+                dbName2, tb_normal ), message );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime3,
                 dbName2, tb_part ) );
         Assert.assertFalse( StatsRefreshUtils.isRefresh( jdbc, currentTime3,
