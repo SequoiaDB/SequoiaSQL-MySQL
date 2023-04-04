@@ -1,6 +1,8 @@
 drop table if exists t1;
 CREATE TABLE t1 ( a INT );
 set session sequoiadb_execute_only_in_mysql=on;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 drop table t1;
 CREATE TABLE t1 ( a INT );
 SELECT * FROM t1;
@@ -11,10 +13,14 @@ DELETE FROM t1 WHERE a = 11;
 SELECT * FROM t1 ORDER BY a;
 a
 set session sequoiadb_execute_only_in_mysql=off;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 DROP TABLE t1;
 CREATE TABLE t1 ( a INT );
 INSERT INTO t1 VALUES(1),(2),(3),(4);
 set session sequoiadb_execute_only_in_mysql=on;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 UPDATE t1 SET a = a+10;
 DELETE FROM t1 WHERE a = 11;
 SELECT * FROM t1 ORDER BY a;
@@ -26,6 +32,8 @@ DELETE FROM t1 WHERE a = 24;
 SELECT * FROM t1 ORDER BY a;
 a
 set session sequoiadb_execute_only_in_mysql=off;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 SELECT * FROM t1 ORDER BY a;
 a
 1
@@ -34,6 +42,8 @@ a
 4
 DROP TABLE t1;
 set session sequoiadb_execute_only_in_mysql=on;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 CREATE TABLE t1 ( a INT PRIMARY KEY);
 INSERT INTO t1 VALUES (1),(2);
 ANALYZE TABLE t1;
@@ -45,9 +55,13 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 set session sequoiadb_execute_only_in_mysql=off;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 CREATE TABLE t1 ( a INT PRIMARY KEY);
 INSERT INTO t1 VALUES (1),(2);
 set session sequoiadb_execute_only_in_mysql=on;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 ANALYZE TABLE t1;
 SHOW CREATE TABLE t1;
 Table	Create Table
@@ -56,8 +70,12 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 set session sequoiadb_execute_only_in_mysql=off;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 DROP TABLE t1;
 set session sequoiadb_execute_only_in_mysql=on;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 CREATE TABLE t1 ( a INT PRIMARY KEY);
 INSERT INTO t1 VALUES (1),(2);
 TRUNCATE TABLE t1;
@@ -65,13 +83,19 @@ SELECT * FROM t1 ORDER BY a;
 a
 DROP TABLE t1;
 set session sequoiadb_execute_only_in_mysql=off;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 CREATE TABLE t1 ( a INT PRIMARY KEY);
 INSERT INTO t1 VALUES (1),(2);
 set session sequoiadb_execute_only_in_mysql=on;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 TRUNCATE TABLE t1;
 SELECT * FROM t1 ORDER BY a;
 a
 set session sequoiadb_execute_only_in_mysql=off;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 SELECT * FROM t1 ORDER BY a;
 a
 1

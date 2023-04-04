@@ -3,14 +3,20 @@ create database db_22123;
 use db_22123;
 set session sequoiadb_use_transaction=off;
 set session sequoiadb_execute_only_in_mysql=on;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 create table closeTransAndDDL22123(a int(5),b int(5),c int(5),d int(5));
 show tables like 'closeTransAndDDL22123';
 Tables_in_db_22123 (closeTransAndDDL22123)
 closeTransAndDDL22123
 drop table closeTransAndDDL22123;
 set session sequoiadb_execute_only_in_mysql=off;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 create table closeTransAndDDL22123(a int(5),b int(5),c int(5),d int(5));
 set session sequoiadb_execute_only_in_mysql=on;
+Warnings:
+Warning	1287	'sequoiadb_execute_only_in_mysql' is deprecated and will be removed in a future release. Please use 'sequoiadb_execution_mode' instead
 alter table closeTransAndDDL22123 rename closeTransAndDDL22123_2;
 alter table closeTransAndDDL22123_2 comment "表2";
 alter table closeTransAndDDL22123_2 default character set utf8 collate utf8_general_ci;
