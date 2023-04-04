@@ -84,7 +84,7 @@ static void sdb_update_exec_only_in_mysql(THD *thd,
 
     if (sdb_execution_mode(thd) <= SDB_SQL_EXEC_MODE_ONLY_IN_SINGLE_SQL) {
       sdb_set_execution_mode(thd, new_value, false);
-    } else if (!new_value) { // mode > SDB_SQL_EXEC_MODE_ONLY_IN_SINGLE_SQL
+    } else if (!new_value) {  // mode > SDB_SQL_EXEC_MODE_ONLY_IN_SINGLE_SQL
       // 'sequoiadb_execute_only_in_mysql' is set to OFF
       // set 'sequoiadb_execution_mode' to 0
       sdb_set_execution_mode(thd, new_value, false);

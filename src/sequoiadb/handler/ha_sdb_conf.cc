@@ -288,7 +288,7 @@ static void sdb_preferred_period_update(THD *thd, struct st_mysql_sys_var *var,
 }
 
 static void sdb_exec_mode_update(THD *thd, struct st_mysql_sys_var *var,
-                                      void *var_ptr, const void *save) {
+                                 void *var_ptr, const void *save) {
   if (sdb_set_exec_mode) {
     sdb_set_exec_mode(thd, var, var_ptr, save);
   }
@@ -842,7 +842,7 @@ void *sdb_execute_only_in_mysql_ptr(THD *thd) {
 void sdb_set_execution_mode(THD *thd, int val, bool cascade_update) {
   THDVAR(thd, execution_mode) = val;
   if (cascade_update && thd && val < SDB_SQL_EXEC_MODE_SYNC_DDL_IN_SQL_NODES) {
-    sdb_set_execute_only_in_mysql(thd, val);
+    THDVAR(thd, execute_only_in_mysql) = (bool)val;
   }
 }
 
