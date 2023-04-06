@@ -38,8 +38,9 @@ if ($i == 1)
 ALTER TABLE list_part_table ENGINE = SequoiaDB;
 }
 
-EXPLAIN SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 OR col_varchar_16_key = 'u' group by field1;
-SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 OR col_varchar_16_key = 'u' group by field1;
+EXPLAIN SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 OR col_varchar_16_key = 'u';
+--sorted_result
+SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 OR col_varchar_16_key = 'u';
 
 EXPLAIN SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 AND col_varchar_16_key = 'u';
 SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 AND col_varchar_16_key = 'u';
