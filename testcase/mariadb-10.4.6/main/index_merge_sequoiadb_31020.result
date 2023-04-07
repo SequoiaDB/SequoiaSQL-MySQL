@@ -47,7 +47,7 @@ h
 ALTER TABLE list_part_table ENGINE = SequoiaDB;
 EXPLAIN SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 OR col_varchar_16_key = 'u' group by field1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	list_part_table	index_merge	col_varchar_16_key,col_int_key	col_int_key,col_varchar_16_key	5,67	NULL	4	Using union(col_int_key,col_varchar_16_key); Using where with pushed condition; Using temporary; Using filesort
+1	SIMPLE	list_part_table	index_merge	col_varchar_16_key,col_int_key	col_int_key,col_varchar_16_key	5,67	NULL	4	Using sdb_union(col_int_key,col_varchar_16_key); Using where with pushed condition; Using temporary; Using filesort
 SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 OR col_varchar_16_key = 'u' group by field1;
 field1
 NULL

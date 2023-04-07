@@ -509,6 +509,7 @@ int ha_sdb_part_wrapper::open(const char *name, int mode, uint test_if_locked) {
     }
 
     ((ha_sdb_part *)(m_file[0]))->m_handler_wrapper = this;
+    ((ha_sdb_part *)(m_file[0]))->set_part_part_share(part_share);
     if (m_file[0]->ha_open(table, name, table->db_stat,
                            HA_OPEN_IGNORE_IF_LOCKED, m_clone_mem_root)) {
       delete m_file[0];
