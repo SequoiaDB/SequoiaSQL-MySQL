@@ -244,8 +244,8 @@ explain select distinct SQL_CACHE documentno from t1 group by documentno limit 2
 select distinct SQL_CACHE documentno from t1 group by documentno limit 2;
 --source include/query_pushdown_condition_sequoiadb_2.inc
 
-
-select SQL_NO_CACHE documentno from t1 group by documentno;
+--replace_column 9 #
+explain select SQL_NO_CACHE documentno from t1 group by documentno;
 select SQL_NO_CACHE documentno from t1 group by documentno;
 --source include/query_pushdown_condition_sequoiadb_2.inc
 
@@ -284,17 +284,17 @@ select distinct SQL_NO_CACHE id from t1 group by id limit 2;
 --replace_column 9 #
 explain (select documentno from t1 group by documentno limit 2) union (select documentno from t1 order by documentno limit 2);
 (select documentno from t1 group by documentno limit 2) union (select documentno from t1 order by documentno limit 2);
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 
 --replace_column 9 #
 explain select *,(select documentno from t1 tt group by documentno limit 1) from t2 where t2.id <(select id from t1 where id=5 order by id desc limit 6);
 select *,(select documentno from t1 tt group by documentno limit 1) from t2 where t2.id <(select id from t1 where id=5 order by id desc limit 6);
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_7.inc
 
 --replace_column 9 #
 explain select * from (select documentno from t1 group by documentno limit 10) dt where documentno>="aaa" limit 2,3;
 select * from (select documentno from t1 group by documentno limit 10) dt where documentno>="aaa" limit 2,3;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb.inc
 
 --replace_column 9 #
 explain select * from (select id from t1 order by id limit 6) dt where id<6 limit 2,2;
