@@ -237,9 +237,9 @@ truncate table t5;
 
 # partition table
 --replace_column 9 #
-explain  insert into t3_partition select * from t1_partition where col2>="def" group by col1 order by col4 limit 2,3;
+explain  insert into t3_partition(col2,col4) select col2,col4 from t1_partition where col2>="def" group by col2 order by col4 limit 2,3;
 --sorted_result
-insert into t3_partition select * from t1_partition where col2>="def" group by col2 order by col4 limit 2,3;
+insert into t3_partition(col2,col4) select col2,col4 from t1_partition where col2>="def" group by col2 order by col4 limit 2,3;
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 select * from t3_partition order by col1;
@@ -1101,9 +1101,9 @@ truncate table t5;
 
 # partition table
 --replace_column 9 #
-explain  insert into insert_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
+explain  insert into insert_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4,col1 limit 0,1) order by col4 desc;
 --sorted_result
-select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
+insert into insert_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4,col1 limit 0,1) order by col4 desc;
 --source include/query_pushdown_condition_sequoiadb_3.inc
  --sorted_result
 select * from insert_table7 order by col4;
