@@ -623,15 +623,12 @@ Warnings:
 Warning	1681	'SQL_CACHE' is deprecated and will be removed in a future release.
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
-select SQL_NO_CACHE documentno from t1 group by documentno;
-documentno
-NULL
-abc
-bdc
-cf 
-ef
+explain select SQL_NO_CACHE documentno from t1 group by documentno;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index	doc,id_doc_sff_idx	doc	131	NULL	#	#	Using index
 Warnings:
 Warning	1681	'SQL_NO_CACHE' is deprecated and will be removed in a future release.
+Note	1003	/* select#1 */ select sql_no_cache `count_limit_sort_pushdown_sequoiadb_29792`.`t1`.`documentno` AS `documentno` from `count_limit_sort_pushdown_sequoiadb_29792`.`t1` group by `count_limit_sort_pushdown_sequoiadb_29792`.`t1`.`documentno`
 select SQL_NO_CACHE documentno from t1 group by documentno;
 documentno
 NULL
@@ -754,6 +751,7 @@ Note	1003	(/* select#1 */ select `count_limit_sort_pushdown_sequoiadb_29792`.`t1
 documentno
 NULL
 abc
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 [Note] SequoiaDB: optimizer selector object: { "documentno": null }, table: count_limit_sort_pushdown_sequoiadb_29792.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "documentno": null }], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[2], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select *,(select documentno from t1 tt group by documentno limit 1) from t2 where t2.id <(select id from t1 where id=5 order by id desc limit 6);
@@ -769,6 +767,9 @@ id	documentno	sffid	(select documentno from t1 tt group by documentno limit 1)
 2	abc	3	NULL
 4	bdc	4	NULL
 4	bdc	4	NULL
+[Note] SequoiaDB: optimizer selector object: { "id": null }, table: count_limit_sort_pushdown_sequoiadb_29792.t1
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 5 } }], selector[{ "id": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
+[Note] SequoiaDB: optimizer selector object: { "id": null }, table: count_limit_sort_pushdown_sequoiadb_29792.t1
 [Note] SequoiaDB: Query message: condition[{ "id": { "$et": 5 } }], selector[{ "id": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[6], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 [Note] SequoiaDB: optimizer selector object: { "id": null, "documentno": null, "sffid": null }, table: count_limit_sort_pushdown_sequoiadb_29792.t2
 [Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 5 } }], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t2]
@@ -783,8 +784,6 @@ select * from (select documentno from t1 group by documentno limit 10) dt where 
 documentno
 cf 
 ef
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 5 } }], selector[{ "id": null, "documentno": null, "sffid": null }], order_by[{ "id": 1, "documentno": 1, "sffid": 1 }], hint[{ "": "id_doc_sff_idx" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t2]
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "documentno": 1 }], hint[{ "": "doc" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_29792.t1]
 explain select * from (select id from t1 order by id limit 6) dt where id<6 limit 2,2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
