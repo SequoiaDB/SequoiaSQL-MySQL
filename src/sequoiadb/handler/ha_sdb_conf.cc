@@ -556,6 +556,7 @@ static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
 static MYSQL_THDVAR_STR(
     diag_info_path,
     PLUGIN_VAR_NOCMDARG | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1470 "
     "Path to the table and index statistics replacement file. (Default: \"\")"
     /*表及索引统计信息替换文件的路径。*/,
     NULL, NULL, SDB_DEFAULT_DIAG_INFO_PATH);
@@ -563,6 +564,7 @@ static MYSQL_THDVAR_STR(
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_BOOL(
     lossy_end_range, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1479 "
     "Ignore the end range on character strings data type fields when using "
     "index to retrieve on a given range."
     "(Default: OFF)"
@@ -572,6 +574,7 @@ static MYSQL_THDVAR_BOOL(
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_BOOL(
     cls_pushdown_expand, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1534 "
     "Expand 'direct_count', 'direct_limit' and 'direct_sort' pushdown. "
     "(Default: ON)"
     /* SequoiaDB 优化选项开关，以决定是否扩展 count、limit、sort 下压。*/,
@@ -580,6 +583,7 @@ static MYSQL_THDVAR_BOOL(
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_BOOL(support_cond_not,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+                         "SEQUOIASQLMAINSTREAM-1533 "
                          "Whether support push SequoiaDB $not matcher down."
                          "(Default: ON)"
                          /* 是否支持匹配符 $not 的下压 */,
@@ -588,6 +592,7 @@ static MYSQL_THDVAR_BOOL(support_cond_not,
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_BOOL(
     choose_all_in_mrr_info, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1606 "
     "Whether do all choosing job in ::multi_range_read_info[_const](). "
     "(Default: ON)"
     /* 是否在 ::multi_range_read_info[_const] 函数完成所有 mrr 选择工作 */,
@@ -596,6 +601,7 @@ static MYSQL_THDVAR_BOOL(
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_BOOL(
     build_sort_cond_on_runtime, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1571 "
     "Whether build sort condition on runtime. "
     "(Default: ON)"
     /* 是否在 runtime 层构建排序条件(包括order by、group by)。*/,
@@ -604,6 +610,7 @@ static MYSQL_THDVAR_BOOL(
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_BOOL(
     support_cond_const_bool, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1744 "
     "Whether support pushing always true / false condition down. "
     "(Default: ON)"
     /* 是否支持下压永真永假条件 */,
@@ -612,6 +619,7 @@ static MYSQL_THDVAR_BOOL(
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_BOOL(
     enable_null_reject_for_bka_join, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1749 "
     "Whether enable null reject for batched keys access join or not. "
     "(Default: ON)"
     /* 是否在 BKA JOIN 中启用 null_reject */,
