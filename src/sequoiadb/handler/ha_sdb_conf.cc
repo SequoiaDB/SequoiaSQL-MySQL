@@ -539,6 +539,7 @@ static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
 static MYSQL_THDVAR_STR(
     diag_info_path,
     PLUGIN_VAR_NOCMDARG | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1470 "
     "Path to the table and index statistics replacement file. (Default: \"\")"
     /*表及索引统计信息替换文件的路径。*/,
     NULL, NULL, SDB_DEFAULT_DIAG_INFO_PATH);
@@ -546,6 +547,7 @@ static MYSQL_THDVAR_STR(
 // SDB_DOC_OPT = IGNORE
 static MYSQL_THDVAR_BOOL(
     support_cond_const_bool, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+    "SEQUOIASQLMAINSTREAM-1744 "
     "Whether support pushing always true / false condition down. "
     "(Default: ON)"
     /* 是否支持下压永真永假条件 */,
