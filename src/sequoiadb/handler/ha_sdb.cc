@@ -12629,6 +12629,10 @@ static void sdb_drop_database(handlerton *hton, char *path) {
       SDB_LOG_WARNING("Failed to drop CS '%s', error: %d",
                       mapping_cs[i].c_str(), rc);
     }
+    if (SDB_RECYCLE_FULL == get_sdb_code(rc)) {
+      my_printf_error(rc, "%s", MYF(0), connection->get_err_msg());
+      goto error;
+    }
   }
 
   rc = Name_mapping::remove_table_mappings(connection, db_name);

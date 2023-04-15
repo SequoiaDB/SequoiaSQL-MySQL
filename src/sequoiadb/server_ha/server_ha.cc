@@ -3146,6 +3146,9 @@ bool can_write_user_ddl_sql_log(THD *thd, ha_sql_stmt_info *sql_info,
     // handle 'create table if not exists', if get warning message 'table
     // exists' in thd, ignore this sql
     can_write_log = !sdb_has_sql_condition(thd, ER_TABLE_EXISTS_ERROR);
+  } else if (SQLCOM_DROP_DB == sql_command &&
+             get_sdb_code(error_code) == SDB_RECYCLE_FULL) {
+    can_write_log = true;
   } else if (error_code) {
     can_write_log = false;
   }

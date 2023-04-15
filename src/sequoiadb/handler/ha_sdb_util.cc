@@ -1669,3 +1669,7 @@ SELECT_LEX *sdb_get_cur_select_by_table(TABLE *table) {
   }
   return table->pos_in_table_list->select_lex;
 }
+
+bool sdb_is_recyclebin_full_error(int rc) {
+  return SDB_RECYCLE_FULL == get_sdb_code(rc);
+}
