@@ -110,7 +110,7 @@ public class DDL31068 extends MysqlTestBase {
         List< String > exp3 = new ArrayList<>();
         exp2.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `pk` int(11) DEFAULT NULL,\n"
-                + "  `col2` bigint(11) DEFAULT '100',\n"
+                + "  `col2` bigint(11) DEFAULT 100,\n"
                 + "  `col3` char(20) COLLATE utf8mb4_bin DEFAULT 'ABCD',\n"
                 + "  `col6` varchar(20) COLLATE utf8mb4_bin DEFAULT 'DCBA'\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );
