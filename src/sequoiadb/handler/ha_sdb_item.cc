@@ -445,7 +445,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
             item_val->val_decimal(&dec_tmp);
             sdb_decimal_to_string(E_DEC_FATAL_ERROR, &dec_tmp, 0, 0, 0, &str);
 
-            rc = decimal.fromString(str.c_ptr());
+            rc = decimal.fromString(str.ptr());
             if (0 != rc) {
               rc = SDB_ERR_INVALID_ARG;
               goto error;
@@ -505,7 +505,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
               p_str = &conv_str;
             }
 
-            rc = decimal.fromString(p_str->c_ptr());
+            rc = decimal.fromString(p_str->ptr());
             if (0 != rc) {
               rc = SDB_ERR_INVALID_ARG;
               goto error;
@@ -612,7 +612,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
                                    converter->table->read_set,
                                    converter->table->write_set);
           type_conversion_status status = converter->store(
-              p_str->c_ptr(), p_str->length(), p_str->charset());
+              p_str->ptr(), p_str->length(), p_str->charset());
           if (TYPE_OK == status) {
             try {
               BSON_APPEND(field_name, converter->val_int(), obj, arr_builder);
@@ -634,7 +634,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
                                                  p_str->length());
           obj = obj_builder.obj();
         } else {
-          arr_builder->append(p_str->c_ptr());
+          arr_builder->append(p_str->ptr());
         }
       } else {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;

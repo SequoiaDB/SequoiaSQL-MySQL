@@ -676,7 +676,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
       const KEY_PART_INFO *key_part;
       bool ignore_text_key = false;
 
-      if (ranges[i] == NULL) {
+      if (NULL == ranges[i] || 0 == ranges[i]->keypart_map) {
         continue;
       }
 
