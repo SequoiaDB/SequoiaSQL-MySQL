@@ -616,7 +616,11 @@ delete from slow_log;
 ERROR HY000: You can't use locks with log tables.
 delete from general_log;
 ERROR HY000: You can't use locks with log tables.
-set global slow_query_log = off;
-set global general_log = off;
+truncate mysql.slow_log;
+truncate mysql.general_log;
+set global server_id = 1;
+set global log_output = 'FILE';
+set global sequoiadb_error_level = 'error';
+set global slow_query_log = 1;
+set global general_log = 1;
 drop database slow_log_sequoiadb;
-drop table mysql.slow_log, mysql.general_log;

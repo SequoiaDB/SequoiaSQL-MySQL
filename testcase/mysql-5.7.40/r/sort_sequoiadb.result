@@ -185,3 +185,4 @@ NULL
 [Note] SequoiaDB: optimizer selector object: { "_id": null, "col_int_key": null }, table: sort_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "col_int_key": { "$et": 1 } }, { "col_int_key": { "$et": 7 } }, { "col_int_key": { "$isnull": 1 } } ] }, { "col_int_key": { "$gt": 7 } } ] }], selector[{ "_id": null, "col_int_key": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[sort_sequoiadb.t1]
 drop database sort_sequoiadb;
+set global sequoiadb_auto_partition = 0;

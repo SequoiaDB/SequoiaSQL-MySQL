@@ -1,6 +1,12 @@
 #case 29404~29415
 --source include/have_sequoiadb.inc
 
+let $log_output = `select @@log_output`;
+let $sequoiadb_error_level = `select @@sequoiadb_error_level`;
+let $server_id = `select @@server_id`;
+let $slow_query_log = `select @@slow_query_log`; 
+let $general_log = `select @@general_log`;
+
 set global log_output = "TABLE";
 set session long_query_time = 0;
 set session sequoiadb_support_mode = '';
@@ -544,9 +550,13 @@ delete from general_log;
 #--error 122
 #set global general_log = on;
 
-set global slow_query_log = off;
-set global general_log = off;
+truncate mysql.slow_log;
+truncate mysql.general_log;
+eval set global server_id = $server_id;
+eval set global log_output = '$log_output';
+eval set global sequoiadb_error_level = '$sequoiadb_error_level';
+eval set global slow_query_log = $slow_query_log;
+eval set global general_log = $general_log;
 drop database slow_log_sequoiadb;
-drop table mysql.slow_log, mysql.general_log;
 
 --source include/uninstall_sequoiadb.inc

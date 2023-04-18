@@ -1,6 +1,7 @@
 #Case 29390,29391,29395
 --source include/have_sequoiadb.inc
 
+let $sequoiadb_auto_partition = `select @@sequoiadb_auto_partition`;
 set session optimizer_index_sort_prune=on;
 set session sequoiadb_debug_log=on;
 set global sequoiadb_auto_partition=on;
@@ -46,5 +47,6 @@ SELECT DISTINCT col_int_key FROM t1 WHERE col_int_key = 1 OR col_int_key = 7 OR 
 --source include/query_pushdown_condition_sequoiadb_3.inc
 
 drop database sort_sequoiadb;
+eval set global sequoiadb_auto_partition = $sequoiadb_auto_partition;
 
 --source include/uninstall_sequoiadb.inc
