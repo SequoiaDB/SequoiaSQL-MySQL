@@ -5391,6 +5391,10 @@ id	a	b
 7	 hello	 hello
 SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 id	a	b
+14	 HELLO1	 HELLO1
+16	 HELLO1	 HELLO1
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
 SELECT * FROM t1 WHERE a LIKE "%hello";
 id	a	b
 1	hello	hello
@@ -5588,6 +5592,10 @@ id	a	b
 7	 hello	 hello
 SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 id	a	b
+14	 HELLO1	 HELLO1
+16	 HELLO1	 HELLO1
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
 SELECT * FROM t1 WHERE a LIKE "%hello";
 id	a	b
 1	hello	hello
