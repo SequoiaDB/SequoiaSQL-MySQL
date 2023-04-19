@@ -611,8 +611,8 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
           dbug_tmp_use_all_columns(converter->table, org_sets,
                                    converter->table->read_set,
                                    converter->table->write_set);
-          type_conversion_status status = converter->store(
-              p_str->ptr(), p_str->length(), p_str->charset());
+          type_conversion_status status =
+              converter->store(p_str->ptr(), p_str->length(), p_str->charset());
           if (TYPE_OK == status) {
             try {
               BSON_APPEND(field_name, converter->val_int(), obj, arr_builder);
@@ -634,7 +634,17 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
                                                  p_str->length());
           obj = obj_builder.obj();
         } else {
-          arr_builder->append(p_str->ptr());
+          /*
+            Since BSONArrayBuilder has no appendStrWithNoTerminating() method
+            to control the string length, and String::strip_sp() will not set
+            set '\0' at the end, we do a copy to make string length right.
+          */
+          String str_with_end_char;
+          if (str_with_end_char.copy(*p_str)) {
+            rc = HA_ERR_OUT_OF_MEM; /* purecov: inspected */
+            goto error;             /* purecov: inspected */
+          }
+          arr_builder->append(str_with_end_char.ptr());
         }
       } else {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;

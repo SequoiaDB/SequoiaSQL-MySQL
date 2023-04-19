@@ -361,8 +361,7 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
     (+, -, *, MOD, FLOOR...)
   */
   if (item && item->type() != Item_func::UNKNOWN_FUNC &&
-      cond_item->type() == Item::FUNC_ITEM &&
-      cond_item->const_item()) {
+      cond_item->type() == Item::FUNC_ITEM && cond_item->const_item()) {
     if (current_thd && sdb_support_cond_const_bool(current_thd)) {
       THD *thd = current_thd;
       Dummy_error_handler dummy_handler;
