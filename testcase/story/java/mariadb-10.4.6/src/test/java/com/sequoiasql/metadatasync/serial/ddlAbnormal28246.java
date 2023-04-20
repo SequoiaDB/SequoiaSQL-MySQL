@@ -1,21 +1,22 @@
 package com.sequoiasql.metadatasync.serial;
+
 import java.sql.SQLException;
 import java.util.List;
 
-import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import com.sequoiadb.base.DBCollection;
+import com.sequoiadb.base.DBCursor;
 import com.sequoiadb.base.Sequoiadb;
+import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 import com.sequoiasql.testcommon.CommLib;
 import com.sequoiasql.testcommon.JdbcInterface;
 import com.sequoiasql.testcommon.JdbcInterfaceFactory;
 import com.sequoiasql.testcommon.JdbcWarpperType;
 import com.sequoiasql.testcommon.MysqlTestBase;
-import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 
 /**
  * @Description seqDB-28246:create对象带if not exists时异常，查看pending log
@@ -235,27 +236,39 @@ public class ddlAbnormal28246 extends MysqlTestBase {
         // 等待一段时间后，检查pending log
         String instGroupName = MetaDataMappingUtils.getInstGroupName( sdb,
                 MysqlTestBase.mysql1 );
-        DBCollection cl1 = sdb
-                .getCollectionSpace( "HAInstanceGroup_" + instGroupName )
-                .getCollection( "HAPendingLog" );
-        DBCollection cl2 = sdb
-                .getCollectionSpace( "HAInstanceGroup_" + instGroupName )
-                .getCollection( "HAPendingObject" );
-        int count1 = ( int ) cl1.getCount();
-        int count2 = ( int ) cl2.getCount();
+        DBCollection cl1 = null;
+        DBCollection cl2 = null;
         // 增加重试机制
-        int retry = 0;
-        while ( count1 != 0 && count2 != 0 ) {
-            Thread.sleep( 5000 );
+        int currRetryTimes = 0;
+        int MaxretryTimes = 200;
+        while ( currRetryTimes <= MaxretryTimes ) {
             cl1 = sdb.getCollectionSpace( "HAInstanceGroup_" + instGroupName )
                     .getCollection( "HAPendingLog" );
             cl2 = sdb.getCollectionSpace( "HAInstanceGroup_" + instGroupName )
                     .getCollection( "HAPendingObject" );
-            count1 = ( int ) cl1.getCount();
-            count2 = ( int ) cl2.getCount();
-            retry = retry + 1;
-            if ( retry > 20 ) {
-                throw new Exception( "retry timed out." );
+            long count1 = cl1.getCount();
+            long count2 = cl2.getCount();
+            if ( count1 == 0 && count2 == 0 ) {
+                break;
+            } else {
+                Thread.sleep( 1000 );
+                currRetryTimes++;
+                if ( currRetryTimes > MaxretryTimes ) {
+                    if ( count1 != 0 ) {
+                        DBCursor cursor = cl1.query();
+                        while ( cursor.hasNext() ) {
+                            System.out.println( cursor.getNext().toString() );
+                        }
+                    }
+                    if ( count2 != 0 ) {
+                        DBCursor cursor = cl2.query();
+                        while ( cursor.hasNext() ) {
+                            System.out.println( cursor.getNext().toString() );
+                        }
+                    }
+
+                    throw new Exception( "retry timed out." );
+                }
             }
         }
 
@@ -287,6 +300,7 @@ public class ddlAbnormal28246 extends MysqlTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
+            jdbc.update( "set debug=\"\";" );
             jdbc.dropDatabase( dbName );
             jdbc.dropDatabase( test_db1 );
             jdbc.update( "drop user " + test_u1_Existed + "," + test_u1 + ","
