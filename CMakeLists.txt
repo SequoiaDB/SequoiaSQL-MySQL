@@ -360,8 +360,7 @@ install(FILES "${CMAKE_SOURCE_DIR}/tools/sdbfk/README.md"
         DESTINATION "tools/sdbfk")
 install(PROGRAMS "${CMAKE_SOURCE_DIR}/tools/diagnostic/sdb_diag_info_dump"
         DESTINATION "tools/diagnostic")
-install(PROGRAMS "${CMAKE_SOURCE_DIR}/tools/sdb_change_engine"
-        DESTINATION "tools/")
+
 
 execute_process( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 message( STATUS "Architecture: ${ARCHITECTURE}" )
