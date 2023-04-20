@@ -4716,6 +4716,23 @@ static inline int set_single_query(THD *thd, ha_sql_stmt_info *sql_info,
   return rc;
 }
 
+// return fixed string if it's 'create/grant/alter user' sql command
+// it may contain a plaintext string, it should not be written to any log
+static inline const char *query_without_password(THD *thd,
+                                                 ha_sql_stmt_info *sql_info) {
+  int sql_command = thd_sql_command(thd);
+  static const char *MASKED_PASSWORD_QUERY = "GRANT_CREATE_ALTER_USER_OP";
+  const char *query = sdb_thd_query(thd);
+  if (SQLCOM_CREATE_USER == sql_command || SQLCOM_ALTER_USER == sql_command ||
+      SQLCOM_GRANT == sql_command) {
+    query = MASKED_PASSWORD_QUERY;
+  } else if (sql_info->single_query) {
+    query = sql_info->single_query;
+  }
+  assert(NULL != query);
+  return query;
+}
+
 // entry of audit plugin
 static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                             const void *ev) {
@@ -4903,25 +4920,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         goto error;
       }
 
-      // Rewrite DCL statement with plaintext password
-      rc = ha_rewrite_query(thd, create_query);
-      if (0 != rc) {
-        /* purecov: begin inspected */
-        SDB_LOG_ERROR("HA: Failed to rewrite DCL, error: %d", rc);
-        goto error;
-        /* purecov: end */
-      }
-      if (create_query.length()) {
-        event.general_query = create_query.c_ptr_safe();
-        event.general_query_length = create_query.length();
-      }
-      DBUG_EXECUTE_IF(
-          "test_point_ha_rewritten_query",
-          sdb_register_debug_var(thd, "HA_REWRITTEN_QUERY_BEFORE_EXECUTION",
-                                 event.general_query););
-
       SDB_LOG_DEBUG("HA: At the beginning of persisting SQL: %s, thread: %p",
-                    event.general_query, thd);
+                    query_without_password(thd, sql_info), thd);
       SDB_LOG_DEBUG("HA: SQL command: %d, event: %d, subevent: %d, thread: %p",
                     sql_command, event_class, *((int *)ev), thd);
       SDB_LOG_DEBUG("HA: Start transaction for persisting SQL log");
@@ -4973,6 +4973,23 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         rc = SDB_HA_EXCEPTION;
         goto error;
       }
+
+      // Rewrite DCL statement with plaintext password
+      rc = ha_rewrite_query(thd, create_query);
+      if (0 != rc) {
+        /* purecov: begin inspected */
+        SDB_LOG_ERROR("HA: Failed to rewrite DCL, error: %d", rc);
+        goto error;
+        /* purecov: end */
+      }
+      if (create_query.length()) {
+        event.general_query = create_query.c_ptr_safe();
+        event.general_query_length = create_query.length();
+      }
+      DBUG_EXECUTE_IF(
+          "test_point_ha_rewritten_query",
+          sdb_register_debug_var(thd, "HA_REWRITTEN_QUERY_BEFORE_EXECUTION",
+                                 event.general_query););
 
       // write pending logs for current metadata operation
       rc = write_pending_log(thd, sql_info, event);
