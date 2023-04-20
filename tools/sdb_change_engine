@@ -1,0 +1,203 @@
+#/bin/bash
+
+#   error code list:
+#   1     parameter invalid
+#   2     permission denied
+#   3     shell command error
+#   4     input/output file error
+
+ME=$(basename "$0")
+
+INPUT=""
+OUTPUT=""
+ENGINE="innodb"
+IS_QUIET="false"
+IS_ALL="false"
+
+function show_help()
+{
+    echo "${ME} is a tool for modifying \"ENGINE=xxxxxx\" in the INPUTFILE to \"ENGINE=SequoiaDB\"."
+    echo "This tool will output the result to the OUTPUTFILE and finally print the diff of the two files on screen"
+    echo ""
+    echo "Usage:"
+    echo "  ${ME} <-i INPUTFILE> <-o OUTPUTFILE> ([-e ENGINE]|[--all]) [-q]"
+    echo ""
+    echo "Options:"
+    echo "  -i, --input                    input file"
+    echo "  -o, --output                   output file"
+    echo "  -e, --engine                   specifies the engine to be modified to \"SequoiaDB\", default \"InnoDB\""
+    echo "  -q, --quiet                    will not printed the diff information of the input and output file"
+    echo "  --all                          all engines will be modified to \"SequoiaDB\", the \"-e\" option will not work"
+}
+
+function check_all()
+{
+    check_parameters
+    check_file
+    check_shell_command
+}
+
+function check_shell_command()
+{
+    # 检查 sed 命令是否可用
+    sed --help > /dev/null 2>&1
+    test $? -ne 0 && { echo "ERROR: cannot use \"sed\" command" && exit 3; }
+
+    if [ "${IS_QUIET}" == "false" ]; then
+        # 检查 diff 命令是否可用
+        diff --help > /dev/null 2>&1
+        test $? -ne 0 && { echo "ERROR: cannot use \"diff\" command" && exit 3; }
+    fi
+}
+
+function check_parameters()
+{
+    if [ "${INPUT}" == "" ]; then
+        echo "ERROR: INPUT is empty"
+        exit 1
+    fi
+
+    if [ "${OUTPUT}" == "" ]; then
+        echo "ERROR: OUTPUT is empty"
+        exit 1
+    fi
+}
+
+function check_file()
+{
+    # 检查输入文件是否存在
+    ls -l "${INPUT}" > /dev/null 2>&1
+    test $? -ne 0 && { echo "ERROR: Cannot access \"${INPUT}\", no such file or directory" && exit 4; }
+
+    # 只允许是普通文件
+    test -f "${INPUT}" || { echo "ERROR: The \"${INPUT}\" is not a normal file" && exit 4; }
+
+    # 检查输入文件是否有替换的目标
+    if [ "${IS_ALL}" == "false" ]; then
+        local count=`grep -i "ENGINE=${ENGINE}" "${INPUT}" | wc -l`
+        test $count -eq 0 && { echo "INFO: The input file does not contain \"ENGINE=${ENGINE}\"" && exit 0; }
+    else
+        local count=`grep -iE "ENGINE=[^ ]+" "${INPUT}" | wc -l`
+        test $count -eq 0 && { echo "INFO: The input file does not contain \"ENGINE=[ENGINE]\"" && exit 0; }
+    fi
+
+    # 检查输出文件是否存在
+    if [ -e "${OUTPUT}" ]; then
+        # 只允许是普通文件
+        test -f "${OUTPUT}" || { echo "ERROR: The \"${OUTPUT}\" is not a normal file" && exit 4; }
+
+        # 如果输出文件不为空，询问用户是否可以覆盖
+        if [ -s "${OUTPUT}" ]; then
+            local answer
+            echo "INFO: The \"${OUTPUT}\" is not empty" >&2
+            read -p "Do you want to recover it?[y/N]" answer
+            answer=`echo "${answer}" | tr -t "[:lower:]" "[:upper:]"`
+            test -z "${answer}" && answer="N"
+            case "${answer}" in
+                Y|YES)
+                    ;;
+                *)
+                    echo "Exit"
+                    exit 0
+                    ;;
+            esac
+        fi
+    fi
+
+    # 创建文件或清空文件，检查权限
+    echo "" > "${OUTPUT}"
+    test $? -ne 0 && { echo "ERROR: No permission to write to the \"${OUTPUT}\"" && exit 4; }
+}
+
+function change_engine()
+{
+    # 忽略大小写
+    # 先进行较严格的匹配，减少错误匹配
+    if [ "${IS_ALL}" == "false" ]; then
+        sed "s/^) ENGINE=$ENGINE /) ENGINE=SequoiaDB /Ig" "${INPUT}" > "${OUTPUT}"
+    else
+        sed "s/^) ENGINE=[^ ]\+ /) ENGINE=SequoiaDB /Ig" "${INPUT}" > "${OUTPUT}"
+    fi
+    test $? -ne 0 && { echo "ERROR: Failed to modify the file with sed" && exit 3; }
+
+    # 检查是否已经替换完成
+    local count=0
+    if [ "${IS_ALL}" == "false" ]; then
+        count=`grep -i "ENGINE=${ENGINE}" "${OUTPUT}" | wc -l`
+    else
+        count=`grep -iE "ENGINE=[^ ]+" "${OUTPUT}" | wc -l`
+    fi
+
+    test $count -eq 0 && return 0
+
+    # 如果没有替换完，放宽匹配范围
+    if [ "${IS_ALL}" == "false" ]; then
+        sed "s/ENGINE=$ENGINE/ENGINE=SequoiaDB/Ig" "${INPUT}" > "${OUTPUT}"
+    else
+        sed "s/ENGINE=[^ ]\+/ENGINE=SequoiaDB/Ig" "${INPUT}" > "${OUTPUT}"
+    fi
+    test $? -ne 0 && { echo "ERROR: Failed to modify the file with sed" && exit 3; }
+}
+
+function diff_file()
+{
+    test $IS_QUIET == "true" && return 0
+    diff "${INPUT}" "${OUTPUT}"
+}
+
+##################################
+#    main entry
+##################################
+
+#parse command line parameters
+test $# -eq 0 && { show_help && exit 0; }
+
+ARGS=`getopt -o h:i:o:e:q --long help,input:,output:,engine:,quiet,all -n "${ME}" -- "$@"`
+ret=$?
+test $ret -ne 0 && exit 1
+
+eval set -- "${ARGS}"
+
+while true
+do
+    case "${1}" in
+        -h | --help )                               show_help
+                                                    exit 0
+                                                    ;;
+        -i | --input )                              INPUT="${2}"
+                                                    shift 2
+                                                    ;;
+        -o | --output )                             OUTPUT="${2}"
+                                                    shift 2
+                                                    ;;
+        -e | --engine )                             ENGINE="${2}"
+                                                    shift 2
+                                                    ;;
+        -q | --quiet )                              IS_QUIET="true"
+                                                    shift 1
+                                                    ;;
+        --all )                                     IS_ALL="true"
+                                                    shift 1
+                                                    ;;
+         -- )                                       shift
+                                                    break
+                                                    ;;
+         * )                                        echo "parameter error!"
+                                                    exit 1
+                                                    ;;
+   esac
+done
+
+if [ "$*" != "" ]; then
+   echo "${ME}: too many arguments: $*" >&2
+   echo "Try '${ME} --help' for more information."
+   exit 1
+fi
+
+check_all
+
+change_engine
+
+diff_file
+
+exit 0
