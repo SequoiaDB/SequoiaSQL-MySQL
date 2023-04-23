@@ -1,7 +1,9 @@
 set session optimizer_switch ='optimizer_sort_pushdown=ON';
 set session optimizer_index_sort_prune=on;
 set session sequoiadb_debug_log=on;
-drop table if exists reverse_order_sequoiadb;
+drop database if exists order_by_desc_sequoiadb;
+create database order_by_desc_sequoiadb;
+use order_by_desc_sequoiadb;
 CREATE TABLE `reverse_order_sequoiadb` (
 `col_date` date DEFAULT NULL,
 `col_varchar_16` varchar(16) COLLATE utf8mb4_bin DEFAULT NULL,
@@ -106,29 +108,29 @@ NULL
 NULL
 NULL
 NULL
-[Note] SequoiaDB: optimizer selector object: { "col_date": null, "col_int": null }, table: test_parallel_1.reverse_order_sequoiadb
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$gte": {"$date": "2000-01-14"} } }, { "col_date": { "$lte": {"$date": "2005-01-14"} } } ] }], selector[{ "col_date": null, "col_int": null }], order_by[{ "col_int": -1 }], hint[{ "": "dvi1" }], limit[-1], offset[0], table[test_parallel_1.reverse_order_sequoiadb]
+[Note] SequoiaDB: optimizer selector object: { "col_date": null, "col_int": null }, table: order_by_desc_sequoiadb.reverse_order_sequoiadb
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$gte": {"$date": "2000-01-14"} } }, { "col_date": { "$lte": {"$date": "2005-01-14"} } } ] }], selector[{ "col_date": null, "col_int": null }], order_by[{ "col_int": -1 }], hint[{ "": "dvi1" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT *  FROM reverse_order_sequoiadb WHERE col_date='2005-02-05' and col_int=-657588224  order by col_date desc;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	reverse_order_sequoiadb	ref	ivd,idv,d_i_v,dvi,dvi1	ivd	5	const	2	Using where with pushed condition
 SELECT *  FROM reverse_order_sequoiadb WHERE col_date='2005-02-05' and col_int=-657588224  order by col_date desc;
 col_date	col_varchar_16	pk	col_int
 2005-02-05	p	3	-657588224
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$et": {"$date": "2005-02-05"} } }, { "col_int": { "$et": -657588224 } } ] }], selector[{}], order_by[{}], hint[{ "": "ivd" }], limit[-1], offset[0], table[test_parallel_1.reverse_order_sequoiadb]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$et": {"$date": "2005-02-05"} } }, { "col_int": { "$et": -657588224 } } ] }], selector[{}], order_by[{}], hint[{ "": "ivd" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN select * from reverse_order_sequoiadb where col_date='2006-03-17' and col_varchar_16='l' and pk=180 and col_int=3 ORDER BY pk DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	reverse_order_sequoiadb	const	PRIMARY,ivd,idv,vid,vdi,d_i_v,dvi,dvi1	PRIMARY	4	const	1	
 select * from reverse_order_sequoiadb where col_date='2006-03-17' and col_varchar_16='l' and pk=180 and col_int=3 ORDER BY pk DESC;
 col_date	col_varchar_16	pk	col_int
 2006-03-17	l	180	3
-[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 180 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[test_parallel_1.reverse_order_sequoiadb]
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 180 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN select * from reverse_order_sequoiadb where col_date='2006-03-17' ORDER BY pk DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	reverse_order_sequoiadb	ref	d_i_v,dvi,dvi1	d_i_v	4	const	2	Using where; Using pushed sort (reverse_order_sequoiadb.pk desc)
 select * from reverse_order_sequoiadb where col_date='2006-03-17' ORDER BY pk DESC;
 col_date	col_varchar_16	pk	col_int
 2006-03-17	l	180	3
-[Note] SequoiaDB: Query message: condition[{ "col_date": { "$et": {"$date": "2006-03-17"} } }], selector[{}], order_by[{ "pk": -1 }], hint[{ "": "d_i_v" }], limit[-1], offset[0], table[test_parallel_1.reverse_order_sequoiadb]
+[Note] SequoiaDB: Query message: condition[{ "col_date": { "$et": {"$date": "2006-03-17"} } }], selector[{}], order_by[{ "pk": -1 }], hint[{ "": "d_i_v" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT col_int AS field1 FROM reverse_order_sequoiadb WHERE col_date < '2005-01-14' AND col_varchar_16 < 'w' ORDER BY field1 DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	reverse_order_sequoiadb	range	vid,vdi,d_i_v,dvi,dvi1	d_i_v	4	NULL	22	Using where with pushed condition; Using index; Using pushed sort (reverse_order_sequoiadb.col_int desc)
@@ -196,7 +198,7 @@ NULL
 NULL
 NULL
 NULL
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$lt": {"$date": "2005-01-14"} } }, { "col_varchar_16": { "$lt": "w" } } ] }], selector[{ "col_date": null, "col_varchar_16": null, "col_int": null }], order_by[{ "col_int": -1 }], hint[{ "": "d_i_v" }], limit[-1], offset[0], table[test_parallel_1.reverse_order_sequoiadb]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$lt": {"$date": "2005-01-14"} } }, { "col_varchar_16": { "$lt": "w" } } ] }], selector[{ "col_date": null, "col_varchar_16": null, "col_int": null }], order_by[{ "col_int": -1 }], hint[{ "": "d_i_v" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT pk AS field1 FROM reverse_order_sequoiadb WHERE col_int IN (9, 2, 0) AND col_date != '2004-05-09' ORDER BY field1 DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	reverse_order_sequoiadb	range	ivd,idv,d_i_v,dvi,dvi1	ivd	5	NULL	6	Using where with pushed condition; Using filesort
@@ -230,7 +232,7 @@ field1
 17
 14
 13
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_int": { "$in": [ 9, 2, 0 ] } }, { "col_date": { "$ne": {"$date": "2004-05-09"} } } ] }, { "col_int": { "$et": 9 } } ] }], selector[{}], order_by[{}], hint[{ "": "ivd" }], limit[-1], offset[0], table[test_parallel_1.reverse_order_sequoiadb]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_int": { "$in": [ 9, 2, 0 ] } }, { "col_date": { "$ne": {"$date": "2004-05-09"} } } ] }, { "col_int": { "$et": 9 } } ] }], selector[{}], order_by[{}], hint[{ "": "ivd" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT col_varchar_16 AS field1 , col_date AS field2 , col_varchar_16 AS field3 FROM reverse_order_sequoiadb WHERE col_int > 3 AND col_int > 2 AND col_int > 1 ORDER BY field1 DESC, field2 DESC, field3 DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	reverse_order_sequoiadb	range	ivd,idv	ivd	5	NULL	150	Using where with pushed condition; Using index; Using pushed sort (reverse_order_sequoiadb.col_varchar_16 desc, reverse_order_sequoiadb.col_date desc)
@@ -316,8 +318,8 @@ NULL	2000-03-01	NULL
 NULL	NULL	NULL
 NULL	NULL	NULL
 NULL	NULL	NULL
-[Note] SequoiaDB: optimizer selector object: { "col_date": null, "col_varchar_16": null, "col_int": null }, table: test_parallel_1.reverse_order_sequoiadb
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int": { "$gt": 3 } }, { "col_int": { "$gt": 2 } }, { "col_int": { "$gt": 1 } } ] }], selector[{ "col_date": null, "col_varchar_16": null, "col_int": null }], order_by[{ "col_varchar_16": -1, "col_date": -1 }], hint[{ "": "ivd" }], limit[-1], offset[0], table[test_parallel_1.reverse_order_sequoiadb]
+[Note] SequoiaDB: optimizer selector object: { "col_date": null, "col_varchar_16": null, "col_int": null }, table: order_by_desc_sequoiadb.reverse_order_sequoiadb
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int": { "$gt": 3 } }, { "col_int": { "$gt": 2 } }, { "col_int": { "$gt": 1 } } ] }], selector[{ "col_date": null, "col_varchar_16": null, "col_int": null }], order_by[{ "col_varchar_16": -1, "col_date": -1 }], hint[{ "": "ivd" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 FROM `reverse_order_sequoiadb` WHERE col_int > 8 AND col_int != 8 AND col_date >= '2000-04-07' ORDER BY field1 DESC, field2 DESC, field3 DESC;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	reverse_order_sequoiadb	ALL	ivd,idv,d_i_v,dvi,dvi1	NULL	NULL	NULL	200	Using where with pushed condition; Using pushed sort (reverse_order_sequoiadb.col_int desc, reverse_order_sequoiadb.pk desc, reverse_order_sequoiadb.col_date desc)
@@ -344,4 +346,5 @@ field1	field2	field3
 9	61	2001-11-23
 9	41	2006-09-04
 9	23	2007-12-07
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int": { "$gt": 8 } }, { "col_int": { "$ne": 8 } }, { "col_date": { "$gte": {"$date": "2000-04-07"} } } ] }], selector[{}], order_by[{ "col_int": -1, "pk": -1, "col_date": -1 }], hint[{}], limit[-1], offset[0], table[test_parallel_1.reverse_order_sequoiadb]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int": { "$gt": 8 } }, { "col_int": { "$ne": 8 } }, { "col_date": { "$gte": {"$date": "2000-04-07"} } } ] }], selector[{}], order_by[{ "col_int": -1, "pk": -1, "col_date": -1 }], hint[{}], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
+drop database order_by_desc_sequoiadb;
