@@ -1730,6 +1730,8 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       goto error;
     }
 
+    DEBUG_SYNC(thd, "debug_sync_after_write_sql_log");
+
     // write 'HAObjectState'
     DBUG_ASSERT(sql_id > 0);
 
