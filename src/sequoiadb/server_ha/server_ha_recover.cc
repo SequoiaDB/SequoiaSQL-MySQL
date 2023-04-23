@@ -1656,6 +1656,15 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
             ha_error_string(sdb_conn, rc, err_buf));
         goto sleep_secs;
       }
+
+      // Set "TransLockWait" to true
+      rc = sdb_conn.set_session_attr(attr);
+      HA_RC_CHECK(rc, error,
+                  "HA: Failed to set '%s' before replay SQL log, "
+                  "sequoiadb error: %s",
+                  HA_TRANSACTION_LOCK_WAIT,
+                  ha_error_string(sdb_conn, rc, err_buf));
+
       rc = sdb_conn.get_cl(sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
       HA_RC_CHECK(rc, error,
                   "HA: Unable to get SQL log table '%s', sequoiadb error: %s",
@@ -2021,7 +2030,8 @@ int load_inst_obj_state_into_cache(ha_recover_replay_thread *ha_thread,
               "sequoiadb error: %s",
               HA_INSTANCE_OBJECT_STATE_CL, ha_thread->instance_id,
               ha_error_string(sdb_conn, rc, err_buf));
-  while (!inst_obj_state_cl.next(result, false) && !result.isEmpty()) {
+  while (0 == (rc = inst_obj_state_cl.next(result, false)) &&
+         !result.isEmpty()) {
     count++;
     const char *db_name = result.getStringField(HA_FIELD_DB);
     const char *table_name = result.getStringField(HA_FIELD_TABLE);
@@ -2036,6 +2046,15 @@ int load_inst_obj_state_into_cache(ha_recover_replay_thread *ha_thread,
       SDB_LOG_ERROR("HA: Out of memory while loading instance object state");
       goto error;
     }
+  }
+  if (HA_ERR_END_OF_FILE == rc || SDB_DMS_EOC == get_sdb_code(rc)) {
+    rc = 0;
+  } else if (rc) {
+    /* purecov: begin tested */
+    SDB_LOG_ERROR("HA: Failed to fetch next record from '%s', rc: %d",
+                  HA_INSTANCE_OBJECT_STATE_CL, rc);
+    goto error;
+    /* purecov: end */
   }
   SDB_LOG_INFO("HA: Completed load instance object state, found %d records",
                count);
