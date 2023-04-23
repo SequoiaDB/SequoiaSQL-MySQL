@@ -3241,12 +3241,13 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
 
 // set THD::Diagnostics_area::m_can_overwrite_status for mariadb, if this flag
 // is false, my_printf_error can't be used for printing errors
-inline static void set_overwrite_status(THD *thd, ha_event_general &event,
-                                        bool status) {
+inline static void set_overwrite_status(THD *thd, ha_event_class_t event_class,
+                                        ha_event_general &event, bool status) {
 #ifdef IS_MARIADB
-  if (MYSQL_AUDIT_GENERAL_RESULT == event.event_subclass ||
-      MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
-      MYSQL_AUDIT_QUERY_END == event.event_subclass) {
+  if (thd && MYSQL_AUDIT_GENERAL_CLASS == event_class &&
+      (MYSQL_AUDIT_GENERAL_RESULT == event.event_subclass ||
+       MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
+       MYSQL_AUDIT_QUERY_END == event.event_subclass)) {
     thd->get_stmt_da()->set_overwrite_status(status);
   }
 #endif
@@ -4744,6 +4745,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   create_query.length(0);
   ha_sql_stmt_info *sql_info = NULL;
   ha_event_general event;
+  bool need_clear_overwrite_status = false;
 
   // do nothing for following situation
   // 1. HA function is not turned on;
@@ -4901,7 +4903,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   // in mariadb, THD::Diagnostics_area::m_can_overwrite_status must
   // set to true for using 'my_printf_error' when event_class is
   // MYSQL_AUDIT_GENERAL_STATUS or  MYSQL_AUDIT_GENERAL_RESULT
-  set_overwrite_status(thd, event, true);
+  set_overwrite_status(thd, event_class, event, true);
+  need_clear_overwrite_status = true;
 
   // update SQL statement info according to ev
   if ((rc = update_sql_stmt_info(sql_info, event.general_thread_id))) {
@@ -5149,7 +5152,9 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   }
 done:
   // restore THD::m_overwrite_status for mariadb
-  set_overwrite_status(thd, event, false);
+  if (need_clear_overwrite_status) {
+    set_overwrite_status(thd, event_class, event, false);
+  }
   DBUG_RETURN(rc);
 error:
   if (sql_info->sdb_conn && '\0' == sql_info->err_message[0]) {
