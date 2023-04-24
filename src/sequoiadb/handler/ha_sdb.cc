@@ -4181,8 +4181,8 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
       }
       mrr_range_no++;
       /*If it is BKA join, should fill the ranges buf.*/
-      if (!m_batched_keys_ranges.filled_done() &&
-          m_batched_keys_ranges.initialized()) {
+      if (m_batched_keys_ranges.initialized() &&
+          !m_batched_keys_ranges.filled_done()) {
         rc = m_batched_keys_ranges.fill_ranges_buf(mrr_cur_range);
         if (SDB_OK != rc) {
           goto error;
@@ -4379,8 +4379,8 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
         }
       }
 
-      if (!m_batched_keys_ranges.filled_done() &&
-          m_batched_keys_ranges.initialized()) {
+      if (m_batched_keys_ranges.initialized() &&
+          !m_batched_keys_ranges.filled_done()) {
         rc = m_batched_keys_ranges.fill_ranges_buf(mrr_cur_range);
         if (SDB_OK != rc) {
           goto error;
