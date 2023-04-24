@@ -25,7 +25,7 @@ import com.sequoiasql.testcommon.MysqlTestBase;
  * @Author huangxiaoni
  * @CreateDate 2023/3/17
  */
-public class PrepareStmts30685 extends MysqlTestBase {
+public class PrepareStmt30685 extends MysqlTestBase {
     private JdbcInterface jdbc;
     private String jdbcUrl;
     private Connection conn;
@@ -48,16 +48,17 @@ public class PrepareStmts30685 extends MysqlTestBase {
 
             jdbc = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-            jdbc.dropDatabase( dbName );
-            jdbc.createDatabase( dbName );
-            jdbc.update( "use " + dbName + ";" );
-
             // 创建连接配置useServerPrepStmts=true
             jdbcUrl = "jdbc:mysql://" + MysqlTestBase.mysql2
                     + "/mysql?useSSL=false&useServerPrepStmts=true";
             conn = ( Connection ) DriverManager.getConnection( jdbcUrl,
                     MysqlTestBase.mysqluser, MysqlTestBase.mysqlpasswd );
 
+            jdbc.dropDatabase( dbName );
+            if ( sdb.isCollectionSpaceExist( dbName ) )
+                sdb.dropCollectionSpace( dbName );
+            jdbc.createDatabase( dbName );
+            jdbc.update( "use " + dbName + ";" );
             prepareTableAndData();
 
             Thread.sleep( 3000 );
