@@ -6842,19 +6842,6 @@ void ha_sdb::fix_start_end_key_if_range_scan_desc(key_range *&start_key_ptr,
       sdb_is_key_buf_same(key_info, start_key_ptr, end_key_ptr)) {
     // Get the real start key. m_start_range is from ::prepare_range_scan()
     start_key_ptr = m_start_range;
-
-    /*
-      Here rewrite the search flag of exact search. Because
-      1. it is simplified;
-      2. in sdb_create_condition_from_key(), if key buffer value is the same
-         end key($lte) may be ignore, which will lead to $et becoming $gte.
-    */
-    if (eq_range && HA_READ_KEY_OR_NEXT == start_key_ptr->flag &&
-        HA_READ_AFTER_KEY == end_key_ptr->flag &&
-        sdb_is_key_buf_same(key_info, start_key_ptr, end_key_ptr)) {
-      start_key_ptr->flag = HA_READ_KEY_EXACT;
-      end_key_ptr = NULL;
-    }
   }
 #elif defined IS_MYSQL
   if (start_key_ptr && end_key_ptr && RANGE_SCAN_DESC == range_scan_direction) {
