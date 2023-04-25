@@ -1,7 +1,8 @@
-#Case 29391
+#Case 29390,29391,29395
 --source include/have_sequoiadb.inc
 
 set session sequoiadb_debug_log=on;
+set global sequoiadb_auto_partition=on;
 
 --disable_warnings
 drop database if exists sort_sequoiadb;
@@ -27,11 +28,23 @@ INSERT INTO `t1` VALUES (-361234432,'c','z',6,1019871232),(NULL,NULL,'v',11,-425
 # !40000 ALTER TABLE `t1` ENABLE KEYS;
 UNLOCK TABLES;
 
+# case 29395
+EXPLAIN SELECT ALL col_int FROM t1 WHERE col_int_key < 5 ORDER BY col_int;
+SELECT ALL col_int FROM t1 WHERE col_int_key < 5 ORDER BY col_int;
+--source include/query_pushdown_condition_sequoiadb_3.inc
+
+# case 29390
+EXPLAIN SELECT ALL SQL_BUFFER_RESULT col_int FROM t1 WHERE col_int_key = 5 OR col_int_key IS NULL ORDER BY col_int;
+SELECT ALL SQL_BUFFER_RESULT col_int FROM t1 WHERE col_int_key = 5 OR col_int_key IS NULL ORDER BY col_int;
+--source include/query_pushdown_condition_sequoiadb_3.inc
+
+# case 29391
 EXPLAIN SELECT DISTINCT col_int_key FROM t1 WHERE col_int_key = 1 OR col_int_key = 7 OR col_int_key IS NULL;
 --sorted_result
 SELECT DISTINCT col_int_key FROM t1 WHERE col_int_key = 1 OR col_int_key = 7 OR col_int_key IS NULL;
 --source include/query_pushdown_condition_sequoiadb_3.inc
 
 drop database sort_sequoiadb;
+set global sequoiadb_auto_partition=off;
 
 --source include/uninstall_sequoiadb.inc
