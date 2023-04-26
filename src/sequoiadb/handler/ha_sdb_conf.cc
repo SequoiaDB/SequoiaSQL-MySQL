@@ -419,7 +419,7 @@ static MYSQL_THDVAR_UINT(selector_pushdown_threshold, PLUGIN_VAR_OPCMDARG,
                          /*查询字段下压触发阈值，取值范围[0, 100]，单位：%。*/,
                          NULL, NULL, SDB_DEFAULT_SELECTOR_PUSHDOWN_THRESHOLD, 0,
                          100, 0);
-static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_OPCMDARG,
+static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_NOCMDOPT,
                          "Commands execute only in mysql. (Default: OFF)"
                          /*DDL 命令只在 MySQL 执行，不下压到 SequoiaDB 执行。*/,
                          NULL, sdb_exec_only_in_mysql_update, FALSE);
