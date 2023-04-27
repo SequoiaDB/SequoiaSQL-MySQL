@@ -1081,8 +1081,6 @@ The following options may be given as the first argument:
  --sequoiadb-error-level=name 
  Sequoiadb error level for updating sharding key
  error.(Default: error), available choices: error, warning
- --sequoiadb-execute-only-in-mysql 
- Commands execute only in mysql. (Default: OFF)
  --sequoiadb-lock-wait-timeout[=#] 
  Timeout in seconds a SequoiaDB transaction may wait for a
  lock before being rolled back. (Default: 60)
@@ -1746,7 +1744,6 @@ sequoiadb-conn-addr localhost:11810
 sequoiadb-debug-log FALSE
 sequoiadb-enable-mapping FALSE
 sequoiadb-error-level error
-sequoiadb-execute-only-in-mysql FALSE
 sequoiadb-lock-wait-timeout 60
 sequoiadb-mapping-unit-count 10
 sequoiadb-mapping-unit-size 1024
