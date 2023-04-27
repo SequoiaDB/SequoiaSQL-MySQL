@@ -1,4 +1,5 @@
 # Case 31123, Case 31129, Case 31130
+--source include/sequoiadb_version_release_skip.inc
 --source include/have_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
 
