@@ -318,7 +318,7 @@ bool ha_sdb_part_share::populate_main_part_name(partition_info *part_info) {
   uint i = 0;
 
   if (m_main_part_name_hashs) {
-    delete[] m_main_part_name_hashs;
+    goto done;
   }
 
   m_main_part_name_hashs = new (std::nothrow) longlong[part_info->num_parts];
