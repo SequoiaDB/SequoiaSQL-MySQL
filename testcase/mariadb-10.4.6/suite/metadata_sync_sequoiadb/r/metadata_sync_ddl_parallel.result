@@ -907,6 +907,18 @@ connection conn1;
 ALTER TABLE t1 AUTO_INCREMENT 120;
 INSERT INTO t1(e,c) VALUES ('giveup','charnew1'),('giveup','charnew2');
 connection conn2;
+SHOW CREATE TABLE t1;
+Table  Create Table
+t1     CREATE TABLE `t1` (SHOW CREATE TABLE t1;
+  `a` tinyint(4) NOT NULL AUTO_INCREMENT,Table  Create Table
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,t1     CREATE TABLE `t1` (
+  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',  `a` tinyint(4) NOT NULL,
+  PRIMARY KEY (`a`)  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+) ENGINE=SequoiaDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
+  PRIMARY KEY (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+/*!50100 PARTITION BY HASH (a)
+PARTITIONS 4 */
 SELECT * FROM t1 ORDER BY a;
 a	e	c
 1	y	char
@@ -945,6 +957,14 @@ connection conn1;
 ALTER TABLE t1 MODIFY a TINYINT;
 INSERT INTO t1(a,e) VALUES (-1, 'giveup');
 connection conn2;
+SHOW CREATE TABLE t1;
+Table  Create Table
+t1     CREATE TABLE `t1` (
+  `a` tinyint(4) NOT NULL,
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
+  PRIMARY KEY (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SELECT * FROM t1 ORDER BY a;
 a	e	c
 -1	giveup	char

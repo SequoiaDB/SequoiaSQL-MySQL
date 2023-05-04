@@ -738,6 +738,7 @@ ALTER TABLE t1 AUTO_INCREMENT 120;
 INSERT INTO t1(e,c) VALUES ('giveup','charnew1'),('giveup','charnew2');
 # check metadatas after alter
 connection conn2;
+SHOW CREATE TABLE t1;
 SELECT * FROM t1 ORDER BY a;
 SHOW CREATE TABLE t1;
 SHOW CREATE DATABASE metasync_22561_22566;
@@ -753,6 +754,7 @@ ALTER TABLE t1 MODIFY a TINYINT;
 INSERT INTO t1(a,e) VALUES (-1, 'giveup');
 # check metadatas after alter, drop
 connection conn2;
+SHOW CREATE TABLE t1;
 SELECT * FROM t1 ORDER BY a;
 SHOW CREATE TABLE t1;
 connection conn1;

@@ -747,6 +747,16 @@ ALTER TABLE t1 ADD COLUMN c CHAR(8) DEFAULT 'char';
 ALTER TABLE t1 PARTITION BY HASH (a) PARTITIONS 4;
 ALTER TABLE t1 AUTO_INCREMENT 120;
 INSERT INTO t1(e,c) VALUES ('giveup','charnew1'),('giveup','charnew2');
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
+  PRIMARY KEY (`a`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+/*!50100 PARTITION BY HASH (a)
+PARTITIONS 4 */
 SELECT * FROM t1 ORDER BY a;
 a	e	c
 1	y	char
@@ -785,6 +795,16 @@ PARTITIONS 4 */
 ALTER DATABASE metasync_22561_22566 CHARACTER SET cp1251;
 ALTER TABLE t1 MODIFY a TINYINT;
 INSERT INTO t1(a,e) VALUES (-1, 'giveup');
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` tinyint(4) NOT NULL,
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
+  PRIMARY KEY (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+/*!50100 PARTITION BY HASH (a)
+PARTITIONS 4 */
 SELECT * FROM t1 ORDER BY a;
 a	e	c
 -1	giveup	char
