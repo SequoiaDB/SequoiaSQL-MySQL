@@ -1779,8 +1779,8 @@ int ha_sdb::reset() {
    * If the handler::share->expired is setted true by self or others, should
    * release local share in handler and search to get the new sdb_share from
    * the sdb_open_tables in the next statement of same handler, if
-   * handler::share->expired is not true, that means the handler will always keep
-   * the share.
+   * handler::share->expired is not true, that means the handler will always
+   * keep the share.
    *
    * see the principle of soft invalidation comments in ha_sdb::ensure_stats()
    */
@@ -7368,13 +7368,17 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
     if (!sdb_use_transaction(thd) && incr_stat &&
         0 != incr_stat->no_uncommitted_rows_count) {
       int &incr_rows = incr_stat->no_uncommitted_rows_count;
-      my_atomic_add64(&share->stat.total_records, incr_rows);
-      if (share->stat.total_records < 0) {
-        share->stat.total_records = 0;
+
+      // SEQUOIASQLMAINSTREAM-1854
+      if (share) {
+        my_atomic_add64(&share->stat.total_records, incr_rows);
+        if (share->stat.total_records < 0) {
+          share->stat.total_records = 0;
+        }
+        incr_rows = 0;
+        DBUG_PRINT("info",
+                   ("share total records: %lld", share->stat.total_records));
       }
-      incr_rows = 0;
-      DBUG_PRINT("info",
-                 ("share total records: %lld", share->stat.total_records));
     }
 
     // Fix bug SEQUOIASQLMAINSTREAM-1411. Rollback transaction in advance
