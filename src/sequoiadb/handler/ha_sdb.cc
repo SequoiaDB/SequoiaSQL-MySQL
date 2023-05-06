@@ -708,10 +708,12 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
               SDB_JOIN_INDEX_MERGE_SORT_INTERSECT == type
           ? true
           : false;
+  const bool use_window_func = sdb_use_window_func(thd);
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       (m_use_group && !direct_sort) || use_distinct || calc_found_rows ||
-      use_group_and_agg_func || use_filesort || use_index_merge_and) {
+      use_group_and_agg_func || use_filesort || use_index_merge_and ||
+      use_window_func) {
     direct_limit = false;
     goto done;
   }
@@ -767,11 +769,11 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
       goto done;
     }
   }
-#ifdef IS_MARIADB
-  if (join->select_lex->window_specs.elements > 0) {
+
+  if (sdb_use_window_func(thd)) {
     goto done;
   }
-#endif
+
   order = sdb_get_join_order(thd);
   group_list = sdb_get_join_group_list(thd);
 
@@ -4326,6 +4328,7 @@ done:
     8 not enable optimize_with_materialization.
     9 just use one count function.
     10. WHERE condition does not have non-deterministic function like rand().
+    11 do not use window funcs
 
 
   RETURN
@@ -4342,12 +4345,13 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   bool only_one_func = join && (join->tmp_table_param.sum_func_count == 1);
   bool optimize_with_materialization =
       sdb_optimizer_switch_flag(ha_thd(), OPTIMIZER_SWITCH_MATERIALIZATION);
+  bool use_window_func = sdb_use_window_func(ha_thd());
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   count_query = false;
   try {
     if (only_one_func && sdb_is_single_table(ha_thd()) && !order && !group &&
-        optimize_with_materialization) {
+        optimize_with_materialization && !use_window_func) {
       /*Cannot direct_count when WHERE clause has non-determined func like
        * rand().*/
       if (sdb_where_condition(ha_thd()) &&

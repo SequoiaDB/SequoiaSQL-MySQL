@@ -323,6 +323,8 @@ bool sdb_use_filesort(THD *thd);
 
 bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table);
 
+bool sdb_use_window_func(THD *thd);
+
 sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq);
 
 bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index);

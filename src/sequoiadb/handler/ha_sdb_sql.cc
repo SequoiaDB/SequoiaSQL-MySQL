@@ -340,6 +340,10 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
   return JT_REF_OR_NULL == tab->type();
 }
 
+bool sdb_use_window_func(THD *thd) {
+  return false;
+}
+
 sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
   sdb_join_type type = SDB_JOIN_UNKNOWN;
   int count = 0;
@@ -1111,6 +1115,14 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
   tab = (join_two_phase_optimization ? join->map2table[table->tablenr]
                                      : &join->join_tab[table->tablenr]);
   return JT_REF_OR_NULL == tab->type;
+}
+
+bool sdb_use_window_func(THD *thd) {
+  SELECT_LEX *select_lex = sdb_lex_first_select(thd);
+  if (!select_lex) {
+    return false; /* purecov: inspected */
+  }
+  return select_lex->have_window_funcs();
 }
 
 sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
