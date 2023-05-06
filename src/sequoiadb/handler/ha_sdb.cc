@@ -696,8 +696,9 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
   const bool use_where_condition = sdb_where_condition(thd);
   const bool use_having_condition = sdb_having_condition(thd);
   const bool where_cond_push =
-      use_where_condition && (SDB_COND_SUPPORTED == sdb_condition->status ||
-                              SDB_COND_UNCALLED == sdb_condition->status);
+      use_where_condition &&
+      (sdb_condition && (SDB_COND_SUPPORTED == sdb_condition->status ||
+                         SDB_COND_UNCALLED == sdb_condition->status));
   const bool use_filesort = sdb_use_filesort(thd);
   const bool use_distinct = sdb_use_distinct(thd);
   const bool calc_found_rows = sdb_calc_found_rows(thd);
@@ -4322,7 +4323,8 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
 
   if (order || using_limit || using_vers_sys || using_period || has_triggers ||
       sdb_is_view(table_list) ||
-      !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
+      !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd())) ||
+      !sdb_condition) {
     optimizer_delete = false;
     goto done;
   }
@@ -4417,6 +4419,7 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
       sdb_join_type cur_type = sdb_get_join_type(ha_thd(), mrr_iter);
       if ((SDB_JOIN_UNKNOWN == cur_type ||
            (SDB_JOIN_MULTI_RANGE == cur_type && !m_use_default_impl)) &&
+          sdb_condition &&
           (SDB_COND_UNCALLED == sdb_condition->status ||
            SDB_COND_SUPPORTED == sdb_condition->status)) {
         List_iterator<Item> li(select->item_list);
@@ -7432,6 +7435,19 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
   }
 
   thd_sdb = thd_get_thd_sdb(thd);
+  /* In the case of using SequoiaDB engine table for slow log or general log,
+   * should never start transaction for statement.
+   */
+  if (is_slow_log_table() || is_general_log_table()) {
+    if (!sdb_condition) {
+      rc = ensure_cond_ctx(ha_thd());
+      if (rc) {
+        goto error; /* purecov: inspected */
+      }
+    }
+    goto done;
+  }
+
   if (F_UNLCK != lock_type) {
     rc = start_statement(thd, thd_sdb->lock_count++);
     if (0 != rc) {
