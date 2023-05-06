@@ -880,11 +880,12 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
           : false;
   const bool is_recursive_table = sdb_is_recursive_table(table);
   const bool is_correlated = sdb_correlated_subquery_for_cur_select(table);
+  const bool use_window_func = sdb_use_window_func(select_lex);
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       (m_use_group && !direct_sort) || use_distinct || calc_found_rows ||
       use_group_and_agg_func || use_filesort || use_index_merge_and ||
-      is_recursive_table || is_correlated) {
+      is_recursive_table || is_correlated || use_window_func) {
     rs = false;
     goto error;
   }
@@ -1103,11 +1104,11 @@ int ha_sdb::handle_sort_condition(bool check_order_by_only) {
     sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
     sdb_parse_condtion(sdb_where_condition(select_lex), sdb_condition);
   }
-#ifdef IS_MARIADB
-  if (join->select_lex->window_specs.elements > 0) {
+
+  if (sdb_use_window_func(select_lex)) {
     goto done;
   }
-#endif
+
   order = sdb_get_join_order_by(join);
   group_list = sdb_get_join_group_list(join);
 
@@ -6158,6 +6159,7 @@ done:
     8 not enable optimize_with_materialization.
     9 just use one count function.
     10 WHERE clause does not have non-determined func like rand()
+    11 do not use window funcs
 
 
   RETURN
@@ -6182,6 +6184,7 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
                               : false;
   bool is_recursive_table = sdb_is_recursive_table(table);
   bool is_correlated = sdb_correlated_subquery_for_cur_select(table);
+  bool use_window_func = sdb_use_window_func(select);
 
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
@@ -6192,7 +6195,8 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
         !is_recursive_table && !is_correlated &&
         (sdb_is_single_table(thd) ||
          (sdb_cls_pushdown_expand(thd) &&
-          sdb_is_single_table_in_cur_select(thd, select)))) {
+          sdb_is_single_table_in_cur_select(thd, select))) &&
+        !use_window_func) {
       /*WHERE clause has non-determined func like rand().*/
       if (sdb_where_condition(select) &&
           (sdb_where_condition(select)->used_tables() & RAND_TABLE_BIT)) {

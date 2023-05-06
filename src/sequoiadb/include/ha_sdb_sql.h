@@ -367,6 +367,8 @@ bool sdb_use_filesort(JOIN *join);
 
 bool sdb_use_JT_REF_OR_NULL(JOIN *join, const TABLE *table);
 
+bool sdb_use_window_func(SELECT_LEX *select_lex);
+
 sdb_join_type sdb_get_join_type(JOIN *join);
 
 void sdb_clear_const_keys(JOIN *join);
