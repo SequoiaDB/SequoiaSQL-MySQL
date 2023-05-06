@@ -862,8 +862,9 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
   const bool use_where_condition = sdb_where_condition(select_lex);
   const bool use_having_condition = sdb_having_condition(select_lex);
   const bool where_cond_push =
-      use_where_condition && (SDB_COND_SUPPORTED == sdb_condition->status ||
-                              SDB_COND_UNCALLED == sdb_condition->status);
+      use_where_condition &&
+      (sdb_condition && (SDB_COND_SUPPORTED == sdb_condition->status ||
+                         SDB_COND_UNCALLED == sdb_condition->status));
   const bool use_filesort = sdb_use_filesort(join);
   const bool use_distinct = sdb_use_distinct(select_lex);
   const bool calc_found_rows = sdb_calc_found_rows(join);
@@ -6097,7 +6098,8 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
 
   if (order || using_limit || using_vers_sys || using_period || has_triggers ||
       sdb_is_view(table_list) ||
-      !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
+      !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd())) ||
+      !sdb_condition) {
     optimizer_delete = false;
     goto done;
   }
@@ -6199,7 +6201,7 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
         goto done;
       }
 
-      if (is_in_one_query_for_cur_select() &&
+      if (is_in_one_query_for_cur_select() && sdb_condition &&
           (SDB_COND_UNCALLED == sdb_condition->status ||
            SDB_COND_SUPPORTED == sdb_condition->status)) {
         List_iterator<Item> li(select->item_list);
@@ -9439,6 +9441,12 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
    * should never start transaction for statement.
    */
   if (is_slow_log_table() || is_general_log_table()) {
+    if (!sdb_condition) {
+      rc = ensure_cond_ctx(ha_thd());
+      if (rc) {
+        goto error; /* purecov: inspected */
+      }
+    }
     goto done;
   }
 
