@@ -1,0 +1,86 @@
+#seqDB-31495
+--source include/have_sequoiadb.inc
+
+let $log_output = `select @@log_output`;
+let $slow_query_log = `select @@slow_query_log`;
+let $general_log = `select @@general_log`;
+set global slow_query_log = off;
+set global general_log = off;
+
+--disable_warnings
+drop table if exists mysql.slow_log;
+drop table if exists mysql.general_log;
+drop database if exists db31495;
+--enable_warnings
+
+create database db31495;
+drop database db31495;
+create database db31495;
+use db31495;
+
+create table t1 (a int);
+insert into t1 values(1),(2);
+
+set session sequoiadb_support_mode='';
+use mysql;
+CREATE TABLE `slow_log` (
+  `start_time` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+  `user_host` mediumtext NOT NULL,
+  `query_time` time(6) NOT NULL,
+  `lock_time` time(6) NOT NULL,
+  `rows_sent` int(11) NOT NULL,
+  `rows_examined` int(11) NOT NULL,
+  `db` varchar(512) NOT NULL,
+  `last_insert_id` int(11) NOT NULL,
+  `insert_id` int(11) NOT NULL,
+  `server_id` int(10) unsigned NOT NULL,
+  `sql_text` mediumtext NOT NULL,
+  `thread_id` bigint(21) unsigned NOT NULL,
+  `rows_affected` int(11) NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='Slow log,sequoiadb:{table_options: {NoTrans:true}}';
+
+CREATE TABLE `general_log` (
+  `event_time` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+  `user_host` mediumtext NOT NULL,
+  `thread_id` bigint(21) unsigned NOT NULL,
+  `server_id` int(10) unsigned NOT NULL,
+  `command_type` varchar(64) NOT NULL,
+  `argument` mediumtext NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='General log,sequoiadb:{table_options: {NoTrans:true}}';
+
+set session long_query_time = 0;
+set global log_output = 'table';
+set global slow_query_log = on;
+set global general_log = on;
+truncate slow_log;
+truncate general_log;
+
+select * from db31495.t1;
+--replace_column 1 COUNT
+select count(*) from slow_log;
+--replace_column 1 COUNT
+select count(*) from general_log;
+
+--error 1556
+update slow_log set rows_sent = 1 where rows_examined = 1;
+--error 1556
+update general_log set thread_id = 1 where command_type = 'Query';
+--error 1556
+delete from slow_log where rows_examined = 1;
+--error 1556
+delete from general_log where command_type = 'Query';
+--error 1556
+insert into slow_log select * from slow_log;
+--error 1556
+insert into general_log select * from general_log;
+
+--replace_column 1 TIMESTAMP 2 USER_HOST 3 QUERY_TIME 4 LOCK_TIME 12 THREAD_ID 13 ROWS_AFFECTED
+select * from slow_log;
+--replace_column 1 TIMESTAMP 2 USER_HOST 3 THREAD_ID
+select * from general_log;
+
+eval set global log_output = '$log_output';
+eval set global slow_query_log = $slow_query_log;
+eval set global general_log = $general_log;
+drop database db31495;
+--source include/uninstall_sequoiadb.inc
