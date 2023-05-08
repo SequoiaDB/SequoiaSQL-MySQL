@@ -100,7 +100,8 @@ static inline Thd_sdb* thd_get_thd_sdb(THD* thd) {
 }
 
 // Make sure THD has a Thd_sdb struct assigned
-int check_sdb_in_thd(THD* thd, Sdb_conn** conn, bool validate_conn = false);
+int check_sdb_in_thd(THD* thd, Sdb_conn** conn, bool validate_conn = false,
+                     bool killing = false);
 
 void sdb_init_vars_check_and_update_funcs();
 

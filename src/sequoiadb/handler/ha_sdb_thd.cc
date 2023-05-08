@@ -836,7 +836,8 @@ error:
 // Make sure THD has a Thd_sdb struct allocated and associated
 // TODO: The parameter `validate_conn` is hard to decide. We should find an
 // other way to handle the reconnection problem!
-int check_sdb_in_thd(THD *thd, Sdb_conn **conn, bool validate_conn) {
+int check_sdb_in_thd(THD *thd, Sdb_conn **conn, bool validate_conn,
+                     bool killing) {
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   if (NULL == thd_sdb) {
@@ -859,7 +860,11 @@ int check_sdb_in_thd(THD *thd, Sdb_conn **conn, bool validate_conn) {
   DBUG_ASSERT(thd_sdb->is_slave_thread() == thd->slave_thread);
   *conn = thd_sdb->get_conn();
 
-  if (thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated()) {
+  /* When session A tries to kill session B, e.g., 'kill [query] <id>', it sends
+     an interruptOperation message using the connection of B. This is the only
+     operation allowd for A, as sending any other messages is not permitted due
+     to the fact that driver of sdb is not thread-safe. */
+  if (!killing && thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated()) {
     rc = sdb_fix_conn_attrs_by_thd(thd_sdb->get_conn());
     if (0 != rc) {
       goto error;

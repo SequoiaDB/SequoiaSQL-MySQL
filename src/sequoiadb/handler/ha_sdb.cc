@@ -10480,7 +10480,7 @@ static void sdb_kill_connection(handlerton *hton, THD *thd) {
   int rc = 0;
   uint64 tid = 0;
   Sdb_conn *connection = NULL;
-  rc = check_sdb_in_thd(thd, &connection, false);
+  rc = check_sdb_in_thd(thd, &connection, false, true);
   if (0 != rc) {
     goto error;
   }
