@@ -690,6 +690,8 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
         t1'.
      7. has a GROUP BY clause and/or one or more aggregate functions.
      8. join type is QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT.
+     9. contains window function.
+     10. is const table.
   */
   const bool use_where_condition = sdb_where_condition(thd);
   const bool use_having_condition = sdb_having_condition(thd);
@@ -710,11 +712,12 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
           ? true
           : false;
   const bool use_window_func = sdb_use_window_func(thd);
+  const bool is_const_table = table ? table->const_table : false;
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       (m_use_group && !direct_sort) || use_distinct || calc_found_rows ||
       use_group_and_agg_func || use_filesort || use_index_merge_and ||
-      use_window_func) {
+      use_window_func || is_const_table) {
     direct_limit = false;
     goto done;
   }
