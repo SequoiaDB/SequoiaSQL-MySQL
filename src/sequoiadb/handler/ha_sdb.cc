@@ -869,7 +869,7 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
   const bool use_distinct = sdb_use_distinct(select_lex);
   const bool calc_found_rows = sdb_calc_found_rows(join);
   bool use_group_and_agg_func = false;
-  if (join && join->sort_and_group &&
+  if (join && (join->sort_and_group || join->tmp_table_param.sum_func_count) &&
       !join->tmp_table_param.precomputed_group_by) {
     use_group_and_agg_func = true;
   }
