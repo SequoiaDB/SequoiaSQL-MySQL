@@ -858,6 +858,8 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
      8. join type is QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT.
      9. Current query block is in a correlated subquery or contains recursive
         tables.
+     10. contains window function.
+     11. is const table.
   */
   const bool use_where_condition = sdb_where_condition(select_lex);
   const bool use_having_condition = sdb_having_condition(select_lex);
@@ -881,11 +883,13 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
   const bool is_recursive_table = sdb_is_recursive_table(table);
   const bool is_correlated = sdb_correlated_subquery_for_cur_select(table);
   const bool use_window_func = sdb_use_window_func(select_lex);
+  const bool is_const_table = table ? table->const_table : false;
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       (m_use_group && !direct_sort) || use_distinct || calc_found_rows ||
       use_group_and_agg_func || use_filesort || use_index_merge_and ||
-      is_recursive_table || is_correlated || use_window_func) {
+      is_recursive_table || is_correlated || use_window_func ||
+      is_const_table) {
     rs = false;
     goto error;
   }
