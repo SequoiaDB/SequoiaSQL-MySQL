@@ -748,8 +748,8 @@ ALTER TABLE t1 PARTITION BY HASH (a) PARTITIONS 4;
 ALTER TABLE t1 AUTO_INCREMENT 120;
 INSERT INTO t1(e,c) VALUES ('giveup','charnew1'),('giveup','charnew2');
 SHOW CREATE TABLE t1;
-Table  Create Table
-t1     CREATE TABLE `t1` (
+Table	Create Table
+t1	CREATE TABLE `t1` (
   `a` tinyint(4) NOT NULL AUTO_INCREMENT,
   `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
   `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
@@ -796,8 +796,8 @@ ALTER DATABASE metasync_22561_22566 CHARACTER SET cp1251;
 ALTER TABLE t1 MODIFY a TINYINT;
 INSERT INTO t1(a,e) VALUES (-1, 'giveup');
 SHOW CREATE TABLE t1;
-Table  Create Table
-t1     CREATE TABLE `t1` (
+Table	Create Table
+t1	CREATE TABLE `t1` (
   `a` tinyint(4) NOT NULL,
   `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
   `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
