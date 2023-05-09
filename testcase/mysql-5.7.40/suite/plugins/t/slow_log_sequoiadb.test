@@ -46,6 +46,8 @@ CREATE TABLE `general_log` (
   `command_type` varchar(64) NOT NULL,
   `argument` mediumblob NOT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='General log,sequoiadb:{table_options: {NoTrans:true}}';
+truncate table slow_log;
+truncate table general_log;
 
 create database slow_log_sequoiadb;
 use slow_log_sequoiadb;
@@ -540,6 +542,66 @@ delete from general_log;
 #set global slow_query_log = on;
 #--error 122
 #set global general_log = on;
+
+# Case31495:查询慢查询，总查询日志表走direct_count优化
+set global slow_query_log = off;
+set global general_log = off;
+use mysql;
+drop table slow_log, general_log;
+CREATE TABLE `slow_log` (
+  `start_time` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `user_host` mediumtext NOT NULL,
+  `query_time` time(6) NOT NULL,
+  `lock_time` time(6) NOT NULL,
+  `rows_sent` int(11) NOT NULL,
+  `rows_examined` int(11) NOT NULL,
+  `db` varchar(512) NOT NULL,
+  `last_insert_id` int(11) NOT NULL,
+  `insert_id` int(11) NOT NULL,
+  `server_id` int(10) unsigned NOT NULL,
+  `sql_text` mediumblob NOT NULL,
+  `thread_id` bigint(21) unsigned NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='Slow log,sequoiadb:{table_options: {NoTrans:true}}';
+
+CREATE TABLE `general_log` (
+  `event_time` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `user_host` mediumtext NOT NULL,
+  `thread_id` bigint(21) unsigned NOT NULL,
+  `server_id` int(10) unsigned NOT NULL,
+  `command_type` varchar(64) NOT NULL,
+  `argument` mediumblob NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='General log,sequoiadb:{table_options: {NoTrans:true}}';
+
+use slow_log_sequoiadb;
+create table t15(id int);
+insert into t15 values (1),(2);
+use mysql;
+set global slow_query_log = on;
+set global general_log = on;
+
+select * from slow_log_sequoiadb.t15;
+--replace_column 1 COUNT
+select count(*) from slow_log;
+--replace_column 1 COUNT
+select count(*) from general_log;
+
+--error 1556
+update slow_log set rows_sent = 1 where rows_examined = 1;
+--error 1556
+update general_log set thread_id = 1 where command_type = 'Query';
+--error 1556
+delete from slow_log where rows_examined = 1;
+--error 1556
+delete from general_log where command_type = 'Query';
+--error 1556
+insert into slow_log select * from slow_log;
+--error 1556
+insert into general_log select * from general_log;
+
+--replace_column 1 TIMESTAMP 2 USER_HOST 3 QUERY_TIME 4 LOCK_TIME 12 THREAD_ID
+select * from slow_log;
+--replace_column 1 TIMESTAMP 2 USER_HOST 3 THREAD_ID
+select * from general_log;
 
 truncate mysql.slow_log;
 truncate mysql.general_log;

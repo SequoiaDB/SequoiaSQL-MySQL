@@ -30,6 +30,8 @@ CREATE TABLE `general_log` (
 `command_type` varchar(64) NOT NULL,
 `argument` mediumtext NOT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='General log,sequoiadb:{table_options: {NoTrans:true}}';
+truncate table slow_log;
+truncate table general_log;
 create database slow_log_sequoiadb;
 use slow_log_sequoiadb;
 set global slow_query_log = on;
@@ -622,6 +624,87 @@ delete from slow_log;
 ERROR HY000: You can't use locks with log tables
 delete from general_log;
 ERROR HY000: You can't use locks with log tables
+set global slow_query_log = off;
+set global general_log = off;
+use mysql;
+drop table slow_log, general_log;
+CREATE TABLE `slow_log` (
+`start_time` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+`user_host` mediumtext NOT NULL,
+`query_time` time(6) NOT NULL,
+`lock_time` time(6) NOT NULL,
+`rows_sent` int(11) NOT NULL,
+`rows_examined` int(11) NOT NULL,
+`db` varchar(512) NOT NULL,
+`last_insert_id` int(11) NOT NULL,
+`insert_id` int(11) NOT NULL,
+`server_id` int(10) unsigned NOT NULL,
+`sql_text` mediumtext NOT NULL,
+`thread_id` bigint(21) unsigned NOT NULL,
+`rows_affected` int(11) NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='Slow log,sequoiadb:{table_options: {NoTrans:true}}';
+CREATE TABLE `general_log` (
+`event_time` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+`user_host` mediumtext NOT NULL,
+`thread_id` bigint(21) unsigned NOT NULL,
+`server_id` int(10) unsigned NOT NULL,
+`command_type` varchar(64) NOT NULL,
+`argument` mediumtext NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='General log,sequoiadb:{table_options: {NoTrans:true}}';
+use slow_log_sequoiadb;
+create table t15(id int);
+insert into t15 values (1),(2);
+use mysql;
+set global slow_query_log = on;
+set global general_log = on;
+select * from slow_log_sequoiadb.t15;
+id
+1
+2
+select count(*) from slow_log;
+count(*)
+COUNT
+select count(*) from general_log;
+count(*)
+COUNT
+update slow_log set rows_sent = 1 where rows_examined = 1;
+ERROR HY000: You can't use locks with log tables
+update general_log set thread_id = 1 where command_type = 'Query';
+ERROR HY000: You can't use locks with log tables
+delete from slow_log where rows_examined = 1;
+ERROR HY000: You can't use locks with log tables
+delete from general_log where command_type = 'Query';
+ERROR HY000: You can't use locks with log tables
+insert into slow_log select * from slow_log;
+ERROR HY000: You can't use locks with log tables
+insert into general_log select * from general_log;
+ERROR HY000: You can't use locks with log tables
+select * from slow_log;
+start_time	user_host	query_time	lock_time	rows_sent	rows_examined	db	last_insert_id	insert_id	server_id	sql_text	thread_id	rows_affected
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	0	0	mysql	0	0	10	set global slow_query_log = on	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	0	0	mysql	0	0	10	set global general_log = on	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	2	2	mysql	0	0	10	select * from slow_log_sequoiadb.t15	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	1	0	mysql	0	0	10	select count(*) from slow_log	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	1	0	mysql	0	0	10	select count(*) from general_log	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	0	0	mysql	0	0	10	update slow_log set rows_sent = 1 where rows_examined = 1	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	0	0	mysql	0	0	10	update general_log set thread_id = 1 where command_type = 'Query'	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	0	0	mysql	0	0	10	delete from slow_log where rows_examined = 1	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	0	0	mysql	0	0	10	delete from general_log where command_type = 'Query'	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	0	0	mysql	0	0	10	insert into slow_log select * from slow_log	THREAD_ID	ROWS_AFFECTED
+TIMESTAMP	USER_HOST	QUERY_TIME	LOCK_TIME	0	0	mysql	0	0	10	insert into general_log select * from general_log	THREAD_ID	ROWS_AFFECTED
+select * from general_log;
+event_time	user_host	thread_id	server_id	command_type	argument
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	select * from slow_log_sequoiadb.t15
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	select count(*) from slow_log
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	select count(*) from general_log
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	update slow_log set rows_sent = 1 where rows_examined = 1
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	update general_log set thread_id = 1 where command_type = 'Query'
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	delete from slow_log where rows_examined = 1
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	delete from general_log where command_type = 'Query'
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	insert into slow_log select * from slow_log
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	insert into general_log select * from general_log
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	select * from slow_log
+TIMESTAMP	USER_HOST	THREAD_ID	10	Query	select * from general_log
 truncate mysql.slow_log;
 truncate mysql.general_log;
 set global server_id = 1;
