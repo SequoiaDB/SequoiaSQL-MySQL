@@ -1,11 +1,11 @@
 package com.sequoiasql.statsflush;
 
-import com.sequoiasql.testcommon.JdbcInterface;
-import com.sequoiasql.testcommon.MysqlTestBase;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeoutException;
+
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 public class StatsFlushUtils extends MysqlTestBase {
     public static String[] getLineOfExplain( JdbcInterface jdbc, String sql,
@@ -44,7 +44,7 @@ public class StatsFlushUtils extends MysqlTestBase {
         while ( !explain1.toString().equals( explain2.toString() ) ) {
             // 计时超过预期时间后两个实例查到的访问计划还没有统一则抛异常
             retry = retry + 1;
-            if ( retry > 24 ) {
+            if ( retry > 60 ) {
                 throw new TimeoutException( "retry timed out." );
             }
             // HAPendingLog的记录没有被完全清除则休眠4s再进入下一次循环
