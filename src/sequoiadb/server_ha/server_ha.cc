@@ -4756,7 +4756,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   // 4. SQL statement has 'temporary' flag, eg: 'create temporary table'
   if (!thd || !ha_thread.is_open || opt_bootstrap || !mysqld_server_started ||
       create_or_drop_only_temporary_table(thd) ||
-      (ha_thread.thd && sdb_thd_id(thd) == sdb_thd_id(ha_thread.thd))) {
+      (!ha_thread.stopped && ha_thread.thd &&
+       sdb_thd_id(thd) == sdb_thd_id(ha_thread.thd))) {
     goto done;
   }
   sql_command = thd_sql_command(thd);

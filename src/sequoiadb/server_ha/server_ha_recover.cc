@@ -2244,6 +2244,7 @@ done:
   // set stop flag, main thread will no longer sleep by checking this flag
   ha_thread->stopped = true;
   ha_thread_end(ha_thread->thd);
+  ha_thread->thd = NULL;
   return NULL;
 error:
   sdb_conn.rollback_transaction();
