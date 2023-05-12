@@ -10540,9 +10540,30 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto error;
   }
 
-  rc = conn->drop_cl(db_name, part_name, &table_part_mapping, false);
+  rc = conn->get_cl(db_name, part_table_name, main_cl, false, &tbl_ctx_impl);
   if (rc != 0) {
     goto error;
+  }
+
+  rc = conn->drop_cl(db_name, part_name, &table_part_mapping, false);
+  if (SDB_RECYCLE_FULL == get_sdb_code(rc)) {
+    // Ignore 'SDB_RECYCLE_FULL' error for dropping partition
+    sprintf(dropped_scl_full_name, "%s.%s", table_part_mapping.get_mapping_cs(),
+            table_part_mapping.get_mapping_cl());
+    SDB_LOG_WARNING("Recyclebin is full, ignore drop partition '%s' error",
+                    dropped_scl_full_name);
+    push_warning_printf(
+        thd, Sql_condition::SL_WARNING, rc,
+        "Recyclebin is full while dropping partition '%s' from '%s.%s'",
+        dropped_scl_full_name, db_name, part_table_name);
+    rc = main_cl.detach_collection(dropped_scl_full_name);
+    if (0 != rc) {
+      /* purecov: begin tested */
+      SDB_LOG_ERROR("Failed to detach '%s' from '%s.%s', rc: %d",
+                    dropped_scl_full_name, db_name, part_table_name, rc);
+      goto error;
+      /* purecov: end */
+    }
   }
 
   /*
@@ -10601,11 +10622,6 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   // Update the upper sub cl attach range.
   if (!upper_scl_name) {
     goto done;
-  }
-
-  rc = conn->get_cl(db_name, part_table_name, main_cl, false, &tbl_ctx_impl);
-  if (rc != 0) {
-    goto error;
   }
 
   rc = main_cl.detach_collection(upper_scl_name);

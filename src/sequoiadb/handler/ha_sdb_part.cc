@@ -3989,6 +3989,7 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
     build_selector(selector);
   }
 
+  scl.set_version(0);
   rc = scl.query(SDB_EMPTY_BSON, selector);
   if (rc != 0) {
     print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
