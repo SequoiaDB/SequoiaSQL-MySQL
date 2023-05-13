@@ -2819,8 +2819,7 @@ int ha_sdb_part::inner_append_range_cond(bson::BSONArrayBuilder &builder) {
   uint last_part_id = UINT_MAX32;
 
   try {
-    for (uint i = sdb_get_first_used_partition(m_part_info);
-         i < m_part_info->get_tot_partitions();
+    for (uint i = sdb_get_first_used_partition(m_part_info); i < MY_BIT_NONE;
          i = sdb_get_next_used_partition(m_part_info, i)) {
       uint part_id = i;
       convert_sub2main_part_id(part_id);
@@ -2936,8 +2935,7 @@ int ha_sdb_part::append_range_cond(bson::BSONArrayBuilder &builder) {
   bool need_cond_or = false;
 
   // Test if need $or.
-  for (uint i = sdb_get_first_used_partition(m_part_info);
-       i < m_part_info->get_tot_partitions();
+  for (uint i = sdb_get_first_used_partition(m_part_info); i < MY_BIT_NONE;
        i = sdb_get_next_used_partition(m_part_info, i)) {
     uint part_id = i;
     convert_sub2main_part_id(part_id);
@@ -3068,8 +3066,7 @@ int ha_sdb_part::append_shard_cond(bson::BSONObj &condition) {
       bson::BSONObjBuilder sub_obj(builder.subobjStart(SDB_FIELD_PART_HASH_ID));
       bson::BSONArrayBuilder sub_array(sub_obj.subarrayStart("$in"));
       uint last_part_id = -1;
-      for (uint i = sdb_get_first_used_partition(m_part_info);
-           i < m_part_info->get_tot_partitions();
+      for (uint i = sdb_get_first_used_partition(m_part_info); i < MY_BIT_NONE;
            i = sdb_get_next_used_partition(m_part_info, i)) {
         uint part_id = i;
         convert_sub2main_part_id(part_id);
@@ -3126,8 +3123,7 @@ int ha_sdb_part::pre_first_rnd_next(bson::BSONObj &condition) {
       INTERVAL_LAST == m_part_info->vers_info->interval.type &&
       0 == m_part_info->vers_info->limit) {
     has_valid_part = false;
-    for (uint i = sdb_get_first_used_partition(m_part_info);
-         i < m_part_info->get_tot_partitions();
+    for (uint i = sdb_get_first_used_partition(m_part_info); i < MY_BIT_NONE;
          i = sdb_get_next_used_partition(m_part_info, i)) {
       List_iterator_fast<partition_element> part_it(m_part_info->partitions);
       partition_element *part_elem;
@@ -3492,8 +3488,7 @@ int ha_sdb_part::truncate_partition_low() {
     goto done;
   }
 
-  for (uint i = sdb_get_first_used_partition(m_part_info);
-       i < m_part_info->get_tot_partitions();
+  for (uint i = sdb_get_first_used_partition(m_part_info); i < MY_BIT_NONE;
        i = sdb_get_next_used_partition(m_part_info, i)) {
     uint part_id = i;
     convert_sub2main_part_id(part_id);
@@ -3991,8 +3986,7 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
     goto error;
   }
 
-  for (i = sdb_get_first_used_partition(m_part_info);
-       i < m_part_info->get_tot_partitions();
+  for (i = sdb_get_first_used_partition(m_part_info); i < MY_BIT_NONE;
        i = sdb_get_next_used_partition(m_part_info, i)) {
     uint part_id = i;
     convert_sub2main_part_id(part_id);
