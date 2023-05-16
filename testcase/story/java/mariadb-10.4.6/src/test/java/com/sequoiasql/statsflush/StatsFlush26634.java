@@ -1,15 +1,20 @@
 package com.sequoiasql.statsflush;
 
-import com.sequoiadb.base.Sequoiadb;
-import com.sequoiasql.testcommon.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.sequoiadb.base.Sequoiadb;
+import com.sequoiasql.testcommon.CommLib;
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.JdbcInterfaceFactory;
+import com.sequoiasql.testcommon.JdbcWarpperType;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
  * @Description seqDB-26634:缓存信息时间'sequoiadb_stats_flush_time_threshold'阈值测试
@@ -106,9 +111,9 @@ public class StatsFlush26634 extends MysqlTestBase {
                 queryExplain, 1 );
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
 
-        // 设置缓存信息时间阈值参数为10s
+        // 设置缓存信息时间阈值
         jdbc1.update( "set debug=\"d,stats_flush_time_threshold_test\";" );
-        jdbc1.update( "set sequoiadb_stats_flush_time_threshold = 10 ;" );
+        jdbc1.update( "set sequoiadb_stats_flush_time_threshold = 30 ;" );
 
         // 两次crud操作间隔小于sequoiadb_stats_flush_time_threshold，不触发统计信息清理，两个实例下查出的查询计划不统一
         jdbc1.query( "select * from " + tbName1 + " where id>10 and id<20;" );
@@ -122,6 +127,7 @@ public class StatsFlush26634 extends MysqlTestBase {
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
 
         // 两次crud操作间隔大于sequoiadb_stats_flush_time_threshold，触发统计信息清理，两个实例下查出的查询计划相同
+        jdbc1.update( "set sequoiadb_stats_flush_time_threshold = 5 ;" );
         jdbc1.query( "select * from " + tbName1 + " where id>10 and id<20;" );
         StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain );
 
