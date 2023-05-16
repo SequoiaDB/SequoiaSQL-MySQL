@@ -59,13 +59,13 @@ public class TimePrinterListener extends TestListenerAdapter {
     }
 
     private void printBeginTime( ITestResult tr ) {
-        System.out.println( getCurTimeStr() + "Begin testcase: "
+        System.out.println( getCurTimeStr() + " Begin testcase: "
                 + getTestMethodName( tr ) );
     }
 
     private void printEndTime( ITestResult tr ) {
         System.out.println(
-                getCurTimeStr() + "End testcase: " + getTestMethodName( tr ) );
+                getCurTimeStr() + " End testcase: " + getTestMethodName( tr ) );
     }
 
     private String getTestMethodName( ITestResult tr ) {
