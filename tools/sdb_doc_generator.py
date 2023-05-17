@@ -82,9 +82,10 @@ optimizer_switch=index_merge_intersection=off,batched_key_access=on
 '''
 
 MARIADB_CNF_APPEND = '''
+join_buffer_size=2097152\n
 join_cache_level=8\n
 optimizer_switch=mrr=on,mrr_cost_based=off,join_cache_incremental=on,\
-join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=on,\
+join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=off,\
 index_merge_intersection=off
 '''
 
