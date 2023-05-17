@@ -605,8 +605,9 @@ int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
   DBUG_ASSERT(slot_idx < m_mapping_unit_count);
   if (cs_slot_is_full[slot_idx]) {
     rc = SDB_ERR_TOO_MANY_TABLES;
-    SDB_LOG_ERROR("NM: too many tables in current database, limit: %d",
-                  m_mapping_unit_size * m_mapping_unit_count);
+    SDB_PRINT_ERROR(ER_GET_ERRNO,
+                    "Too many tables in current database, limit: %d",
+                    m_mapping_unit_size * m_mapping_unit_count);
     goto error;
   }
   // slot number start with 1
@@ -888,9 +889,10 @@ retry:
     inserted = false;
     goto retry;
   } else if (cl_cnt > m_mapping_unit_size) {
-    SDB_LOG_ERROR("Number of table mapping in '%s' exceed the limit %d",
-                  cs_name, m_mapping_unit_size);
-    rc = SDB_ERR_TOO_MANY_TABLES;
+    rc = SDB_ERR_TOO_MANY_TABLES_IN_ONE_SLOT;
+    SDB_PRINT_ERROR(ER_GET_ERRNO,
+                    "Number of table mapping in '%s' exceed the limit %d",
+                    cs_name, m_mapping_unit_size);
     goto error;
   }
 
