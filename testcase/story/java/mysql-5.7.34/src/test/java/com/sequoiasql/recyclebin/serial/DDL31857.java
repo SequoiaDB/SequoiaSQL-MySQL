@@ -108,7 +108,6 @@ public class DDL31857 extends MysqlTestBase {
         Assert.assertEquals( act, exp );
         List< String > act1 = jdbc2.query( "select * from " + dbNameBase + "."
                 + tbNameBase + " order by pk;" );
-        System.out.println( act1 );
         List< String > exp1 = new ArrayList<>();
         Collections.addAll( exp1, "0|0|0|a|2023-05-22 10:10:10.0",
                 "2|2|2|b|2023-05-22 10:10:10.0",

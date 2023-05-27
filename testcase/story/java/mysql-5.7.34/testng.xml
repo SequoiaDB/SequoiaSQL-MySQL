@@ -43,6 +43,7 @@
             <package name="com.sequoiasql.session"/>
             <package name="com.sequoiasql.metadatasync.serial"/>
             <package name="com.sequoiasql.statsrefresh.serial"/>
+            <package name="com.sequoiasql.recyclebin.serial"></package>
         </packages>
     </test>
 

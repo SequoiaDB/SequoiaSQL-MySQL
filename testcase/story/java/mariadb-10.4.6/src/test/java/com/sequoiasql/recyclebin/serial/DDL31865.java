@@ -1,7 +1,8 @@
-package com.sequoiasql.metadatasync.serial;
+package com.sequoiasql.recyclebin.serial;
 
 import com.sequoiadb.base.DBCursor;
 import com.sequoiadb.base.Sequoiadb;
+import com.sequoiasql.metadatasync.serial.DDLUtils;
 import com.sequoiasql.testcommon.*;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
@@ -16,13 +17,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Description seqDB-31623:回收站满时，SQL端删除库和表
+ * @Description seqDB-3865:回收站满时，SQL端删除库和表
  * @Author wangxingming
  * @Date 2023/5/16
  */
-public class DDL31623 extends MysqlTestBase {
-    private String dbNameBase = "db_31623";
-    private String tbNameBase = "tb_31623";
+public class DDL31865 extends MysqlTestBase {
+    private String dbNameBase = "db_31865";
+    private String tbNameBase = "tb_31865";
     private Sequoiadb sdb = null;
     private JdbcInterface jdbc1;
     private JdbcInterface jdbc2;
@@ -151,7 +152,7 @@ public class DDL31623 extends MysqlTestBase {
         try {
             sdb.getRecycleBin().dropAll( null );
             BasicBSONObject recycleOptions = new BasicBSONObject( "MaxItemNum",
-                    100 ).append( "MaxVersionNum", 2 ).append( "AutoDrop",
+                    100 ).append( "MaxVersionNum", 6 ).append( "AutoDrop",
                     true );
             sdb.getRecycleBin().alter( recycleOptions );
             jdbc1.dropDatabase( dbNameBase );
