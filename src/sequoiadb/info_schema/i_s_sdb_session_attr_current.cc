@@ -177,6 +177,11 @@ static int i_s_store_elem_to_field(TABLE *table, bson::BSONElement &elem) {
   }
   field = table->field[pair->id];
 
+  if (!bitmap_is_set(field->table->read_set, field->field_index)) {
+    rc = 0;
+    goto done;
+  }
+
   field->set_notnull();
 
   switch (field->type()) {
