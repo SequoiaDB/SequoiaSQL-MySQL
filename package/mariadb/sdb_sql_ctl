@@ -1307,7 +1307,10 @@ function build_help()
    echo ""
    echo "Usage:"
    echo "  ${ME} listinst"
-   echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-P PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD] [-g INST_GROUP_NAME] [-k INST_GROUP_KEY] [--sdb-conn-addr=ADDR] [--sdb-user USER] [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] [--sdb-token TOKEN]"
+   echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-P PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD] 
+                                                   [-g INST_GROUP_NAME] [-k INST_GROUP_KEY] [--sdb-conn-addr=ADDR] 
+                                                   [--sdb-user USER] [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] 
+                                                   [--sdb-token TOKEN]"
    echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
    echo "  ${ME} start      <INSTNAME>                           [--print]"
    echo "  ${ME} startall                                        [--print]"
@@ -1317,10 +1320,16 @@ function build_help()
    echo "  ${ME} status     [INSTNAME]"
    echo "  ${ME} join       <INSTANCE> <-g INST_GROUP_NAME> [-k INST_GROUP_KEY] [--force]"
    echo "  ${ME} leave      <INSTANCE> <-g INST_GROUP_NAME> [--force]"
-   echo "  ${ME} chconf     <INSTNAME> [-P PORT]                            [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE]
-[--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL] [--sdb-token=TOKEN] [--sdb-cipherfile=PATH] [--sdb-error-level=ENUM] [--sdb-replica-size=SIZE] [--sdb-use-transaction=BOOL] [--sdb-optimizer-options=SET]
-[--sdb-rollback-on-timeout=BOOL] [--sdb-execute-only-in-mysql=BOOL] [--sdb-selector-pushdown-threshold=THRESHOLD] [--sdb-alter-table-overhead-threshold=THRESHOLD] [--sdb-lock-wait-timeout=TIMEOUT] [--sdb-use-rollback-segments=BOOL]
-[--sdb-stats-mode=MODE] [--sdb-stats-sample-num=NUM] [--sdb-stats-sample-percent=DOUBLE] [--sdb-stats-cache=BOOL] [--inst-group-name=NAME] [--inst-group-key=KEY]"
+   echo "  ${ME} chconf     <INSTNAME> [-P PORT] [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] 
+                                      [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE] 
+                                      [--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL] [--sdb-token=TOKEN] 
+                                      [--sdb-cipherfile=PATH] [--sdb-error-level=ENUM] [--sdb-replica-size=SIZE] 
+                                      [--sdb-use-transaction=BOOL] [--sdb-optimizer-options=SET] [--sdb-rollback-on-timeout=BOOL] 
+                                      [--sdb-execute-only-in-mysql=BOOL] [--sdb-selector-pushdown-threshold=THRESHOLD] 
+                                      [--sdb-alter-table-overhead-threshold=THRESHOLD] [--sdb-lock-wait-timeout=TIMEOUT] 
+                                      [--sdb-use-rollback-segments=BOOL] [--sdb-stats-mode=MODE] [--sdb-stats-sample-num=NUM] 
+                                      [--sdb-stats-sample-percent=DOUBLE] [--sdb-stats-cache=BOOL] [--inst-group-name=NAME] 
+                                      [--inst-group-key=KEY]"
    echo ""
    echo "Options:"
    echo "  -D DATADIR                                      location of the database storage area"
@@ -1348,19 +1357,29 @@ function build_help()
    echo "  --sdb-error-level=ENUM                          Sequoiadb error level for updating sharding key error"
    echo "  --sdb-replica-size=SIZE                         Replica size of write operations"
    echo "  --sdb-use-transaction=BOOL                      Enable transaction of SequoiaDB"
-   echo "  --sdb-optimizer-options=SET                     Optimizer_options[=option[,option...]], where option can be 'direct_count', 'direct_delete', 'direct_update', 'direct_sort', 'direct_limit'"
+   echo "  --sdb-optimizer-options=SET                     Optimizer_options[=option[,option...]], where option can be 
+                                                    'direct_count', 'direct_delete', 'direct_update', 'direct_sort', 
+                                                    'direct_limit'"
    echo "  --inst-group-name=NAME                          Specify instance group name"
    echo "  --inst-group-key=KEY                            Specify instance group key"
    echo "  --sdb-rollback-on-timeout=BOOL                  Roll back the complete transaction on lock wait timeout"
    echo "  --sdb-execute-only-in-mysql=BOOL                Commands execute only in mysql"
    echo "  --sdb-selector-pushdown-threshold=THRESHOLD     The threshold of selector push down to SequoiaDB"
-   echo "  --sdb-alter-table-overhead-threshold=THRESHOLD  Overhead threshold of table alteration. When count of records exceeds it, the alteration that needs to update the full table will be prohibited"
-   echo "  --sdb-lock-wait-timeout=TIMEOUT                 Timeout in seconds an InnoDB transaction may wait for a lock before being rolled back. Values above 100000000 disable the timeout."
-   echo "  --sdb-use-rollback-segments=BOOL                Whether use rollback segements in sequoiadb transaction or not. (Default: ON) (Defaults to on; use --skip-sequoiadb-use-rollback-segments to disable.)"
-   echo "  --sdb-stats-mode=MODE                           Mode of analysis. 1: sampling analysis; 2. full data analysis; 3. generate default statistics; 4. load statistics into the cache; 5. clear cached statistics; (Default: 1)"
+   echo "  --sdb-alter-table-overhead-threshold=THRESHOLD  Overhead threshold of table alteration. When count of records 
+                                                    exceeds it, the alteration that needs to update the full table will be 
+                                                    prohibited"
+   echo "  --sdb-lock-wait-timeout=TIMEOUT                 Timeout in seconds an InnoDB transaction may wait for a lock before 
+                                                    being rolled back. Values above 100000000 disable the timeout."
+   echo "  --sdb-use-rollback-segments=BOOL                Whether use rollback segements in sequoiadb transaction or not. 
+                                                    (Default: ON) (Defaults to on; use --skip-sequoiadb-use-rollback-segments 
+                                                    to disable.)"
+   echo "  --sdb-stats-mode=MODE                           Mode of analysis. 1: sampling analysis; 2. full data analysis; 
+                                                    3. generate default statistics; 4. load statistics into the cache; 
+                                                    5. clear cached statistics; (Default: 1)"
    echo "  --sdb-stats-sample-num=NUM                      Number of sample records for index statistics. (Default: 200)"
    echo "  --sdb-stats-sample-percent=DOUBLE               Percentage of sample records for index statistics. (Default: 0.0)"
-   echo "  --sdb-stats-cache=BOOL                          Load statistics information into cache from SequoiaDB. Default: ON) (Defaults to on; use --skip-sequoiadb-stats-cache to disable.)"
+   echo "  --sdb-stats-cache=BOOL                          Load statistics information into cache from SequoiaDB. Default: ON) 
+                                                    (Defaults to on; use --skip-sequoiadb-stats-cache to disable.)"
    echo "  -v, --version                                   output version information, then exit"
 }
 #Parse command line parameters
