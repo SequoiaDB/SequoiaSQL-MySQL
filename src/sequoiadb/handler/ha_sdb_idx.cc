@@ -747,7 +747,14 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                   is_null = i > 0 ? 1 : 0;
                   break;
                 }
-                /*Note: no break*/
+                /* For the start_key, 'undefined' may be prepended to the
+                   field that initially reads as null. However, this is not
+                   applicable for the end_key */
+                if (i > 0) {
+                  is_null = 1;
+                  break;
+                }
+                /* go through */
               case HA_READ_KEY_OR_NEXT:
                 // >= null means read all records
                 /*pre append undefined on the field which start read with
