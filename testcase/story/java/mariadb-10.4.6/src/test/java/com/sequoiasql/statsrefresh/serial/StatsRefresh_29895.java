@@ -15,7 +15,7 @@ import com.sequoiasql.testcommon.*;
  * @Descreption seqDB-29895:创建不同引擎的表，使用refresh刷新统计信息
  * @Author chenzejia
  * @CreateDate 2023.02.09
- * @UpdateDate 2023.02.09
+ * @UpdateDate 2023.05.29
  * @UpdateRemark chenzejia
  */
 public class StatsRefresh_29895 extends MysqlTestBase {
@@ -54,6 +54,7 @@ public class StatsRefresh_29895 extends MysqlTestBase {
         String tb_part = "tb_part";
         String tb_normal = "tb_normal";
         String tb_innodb = "tb_innodb";
+        String refreshMsg;
 
         // 清除其他数据表的sdb缓存，避免对用例造成影响
         jdbc.update( "flush tables;" );
@@ -92,22 +93,25 @@ public class StatsRefresh_29895 extends MysqlTestBase {
         long currentTime1 = StatsRefreshUtils.getMysqlTime( jdbc );
         jdbc.update( "refresh tables " + tb_innodb + "," + tb_part + ","
                 + tb_normal + " stats;" );
+        refreshMsg = jdbc.query( "show engine sequoiadb status" ).toString();
         Assert.assertFalse( StatsRefreshUtils.isRefresh( jdbc, currentTime1,
-                dbName, tb_innodb ) );
+                dbName, tb_innodb ), refreshMsg );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime1,
-                dbName, tb_normal ) );
+                dbName, tb_normal ), refreshMsg );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime1,
-                dbName, tb_part ) );
+                dbName, tb_part ), refreshMsg );
 
         // 预期sequoiadb表刷新成功
         long currentTime2 = StatsRefreshUtils.getMysqlTime( jdbc );
         jdbc.update( "refresh tables  stats;" );
+        refreshMsg = jdbc.query( "show engine sequoiadb status" ).toString();
         Assert.assertFalse( StatsRefreshUtils.isRefresh( jdbc, currentTime2,
-                dbName, tb_innodb ) );
+                dbName, tb_innodb ), refreshMsg );
+        // CI-2043 增加相关信息打印
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime2,
-                dbName, tb_normal ) );
+                dbName, tb_normal ), refreshMsg );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime2,
-                dbName, tb_part ) );
+                dbName, tb_part ), refreshMsg );
 
         // 预期查询成功
         ArrayList< String > query = jdbc
@@ -124,12 +128,13 @@ public class StatsRefresh_29895 extends MysqlTestBase {
         // 预期sequoiadb表刷新成功
         long currentTime3 = StatsRefreshUtils.getMysqlTime( jdbc );
         jdbc.update( "refresh tables  stats;" );
+        refreshMsg = jdbc.query( "show engine sequoiadb status" ).toString();
         Assert.assertFalse( StatsRefreshUtils.isRefresh( jdbc, currentTime3,
-                dbName, tb_innodb ) );
+                dbName, tb_innodb ), refreshMsg );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime3,
-                dbName, tb_normal ) );
+                dbName, tb_normal ), refreshMsg );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime3,
-                dbName, tb_part ) );
+                dbName, tb_part ), refreshMsg );
 
         jdbc.update(
                 "update " + tb_normal + " set b = 'sequoiasql' where a=1;" );
@@ -143,12 +148,13 @@ public class StatsRefresh_29895 extends MysqlTestBase {
         // 预期sequoiadb表刷新成功
         long currentTime4 = StatsRefreshUtils.getMysqlTime( jdbc );
         jdbc.update( "refresh tables  stats;" );
+        refreshMsg = jdbc.query( "show engine sequoiadb status" ).toString();
         Assert.assertFalse( StatsRefreshUtils.isRefresh( jdbc, currentTime4,
-                dbName, tb_innodb ) );
+                dbName, tb_innodb ), refreshMsg );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime4,
-                dbName, tb_normal ) );
+                dbName, tb_normal ), refreshMsg );
         Assert.assertTrue( StatsRefreshUtils.isRefresh( jdbc, currentTime4,
-                dbName, tb_part ) );
+                dbName, tb_part ), refreshMsg );
 
         jdbc.update(
                 "alter table " + tb_normal + " add column c varchar(28);" );
