@@ -105,23 +105,25 @@ public class Select28186 extends MysqlTestBase {
         es.run();
 
         // 查询上下文快照，预期是没有context残留的
-        BasicBSONObject matcher = new BasicBSONObject( "Contexts.Type",
-                "DATA" );
-        boolean checkSucc = false;
+        BasicBSONObject matcher = new BasicBSONObject( "Contexts.Type", "DATA" )
+                .append( "Contexts.Description",
+                        new BasicBSONObject( "$regex",
+                                ".Collection:" + csName + "." + clName + "*" )
+                                        .append( "$options", "i" ) );
         int retryTimes = 60;
-        while ( !checkSucc ) {
+        while ( retryTimes > 0 ) {
             DBCursor cursor = sdb.getSnapshot( 0, matcher, null, null );
             try {
-                if ( retryTimes > 0 ) {
-                    if ( !cursor.hasNext() ) {
-                        break;
-                    } else {
-                        Thread.sleep( 100 );
-                        retryTimes--;
-                    }
+                if ( !cursor.hasNext() ) {
+                    break;
                 } else {
-                    Object context = cursor.getNext().get( "Contexts" );
-                    Assert.fail( context.toString() );
+                    Thread.sleep( 100 );
+                    retryTimes--;
+                    if ( retryTimes <= 0 ) {
+                        Object context = cursor.getNext().get( "Contexts" );
+                        Assert.fail( "check timeout. context = "
+                                + context.toString() );
+                    }
                 }
             } finally {
                 cursor.close();
@@ -131,7 +133,6 @@ public class Select28186 extends MysqlTestBase {
         List< String > processList = jdbc1.query( "show processlist;" );
         for ( int i = 0; i < processList.size(); i++ ) {
             String[] row = processList.get( i ).toString().split( "\\|" );
-            System.out.println( processList.get( i ) );
             if ( row[ 7 ].contains( sql ) ) {
                 Assert.fail( "processId exists, process info: "
                         + processList.get( i ) );
