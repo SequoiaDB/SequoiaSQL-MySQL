@@ -12647,6 +12647,7 @@ static void sdb_drop_database(handlerton *hton, char *path) {
     }
     if (SDB_RECYCLE_FULL == get_sdb_code(rc)) {
       my_printf_error(rc, "%s", MYF(0), connection->get_err_msg());
+      connection->clear_err_msg();
       goto error;
     }
   }
