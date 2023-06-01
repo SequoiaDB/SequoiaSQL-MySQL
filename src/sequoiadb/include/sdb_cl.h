@@ -127,6 +127,8 @@ class Sdb_cl {
 
   int get_indexes(std::vector<bson::BSONObj> &infos);
 
+  int get_index(const char *index_name, bson::BSONObj &index_info);
+
   int attach_collection(const char *sub_cl_fullname,
                         const bson::BSONObj &options);
 
