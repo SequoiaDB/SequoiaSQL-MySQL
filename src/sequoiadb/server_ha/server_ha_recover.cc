@@ -174,7 +174,8 @@ static int decrypt_inst_group_password(const char *base64_cipher,
   HA_RC_CHECK(oom, error,
               "HA: Out of memory while decrypting instance group password");
 
-  len = base64_decode(base64_cipher, strlen(base64_cipher), src.c_ptr(), 0, 0);
+  len = base64_decode(base64_cipher, strlen(base64_cipher), src.c_ptr_quick(),
+                      0, 0);
   HA_RC_CHECK(len < 0, error,
               "HA: Failed to decode 'CipherPassword' in base64 format, "
               "please use 'IV' and instance group key to check "
@@ -190,15 +191,16 @@ static int decrypt_inst_group_password(const char *base64_cipher,
   md5_key.length(HA_MD5_BYTE_LEN);
   md5_iv.length(HA_MD5_BYTE_LEN);
 #ifdef IS_MYSQL
-  compute_md5_hash(md5_key.c_ptr(), key, strlen(key));
-  compute_md5_hash(md5_iv.c_ptr(), iv, strlen(iv));
+  compute_md5_hash(md5_key.c_ptr_quick(), key, strlen(key));
+  compute_md5_hash(md5_iv.c_ptr_quick(), iv, strlen(iv));
 #else
-  compute_md5_hash((uchar *)md5_key.c_ptr(), key, strlen(key));
-  compute_md5_hash((uchar *)md5_iv.c_ptr(), iv, strlen(iv));
+  compute_md5_hash((uchar *)md5_key.c_ptr_quick(), key, strlen(key));
+  compute_md5_hash((uchar *)md5_iv.c_ptr_quick(), iv, strlen(iv));
 #endif
 
-  rc = sdb_aes_decrypt(MY_AES_CBC, (uchar *)md5_key.c_ptr(), HA_MD5_BYTE_LEN,
-                       src, dst, (uchar *)md5_iv.c_ptr(), HA_MD5_BYTE_LEN);
+  rc = sdb_aes_decrypt(MY_AES_CBC, (uchar *)md5_key.c_ptr_quick(),
+                       HA_MD5_BYTE_LEN, src, dst, (uchar *)md5_iv.c_ptr_quick(),
+                       HA_MD5_BYTE_LEN);
   HA_RC_CHECK(rc, error, "HA: Decrypt aes cipher error: %d", rc);
 
   // check if password is correct
@@ -211,9 +213,10 @@ static int decrypt_inst_group_password(const char *base64_cipher,
   md5_password.length(HA_MD5_BYTE_LEN);
   md5_hex_str.length(HA_MD5_HEX_STR_LEN);
 #ifdef IS_MYSQL
-  compute_md5_hash(md5_password.c_ptr(), dst.c_ptr(), dst.length());
+  compute_md5_hash(md5_password.c_ptr_quick(), dst.c_ptr_quick(), dst.length());
 #else
-  compute_md5_hash((uchar *)md5_password.c_ptr(), dst.c_ptr(), dst.length());
+  compute_md5_hash((uchar *)md5_password.c_ptr_quick(), dst.c_ptr_quick(),
+                   dst.length());
 #endif
   array_to_hex(md5_hex_str.c_ptr_safe(), (uchar *)md5_password.c_ptr_safe(),
                HA_MD5_BYTE_LEN);
