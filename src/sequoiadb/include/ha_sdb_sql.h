@@ -559,4 +559,6 @@ bool is_slow_log_on();
 
 bool is_general_log_on();
 
+my_thread_id sdb_thread_id(THD *thd);
+
 #endif

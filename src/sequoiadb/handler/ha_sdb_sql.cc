@@ -1015,6 +1015,10 @@ bool is_general_log_on() {
   return opt_general_log;
 }
 
+my_thread_id sdb_thread_id(THD *thd) {
+  return thd->thread_id();
+}
+
 #elif defined IS_MARIADB
 
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
@@ -1943,6 +1947,10 @@ bool is_slow_log_on() {
 
 bool is_general_log_on() {
   return opt_log;
+}
+
+my_thread_id sdb_thread_id(THD *thd) {
+  return thd->thread_id;
 }
 
 #endif
