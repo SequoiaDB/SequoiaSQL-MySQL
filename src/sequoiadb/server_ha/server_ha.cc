@@ -634,7 +634,8 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         goto error;
       }
     }
-  } else if (is_dcl_meta_sql(thd) && sql_info->tables &&
+  } else if ((SQLCOM_GRANT == sql_command || SQLCOM_REVOKE == sql_command) &&
+             sql_info->tables &&
              (0 == thd->lex->type || TYPE_ENUM_PROCEDURE == thd->lex->type ||
               TYPE_ENUM_FUNCTION == thd->lex->type)) {
     // grant object can be 'TABLE/FUNCTION/PROCEDURE'
@@ -964,6 +965,7 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
   Sdb_cl obj_state_cl, inst_obj_state_cl;
   const char *db_name = NULL, *table_name = NULL, *op_type = NULL;
+  int sql_command = thd_sql_command(thd);
   rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_OBJECT_STATE_CL,
                         obj_state_cl);
   if (rc) {
@@ -1002,7 +1004,8 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
         goto error;
       }
     }
-  } else if (is_dcl_meta_sql(thd) && sql_info->tables &&
+  } else if ((SQLCOM_GRANT == sql_command || SQLCOM_REVOKE == sql_command) &&
+             sql_info->tables &&
              (0 == thd->lex->type || TYPE_ENUM_PROCEDURE == thd->lex->type ||
               TYPE_ENUM_FUNCTION == thd->lex->type)) {
     // lex->type == 0 means that granted object is table
@@ -1045,16 +1048,17 @@ static int wait_definer_if_exists(THD *thd, ha_sql_stmt_info *sql_info,
                                   Sdb_cl &obj_state_cl) {
   int rc = 0;
   int sql_command = thd_sql_command(thd);
-  if (thd->lex->definer && (SQLCOM_CREATE_VIEW == sql_command ||
-                            SQLCOM_CREATE_TRIGGER == sql_command ||
-                            SQLCOM_CREATE_FUNCTION == sql_command ||
-                            SQLCOM_CREATE_SPFUNCTION == sql_command ||
-                            SQLCOM_CREATE_PROCEDURE == sql_command
+  if ((SQLCOM_CREATE_VIEW == sql_command ||
+       SQLCOM_CREATE_TRIGGER == sql_command ||
+       SQLCOM_CREATE_FUNCTION == sql_command ||
+       SQLCOM_CREATE_SPFUNCTION == sql_command ||
+       SQLCOM_CREATE_PROCEDURE == sql_command
 #ifdef IS_MARIADB
-                            || SQLCOM_CREATE_PACKAGE == sql_command ||
-                            SQLCOM_CREATE_PACKAGE_BODY == sql_command
+       || SQLCOM_CREATE_PACKAGE == sql_command ||
+       SQLCOM_CREATE_PACKAGE_BODY == sql_command
 #endif
-                            )) {
+       ) &&
+      thd->lex->definer) {
     LEX_CSTRING definer_user = thd->lex->definer->user;
     const char *db_name = HA_MYSQL_DB;
     const char *table_name = definer_user.str;
@@ -2387,7 +2391,8 @@ error:
 }
 
 static void init_ha_event_general(ha_event_general &ha_event, const void *ev,
-                                  ha_event_class_t event_class) {
+                                  ha_event_class_t event_class, THD *thd) {
+  ha_event.general_thread_id = sdb_thread_id(thd);
   ha_event.general_error_code = -1;
   if (MYSQL_AUDIT_CONNECTION_CLASS == event_class) {
     const struct mysql_event_connection *event =
@@ -2452,11 +2457,11 @@ static inline bool need_complete(const ha_event_general &event,
                                  ha_event_class_t event_class) {
   bool conds = is_trans_on;
 #ifdef IS_MARIADB
-  conds = conds && (MYSQL_AUDIT_QUERY_END == event.event_subclass ||
-                    MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
-                    MYSQL_AUDIT_GENERAL_RESULT == event.event_subclass);
   // for mariadb the final event class must be MYSQL_AUDIT_GENERAL_CLASS
-  conds = conds && (MYSQL_AUDIT_GENERAL_CLASS == event_class);
+  conds = conds && (MYSQL_AUDIT_GENERAL_CLASS == event_class) &&
+          (MYSQL_AUDIT_QUERY_END == event.event_subclass ||
+           MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
+           MYSQL_AUDIT_GENERAL_RESULT == event.event_subclass);
 #else
   bool result = MYSQL_AUDIT_GENERAL_CLASS == event_class &&
                 (MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
@@ -4756,13 +4761,16 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   // 4. SQL statement has 'temporary' flag, eg: 'create temporary table'
   if (!thd || !ha_thread.is_open || opt_bootstrap || !mysqld_server_started ||
       create_or_drop_only_temporary_table(thd) ||
+#ifdef IS_MYSQL
+      event_class == MYSQL_AUDIT_SERVER_SHUTDOWN_CLASS ||
+#endif
       (!ha_thread.stopped && ha_thread.thd &&
        sdb_thd_id(thd) == sdb_thd_id(ha_thread.thd))) {
     goto done;
   }
   sql_command = thd_sql_command(thd);
   // convert mysql or mariadb event to HA event
-  init_ha_event_general(event, ev, event_class);
+  init_ha_event_general(event, ev, event_class, thd);
 
   if ((rc = get_sql_stmt_info(&sql_info))) {
     goto error;

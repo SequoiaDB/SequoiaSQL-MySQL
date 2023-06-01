@@ -898,6 +898,10 @@ ulong sdb_thd_da_warn_count(THD *thd) {
 bool sdb_field_default_values_is_null(const Create_field *definition) {
   return (NULL == definition->def);
 }
+
+my_thread_id sdb_thread_id(THD *thd) {
+  return thd->thread_id();
+}
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1681,5 +1685,9 @@ ulong sdb_thd_da_warn_count(THD *thd) {
 
 bool sdb_field_default_values_is_null(const Create_field *definition) {
   return (NULL == definition->default_value);
+}
+
+my_thread_id sdb_thread_id(THD *thd) {
+  return thd->thread_id;
 }
 #endif

@@ -522,4 +522,6 @@ void sdb_register_debug_var(THD *thd, const char *var_name,
 ulong sdb_thd_da_warn_count(THD *thd);
 
 bool sdb_field_default_values_is_null(const Create_field *definition);
+
+my_thread_id sdb_thread_id(THD *thd);
 #endif
