@@ -440,67 +440,67 @@ SHOW CREATE USER u2;
 SHOW CREATE USER u3;
 DROP USER u1, u2, u3;
 
-## SEQUOIASQLMAINSTREAM-1845
-#connection conn1;
-#DROP DATABASE IF EXISTS sdb1;
-#CREATE DATABASE sdb1;
-#USE sdb1;
-#DELIMITER $$;
-#CREATE PROCEDURE dcl_create()
-#BEGIN
-#DECLARE i int;
-#SET i = 0;
-#WHILE i < 3 do
-#IF(i = 0)
-#THEN
-#CREATE USER u1;
-#END IF;
-#IF(i = 1)
-#THEN
-#CREATE USER u2 IDENTIFIED BY '123456';
-#END IF;
-#IF(i = 2)
-#THEN
-#CREATE USER u3 IDENTIFIED BY PASSWORD '*6BB4837EB74329105EE4568DDA7DC67ED2CA2AD9';
-#END IF;
-#SET i = i + 1;
-#END WHILE;
-#END $$
-#DELIMITER ;$$
-#
-#CALL dcl_create();
-#show create user u1;
-#show create user u2;
-#show create user u3;
-#connection conn2;
-#show create user u1;
-#show create user u2;
-#show create user u3;
-#drop user u1,u2,u3;
-#
-#connection conn1;
-#CALL dcl_create();
-#show create user u1;
-#show create user u2;
-#show create user u3;
-#connection conn2;
-#show create user u1;
-#show create user u2;
-#show create user u3;
-#drop user u1,u2,u3;
-#
-#connection conn1;
-#CALL dcl_create();
-#show create user u1;
-#show create user u2;
-#show create user u3;
-#connection conn2;
-#show create user u1;
-#show create user u2;
-#show create user u3;
-#drop user u1,u2,u3;
-#
-#DROP DATABASE sdb1;
+# SEQUOIASQLMAINSTREAM-1845
+connection conn1;
+DROP DATABASE IF EXISTS sdb1;
+CREATE DATABASE sdb1;
+USE sdb1;
+DELIMITER $$;
+CREATE PROCEDURE dcl_create()
+BEGIN
+DECLARE i int;
+SET i = 0;
+WHILE i < 3 do
+IF(i = 0)
+THEN
+CREATE USER u1;
+END IF;
+IF(i = 1)
+THEN
+CREATE USER u2 IDENTIFIED BY '123456';
+END IF;
+IF(i = 2)
+THEN
+CREATE USER u3 IDENTIFIED BY PASSWORD '*6BB4837EB74329105EE4568DDA7DC67ED2CA2AD9';
+END IF;
+SET i = i + 1;
+END WHILE;
+END $$
+DELIMITER ;$$
+
+CALL dcl_create();
+show create user u1;
+show create user u2;
+show create user u3;
+connection conn2;
+show create user u1;
+show create user u2;
+show create user u3;
+drop user u1,u2,u3;
+
+connection conn1;
+CALL dcl_create();
+show create user u1;
+show create user u2;
+show create user u3;
+connection conn2;
+show create user u1;
+show create user u2;
+show create user u3;
+drop user u1,u2,u3;
+
+connection conn1;
+CALL dcl_create();
+show create user u1;
+show create user u2;
+show create user u3;
+connection conn2;
+show create user u1;
+show create user u2;
+show create user u3;
+drop user u1,u2,u3;
+
+DROP DATABASE sdb1;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

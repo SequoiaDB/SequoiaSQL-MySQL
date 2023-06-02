@@ -67,8 +67,10 @@ public class DDL31060 extends MysqlTestBase {
                 + " (3, 3, 3, 'ZXCV', '2023-04-10 12:23:13'),"
                 + " (4, 4, 4, 'ZXAD', '2023-04-11 13:24:14');" );
         jdbc1.update( "set session sequoiadb_execution_mode = 1;" );
-        List< String > act01 = jdbc1.query( "select @@sequoiadb_execution_mode;" );
-        List< String > act02 = jdbc1.query( "select @@sequoiadb_execute_only_in_mysql;" );
+        List< String > act01 = jdbc1
+                .query( "select @@sequoiadb_execution_mode;" );
+        List< String > act02 = jdbc1
+                .query( "select @@sequoiadb_execute_only_in_mysql;" );
         List< String > exp0 = new ArrayList<>();
         exp0.add( "1" );
         Assert.assertEquals( act01, exp0 );
@@ -115,9 +117,6 @@ public class DDL31060 extends MysqlTestBase {
 
         // 验证实例组下的实例是否为最新的同步
         DDLUtils.checkInstanceIsSync( sdb, instanceGroupName );
-        // SEQUOIASQLMAINSTREAM-1817
-        // jdbc1.query( "SELECT * FROM " + dbName + "." + tbName + " order by
-        // pk;");
         List< String > act4 = jdbc2
                 .query( "SELECT pk, col1, col3, col4, col5 FROM " + dbName + "."
                         + tbName + " order by pk;" );
