@@ -120,8 +120,7 @@ public class DDL31859 extends MysqlTestBase {
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
-            // 需要修改报错信息，问题单未修复
-            if ( !eMessage.contains( "[MaxItemNum: 3]" )
+            if ( !eMessage.contains( "[MaxVersionNum: 2]" )
                     || errorCode != 40386 ) {
                 throw e;
             }
@@ -154,7 +153,6 @@ public class DDL31859 extends MysqlTestBase {
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
-            // 需要修改报错信息，问题单未修复
             if ( !eMessage.contains( "[MaxItemNum: 3]" )
                     || errorCode != 40386 ) {
                 throw e;
@@ -189,7 +187,7 @@ public class DDL31859 extends MysqlTestBase {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
             // 需要修改报错信息，问题单未修复
-            if ( !eMessage.contains( "[MaxItemNum: 3]" )
+            if ( !eMessage.contains( "[MaxVersionNum: 2]" )
                     || errorCode != 40386 ) {
                 throw e;
             }
