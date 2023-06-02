@@ -52,7 +52,10 @@ sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,\
 NO_ENGINE_SUBSTITUTION\n
 character_set_server=utf8mb4\n
 collation_server=utf8mb4_bin\n
-lower_case_table_names=1
+lower_case_table_names=1\n
+# Prioritizes cached table statistics over direct stats collecting for SequiaDB \
+engine tables when querying information_schema.tables.
+# information_schema_tables_stats_cache_first=OFF
 '''
 
 MY_CNF_DEFAULT_STORAGE = "\ndefault_storage_engine=SequoiaDB\n"
