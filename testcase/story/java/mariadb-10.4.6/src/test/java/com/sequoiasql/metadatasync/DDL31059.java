@@ -54,8 +54,10 @@ public class DDL31059 extends MysqlTestBase {
         String instanceGroupName = MetaDataMappingUtils.getInstGroupName( sdb,
                 MysqlTestBase.mysql1 );
         jdbc1.update( "set session sequoiadb_execution_mode = 0;" );
-        List< String > act01 = jdbc1.query( "select @@sequoiadb_execution_mode;" );
-        List< String > act02 = jdbc1.query( "select @@sequoiadb_execute_only_in_mysql;" );
+        List< String > act01 = jdbc1
+                .query( "select @@sequoiadb_execution_mode;" );
+        List< String > act02 = jdbc1
+                .query( "select @@sequoiadb_execute_only_in_mysql;" );
         List< String > exp0 = new ArrayList<>();
         exp0.add( "0" );
         Assert.assertEquals( act01, exp0 );
@@ -81,9 +83,6 @@ public class DDL31059 extends MysqlTestBase {
 
         // 验证实例组下的实例是否为最新的同步
         DDLUtils.checkInstanceIsSync( sdb, instanceGroupName );
-        // SEQUOIASQLMAINSTREAM-1817
-        // jdbc1.query( "SELECT * FROM " + dbName + "." + tbName + " order by
-        // pk;");
         List< String > act1 = jdbc1
                 .query( "SELECT pk, col1, col2, col3, col4, col5 FROM " + dbName
                         + "." + tbName + " order by pk;" );
