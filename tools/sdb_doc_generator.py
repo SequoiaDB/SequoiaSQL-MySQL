@@ -71,7 +71,10 @@ NONE: returns the result set; WARNING: returns a result set with waning\
 information; ERROR: does not return a result set,but outputs an error."
 # sql_select_result_limit_exceed_handling_names=NONE\n
 # sql_select_result_limit_exceed_handling as a threshold for the number of results.
-# sql_select_result_limit=18446744073709551615
+# sql_select_result_limit=18446744073709551615\n
+# Prioritizes cached table statistics over direct stats collecting for SequiaDB \
+engine tables when querying information_schema.tables.
+# information_schema_tables_stats_cache_first=OFF
 '''
 
 MY_CNF_DEFAULT_STORAGE = "\ndefault_storage_engine=SequoiaDB\n"
