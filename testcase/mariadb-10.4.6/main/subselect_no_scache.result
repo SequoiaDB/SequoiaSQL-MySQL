@@ -3726,8 +3726,8 @@ INSERT INTO t2 VALUES (7), (5), (1), (3);
 SELECT id, st FROM t1
 WHERE st IN ('GA','FL') AND EXISTS(SELECT 1 FROM t2 WHERE t2.id=t1.id);
 id	st
-3	FL
 1	GA
+3	FL
 7	FL
 SELECT id, st FROM t1
 WHERE st IN ('GA','FL') AND EXISTS(SELECT 1 FROM t2 WHERE t2.id=t1.id)
