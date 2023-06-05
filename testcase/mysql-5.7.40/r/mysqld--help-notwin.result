@@ -335,6 +335,10 @@ The following options may be given as the first argument:
  Specifies a directory to add to the ignore list when
  collecting database names from the datadir. Put a blank
  argument to reset the list accumulated so far.
+ --information-schema-tables-stats-cache-first 
+ Prioritizes cached table statistics over direct stats
+ collecting for SequoiaDB engine tables when querying
+ information_schema.tables.
  --init-connect=name Command(s) that are executed for each new connection
  --init-file=name    Read SQL commands from this file at startup
  --init-slave=name   Command(s) that are executed by a slave server each time
@@ -1500,6 +1504,7 @@ gtid-mode OFF
 help TRUE
 host-cache-size 279
 ignore-builtin-innodb FALSE
+information-schema-tables-stats-cache-first FALSE
 init-connect 
 init-file (No default value)
 init-slave 

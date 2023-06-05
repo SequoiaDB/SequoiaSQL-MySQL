@@ -53,7 +53,7 @@ NO_ENGINE_SUBSTITUTION\n
 character_set_server=utf8mb4\n
 collation_server=utf8mb4_bin\n
 lower_case_table_names=1\n
-# Prioritizes cached table statistics over direct stats collecting for SequiaDB \
+# Prioritizes cached table statistics over direct stats collecting for SequoiaDB \
 engine tables when querying information_schema.tables.
 # information_schema_tables_stats_cache_first=OFF
 '''
