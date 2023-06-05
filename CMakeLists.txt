@@ -77,7 +77,12 @@ function(prepare_sql_source sql_source_root sql_name)
                WORKING_DIRECTORY "${sql_source_root}"
                RESULT_VARIABLE tar_result
             )
-            set(MYSQL_SRC_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}")
+
+         IF(SQL_VERSION STREQUAL "5.7.42")
+            set(MYSQL_SRC_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}")
+         ELSE()
+            set(MYSQL_SRC_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}-3.6-cgb")
+         ENDIF()
             execute_process(
                COMMAND bash -c "mv -f ${MYSQL_SRC_NAME}/* ./; rm -r ${MYSQL_SRC_NAME}"
                WORKING_DIRECTORY "${sql_source_root}"
@@ -95,7 +100,11 @@ function(prepare_sql_source sql_source_root sql_name)
             WORKING_DIRECTORY "${sql_source_root}"
             RESULT_VARIABLE tar_result
          )
-         set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}-3.6-cgb")
+         IF(SQL_VERSION STREQUAL "5.7.42")
+           set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}")
+         ELSE()
+           set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}-3.6-cgb")
+         ENDIF()
          execute_process(
             COMMAND bash -c "mv ${EXTRACT_NAME}/* ./"
             WORKING_DIRECTORY "${sql_source_root}"
