@@ -34,6 +34,13 @@ typedef struct Sdb_partition_del_ren_ctx {
   char skip_rename_main_cl[SDB_CL_NAME_MAX_SIZE + 1];
   char skip_rename_sub_cl[SDB_CL_NAME_MAX_SIZE + 1];
   longlong query_id;
+
+  Sdb_partition_del_ren_ctx() {
+    skip_delete_cl[0] = '\0';
+    skip_rename_main_cl[0] = '\0';
+    skip_rename_sub_cl[0] = '\0';
+    query_id = 0;
+  }
 } Sdb_part_del_ren_ctx;
 #endif
 
