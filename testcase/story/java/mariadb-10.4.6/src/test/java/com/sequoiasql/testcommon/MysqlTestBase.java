@@ -53,7 +53,7 @@ public class MysqlTestBase {
     }
 
     public static String initUrl( String addr, String user, String passwd ) {
-        String urlbase = "jdbc:mysql://%s?user=%s&password=%s&useUnicode=true&useSSL=false&characterEncoding=utf-8&autoReconnect=true";
+        String urlbase = "jdbc:mysql://%s?user=%s&password=%s&useUnicode=true&useSSL=false&characterEncoding=utf-8&autoReconnect=true&allowMultiQueries=true";
         String url = String.format( urlbase, addr, user, passwd );
         return url;
     }
