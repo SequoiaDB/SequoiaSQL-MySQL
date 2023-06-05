@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Description seqDB-3865:回收站满时，SQL端删除库和表
+ * @Description seqDB-31865:回收站满时，SQL端删除库和表
  * @Author wangxingming
  * @Date 2023/5/16
  * @UpdateAuthor wangxingming
