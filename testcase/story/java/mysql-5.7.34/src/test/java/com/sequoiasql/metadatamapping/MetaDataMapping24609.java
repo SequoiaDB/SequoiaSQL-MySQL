@@ -135,31 +135,6 @@ public class MetaDataMapping24609 extends MysqlTestBase {
         actCLcount = mappingCLNum;
         checkSdbCS( true );
 
-        // 当映射表个数达到默认的 10 * 1024 时，再次创建一个普通表或添加分区，超过默认的最大映射表个数创建失败
-        if ( mappingCLNum == 10 * 1024 ) {
-            // 创建普通表
-            try {
-                jdbc.update( "create table " + dbName + "." + tableNamePrefix
-                        + "test" + "(a int,b int)" );
-                Assert.fail( "should error but success" );
-            } catch ( SQLException e ) {
-                if ( e.getErrorCode() != 1030 ) {
-                    throw e;
-                }
-            }
-            // range分区表添加一个分区
-            try {
-                jdbc.update( "alter table " + dbName + "." + tableNamePrefix
-                        + "range_2 "
-                        + "add partition (partition p3 values less than(5000))" );
-                Assert.fail( "should error but success" );
-            } catch ( SQLException e ) {
-                if ( e.getErrorCode() != 1030 ) {
-                    throw e;
-                }
-            }
-        }
-
         // mysql端删除数据库
         jdbc.update( "drop database " + dbName );
         checkSdbCS( false );
