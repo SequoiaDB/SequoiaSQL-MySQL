@@ -5,13 +5,12 @@ import com.sequoiadb.base.DBCursor;
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.testcommon.JdbcInterface;
 import com.sequoiasql.testcommon.MysqlTestBase;
-import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.testng.Assert;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 public class DDLUtils extends MysqlTestBase {
@@ -56,44 +55,35 @@ public class DDLUtils extends MysqlTestBase {
     public static void checkInstanceIsSync( Sequoiadb sdb,
             String instanceGroupName )
             throws TimeoutException, InterruptedException {
-        int retry = 0;
-        boolean allSame = false;
-        while ( !allSame ) {
-            List< Integer > list = new ArrayList<>();
-            BSONObject orderBy = new BasicBSONObject( "_id", -1 );
-            BSONObject rs;
+        int retryTimes = 60;
+        while ( true ) {
+            Set< Integer > SQLIDs = new HashSet<>();
             // 获取最后一条HASQLLog日志的SQLID
-            DBCursor lastSQLLog = sdb
+            DBCursor cursor1 = sdb
                     .getCollectionSpace(
                             "HAInstanceGroup_" + instanceGroupName )
-                    .getCollection( "HASQLLog" )
-                    .query( null, null, orderBy, null, 0, 1 );
-            while ( lastSQLLog.hasNext() ) {
-                rs = lastSQLLog.getNext();
-                int SQLID1 = Integer.parseInt( rs.get( "SQLID" ).toString() );
-                list.add( SQLID1 );
-            }
+                    .getCollection( "HASQLLog" ).query( null, null,
+                            new BasicBSONObject( "_id", -1 ), null, 0, 1 );
+            int expSQLID = Integer
+                    .parseInt( cursor1.getNext().get( "SQLID" ).toString() );
+            SQLIDs.add( expSQLID );
             // 获取HAInstanceState表中所有实例最新的SQLID
-            DBCursor allInstance = sdb
+            DBCursor cursor2 = sdb
                     .getCollectionSpace(
                             "HAInstanceGroup_" + instanceGroupName )
                     .getCollection( "HAInstanceState" ).query();
-            while ( allInstance.hasNext() ) {
-                int SQLID2 = Integer.parseInt(
-                        allInstance.getNext().get( "SQLID" ).toString() );
-                list.add( SQLID2 );
+            while ( cursor2.hasNext() ) {
+                int actSQLID = Integer.parseInt(
+                        cursor2.getNext().get( "SQLID" ).toString() );
+                SQLIDs.add( actSQLID );
             }
-            // 验证实例组下的实例是否为最新的同步
-            for ( int i = 1; i < list.size(); i++ ) {
-                if ( !list.get( i ).equals( list.get( 0 ) ) ) {
-                    break;
-                } else {
-                    allSame = true;
-                }
+            // 验证实例组下的实例是否为最新的同步(HashSet去重，SQLIDs.size() == 1表示三数相等)
+            if ( SQLIDs.size() == 1 ) {
+                return;
             }
             // 计时超过timeout时实例组还未同步则抛异常
-            retry = retry + 1;
-            if ( retry > 60 ) {
+            retryTimes--;
+            if ( retryTimes < 0 ) {
                 throw new TimeoutException( "retry timed out." );
             }
             // 实例组还未同步则休眠1s再进入下一次循环
