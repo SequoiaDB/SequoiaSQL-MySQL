@@ -87,7 +87,7 @@ public class DDL31857 extends MysqlTestBase {
                 + "(4, 4, 4, 'c', '2023-05-22 10:10:10');" );
         try {
             jdbc1.update( "drop table " + dbNameBase + "." + tbNameBase + ";" );
-            Assert.fail( "drop partition table should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
@@ -143,7 +143,7 @@ public class DDL31857 extends MysqlTestBase {
                 + "(4, 4, 4, 'c', '2023-05-22 10:10:10');" );
         try {
             jdbc1.update( "drop table " + dbNameBase + "." + tbNameBase + ";" );
-            Assert.fail( "drop partition table should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();

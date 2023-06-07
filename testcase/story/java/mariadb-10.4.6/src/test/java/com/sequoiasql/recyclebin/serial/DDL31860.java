@@ -78,7 +78,7 @@ public class DDL31860 extends MysqlTestBase {
         try {
             jdbc1.update( "truncate table " + dbNameBase + "." + tbNameBase
                     + "_3" + ";" );
-            Assert.fail( "truncate table should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
@@ -115,7 +115,7 @@ public class DDL31860 extends MysqlTestBase {
         try {
             jdbc1.update( "truncate table " + dbNameBase + "." + tbNameBase
                     + "_0" + ";" );
-            Assert.fail( "truncate table should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
