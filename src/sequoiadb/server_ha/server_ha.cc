@@ -252,7 +252,7 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
   }
   is_hash_inited = true;
 
-  sql_info->sdb_conn = new (std::nothrow) Sdb_pool_conn(0, true);
+  sql_info->sdb_conn = new (std::nothrow) Sdb_pool_conn(thread_id, true);
   sql_info->pending_sql_id = 0;
   if (likely(sql_info->sdb_conn)) {
     SDB_LOG_DEBUG("HA: Init sequoiadb connection");
@@ -5880,6 +5880,7 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
     mysql_mutex_destroy(&pending_log_replayer.stopped_mutex);
     my_thread_attr_destroy(&pending_log_replayer.thread_attr);
   }
+
   DBUG_RETURN(0);
 }
 
