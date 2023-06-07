@@ -72,7 +72,7 @@ public class DDL31865 extends MysqlTestBase {
         // drop操作，预期失败且报错合理
         try {
             jdbc1.update( "drop database " + dbNameBase + ";" );
-            Assert.fail( "drop database should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
@@ -120,7 +120,7 @@ public class DDL31865 extends MysqlTestBase {
                 + " (id int);" );
         try {
             jdbc1.update( "drop database " + dbNameBase + ";" );
-            Assert.fail( "drop database should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();

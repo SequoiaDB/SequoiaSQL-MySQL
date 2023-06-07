@@ -85,7 +85,7 @@ public class DDL31861 extends MysqlTestBase {
             jdbc1.update( "alter table " + dbNameBase + "." + tbNameBase
                     + "_range" + " exchange partition p0 with table "
                     + dbNameBase + "." + tbNameBase + "_normal;" );
-            Assert.fail( "exchange partition should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             Assert.assertEquals( e.getErrorCode(), 1505 );
         }

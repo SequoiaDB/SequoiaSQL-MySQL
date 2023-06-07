@@ -78,7 +78,7 @@ public class DDL31859 extends MysqlTestBase {
                 + "_3" + " (id int);" );
         try {
             jdbc1.update( "drop database " + dbNameBase + "_3" + ";" );
-            Assert.fail( "drop database should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
@@ -116,7 +116,7 @@ public class DDL31859 extends MysqlTestBase {
                 + "_0" + " (id int);" );
         try {
             jdbc1.update( "drop database " + dbNameBase + "_0" + ";" );
-            Assert.fail( "drop database should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
@@ -149,7 +149,7 @@ public class DDL31859 extends MysqlTestBase {
         jdbc1.update( "create database " + dbNameBase + "_3" + ";" );
         try {
             jdbc1.update( "drop database " + dbNameBase + "_3" + ";" );
-            Assert.fail( "drop database should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
@@ -182,7 +182,7 @@ public class DDL31859 extends MysqlTestBase {
         jdbc1.update( "create database " + dbNameBase + "_0" + ";" );
         try {
             jdbc1.update( "drop database " + dbNameBase + "_0" + ";" );
-            Assert.fail( "drop database should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();

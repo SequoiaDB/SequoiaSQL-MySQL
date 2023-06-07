@@ -67,7 +67,7 @@ public class DDL31858 extends MysqlTestBase {
             jdbc1.update( "create table " + dbNameBase + "." + tbNameBase
                     + " (id int);" );
             jdbc1.update( "drop table " + dbNameBase + "." + tbNameBase + ";" );
-            Assert.fail( "drop table should success" );
+            Assert.fail( "expected execution failure, actual success" );
         } catch ( SQLException e ) {
             int errorCode = e.getErrorCode();
             String eMessage = e.getMessage();
