@@ -220,6 +220,8 @@ typedef struct st_recover_replay_thread {
   THD *thd;
   my_thread_handle thread;
   my_thread_attr_t thread_attr;
+
+  bool is_created;
 } ha_recover_replay_thread;
 
 typedef struct st_pending_log_replay_thread {
@@ -236,6 +238,8 @@ typedef struct st_pending_log_replay_thread {
   bool stopped;
   THD *thd;
   int executing_pending_log_id;
+
+  bool is_created;
 } ha_pending_log_replay_thread;
 
 bool ha_is_open();
