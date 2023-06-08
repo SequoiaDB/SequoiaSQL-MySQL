@@ -365,7 +365,8 @@ class Sdb_conn {
   int get_last_error(bson::BSONObj &errObj);
 
   inline ulong convert_to_sdb_isolation(const ulong tx_isolation,
-                                        const int major = 3) {
+                                        const int major,
+                                        const int minor) {
     switch (tx_isolation) {
       case ISO_READ_UNCOMMITTED:
         return SDB_TRANS_ISO_RU;
@@ -377,11 +378,12 @@ class Sdb_conn {
         return SDB_TRANS_ISO_RS;
         break;
       case ISO_REPEATABLE_READ:
-        // x < 5 not support RR. sdb use RC to mysql RR.
-        if (major < 5) {
-          return SDB_TRANS_ISO_RC;
-        } else {
+        // only if 5.0 <= major.minor < 5.6 then RR is supported, else map sdb
+        // RC to mysql RR.
+        if (5 == major && minor < 6) {
           return SDB_TRANS_ISO_RR;
+        } else {
+          return SDB_TRANS_ISO_RC;
         }
         break;
       case ISO_SERIALIZABLE:  // not supported current now.
