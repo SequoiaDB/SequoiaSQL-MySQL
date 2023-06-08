@@ -64,6 +64,7 @@ static THD *create_ha_thd() {
   THD *thd = NULL;
   try {
 #ifdef IS_MYSQL
+    my_thread_init();
     thd = new THD;
     DBUG_ASSERT(NULL != thd);
     thd->set_command(COM_DAEMON);
@@ -1992,6 +1993,7 @@ void ha_thread_end(THD *thd) {
     Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
     thd->release_resources();
     thd_manager->remove_thd(thd);
+    delete thd;
   }
   my_thread_end();
   my_thread_exit(0);

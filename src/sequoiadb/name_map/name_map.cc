@@ -524,7 +524,9 @@ retry:
   }
 
   mapping_ctx->set_mapping_cs(cs_name);
-  mapping_ctx->set_mapping_cl(cl_name);
+  if (!is_specified_mapping) {
+    mapping_ctx->set_mapping_cl(cl_name);
+  }
   mapping_ctx->set_mapping_state(NM_STATE_CREATING);
   mapping_ctx->set_part_table(!is_phy_table);
 done:

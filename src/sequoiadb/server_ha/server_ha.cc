@@ -178,6 +178,14 @@ const char *ha_get_sys_meta_group() {
   return sdb_enable_mapping ? NM_SYS_META_GROUP : NULL;
 }
 
+static int mysql_thread_join(my_thread_handle *thread, void **value_ptr) {
+#ifdef IS_MYSQL
+  return my_thread_join(thread, value_ptr);
+#elif defined IS_MARIADB
+  return pthread_join(*thread, value_ptr);
+#endif
+}
+
 static const char *check_and_build_lower_case_name(THD *thd, const char *name) {
   const char *name_alias = name;
   if (lower_case_table_names) {
@@ -5643,7 +5651,8 @@ static int server_ha_init(void *p) {
   ha_thread.stopped = false;
   ha_thread.recover_finished = false;
   ha_thread.is_open = false;
-
+  ha_thread.is_created = false;
+  pending_log_replayer.is_created = false;
   if (strlen(ha_inst_group_name) && !opt_bootstrap) {
     // 1. create HA thread
     ha_thread.instance_id = HA_INVALID_INST_ID;
@@ -5663,6 +5672,7 @@ static int server_ha_init(void *p) {
     }
     my_thread_attr_init(&ha_thread.thread_attr);
     ha_thread.thd = NULL;
+    ha_thread.is_created = true;
     if (mysql_thread_create(HA_KEY_HA_THREAD, &ha_thread.thread,
                             &ha_thread.thread_attr, ha_recover_and_replay,
                             (void *)(&ha_thread))) {
@@ -5683,6 +5693,7 @@ static int server_ha_init(void *p) {
                      &pending_log_replayer.stopped_mutex, MY_MUTEX_INIT_FAST);
     my_thread_attr_init(&pending_log_replayer.thread_attr);
     pending_log_replayer.thd = NULL;
+    pending_log_replayer.is_created = true;
     if (mysql_thread_create(
             HA_KEY_PENDING_LOG_REPLAY_THREAD, &pending_log_replayer.thread,
             &pending_log_replayer.thread_attr, ha_replay_pending_logs,
@@ -5736,6 +5747,14 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
     mysql_cond_destroy(&pending_log_replayer.stopped_cond);
     mysql_mutex_destroy(&pending_log_replayer.stopped_mutex);
     my_thread_attr_destroy(&pending_log_replayer.thread_attr);
+  }
+
+  if (ha_thread.is_created) {
+    mysql_thread_join(&ha_thread.thread, NULL);
+  }
+
+  if (pending_log_replayer.is_created) {
+    mysql_thread_join(&pending_log_replayer.thread, NULL);
   }
 
   DBUG_RETURN(0);
