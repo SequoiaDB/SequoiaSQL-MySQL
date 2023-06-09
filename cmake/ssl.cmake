@@ -2,21 +2,21 @@
 function(build_openssl type)
    # Build openssl
    message(STATUS "Build OpenSSL, call ${CMAKE_SOURCE_DIR}/thirdparty/"
-           "build_thirdparty.py  --openssl=1.1.1q")
+           "build_thirdparty.py  --openssl=1.1.1t")
    if(type STREQUAL "debug")
       set(debug_opt " -d")
    else()
       set(debug_opt "")
    endif()
    execute_process(
-      COMMAND bash -c "python3 build_thirdparty.py --openssl=1.1.1q ${debug_opt}"
+      COMMAND bash -c "python3 build_thirdparty.py --openssl=1.1.1t ${debug_opt}"
       WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
    )
 endfunction()
 
 MACRO(SDB_CHECK_SSL)
    IF(NOT WITH_SSL)
-      SET(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1q/install_path")
+      SET(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1t/install_path")
    ELSE()
       SET(OPENSSL_ROOT_DIR "${WITH_SSL}")
    ENDIF()
