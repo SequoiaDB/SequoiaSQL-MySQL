@@ -76,6 +76,8 @@ typedef unsigned char uchar;
   "Print instance group user name and instance group key"
 #define HA_TOOL_HELP_DATA_GROUP \
   "The default SequoiaDB replication group for data storage, default: \"\""
+#define HA_TOOL_HELP_DOMAIN \
+  "The domain for 'HA' tables, default: \"\""
 
 // struct corresponding to 'HAInstGroupConfig' table
 typedef struct st_inst_group_config {
@@ -93,6 +95,8 @@ typedef struct st_inst_group_config {
   int explicit_defaults_ts;
   // sdb replication group
   std::string data_group;
+  // datagroup used to store metadata
+  std::string domain;
 } ha_inst_group_config_cl;
 
 // use to store command line arguments
@@ -125,6 +129,9 @@ typedef struct st_args {
   // sdb replication group name
   std::string data_group;
 
+  // datagroup used to store metadata
+  std::string domain;
+
   // inst_id used to delete instance information
   int inst_id;
   // check if inst_id is set
@@ -146,7 +153,8 @@ enum HA_ARGP_OPTION_KEY {
   HA_KEY_FORCE,
   HA_KEY_HELP,
   HA_KEY_USAGE,
-  HA_KEY_DATA_GROUP
+  HA_KEY_DATA_GROUP,
+  HA_KEY_DOMAIN
 };
 
 namespace {

@@ -72,6 +72,8 @@
 #define HA_FIELD_MD5_PASSWORD "MD5Password"
 #define HA_FIELD_EXPLICITS_DEFAULTS_TIMESTAMP "ExplicitDefaultsTimestamp"
 #define HA_FIELD_DATA_GROUP "DataGroup"
+#define HA_FIELD_PAGE_SIZE "PageSize"
+#define HA_FIELD_DOMAIN "Domain"
 #define HA_FIELD_CONFIG_TYPE "ConfigType"
 
 // configuration type in HAConfig

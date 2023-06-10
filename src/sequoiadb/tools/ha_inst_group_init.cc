@@ -44,6 +44,7 @@ static struct argp_option my_argp_options[] = {
     {"file", HA_KEY_FILE, "FILE", 0, HA_TOOL_HELP_FILE, 5},
     {"verbose", HA_KEY_VERBOSE, 0, 0, HA_TOOL_HELP_VERBOSE, 6},
     {"data-group", HA_KEY_DATA_GROUP, "NAME", 0, HA_TOOL_HELP_DATA_GROUP, 7},
+    {"domain", HA_KEY_DOMAIN, "NAME", 0, HA_TOOL_HELP_DOMAIN, 8},
     {NULL}};
 
 static char *help_filter(int key, const char *text, void *input) {
@@ -89,6 +90,9 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
       break;
     case HA_KEY_DATA_GROUP:
       args->data_group = arg ? arg : "";
+      break;
+    case HA_KEY_DOMAIN:
+      args->domain = arg ? arg : "";
       break;
     case ARGP_KEY_NO_ARGS:
       argp_usage(state);
@@ -255,6 +259,7 @@ static int init_config(const st_args &args,
   st_config.explicit_defaults_ts = 0;
   st_config.password = password;
   st_config.data_group = data_group;
+  st_config.domain = args.domain;
   return SDB_HA_OK;
 }
 
@@ -356,30 +361,8 @@ int main(int argc, char *argv[]) {
     sdbclient::sdbCollectionSpace global_info_cs;
     sdbclient::sdbCollection inst_group_config_cl;
     sdbclient::sdbCollection sql_log_cl, sql_id_generator_cl;
-    bson::BSONObj options, record, index_ref, key_options;
+    bson::BSONObj options, record, index_ref, key_options, cs_options;
     bson::BSONObjBuilder builder;
-
-    // create global configuration database 'HASysGlobalInfo' if necessary
-    rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
-    if (SDB_DMS_CS_NOTEXIST == rc) {
-      // create global configuration database 'HASysGlobalInfo'
-      cout << "Info: creating global configuration database '" << HA_GLOBAL_INFO
-           << "'" << endl;
-      rc = conn.createCollectionSpace(HA_GLOBAL_INFO, SDB_PAGESIZE_64K,
-                                      global_info_cs);
-    }
-    // reset rc if 'HASysGlobalInfo' CS already exists
-    if (SDB_DMS_CS_EXIST == rc) {
-      rc = 0;
-    } else if (rc) {
-      sdb_err = ha_sdb_error_string(conn, rc);
-    } else {
-      sdb_err = "";
-    }
-    HA_TOOL_RC_CHECK(rc, rc,
-                     "Error: failed to create global configuration "
-                     "database '%s', sequoiadb error: %s",
-                     HA_GLOBAL_INFO, sdb_err);
 
     // set data group for instance group tables, data group
     // "SysMetaGroup" must be created first
@@ -392,10 +375,9 @@ int main(int argc, char *argv[]) {
              << "' does not exist" << endl;
         return rc;
       }
-      sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
       HA_TOOL_RC_CHECK(
           rc, rc, "Error: failed to get data group '%s', sequoiadb error: %s",
-          cmd_args.data_group.c_str(), sdb_err);
+          cmd_args.data_group.c_str(), ha_sdb_error_string(conn, rc));
       // check if "SysMetaGroup" exists
       rc = conn.getReplicaGroup(NM_SYS_META_GROUP, sdb_rg);
       if (SDB_CLS_GRP_NOT_EXIST == rc) {
@@ -403,16 +385,47 @@ int main(int argc, char *argv[]) {
              << endl;
         return rc;
       }
-      sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
       HA_TOOL_RC_CHECK(
           rc, rc, "Error: failed to get data group '%s', sequoiadb error: %s",
-          NM_SYS_META_GROUP, sdb_err);
+          NM_SYS_META_GROUP, ha_sdb_error_string(conn, rc));
       options = BSON(SDB_FIELD_GROUP << NM_SYS_META_GROUP);
+    } else if (cmd_args.domain.length() > 0) {
+      sdbclient::sdbDomain sdb_domain;
+      // check if domain exists
+      rc = conn.getDomain(cmd_args.domain.c_str(), sdb_domain);
+      if (SDB_CAT_DOMAIN_NOT_EXIST == rc) {
+        cout << "Error: domain '" << cmd_args.domain
+             << "' does not exist" << endl;
+        return rc;
+      }
+      HA_TOOL_RC_CHECK(
+          rc, rc, "Error: failed to get domain '%s', sequoiadb error: %s",
+          cmd_args.domain.c_str(), ha_sdb_error_string(conn, rc));
+      cs_options = BSON(HA_FIELD_PAGE_SIZE << SDB_PAGESIZE_64K <<
+                        HA_FIELD_DOMAIN << cmd_args.domain);
     }
+
+    // create global configuration database 'HASysGlobalInfo' if necessary
+    rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
+    if (SDB_DMS_CS_NOTEXIST == rc) {
+      // create global configuration database 'HASysGlobalInfo'
+      cout << "Info: creating global configuration database '" << HA_GLOBAL_INFO
+           << "'" << endl;
+      rc = conn.createCollectionSpace(HA_GLOBAL_INFO, cs_options,
+                                      global_info_cs);
+    }
+    // reset rc if 'HASysGlobalInfo' CS already exists
+    if (SDB_DMS_CS_EXIST == rc) {
+      rc = 0;
+    }
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to create global configuration "
+                     "database '%s', sequoiadb error: %s",
+                     HA_GLOBAL_INFO, ha_sdb_error_string(conn, rc));
 
     // create instance group collection spaces
     rc = conn.createCollectionSpace(cmd_args.inst_group_name.c_str(),
-                                    SDB_PAGESIZE_64K, inst_group_cs);
+                                    cs_options, inst_group_cs);
     if (SDB_INVALIDARG == rc) {
       cout << "Error: invalid instance group name" << endl;
       return rc;
