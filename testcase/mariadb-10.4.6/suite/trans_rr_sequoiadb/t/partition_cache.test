@@ -4,7 +4,7 @@
 
 --source include/have_query_cache.inc
 --source include/have_partition.inc
---source include/sequoiadb_version_lt_5_skip.inc
+--source include/sequoiadb_trans_rc_skip.inc
 
 let $engine_type= SequoiaDB;
 # Using SELECT to get a space as first character.

@@ -1,5 +1,5 @@
 --source include/have_sequoiadb.inc
---source include/sequoiadb_version_lt_5_skip.inc
+--source include/sequoiadb_trans_rc_skip.inc
 
 # (#Case #16710)
 
