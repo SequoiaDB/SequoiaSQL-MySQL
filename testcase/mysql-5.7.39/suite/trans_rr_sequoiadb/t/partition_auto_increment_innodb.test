@@ -21,8 +21,7 @@
 
 # The server must support partitioning.
 --source include/have_partition.inc
---source include/sequoiadb_version_lt_5_skip.inc
-
+--source include/sequoiadb_trans_rc_skip.inc
 #------------------------------------------------------------------------------#
 # Engine specific settings and requirements
 let $skip_update= 1;

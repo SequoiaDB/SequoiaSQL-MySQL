@@ -1,6 +1,6 @@
 --source include/not_embedded.inc
 --source include/have_partition.inc
---source include/sequoiadb_version_lt_5_skip.inc
+--source include/sequoiadb_trans_rc_skip.inc
 
 CREATE DATABASE test_partition_innodb;
 USE test_partition_innodb;
