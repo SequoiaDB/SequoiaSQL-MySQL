@@ -2,6 +2,14 @@
 #Case 14758#Case 14759#Case 14760#Case 14872#Case 14873#Case 23775#case 23712#Case 23712
 
 --source include/have_sequoiadb.inc
+--disable_warnings
+drop database if exists db_comment_sequoiadb;
+--enable_warnings
+
+create database db_comment_sequoiadb;
+drop database db_comment_sequoiadb;
+create database db_comment_sequoiadb;
+use db_comment_sequoiadb;
 
 CREATE TABLE t1(a INT, b TINYINT) comment="sequoiadb:{table_options:{ShardingKey:{a:1},ShardingType:\"hash\",Partition:1024,Compressed:true,CompressionType:\"lzw\",ReplSize:2,AutoSplit:true,AutoIndexId:true,EnsureShardingIndex:true,StrictDataMode:true}}";
 SHOW CREATE TABLE t1;
@@ -130,4 +138,6 @@ show create table t1;
 insert into t1 values(),(),();
 select * from t1 order by id;
 drop table t1;
+
+drop database db_comment_sequoiadb;
 --source include/uninstall_sequoiadb.inc
