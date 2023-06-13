@@ -1,0 +1,75 @@
+set @@sql_mode=(select replace(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));
+drop database if exists materialized_view_db_28590;
+create database materialized_view_db_28590 default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_db_28590;
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select a, count(*) from t1 where a>2 group by a;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+show create view v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,count(0) AS `count(*)` from `t1` where `t1`.`a` > 2 group by `t1`.`a`	latin1	latin1_swedish_ci	`materialized_view_db_28590`.`mt1`
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_db_28590`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+explain select * from v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	3	
+select * from v1;
+a	count(*)
+3	1
+4	1
+5	1
+create view v2 as select b from t1 where a > 1 group by b;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+explain select * from v2;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt2	ALL	NULL	NULL	NULL	NULL	4	
+select * from v2;
+b
+2
+3
+4
+5
+create view v3 as select a as a1,b as total from t1 having a1 > 1;
+create table mt3 as select * from v3 maintained by user enable query optimization;
+explain select * from v3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt3	ALL	NULL	NULL	NULL	NULL	4	
+select * from v3;
+a1	total
+2	2
+3	3
+4	4
+5	5
+create view v4 as select *,count(b) as total from t1;
+create table mt4 as select * from v4 maintained by user enable query optimization;
+explain select * from v4;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt4	ALL	NULL	NULL	NULL	NULL	1	
+select * from v4;
+a	b	total
+1	1	5
+create view v5 as select t1.a,t2.b from t1 join t2 where t1.a = t2.b;
+create table mt5 as select * from v5 maintained by user enable query optimization;
+create view v6 as select distinct * from t1 where a = 1;
+create table mt6 as select * from v6 maintained by user enable query optimization;
+explain select * from v6;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt6	ALL	NULL	NULL	NULL	NULL	1	
+select * from v6;
+a	b
+1	1
+create view v7 as select * from t1 where a = 1 limit 1;
+create table mt7 as select * from v7 maintained by user enable query optimization;
+explain select * from v7;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt7	ALL	NULL	NULL	NULL	NULL	1	
+select * from v7;
+a	b
+1	1
+drop table mt1,mt2,mt3,mt4,mt5,mt6,mt7,t1,t2;
+drop view v1,v2,v3,v4,v5,v6,v7;
+drop database materialized_view_db_28590;

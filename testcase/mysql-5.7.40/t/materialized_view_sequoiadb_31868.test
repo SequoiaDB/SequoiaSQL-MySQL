@@ -1,0 +1,31 @@
+#seqDB-31868
+
+--source include/have_sequoiadb.inc
+
+set @@sql_mode=oracle;
+
+--disable_warnings
+drop database if exists materialized_view_db_31868;
+--enable_warnings
+create database materialized_view_db_31868 default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_db_31868;
+
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t1 where a>2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+show create view v1;
+show create table mt1;
+
+explain select * from v1;
+select * from v1;
+
+drop table mt1,t1;
+drop view v1;
+
+drop database materialized_view_db_31868;
+
+--source include/uninstall_sequoiadb.inc
+
