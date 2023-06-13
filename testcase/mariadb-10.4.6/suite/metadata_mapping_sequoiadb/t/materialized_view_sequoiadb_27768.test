@@ -1,0 +1,55 @@
+#seqDB-27768 多实例组下开启元数据映射，创建同名物化表（开启优化选项） 
+
+--source include/have_sequoiadb.inc
+--source suite/metadata_mapping_sequoiadb/inc/insts_connect_sequoiadb.inc
+
+connection group1_conn1;
+--disable_warnings
+drop database if exists metasync_db27768_1;
+--enable_warnings
+create database metasync_db27768_1 default character set utf8mb4 collate utf8mb4_bin;
+drop database metasync_db27768_1;
+create database metasync_db27768_1 default character set utf8mb4 collate utf8mb4_bin;
+use metasync_db27768_1;
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+connection group2_conn1;
+--disable_warnings
+drop database if exists metasync_db27768_2;
+--enable_warnings
+create database metasync_db27768_2 default character set utf8mb4 collate utf8mb4_bin;
+drop database metasync_db27768_2;
+create database metasync_db27768_2 default character set utf8mb4 collate utf8mb4_bin;
+use metasync_db27768_2;
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+connection group1_conn2;
+use metasync_db27768_1;
+show create table mt1;
+select * from v1 order by a;
+explain select * from v1 order by a;
+alter table mt1 add index (a);
+insert into mt1 values(6,6,6,6);
+select * from mt1 order by a;
+drop database metasync_db27768_1;
+
+connection group2_conn2;
+use metasync_db27768_2;
+show create table mt1;
+select * from v1 order by a;
+explain select * from v1 order by a;
+alter table mt1 add index (a);
+insert into mt1 values(6,6,6,6);
+select * from mt1 order by a;
+drop database metasync_db27768_2;
+
+--source include/uninstall_sequoiadb.inc
+--source suite/metadata_mapping_sequoiadb/inc/insts_disconnect_sequoiadb.inc

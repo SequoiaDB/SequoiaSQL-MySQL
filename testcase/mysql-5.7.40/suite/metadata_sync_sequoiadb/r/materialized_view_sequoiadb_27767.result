@@ -1,0 +1,49 @@
+drop database if exists metasync_db27767;
+create database metasync_db27767 default character set utf8mb4 collate utf8mb4_bin;
+drop database metasync_db27767;
+create database metasync_db27767 default character set utf8mb4 collate utf8mb4_bin;
+use metasync_db27767;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `metasync_db27767`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create view v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where (`t1`.`a` < 3)	latin1	latin1_swedish_ci	`metasync_db27767`.`mt1`
+use metasync_db27767;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `metasync_db27767`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create view v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where (`t1`.`a` < 3)	latin1	latin1_swedish_ci	`metasync_db27767`.`mt1`
+use metasync_db27767;
+explain select * from v1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	mt1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `metasync_db27767`.`mt1`.`a` AS `a`,`metasync_db27767`.`mt1`.`b` AS `b`,`metasync_db27767`.`mt1`.`c` AS `c`,`metasync_db27767`.`mt1`.`d` AS `d` from ``.``
+use metasync_db27767;
+explain select * from v1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	mt1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `metasync_db27767`.`mt1`.`a` AS `a`,`metasync_db27767`.`mt1`.`b` AS `b`,`metasync_db27767`.`mt1`.`c` AS `c`,`metasync_db27767`.`mt1`.`d` AS `d` from ``.``
+create index idx on mt1(a);
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1`(
+  KEY `idx` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `metasync_db27767`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+3	4	5	6
+drop table t1,mt1;
+drop view v1;
+drop database metasync_db27767;

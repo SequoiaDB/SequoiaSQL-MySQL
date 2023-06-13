@@ -1,0 +1,60 @@
+drop database if exists metasync_db27768_1;
+create database metasync_db27768_1 default character set utf8mb4 collate utf8mb4_bin;
+drop database metasync_db27768_1;
+create database metasync_db27768_1 default character set utf8mb4 collate utf8mb4_bin;
+use metasync_db27768_1;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+drop database if exists metasync_db27768_2;
+create database metasync_db27768_2 default character set utf8mb4 collate utf8mb4_bin;
+drop database metasync_db27768_2;
+create database metasync_db27768_2 default character set utf8mb4 collate utf8mb4_bin;
+use metasync_db27768_2;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+use metasync_db27768_1;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `metasync_db27768_1`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+select * from v1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+explain select * from v1 order by a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	mt1	NULL	NULL	NULL	NULL	NULL	NULL	2	100.00	Using pushed ORDER BY; Storage engine handles access type
+Warnings:
+Note	1003	/* select#1 */ select `metasync_db27768_1`.`mt1`.`a` AS `a`,`metasync_db27768_1`.`mt1`.`b` AS `b`,`metasync_db27768_1`.`mt1`.`c` AS `c`,`metasync_db27768_1`.`mt1`.`d` AS `d` from ``.`` order by `metasync_db27768_1`.`mt1`.`a`
+alter table mt1 add index (a);
+insert into mt1 values(6,6,6,6);
+select * from mt1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+6	6	6	6
+drop database metasync_db27768_1;
+use metasync_db27768_2;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `metasync_db27768_2`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+select * from v1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+explain select * from v1 order by a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	mt1	NULL	NULL	NULL	NULL	NULL	NULL	2	100.00	Using pushed ORDER BY; Storage engine handles access type
+Warnings:
+Note	1003	/* select#1 */ select `metasync_db27768_2`.`mt1`.`a` AS `a`,`metasync_db27768_2`.`mt1`.`b` AS `b`,`metasync_db27768_2`.`mt1`.`c` AS `c`,`metasync_db27768_2`.`mt1`.`d` AS `d` from ``.`` order by `metasync_db27768_2`.`mt1`.`a`
+alter table mt1 add index (a);
+insert into mt1 values(6,6,6,6);
+select * from mt1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+6	6	6	6
+drop database metasync_db27768_2;

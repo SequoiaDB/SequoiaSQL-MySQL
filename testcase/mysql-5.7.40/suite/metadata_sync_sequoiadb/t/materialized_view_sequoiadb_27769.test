@@ -1,0 +1,56 @@
+#seqDB-27769: 实例组下某实例创建非sequoiadb引擎的物化表，到另一实例查看物化表和视图
+
+--source include/have_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
+
+# inst1
+connection conn1;
+--disable_warnings
+drop database if exists metasync_db27769;
+--enable_warnings
+create database metasync_db27769 default character set utf8mb4 collate utf8mb4_bin;
+drop database metasync_db27769;
+create database metasync_db27769 default character set utf8mb4 collate utf8mb4_bin;
+use metasync_db27769;
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+
+create view v1 as select * from t1 where a < 3;
+create table mt1 engine=innodb as select * from v1 maintained by user enable query optimization;
+
+show create table mt1;
+show create view v1;
+
+# inst2
+connection conn2;
+use metasync_db27769;
+
+show create table mt1;
+show create view v1;
+
+ 
+# 查询视图，查看物化表是否生效
+# inst1
+connection conn1;
+use metasync_db27769;
+explain select * from v1;
+
+# inst2
+connection conn2;
+use metasync_db27769;
+explain select * from v1;
+
+# 对物化表进行ddl、dml操作
+# inst2
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+drop database metasync_db27769;
+--source include/uninstall_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

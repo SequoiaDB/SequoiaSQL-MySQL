@@ -1,0 +1,36 @@
+#seqDB-28602
+
+--source include/have_sequoiadb.inc
+
+--disable_warnings
+drop database if exists materialized_view_sequoiadb_28602;
+--enable_warnings
+
+create database materialized_view_sequoiadb_28602;
+drop database materialized_view_sequoiadb_28602;
+create database materialized_view_sequoiadb_28602;
+use materialized_view_sequoiadb_28602;
+
+set session sql_mode = 'oracle';
+
+create table t1 (a int,b varchar(18));
+insert into t1 values(1,''),(2,'a'),(3,null);
+create view v1 as select * from t1 where a > 2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+alter table mt1 disable query optimization;
+show create table mt1;
+
+alter table mt1 enable query optimization;
+show create table mt1;
+
+alter table mt1 add index (a);
+show create table mt1;
+insert into mt1 values(4,'');
+select * from mt1 order by a;
+
+select * from v1 order by a;
+explain select * from v1 order by a;
+
+drop database materialized_view_sequoiadb_28602;
+--source include/uninstall_sequoiadb.inc

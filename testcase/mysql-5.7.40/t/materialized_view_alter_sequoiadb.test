@@ -1,0 +1,576 @@
+#seqDB-27753  #seqDB-27754  #seqDB-27755  #seqDB-27756  #seqDB-27757  #seqDB-27758  #seqDB-27759  #seqDB-27760
+#seqDB-27761  #seqDB-27762  #seqDB-27763  #seqDB-27764  #seqDB-27765
+
+--source include/have_sequoiadb.inc
+
+--disable_warnings
+drop database if exists materialized_view_alter_sequoiadb;
+--enable_warnings
+create database materialized_view_alter_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+drop database materialized_view_alter_sequoiadb;
+create database materialized_view_alter_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_alter_sequoiadb;
+
+
+#seqDB-27753 修改物化表，开启优化选项
+
+create table t1(a int);
+insert into t1 values(1),(2),(3),(4),(5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user disable query optimization;
+alter table mt1 enable query optimization;
+show create table mt1;
+explain select * from v1 order by a;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+#seqDB-27754:修改物化表，关闭优化选项
+
+create table t1(a int);
+insert into t1 values(1),(2),(3),(4),(5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+alter table mt1 disable query optimization;
+show create table mt1;
+explain select * from v1 order by a;
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3);
+select * from mt1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+#seqDB-27755 修改物化表，指定优化选项的参数错误
+
+create table t1(a int);
+insert into t1 values(1),(2),(3),(4),(5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+--error 1064
+alter table mt1 as select * from v1 maintain by user;
+--error 1064
+alter table mt1 as select * from v1 maintained by user enab query optimization;
+--error 1064
+alter table mt1 as select * from v1 maintained by user disab query optimization;
+
+drop table t1,mt1;
+drop view v1;
+
+#seqDB-27756 对非物化表开启/关闭优化选项  
+
+create table t1(a int);
+insert into t1 values(1),(2),(3),(4),(5);
+create view v1 as select * from t1 where a < 3;
+
+create table mt1 as select * from v1 order by a;
+--error 138
+alter table mt1 enable query optimization;
+--error 138
+alter table mt1 disable query optimization;
+
+drop table t1,mt1;
+drop view v1;
+
+#seqDB-27757 修改索引定义，覆盖普通索引、唯一索引、主键、外键、约束
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+create table t2(a int, b int, c int,d int);
+insert into t2 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v2 as select * from t2 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+# 修改物化表的索引定义，覆盖普通索引、唯一索引、主键、外键、约束，操作覆盖add、alter、drop、rename 
+# 主键
+alter table mt1 add primary key(a);
+# 普通索引
+alter table mt1 add index idx_b(b);
+# 唯一索引
+alter table mt1 add unique idx_c(c); 
+# 多列索引
+alter table mt1 add index idx_abc(a,b,c);
+# 外键
+alter table mt1 add CONSTRAINT `mt1_sdbfk_1` FOREIGN KEY (`a`) REFERENCES `mt2` (`a`) ON DELETE NO ACTION ON UPDATE RESTRICT;
+show create table mt1;
+show create table mt2;
+# 约束
+alter table mt2 add constraint pk_a_b primary key(a,b);
+show create table mt2;
+--error 1064
+alter table mt2 drop constraint pk_a_b;
+
+alter table mt2 add constraint pk_c_d unique index(c,d);
+show create table mt2;
+--error 1064
+alter table mt2 drop constraint pk_c_d;
+
+# rename操作(sdb引擎不支持)
+--error 138
+alter table mt1 rename index idx_b to idx_b_new;
+# drop操作
+alter table mt1 drop index idx_b;
+alter table mt1 drop primary key;
+alter table mt1 drop index idx_c;
+alter table mt1 drop index idx_abc;
+alter table mt1 drop foreign key mt1_sdbfk_1;
+alter table mt2 drop primary key;
+alter table mt2 drop index pk_c_d;
+
+show create table mt1;
+
+alter table mt1 add index idx_b(b);
+show create table mt1;
+insert into mt1 values(6,6,6,6);
+select * from mt1 order by a;
+
+drop table t1,mt1,t2,mt2;
+drop view v1,v2;
+
+
+#seqDB-27758 修改列定义，覆盖add、alter、drop、rename
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+--error 138
+alter table mt1 add c int;
+--error 138
+alter table mt1 modify b char(10) NOT NULL;
+--error 138
+alter table mt1 change b new_b int default 4;
+--error 138
+alter table mt1 drop new_b;
+
+drop table t1,mt1;
+drop view v1;
+
+
+#seqDB-27759 修改表选项
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+# 修改设定的物化表不支持的选项，覆盖：CONNECTION、INSERT_METHOD、UNION 
+--error 138
+alter table mt1 CONNECTION="";
+--error 138
+alter table mt1 INSERT_METHOD=NO;
+--error 138
+alter table mt1 UNION=(t1);
+# 修改CHARACTER SET 和 COLLATE 
+show create table mt1;
+--error 138
+alter table mt1 CHARACTER SET utf8 COLLATE utf8_bin;
+show create table mt1;
+# 修改table_options其他选项
+alter table mt1 AUTO_INCREMENT=10;
+show create table mt1;
+
+alter table mt1 AVG_ROW_LENGTH=1000;
+show create table mt1;
+
+alter table mt1 CHECKSUM=1;
+show create table mt1;
+
+alter table mt1 COMMENT='this is a test';
+show create table mt1;
+
+alter table mt1 COMPRESSION='NONE';
+show create table mt1;
+
+alter table mt1 DATA DIRECTORY='/tmp';
+show create table mt1;
+
+alter table mt1 DELAY_KEY_WRITE=1;
+show create table mt1;
+
+alter table mt1 KEY_BLOCK_SIZE=8;
+show create table mt1;
+
+alter table mt1 MAX_ROWS=10;
+show create table mt1;
+
+alter table mt1 MIN_ROWS=10;
+show create table mt1;
+
+alter table mt1 PACK_KEYS=1;
+show create table mt1;
+
+alter table mt1 PASSWORD='pw';
+show create table mt1;
+
+alter table mt1 ROW_FORMAT=COMPRESSED;
+show create table mt1;
+
+alter table mt1 STATS_AUTO_RECALC=1;
+show create table mt1;
+
+alter table mt1 STATS_PERSISTENT=1;
+show create table mt1;
+
+alter table mt1 STATS_SAMPLE_PAGES=100;
+show create table mt1;
+
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into t1 values(6,6,6,6);
+select * from mt1 order by a;
+drop table mt1;
+
+create TABLESPACE `ts1` add datafile 'ts1.ibd' engine=innodb;
+create TABLESPACE `ts2` add datafile 'ts2.ibd' engine=innodb;
+create table mt1 TABLESPACE ts1 as select * from v1 maintained by user enable query optimization;
+
+show create table mt1;
+alter table mt1 TABLESPACE ts2;
+show create table mt1;
+
+show create table v1;
+create index idx on mt1(a);
+show create table mt1;
+insert into t1 values(6,6,6,6);
+select * from mt1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+#seqDB-27760 修改物化表DISABLE KEYS/ENABLE KEYS
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+# 修改物化表DISABLE KEYS，打印物化表信息 
+alter table mt1 disable keys;
+show create table mt1;
+# 修改物化表ENABLE KEYS，打印物化表信息
+alter table mt1 enable keys;	
+show create table mt1;
+
+drop table t1,mt1;
+drop view v1;
+
+#seqDB-27761 修改物化表ORDER BY col_name
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3 order by a asc;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+select * from mt1 order by a;
+alter table mt1 order by a desc;
+select * from mt1 order by a;
+
+insert into mt1 values(6,6,6,6);
+select * from mt1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+#seqDB-27762 修改物化表字符集和校对集
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+show create table mt1;
+# 修改默认字符集，不会修改列的属性
+--error 138
+alter table mt1 CHARACTER SET="utf8";
+--error 138
+alter table mt1 COLLATE="utf8_bin"; 
+# 修改表和列的属性
+--error 138
+alter table mt1 CONVERT TO CHARACTER SET utf8 COLLATE utf8_bin;
+
+drop table t1,mt1;
+drop view v1;
+
+
+#seqDB-27763 修改物化表算法
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+alter table mt1 algorithm=default;
+alter table mt1 algorithm=copy;
+alter table mt1 algorithm=inplace;
+alter table mt1 lock=default;
+alter table mt1 lock=EXCLUSIVE;
+--error 1845
+alter table mt1 lock=none;
+--error 1845 
+alter table mt1 lock=shared;  
+
+--error 1064
+alter table mt1 disable query optimization, lock=DEFAULT;
+--error 1064
+alter table mt1 enable query optimization, lock=NONE;
+--error 1064
+alter table mt1 disable query optimization, lock=SHARED;
+--error 1064
+alter table mt1 enable query optimization, lock=EXCLUSIVE;
+--error 1064
+alter table mt1 enable query optimization, algorithm=inplace;
+--error 1064
+alter table mt1 disable query optimization, algorithm=copy;
+--error 1064
+alter table mt1 enable query optimization, algorithm=default;
+
+drop table t1,mt1;
+drop view v1;
+
+
+#seqDB-27764 修改物化表partition_options
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5),
+(6,6,6,6),(7,7,7,7),(8,8,8,8),(9,9,9,9),(10,10,10,10),(11,11,11,11),(12,12,12,12);
+create view v1 as select * from t1 where a < 11;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+# 修改物化表partition_options，
+# 覆盖：ADD、DROP、COALESCE、CHECK、REORGANIZE、ANALYZE、OPTIMIZE、REBUILD、REPAIR、EXCHANGE、REMOVE
+
+alter table mt1 partition by hash(a);
+select * from mt1 order by a;
+show create table mt1;
+show create table v1;
+
+alter table mt1 partition by key(a);
+select * from mt1 order by a;
+show create table mt1;
+show create table v1;
+
+alter table mt1 partition by range columns(a)
+(partition p0 values less than(6),
+partition p1 values less than(12));
+select * from mt1 order by a;
+show create table mt1;
+show create table v1;
+
+alter table mt1 partition by list(a)
+(partition p0 values in (1,2,3,4,5,6),
+partition p1 values in (7,8,9,10,11,12));
+select * from mt1 order by a;
+show create table mt1;
+show create table v1;
+
+alter table mt1 partition by range columns(a)
+subpartition by key(b)
+subpartitions 2
+(partition p0 values less than(6),
+partition p1 values less than(12));
+select * from mt1 order by a;
+show create table mt1;
+show create table v1;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+--sorted_result
+SELECT * FROM mt1 PARTITION(p0);
+--sorted_result
+SELECT * FROM mt1 PARTITION(p1);
+
+# ADD PARTITION
+drop table t1,mt1;
+drop view v1;
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5),
+(6,6,6,6);
+
+create view v1 as select * from t1;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+alter table mt1 partition by range columns(a)
+(partition p0 values less than(3),
+partition p1 values less than(7));
+select count(*) from mt1;
+show create table mt1;
+
+insert into t1 values(7,7,7,7),(8,8,8,8),(9,9,9,9),(10,10,10,10),
+(11,11,11,11),(12,12,12,12),(13,13,13,13),(14,14,14,14),(15,15,15,15),
+(16,16,16,16),(17,17,17,17),(18,18,18,18),(19,19,19,19),(20,20,20,20);
+
+insert into t1 values(7,7,7,7),(8,8,8,8);
+alter table mt1 ADD PARTITION (partition p2 values less than(9));
+insert into mt1 values(7,7,7,7),(8,8,8,8);
+select count(*) from mt1;
+show create table mt1;
+
+insert into t1 values(9,9,9,9),(10,10,10,10),(11,11,11,11);
+alter table mt1 ADD PARTITION (partition p3 values less than(12));
+insert into mt1 values(9,9,9,9),(10,10,10,10),(11,11,11,11);
+select count(*) from mt1;
+show create table mt1;
+
+# DROP PARTITION
+--error 138
+alter table mt1 DROP PARTITION p3;
+# DISCARD PARTITION
+--error 1031
+alter table mt1 DISCARD PARTITION p3 TABLESPACE;
+# IMPORT PARTITION
+--error 1031
+alter table mt1 IMPORT PARTITION p3 TABLESPACE;
+# TRUNCATE PARTITION
+--error 138
+alter table mt1 TRUNCATE PARTITION p3;
+# COALESCE PARTITION
+--error 1509
+alter table mt1 COALESCE PARTITION 3;
+
+create view v2 as select * from t1;
+create table mt3 as select * from v2 maintained by user enable query optimization;
+
+alter table mt3 partition by hash(a) partitions 3;
+--sorted_result
+select * from mt3;
+show create table mt3;
+# COALESCE PARTITION
+alter table mt3 COALESCE PARTITION 2;
+# REORGANIZE PARTITION
+alter table mt1 REORGANIZE PARTITION p3 INTO (partition p3 values less than(15));
+
+# EXCHANGE PARTITION 
+create table t1_or(a int, b int, c int,d int);
+insert into t1_or values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5),(6,6,6,6);
+create view v1_or as select * from t1_or;
+create table mt1_or as select * from v1_or maintained by user enable query optimization;
+
+create table t1_ex(a int, b int, c int,d int);
+insert into t1_ex values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5),(6,6,6,6);
+create view v1_ex as select * from t1_ex;
+create table mt1_ex as select * from v1_ex maintained by user enable query optimization;
+
+alter table mt1_or partition by range columns(a)
+(partition p0 values less than(3),
+partition p1 values less than(7));
+
+alter table mt1_ex partition by range columns(a)
+(partition p0 values less than(3),
+partition p1 values less than(7));
+
+# REMOVE PARTITIONING
+alter table mt1_ex remove partitioning;
+show create table mt1_ex;
+
+select partition_name,table_rows from information_schema.partitions where table_name='mt1_or';
+select * from mt1_or order by a;
+select * from mt1_ex order by a;
+truncate table mt1_ex;
+select * from mt1_ex order by a;
+
+--error 138
+alter table mt1_or EXCHANGE PARTITION po WITH TABLE mt1_ex WITHOUT VALIDATION;
+
+# ANALYZE PARTITION
+alter table mt1 ANALYZE PARTITION p0;
+alter table mt1 ANALYZE PARTITION ALL;
+
+# CHECK PARTITION
+alter table mt1 CHECK PARTITION p0;
+alter table mt1 CHECK PARTITION ALL;
+
+# OPTIMIZE PARTITION
+alter table mt1 OPTIMIZE PARTITION p0;
+alter table mt1 OPTIMIZE PARTITION ALL;
+
+# REBUILD PARTITION
+alter table mt1 REBUILD PARTITION p0;
+alter table mt1 REBUILD PARTITION ALL;
+
+# REPAIR PARTITION
+alter table mt1 REPAIR PARTITION p0;
+alter table mt1 REPAIR PARTITION ALL;
+
+# UPGRADE PARTITIONING
+alter table mt1 UPGRADE PARTITIONING;
+
+drop table t1,mt1,t1_or,mt1_or,t1_ex,mt1_ex;
+drop view v1,v2,v1_or,v1_ex;
+
+#seqDB-27765 修改物化表lock table，校验锁
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+lock table mt1 read;
+show open tables where In_use>0;
+select * from mt1 order by a;
+--error 1100
+select * from v1 order by a;
+--error 1099
+alter table mt1 add index idx_b(b);
+--error 1100
+alter table v1 add index idx_b(b);
+unlock table;
+show open tables where In_use>0;
+
+lock table mt1 write;
+show open tables where In_use>0;
+select * from mt1 order by a;
+--error 1100
+select * from v1 order by a;
+alter table mt1 add index idx_b(b);
+--error 1100
+alter table v1 add index idx_b(b);
+unlock table;
+show open tables where In_use>0;
+
+lock table v1 read;
+show open tables where In_use>0;
+--error 1100
+select * from mt1 order by a;
+select * from v1 order by a;
+--error 1100
+alter table mt1 add index idx_b(b);
+--error 1100
+alter table v1 add index idx_b(b);
+unlock table;
+show open tables where In_use>0;
+
+lock table v1 write;
+show open tables where In_use>0;
+--error 1100
+select * from mt1 order by a;
+select * from v1 order by a;
+--error 1100
+alter table mt1 add index idx_b(b);
+--error 1100
+alter table v1 add index idx_b(b);
+unlock table;
+show open tables where In_use>0;
+
+drop table t1,mt1;
+drop view v1;
+
+drop database materialized_view_alter_sequoiadb;
+--source include/uninstall_sequoiadb.inc
+

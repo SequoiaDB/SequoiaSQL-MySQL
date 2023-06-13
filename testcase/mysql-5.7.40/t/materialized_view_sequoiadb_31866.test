@@ -1,0 +1,29 @@
+#seqDB-31866
+
+--source include/have_sequoiadb.inc
+
+--disable_warnings
+drop database if exists materialized_view_sequoiadb_31866;
+--enable_warnings
+
+create database materialized_view_sequoiadb_31866;
+drop database materialized_view_sequoiadb_31866;
+create database materialized_view_sequoiadb_31866;
+use materialized_view_sequoiadb_31866;
+
+create table t1 (a int,b int);
+insert into t1 values(1,2),(2,3),(3,4);
+create view v1 as select * from t1 where a > 2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+select v1.* from v1;
+explain select v1.* from v1;
+
+select v1.a from v1;
+explain select v1.a from v1;
+
+select v1.a,v1.b from v1;
+explain select v1.a,v1.b from v1;
+
+drop database materialized_view_sequoiadb_31866;
+--source include/uninstall_sequoiadb.inc

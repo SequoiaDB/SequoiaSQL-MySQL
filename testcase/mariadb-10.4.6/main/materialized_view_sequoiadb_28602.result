@@ -1,0 +1,37 @@
+drop database if exists materialized_view_sequoiadb_28602;
+create database materialized_view_sequoiadb_28602;
+drop database materialized_view_sequoiadb_28602;
+create database materialized_view_sequoiadb_28602;
+use materialized_view_sequoiadb_28602;
+set session sql_mode = 'oracle';
+create table t1 (a int,b varchar(18));
+insert into t1 values(1,''),(2,'a'),(3,null);
+create view v1 as select * from t1 where a > 2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+alter table mt1 disable query optimization;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE "mt1" AS SELECT * FROM "materialized_view_sequoiadb_28602"."v1" MAINTAINED BY USER DISABLE QUERY OPTIMIZATION 
+alter table mt1 enable query optimization;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE "mt1" AS SELECT * FROM "materialized_view_sequoiadb_28602"."v1" MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+alter table mt1 add index (a);
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE "mt1" (
+  KEY "a" ("a")
+) AS SELECT * FROM "materialized_view_sequoiadb_28602"."v1" MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+insert into mt1 values(4,'');
+select * from mt1 order by a;
+a	b
+3	NULL
+4	
+select * from v1 order by a;
+a	b
+3	NULL
+4	
+explain select * from v1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	2	Using pushed sort (mt1.a)
+drop database materialized_view_sequoiadb_28602;
