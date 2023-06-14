@@ -87,6 +87,7 @@ show create trigger metadata_sync_show_parallel.t1_bi;
 ERROR HY000: Trigger does not exist
 drop table metadata_sync_show_parallel.t1;
 connection conn1;
+drop user if exists 'metadata_sync_user_23109';
 create user 'metadata_sync_user_23109'@'%' IDENTIFIED BY 'metadata_sync_user_23109';
 flush privileges;
 connection conn2;
