@@ -1,0 +1,685 @@
+#seqDB-28573 #seqDB-28574 #seqDB-28575 #seqDB-28576 #seqDB-28577 #seqDB-28578
+#seqDB-28579 #seqDB-28580 #seqDB-28581 #seqDB-28582 #seqDB-28583 #seqDB-28584 
+#seqDB-28585 #seqDB-28586 #seqDB-28587 #seqDB-28588 #seqDB-28589 #seqDB-28687
+
+--source include/have_sequoiadb.inc
+
+set @@sql_mode=(select replace(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));
+
+--disable_warnings
+drop database if exists materialized_view_select_sequoiadb;
+--enable_warnings
+create database materialized_view_select_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_select_sequoiadb;
+
+
+# seqDB-28573:开启/关闭查询优化，查询视图
+	
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+# 加/不加explain，查询视图
+explain select * from v1 order by a;
+select * from v1 order by a;
+# 关闭查询优化选项
+ALTER TABLE mt1 DISABLE QUERY OPTIMIZATION;
+# 加/不加explain，查询视图
+explain select * from v1 order by a;
+select * from v1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28574:删除物化表，查询视图
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+# 删除物化表
+drop table mt1;
+# 加/不加explain，查询视图
+explain select * from v1 order by a;
+select * from v1 order by a;
+
+drop table t1;
+drop view v1;
+
+
+# seqDB-28575:修改视图定义，查询视图
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+show tables;
+create table t2(a int, b int, c int,d int);
+insert into t2 values(1,8,1,1),(2,9,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v2 as select * from t2 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+# 修改视图定义
+alter view v1 as select * from v2;
+show create table mt1;
+show create table v1;
+# 加/不加explain，查询视图
+explain select * from v1 order by a;
+select * from v1 order by a;
+
+drop table t1,mt1,t2,mt2;
+drop view v1,v2;
+
+
+# seqDB-28576:重建视图，查询视图
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+create table t2(a int, b int, c int,d int);
+insert into t2 values(1,8,1,1),(2,9,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v2 as select * from t2 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+# 重建视图
+create or replace view v1 as select * from t2 where a<=6;
+show create table mt1;
+show create table v1;
+
+# 加/不加explain，查询视图
+explain select * from v1 order by a;
+select * from v1 order by a;
+
+drop table t1,mt1,t2,mt2;
+drop view v1,v2;
+
+
+# seqDB-28577:重命名物化表，查询视图
+
+# 创建表、视图、物化表（开启查询优化）
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+# 重命名物化表
+rename table mt1 to new_mt1;
+show create table new_mt1;
+show create table v1;
+
+# 加/不加explain，查询视图
+explain select * from v1 order by a;
+select * from v1 order by a;
+
+alter table new_mt1 rename to mt1;
+show create table mt1;
+show create table v1;
+
+# 加/不加explain，查询视图
+explain select * from v1 order by a;
+select * from v1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28578:重命名视图，查询视图
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+# 重命名视图
+rename table v1 to new_v1;
+show create table mt1;
+show create table new_v1;
+
+# 加/不加explain，查询视图
+explain select * from new_v1;
+select * from new_v1;
+
+drop table t1,mt1;
+drop view new_v1;
+
+
+# seqDB-28579:视图位于join不同的位置，查询视图
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(c1 int, c2 int);
+insert into t3 values(2,4),(6,3);
+
+# 位于第一位置，加/不加explain，查询视图
+explain select *,v1.a from v1,t2,t3;
+select * from v1,t2,t3;
+# 位于第二位置，加/不加explain，查询视图
+explain select *,v1.b from t2,v1,t3;
+select *,v1.b from t2,v1,t3;
+# 位于第三位置，加/不加explain，查询视图
+explain select *,t3.c1 from t2,t3,v1;
+select *,t3.c1 from t2,t3,v1;
+
+drop table mt1,t2,t3;
+drop view v1;
+
+
+# seqDB-28580:视图在子查询、派生表中，覆盖子查询在select、where、from位置中，查询视图
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+
+# 视图在子查询、派生表中，覆盖子查询在select、where、from位置中，加/不加explain，查询视图
+# 查询视图
+explain select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4) order by c1;
+select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4) order by c1;
+
+# 查询物化表
+explain select (select a from mt1 where mt1.b=4) a,c1 from (select * from mt1) dv,t3 where c1 > (select a from mt1 where mt1.b<4) order by c1;
+select (select a from mt1 where mt1.b=4) a,c1 from (select * from mt1) dv,t3 where c1 > (select a from mt1 where mt1.b<4) order by c1;
+
+drop table mt1,t2,t3;
+drop view v1;
+
+
+# seqDB-28581:视图在 union 中，查询视图
+
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t1 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+# 视图在 union 中，加/不加explain，查询视图
+explain select * from v1 union select v1.a,t1.b from v1,t1 order by a;
+--sorted_result
+select * from v1 union select v1.a,t1.b from v1,t1 order by a;
+
+explain select * from mt1 union select mt1.a,t1.b from mt1,t1 order by a;
+--sorted_result
+select * from mt1 union select mt1.a,t1.b from mt1,t1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28582:update/delete/insert into 的 where 条件里面有视图，查询视图(不走优化查询)
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+
+# update
+explain update t3 set c1=3 where c2 > (select a from v1 limit 1);
+update t3 set c1=3 where c2 > (select a from v1 limit 1);
+select * from t3 order by c1;
+
+# delete
+explain delete from t3 where c2 > (select a from v1 limit 1);
+delete from t3 where c2 > (select a from v1 limit 1);
+select * from t3;
+
+# insert into
+explain insert into t3 select * from v1;
+insert into t3 select * from v1;
+select * from t3 order by c1;
+
+drop table mt1,t2,t3;
+drop view v1;
+
+
+# seqDB-28583:对视图做update/delete/insert 操作
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+
+# update
+explain update v1 set a=6 where a=5;
+select * from v1 order by a;
+
+# delete
+explain delete from v1 where a=6;
+select * from v1 order by a;
+
+# insert into
+explain insert into v1 values(2,2);
+select * from v1 order by a;
+
+drop table mt1,t2,t3;
+drop view v1;
+
+
+# seqDB-28584:查询条件带join，查询视图
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+
+create view v2 as select * from t2 where a>1;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+
+# 查询条件带join，覆盖：join/using/on/inner join/cross join/straight_join/left join/right join/natural left outer join/natural right outer join，加/不加explain，查询视图
+# using
+explain select * from t2 join v1 using(a) order by t2.a;        
+select * from t2 join v1 using(a) order by t2.a;    
+
+# join/on     
+explain select * from t2 join v1 on t2.b=v1.b order by t2.a;    
+select * from t2 join v1 on t2.b=v1.b order by t2.a;   
+       
+# inner join        
+explain select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+--sorted_result
+select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+
+explain select * from v1 inner join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+--sorted_result
+select * from v1 inner join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+
+# cross join
+explain select * from v1 cross join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+--sorted_result
+select * from v1 cross join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+
+explain select * from v1 cross join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+--sorted_result
+select * from v1 cross join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+
+# straight_join
+explain select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4)  order by v1.a;
+--sorted_result
+select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+
+explain select * from v1 straight_join v2 where v2.a > (select v1.a from v1 where v1.b<4)  order by v1.a;
+--sorted_result
+select * from v1 straight_join v2 where v2.a > (select v1.a from v1 where v1.b<4)  order by v1.a;
+
+# left join
+explain select * from t3 left join v1 on t3.c1=v1.a  order by t3.c1;          
+--sorted_result
+select * from t3 left join v1 on t3.c1=v1.a  order by t3.c1;  
+
+explain select * from v2 left join v1 on v2.a=v1.a order by v2.a;          
+--sorted_result
+select * from v2 left join v1 on v2.a=v1.a order by v2.a;  
+                
+# right join               
+explain select * from t2 right join t3 on t2.a = t3.c1 where t3.c2 in (select b from v1 where a>1) order by t2.a;
+--sorted_result
+select * from t2 right join t3 on t2.a = t3.c1 where t3.c2 in (select b from v1 where a>1) order by t2.a;
+
+explain select * from v1 right join v2 on v1.a = v2.a where v2.a in (select v1.b from v1 where v1.a>1) order by v1.a;
+--sorted_result
+select * from v1 right join v2 on v1.a = v2.a where v2.a in (select v1.b from v1 where v1.a>1) order by v1.a;
+
+# full join               
+explain select * from v1 full join t3 order by t3.c1;
+--sorted_result
+select * from v1 full join t3 order by t3.c1;
+
+explain select * from v1 full join v2 order by v2.a;
+--sorted_result
+select * from v1 full join v2 order by v2.a;
+
+# natural left outer join
+explain select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+--sorted_result
+select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+
+# natural right outer join
+explain select * from v1 natural right outer join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+--sorted_result
+select * from v1 natural right outer join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+
+drop table mt1,mt2,t2,t3;
+drop view v1,v2;
+
+
+# seqDB-28585:查询语句在存储过程里，查询视图
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+
+# 查询语句在存储过程里，加/不加explain，查询视图
+--disable_warnings
+drop procedure if exists proc_test;
+--enable_warnings
+
+delimiter //;
+create procedure proc_test()
+begin
+   explain select * from t2,v1,t3;
+   select * from t2,v1,t3;
+   explain select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4);
+   select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4);
+   explain select * from v1 union select v1.a,t2.b from v1,t2;
+   select * from v1 union select v1.a,t2.b from v1,t2;
+   explain select * from t2 join v1 using(a);        
+   select * from t2 join v1 using(a);                
+   explain select * from t2 join v1 on t2.b=v1.b;    
+   select * from t2 join v1 on t2.b=v1.b;  
+   explain select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4);
+   select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4);
+   explain select * from v1 cross join t3 where c1 > (select a from v1 where v1.b<4);
+   select * from v1 cross join t3 where c1 > (select a from v1 where v1.b<4);
+   explain select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4);
+   select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4);
+   explain select * from t3 left join v1 on t3.c1=v1.a;          
+   select * from t3 left join v1 on t3.c1=v1.a;                  
+   explain select * from t2 right join t3 on t2.a = t3.c1 where t3.c2 in (select b from v1 where a>1);
+   select * from t2 right join t3 on t2.a = t3.c1 where t3.c2 in (select b from v1 where a>1);
+   explain select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4);
+   select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4);
+   explain select * from v1 natural right outer join t3 where c1 > (select a from v1 where v1.b<4);
+   select * from v1 natural right outer join t3 where c1 > (select a from v1 where v1.b<4);
+end;
+//
+delimiter ;//
+call proc_test();
+
+drop procedure proc_test;
+drop table mt1,t2,t3;
+drop view v1;
+
+
+# seqDB-28586:查询语句在prepare里，查询视图
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+
+# 查询语句在prepare里，prepare 前关闭优化查询，加/不加explain，查询视图                           
+alter table mt1 disable query optimization;
+
+prepare prep_test1 from "explain select * from v1,t3";      
+prepare prep_test2 from "select * from v1,t3"; 
+
+execute prep_test1;
+execute prep_test2;
+
+# 查询语句在prepare里，prepare 前开启优化查询，加/不加explain，查询视图
+alter table mt1 enable query optimization;   
+
+prepare prep_test1 from "explain select * from v1,t3";      
+prepare prep_test2 from "select * from v1,t3";                      
+      
+execute prep_test1;
+execute prep_test2;
+
+# prepare语句包含子查询，派生表、各类join
+prepare prep_test from "explain select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test; 
+prepare prep_test from "select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test; 
+prepare prep_test from "explain select * from v1 union select v1.a,t2.b from v1,t2";
+execute prep_test; 
+prepare prep_test from "select * from v1 union select v1.a,t2.b from v1,t2";
+execute prep_test; 
+prepare prep_test from "explain select * from t2 join v1 using(a)";
+execute prep_test;
+prepare prep_test from "select * from t2 join v1 using(a)";
+execute prep_test;
+prepare prep_test from "explain select * from t2 join v1 on t2.b=v1.b";   
+execute prep_test;
+prepare prep_test from "select * from t2 join v1 on t2.b=v1.b";   
+execute prep_test; 
+prepare prep_test from "explain select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+prepare prep_test from "select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+prepare prep_test from "explain select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+prepare prep_test from "select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+prepare prep_test from "explain select * from t3 left join v1 on t3.c1=v1.a";          
+execute prep_test;       
+prepare prep_test from "select * from t3 left join v1 on t3.c1=v1.a";          
+execute prep_test;       
+prepare prep_test from "select * from t3 full join v1";          
+execute prep_test;       
+prepare prep_test from "explain select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+prepare prep_test from "select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+
+drop table  mt1,t2,t3;
+drop view v1;
+
+# SEQUOIASQLMAINSTREAM-1881:视图中使用函数，创建物化视图发生 coredump
+## seqDB-28587:查询语句在function里，查询视图
+#
+#create table t2(a int primary key, b int);
+#insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+#
+#create view v1 as select * from t2 where a>2;
+#create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+#
+#create table t3(a int, b int);
+#insert into t3 values(1,1),(2,4),(6,3);
+#
+## 查询语句在function里：覆盖函数在select、where位置，覆盖函数有1个、多个返回值，加/不加explain，查询视图
+#--disable_warnings
+#drop function if exists func_test;
+#--enable_warnings
+#
+#delimiter //;
+#create function func_test() returns int
+#begin
+#   declare rc int default 0;
+#   select v1.b into rc from v1,t3 order by t3.b asc limit 1;
+#   return rc;
+#end;
+#//
+#delimiter ;//
+#
+## 删除基表，验证function中使用物化表
+#drop table t2;
+#
+#select func_test();
+#select * from t3 where a > func_test();
+#
+#create table t2(a int primary key, b int);
+#insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+#
+#create view v2 as select * from t3 where a > func_test();
+#--error 1356
+#create table mt2 as select * from v2 maintained by user enable query optimization;
+#
+#explain select * from v2 order by a;
+#select * from v2 order by a;
+#
+#drop table mt1,t2,t3;
+#drop view v1,v2;
+
+
+# seqDB-28588:视图嵌套，查询视图
+
+# 2层嵌套
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4);
+
+create view v2 as select * from t3,v1 where a<5;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+explain select * from v1,v2 order by v1.a;
+--sorted_result
+select * from v1,v2 order by v1.a;
+
+# 3层嵌套
+create view v3 as select v2.* from t3,v2 where a<6;
+create table mt3 as select * from v3 maintained by user enable query optimization;
+
+explain select * from v1,v2,v3 order by v1.a;
+--sorted_result
+select * from v1,v2,v3 order by v1.a;
+
+drop table mt1,mt2,mt3,t2,t3;
+drop view v1,v2,v3;
+
+
+# seqDB-28589:复杂嵌套子查询涉及到视图
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+
+create table t3(a int primary key, b int);
+insert into t3 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v2 as select * from t3 where a>2;
+create table mt2(primary key(a), key(b)) as select * from v2 maintained by user enable query optimization;
+
+# List Subquery
+explain select * from v1 where a in (select max(a) from v1 group by b);
+select * from v1 where a in (select max(a) from v1 group by b);
+
+# Scalar Subquery
+explain select * from v1 where a = (select b from v1 where a = 4);
+select * from v1 where a = (select b from v1 where a = 4);
+
+# Row Subquery
+explain select * from (select a, b from v1) as derived_v1;
+select * from (select a, b from v1) as derived_v1;
+
+# Correlated Subquery
+explain select a, b from v1 where a = (select a from v2 where v1.a = v2.a);
+select a, b from v1 where a = (select a from v2 where v1.a = v2.a);
+
+# Exists Subquery
+explain select * from v1 where exists (select * from v2 where v1.a = v2.a);
+select * from v1 where exists (select * from v2 where v1.a = v2.a);
+
+# Not Exists Subquery
+explain select * from v1 where not exists (select * from v2 where v2.a = 6);
+select * from v1 where not exists (select * from v2 where v2.a = 6);
+
+drop table mt1,mt2,t2,t3;
+drop view v1,v2;
+
+
+# seqDB-28590 查询语句包含group by，查询视图
+
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select a, count(*) from t1 where a>2 group by a;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+explain select * from v1;
+select * from v1;
+
+create view v2 as select b from t1 where a > 1 group by b;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+explain select * from v2;
+select * from v2;
+
+create view v3 as select a as a1,b as total from t1 having a1 > 1;
+create table mt3 as select * from v3 maintained by user enable query optimization;
+
+explain select * from v3;
+select * from v3;
+
+create view v4 as select *,count(b) as total from t1;
+create table mt4 as select * from v4 maintained by user enable query optimization;
+
+explain select * from v4;
+select * from v4;
+
+create view v5 as select t1.a,t2.b from t1 join t2 where t1.a = t2.b;
+create table mt5 as select * from v5 maintained by user enable query optimization;
+
+explain select * from v5;
+select * from v5;
+
+create view v6 as select distinct * from t1 where a = 1;
+create table mt6 as select * from v6 maintained by user enable query optimization;
+
+explain select * from v6;
+select * from v6;
+
+create view v7 as select * from t1 where a = 1 limit 1;
+create table mt7 as select * from v7 maintained by user enable query optimization;
+
+explain select * from v7;
+select * from v7;
+
+drop table mt1,mt2,mt3,mt4,mt5,mt6,mt7,t1,t2;
+drop view v1,v2,v3,v4,v5,v6,v7;
+
+# SEQUOIASQLMAINSTREAM-1882:视图自 join，物化视图无法指定别名
+## seqDB-28687:视图自join
+#
+#create table t2(a int primary key, b int);
+#insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+#
+#create view v1 as select * from t2 where a>2;
+#create table mt1 as select * from v1 maintained by user enable query optimization;
+#
+## 视图自join，加/不加explain，执行生成的查询语句
+#
+#explain select vt1.a, vt2.b from v1 as vt1, v1 as vt2 where vt1.a>3 and vt1.b != 5 order by vt1.b;
+#
+#select vt1.a, vt2.b from v1 as vt1, v1 as vt2 where vt1.a>3 and vt1.b != 5 order by vt1.b;
+#
+#drop table mt1,t2;
+#drop view v1;
+
+
+drop database materialized_view_select_sequoiadb;
+
+--source include/uninstall_sequoiadb.inc
+

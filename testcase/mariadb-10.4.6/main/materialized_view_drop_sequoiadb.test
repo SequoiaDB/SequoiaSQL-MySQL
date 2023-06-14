@@ -1,0 +1,99 @@
+#seqDB-27775 #seqDB-27776 #seqDB-27777
+
+--source include/have_sequoiadb.inc
+
+--disable_warnings
+drop database if exists materialized_view_drop_sequoaidb;
+--enable_warnings
+create database materialized_view_drop_sequoaidb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_drop_sequoaidb;
+
+
+# seqDB-27775:删除物化表
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+drop table mt1;
+--error 1146
+show create table mt1;
+show create table v1;
+explain select * from v1;
+
+drop table t1;
+drop view v1;
+
+
+# seqDB-27776:同时删除表，包含不同类型的表如物化表、表、序列(mairadb的序列是一种特殊的表)
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+# 表存在
+drop table mt1, t1;
+--error 1146
+show create table mt1;
+--error 1146
+show create table t1;
+show create table v1;
+--error 1356
+explain select * from v1;
+drop view v1;
+
+# 表部分不存在
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+--error 1051
+drop table mt1, t1, t2;
+--error 1356
+explain select * from v1;
+
+# 表都不存在
+--error 1051
+drop table mt2, t2;
+drop view v1;
+
+
+# seqDB-27777:循环删除、创建物化表
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+
+let $i = 5;
+while ($i) {
+create table mt1 as select * from v1 maintained by user enable query optimization;
+show create table mt1;
+show create table v1;
+explain select * from v1;
+drop table mt1;
+explain select * from v1;
+show create table v1;
+
+dec $i;
+}
+
+create table mt1 as select * from v1 maintained by user enable query optimization;
+explain select * from v1;
+show create table mt1;
+show create table v1;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+drop database materialized_view_drop_sequoaidb;
+
+--source include/uninstall_sequoiadb.inc

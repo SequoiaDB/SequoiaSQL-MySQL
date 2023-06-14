@@ -1,0 +1,334 @@
+#seqDB-28556 #seqDB-28557 #seqDB-28558 #seqDB-28559 #seqDB-28560 #seqDB-28561 #seqDB-28562 #seqDB-28563 #seqDB-28683
+
+--source include/have_sequoiadb.inc
+
+--disable_warnings
+drop database if exists materialized_view_ddl_sequoiadb;
+--enable_warnings
+create database materialized_view_ddl_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_ddl_sequoiadb;
+
+
+# seqDB-28556:修改视图定义
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+create table t2(a int, b int, c int,d int);
+insert into t2 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v2 as select * from t2 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+show create table mt1;
+show create table v1;
+
+explain select * from v1;
+
+alter view v1 as select * from t2 where a < 3;   
+
+show create table mt1;
+show create table v1;
+
+explain select * from v1;
+
+drop table t1,mt1,t2,mt2;
+drop view v1,v2;
+
+
+# seqDB-28557:删除视图
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+show create table mt1;
+show create table v1;
+
+let $i = 3;
+while ($i) {
+# 删除视图，物化表优化开关关闭，打印警告信息(无关联关系)
+drop view v1;   
+
+show create table mt1;
+--error 1146
+show create table v1;
+# 删除视图后重命名物化表
+alter table mt1 rename to new_mt1;
+show create table new_mt1;
+rename table new_mt1 to mt1;
+show create table mt1;
+# 重新创建新的视图
+create view v1 as select * from t1 where a < 3;
+show create view v1;
+# 重命名物化表
+alter table mt1 rename to new_mt1;
+show create table new_mt1;
+show create table v1;
+rename table new_mt1 to mt1;
+show create table mt1;
+show create table v1;
+# 查询物化视图是否生效
+explain select * from v1;
+# 重新创建物化视图，查询物化视图是否生效
+drop table mt1;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+explain select * from v1;
+
+dec $i;
+}
+
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28558:重命名视图
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+rename table v1 to new_v1;
+show create table mt1;
+show create table new_v1;
+
+explain select * from new_v1;
+
+drop table t1,mt1;
+drop view new_v1;
+
+
+# seqDB-28559:重构视图
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+create table t2(a int, b int, c int,d int);
+insert into t2 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v2 as select * from t2 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+let $i = 3;
+while ($i) {
+# 重建视图，物化表优化开关关闭，打印警告信息(无关联关系)
+create or replace view v1 as select * from t2 where a < 3;
+show create table mt1;
+show create table v1;
+
+explain select * from v1;
+
+# 重建视图后重命名物化表
+alter table mt1 rename to new_mt1;
+show create table new_mt1;
+show create table v1;
+rename table new_mt1 to mt1;
+show create table mt1;
+show create table v1;
+
+explain select * from v1;
+
+dec $i;
+}
+
+drop table t1,mt1,t2,mt2;
+drop view v1,v2;
+
+
+# seqDB-28560:删除基表，删除之前没有disable物化表
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+drop table t1;
+select * from v1 order by a;
+
+show create table v1;
+show create table mt1;
+
+explain select * from v1;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(6,1,1,1),(7,2,2,2),(8,3,3,3),(2,4,4,4),(1,5,5,5);
+explain select * from v1;
+select * from mt1 order by a;
+select * from v1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28561:删除基表，删除之前disable物化表，删除后创建完全相同的基表
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+ALTER TABLE mt1 DISABLE QUERY OPTIMIZATION;
+
+drop table t1;
+--error 1356
+select * from v1 order by a;
+
+show create table v1;
+show create table mt1;
+--error 1356
+explain select * from v1;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(6,1,1,1),(7,2,2,2),(8,3,3,3),(2,4,4,4),(1,5,5,5);
+select * from mt1 order by a;
+select * from v1 order by a;
+
+TRUNCATE TABLE mt1;
+INSERT INTO mt1 SELECT * FROM v1;
+ALTER TABLE mt1 ENABLE QUERY OPTIMIZATION;
+
+show create table mt1;
+explain select * from v1;
+select * from mt1 order by a;
+select * from v1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28562:删除基表，删除之前disable物化表，删除后创建同名不同结构的基表
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+ALTER TABLE mt1 DISABLE QUERY OPTIMIZATION;
+
+drop table t1;
+--error 1356
+select * from v1 order by a;
+
+show create table v1;
+show create table mt1;
+--error 1356
+explain select * from v1;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+
+create table t1(a int, b int, c int);
+insert into t1 values(6,1,1),(7,2,2),(8,3,3),(2,4,4),(1,5,5);
+
+show create table mt1;
+--error 1356
+explain select * from v1;
+select * from mt1 order by a;
+--error 1356
+select * from v1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28563:基表数据变更，手动更新物化表
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+ALTER TABLE mt1 DISABLE QUERY OPTIMIZATION;
+insert into t1 values(1,2,3,4),(2,9,3,4);
+delete from t1 where a=2 and b=9;
+update t1 set b=100 where b=2;
+TRUNCATE TABLE mt1;
+INSERT INTO mt1 SELECT * FROM v1;
+ALTER TABLE mt1 ENABLE QUERY OPTIMIZATION;
+
+show create table mt1;
+explain select * from v1;
+select * from mt1 order by a;
+select * from v1 order by a;
+
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28683: 循环对视图的基本DDL操作
+
+# 数据准备
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+
+create table t2(a int, b int, c int,d int);
+insert into t2 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v2 as select * from t2 where a < 3;
+
+let $i = 3;
+while ($i) {
+# 创建物化表
+create table mt1 as select * from v1 maintained by user enable query optimization;
+show create table mt1;
+show create table v1;
+
+# 修改视图定义，物化表优化开关关闭，检查警告信息(关联关系还在)
+alter view v1 as select * from t2 where a<=2;      
+show create table mt1;
+show create table v1;
+drop table mt1;
+
+# 删除视图，物化表优化开关关闭，打印警告信息(无关联关系)
+create table mt1 as select * from v1 maintained by user enable query optimization;
+drop view v1;                                      
+show create table mt1;
+
+# 重新创建视图(删除视图之后)
+create view v1 as select * from t2 where a>2;
+show create view v1;
+
+# 重命名物化表
+rename table mt1 to new_mt1;
+show create table new_mt1;
+show create table v1;
+alter table new_mt1 rename to mt1;
+show create table mt1;
+show create table v1;
+
+# 重命名视图
+rename table v1 to new_v1;
+show create table mt1;
+show create table new_v1;
+rename table new_v1 to v1;
+show create table mt1;
+show create table v1;
+
+drop table mt1;
+show create table v1;
+
+dec $i;
+}
+
+drop table if exists t1,t2,mt2;
+drop view  if exists v1,v2;
+
+drop database materialized_view_ddl_sequoiadb;
+
+--source include/uninstall_sequoiadb.inc

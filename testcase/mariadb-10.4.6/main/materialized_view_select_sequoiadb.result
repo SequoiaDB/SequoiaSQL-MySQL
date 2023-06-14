@@ -1,0 +1,1064 @@
+set @@sql_mode=(select replace(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));
+drop database if exists materialized_view_select_sequoiadb;
+create database materialized_view_select_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_select_sequoiadb;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+explain select * from v1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	2	Using pushed sort (mt1.a)
+select * from v1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+ALTER TABLE mt1 DISABLE QUERY OPTIMIZATION;
+explain select * from v1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	5	Using where with pushed condition; Using pushed sort (t1.a)
+select * from v1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+drop table t1,mt1;
+drop view v1;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+drop table mt1;
+explain select * from v1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	5	Using where with pushed condition; Using pushed sort (t1.a)
+select * from v1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+drop table t1;
+drop view v1;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+show tables;
+Tables_in_materialized_view_select_sequoiadb
+mt1
+t1
+v1
+create table t2(a int, b int, c int,d int);
+insert into t2 values(1,8,1,1),(2,9,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v2 as select * from t2 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+alter view v1 as select * from v2;
+Warnings:
+Warning	1050	The materialized query table `materialized_view_select_sequoiadb`.`mt1` has been disabled for query optimization
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_select_sequoiadb`.`v1` MAINTAINED BY USER DISABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `v2`.`a` AS `a`,`v2`.`b` AS `b`,`v2`.`c` AS `c`,`v2`.`d` AS `d` from `v2`	latin1	latin1_swedish_ci	`materialized_view_select_sequoiadb`.`mt1`
+explain select * from v1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt2	ALL	NULL	NULL	NULL	NULL	2	Using pushed sort (mt2.a)
+select * from v1 order by a;
+a	b	c	d
+1	8	1	1
+2	9	2	2
+drop table t1,mt1,t2,mt2;
+drop view v1,v2;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+create table t2(a int, b int, c int,d int);
+insert into t2 values(1,8,1,1),(2,9,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v2 as select * from t2 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+create or replace view v1 as select * from t2 where a<=6;
+Warnings:
+Warning	1050	There is a materialized query table `materialized_view_select_sequoiadb`.`mt1` on the old view
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_select_sequoiadb`.`v1` MAINTAINED BY USER DISABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t2`.`a` AS `a`,`t2`.`b` AS `b`,`t2`.`c` AS `c`,`t2`.`d` AS `d` from `t2` where `t2`.`a` <= 6	latin1	latin1_swedish_ci	
+explain select * from v1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	5	Using where with pushed condition; Using pushed sort (t2.a)
+select * from v1 order by a;
+a	b	c	d
+1	8	1	1
+2	9	2	2
+3	3	3	3
+4	4	4	4
+5	5	5	5
+drop table t1,mt1,t2,mt2;
+drop view v1,v2;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+rename table mt1 to new_mt1;
+show create table new_mt1;
+Table	Create Table
+new_mt1	CREATE TABLE `new_mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_select_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where `t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_select_sequoiadb`.`new_mt1`
+explain select * from v1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	new_mt1	ALL	NULL	NULL	NULL	NULL	2	Using pushed sort (new_mt1.a)
+select * from v1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+alter table new_mt1 rename to mt1;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_select_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where `t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_select_sequoiadb`.`mt1`
+explain select * from v1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	2	Using pushed sort (mt1.a)
+select * from v1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+drop table t1,mt1;
+drop view v1;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+rename table v1 to new_v1;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_select_sequoiadb`.`new_v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table new_v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+new_v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `new_v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where `t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_select_sequoiadb`.`mt1`
+explain select * from new_v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	2	
+select * from new_v1;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+drop table t1,mt1;
+drop view new_v1;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(c1 int, c2 int);
+insert into t3 values(2,4),(6,3);
+explain select *,v1.a from v1,t2,t3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	1	
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	2	Using join buffer (flat, BNL join)
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	3	Using join buffer (incremental, BNL join)
+select * from v1,t2,t3;
+a	b	a	b	c1	c2
+3	3	1	1	2	4
+3	3	1	1	6	3
+3	3	2	2	2	4
+3	3	2	2	6	3
+3	3	3	3	2	4
+3	3	3	3	6	3
+explain select *,v1.b from t2,v1,t3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	1	
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	2	Using join buffer (flat, BNL join)
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	3	Using join buffer (incremental, BNL join)
+select *,v1.b from t2,v1,t3;
+a	b	a	b	c1	c2	b
+1	1	3	3	2	4	3
+1	1	3	3	6	3	3
+2	2	3	3	2	4	3
+2	2	3	3	6	3	3
+3	3	3	3	2	4	3
+3	3	3	3	6	3	3
+explain select *,t3.c1 from t2,t3,v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	1	
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	2	Using join buffer (flat, BNL join)
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	3	Using join buffer (incremental, BNL join)
+select *,t3.c1 from t2,t3,v1;
+a	b	c1	c2	a	b	c1
+1	1	2	4	3	3	2
+1	1	6	3	3	3	6
+2	2	2	4	3	3	2
+2	2	6	3	3	3	6
+3	3	2	4	3	3	2
+3	3	6	3	3	3	6
+drop table mt1,t2,t3;
+drop view v1;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+explain select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4) order by c1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	index	NULL	PRIMARY	4	NULL	3	Using index; Using temporary; Using filesort
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+4	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+2	SUBQUERY	mt1	ref	b	b	5	const	2	
+select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4) order by c1;
+a	c1
+4	6
+4	6
+4	6
+explain select (select a from mt1 where mt1.b=4) a,c1 from (select * from mt1) dv,t3 where c1 > (select a from mt1 where mt1.b<4) order by c1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	index	NULL	PRIMARY	4	NULL	3	Using index; Using temporary; Using filesort
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+4	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+2	SUBQUERY	mt1	ref	b	b	5	const	2	
+select (select a from mt1 where mt1.b=4) a,c1 from (select * from mt1) dv,t3 where c1 > (select a from mt1 where mt1.b<4) order by c1;
+a	c1
+4	6
+4	6
+4	6
+drop table mt1,t2,t3;
+drop view v1;
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t1 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+explain select * from v1 union select v1.a,t1.b from v1,t1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+2	UNION	mt1	index	NULL	PRIMARY	4	NULL	3	Using index
+2	UNION	t1	ALL	NULL	NULL	NULL	NULL	5	Using join buffer (flat, BNL join)
+NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+select * from v1 union select v1.a,t1.b from v1,t1 order by a;
+a	b
+3	1
+3	2
+3	3
+3	4
+3	5
+4	1
+4	2
+4	3
+4	4
+4	5
+5	1
+5	2
+5	3
+5	4
+5	5
+explain select * from mt1 union select mt1.a,t1.b from mt1,t1 order by a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+2	UNION	mt1	index	NULL	PRIMARY	4	NULL	3	Using index
+2	UNION	t1	ALL	NULL	NULL	NULL	NULL	5	Using join buffer (flat, BNL join)
+NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	NULL	Using filesort
+select * from mt1 union select mt1.a,t1.b from mt1,t1 order by a;
+a	b
+3	1
+3	2
+3	3
+3	4
+3	5
+4	1
+4	2
+4	3
+4	4
+4	5
+5	1
+5	2
+5	3
+5	4
+5	5
+drop table t1,mt1;
+drop view v1;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+explain update t3 set c1=3 where c2 > (select a from v1 limit 1);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where
+2	SUBQUERY	t2	index	PRIMARY	PRIMARY	4	NULL	5	Using where with pushed condition; Using index
+update t3 set c1=3 where c2 > (select a from v1 limit 1);
+select * from t3 order by c1;
+c1	c2
+1	1
+3	4
+6	3
+explain delete from t3 where c2 > (select a from v1 limit 1);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where
+2	SUBQUERY	t2	index	PRIMARY	PRIMARY	4	NULL	5	Using where with pushed condition; Using index
+delete from t3 where c2 > (select a from v1 limit 1);
+select * from t3;
+c1	c2
+1	1
+6	3
+explain insert into t3 select * from v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t2	range	PRIMARY	PRIMARY	4	NULL	4	Using where with pushed condition
+insert into t3 select * from v1;
+select * from t3 order by c1;
+c1	c2
+1	1
+3	3
+4	4
+5	5
+6	3
+drop table mt1,t2,t3;
+drop view v1;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+explain update v1 set a=6 where a=5;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t2	range	PRIMARY	PRIMARY	4	NULL	1	Using where
+select * from v1 order by a;
+a	b
+3	3
+4	4
+5	5
+explain delete from v1 where a=6;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t2	range	PRIMARY	PRIMARY	4	NULL	1	Using where
+select * from v1 order by a;
+a	b
+3	3
+4	4
+5	5
+explain insert into v1 values(2,2);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	INSERT	t2	ALL	NULL	NULL	NULL	NULL	NULL	NULL
+select * from v1 order by a;
+a	b
+3	3
+4	4
+5	5
+drop table mt1,t2,t3;
+drop view v1;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+create view v2 as select * from t2 where a>1;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+explain select * from t2 join v1 using(a) order by t2.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	PRIMARY	NULL	NULL	NULL	3	Using filesort
+1	SIMPLE	t2	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.mt1.a	1	
+select * from t2 join v1 using(a) order by t2.a;
+a	b	b
+3	3	3
+4	4	4
+5	5	5
+explain select * from t2 join v1 on t2.b=v1.b order by t2.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	b	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	5	Using where; Using join buffer (flat, BNL join)
+select * from t2 join v1 on t2.b=v1.b order by t2.a;
+a	b	a	b
+3	3	3	3
+4	4	4	4
+5	5	5	5
+explain select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+explain select * from v1 inner join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	PRIMARY	mt2	ALL	NULL	NULL	NULL	NULL	4	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+select * from v1 inner join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+a	b	a	b
+3	3	4	4
+3	3	5	5
+4	4	4	4
+4	4	5	5
+5	5	4	4
+5	5	5	5
+explain select * from v1 cross join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+select * from v1 cross join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+explain select * from v1 cross join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	PRIMARY	mt2	ALL	NULL	NULL	NULL	NULL	4	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+select * from v1 cross join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+a	b	a	b
+3	3	4	4
+3	3	5	5
+4	4	4	4
+4	4	5	5
+5	5	4	4
+5	5	5	5
+explain select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4)  order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+explain select * from v1 straight_join v2 where v2.a > (select v1.a from v1 where v1.b<4)  order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	PRIMARY	mt2	ALL	NULL	NULL	NULL	NULL	4	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+select * from v1 straight_join v2 where v2.a > (select v1.a from v1 where v1.b<4)  order by v1.a;
+a	b	a	b
+3	3	4	4
+3	3	5	5
+4	4	4	4
+4	4	5	5
+5	5	4	4
+5	5	5	5
+explain select * from t3 left join v1 on t3.c1=v1.a  order by t3.c1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	3	Using filesort
+1	SIMPLE	mt1	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.t3.c1	1	Using where
+select * from t3 left join v1 on t3.c1=v1.a  order by t3.c1;
+c1	c2	a	b
+1	1	NULL	NULL
+2	4	NULL	NULL
+6	3	NULL	NULL
+explain select * from v2 left join v1 on v2.a=v1.a order by v2.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt2	ALL	NULL	NULL	NULL	NULL	4	Using filesort
+1	SIMPLE	mt1	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.mt2.a	1	
+select * from v2 left join v1 on v2.a=v1.a order by v2.a;
+a	b	a	b
+2	2	NULL	NULL
+3	3	3	3
+4	4	4	4
+5	5	5	5
+explain select * from t2 right join t3 on t2.a = t3.c1 where t3.c2 in (select b from v1 where a>1) order by t2.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	PRIMARY	<subquery2>	eq_ref	distinct_key	distinct_key	4	func	1	
+1	PRIMARY	t2	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.t3.c1	1	Using where
+2	MATERIALIZED	mt1	range	PRIMARY,b	PRIMARY	4	NULL	2	Using where with pushed condition
+select * from t2 right join t3 on t2.a = t3.c1 where t3.c2 in (select b from v1 where a>1) order by t2.a;
+a	b	c1	c2
+2	2	2	4
+NULL	NULL	6	3
+explain select * from v1 right join v2 on v1.a = v2.a where v2.a in (select v1.b from v1 where v1.a>1) order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt2	ALL	NULL	NULL	NULL	NULL	4	Using temporary; Using filesort
+1	PRIMARY	<subquery2>	eq_ref	distinct_key	distinct_key	4	func	1	
+1	PRIMARY	mt1	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.mt2.a	1	
+2	MATERIALIZED	mt1	range	PRIMARY,b	PRIMARY	4	NULL	2	Using where with pushed condition
+select * from v1 right join v2 on v1.a = v2.a where v2.a in (select v1.b from v1 where v1.a>1) order by v1.a;
+a	b	a	b
+3	3	3	3
+4	4	4	4
+5	5	5	5
+explain select * from v1 full join t3 order by t3.c1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	3	Using join buffer (flat, BNL join)
+select * from v1 full join t3 order by t3.c1;
+a	b	c1	c2
+3	3	1	1
+3	3	2	4
+3	3	6	3
+4	4	1	1
+4	4	2	4
+4	4	6	3
+5	5	1	1
+5	5	2	4
+5	5	6	3
+explain select * from v1 full join v2 order by v2.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	SIMPLE	mt2	ALL	NULL	NULL	NULL	NULL	4	Using join buffer (flat, BNL join)
+select * from v1 full join v2 order by v2.a;
+a	b	a	b
+3	3	2	2
+3	3	3	3
+3	3	4	4
+3	3	5	5
+4	4	2	2
+4	4	3	3
+4	4	4	4
+4	4	5	5
+5	5	2	2
+5	5	3	3
+5	5	4	4
+5	5	5	5
+explain select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary; Using filesort
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4) order by v1.a;
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+explain select * from v1 natural right outer join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt2	ALL	NULL	NULL	NULL	NULL	4	Using where with pushed condition; Using temporary; Using filesort
+1	PRIMARY	mt1	eq_ref	PRIMARY,b	PRIMARY	4	materialized_view_select_sequoiadb.mt2.a	1	Using where
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+select * from v1 natural right outer join v2 where v2.a > (select v1.a from v1 where v1.b<4) order by v1.a;
+a	b
+4	4
+5	5
+drop table mt1,mt2,t2,t3;
+drop view v1,v2;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+drop procedure if exists proc_test;
+create procedure proc_test()
+begin
+explain select * from t2,v1,t3;
+select * from t2,v1,t3;
+explain select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4);
+select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4);
+explain select * from v1 union select v1.a,t2.b from v1,t2;
+select * from v1 union select v1.a,t2.b from v1,t2;
+explain select * from t2 join v1 using(a);        
+select * from t2 join v1 using(a);                
+explain select * from t2 join v1 on t2.b=v1.b;    
+select * from t2 join v1 on t2.b=v1.b;  
+explain select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4);
+select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4);
+explain select * from v1 cross join t3 where c1 > (select a from v1 where v1.b<4);
+select * from v1 cross join t3 where c1 > (select a from v1 where v1.b<4);
+explain select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4);
+select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4);
+explain select * from t3 left join v1 on t3.c1=v1.a;          
+select * from t3 left join v1 on t3.c1=v1.a;                  
+explain select * from t2 right join t3 on t2.a = t3.c1 where t3.c2 in (select b from v1 where a>1);
+select * from t2 right join t3 on t2.a = t3.c1 where t3.c2 in (select b from v1 where a>1);
+explain select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4);
+select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4);
+explain select * from v1 natural right outer join t3 where c1 > (select a from v1 where v1.b<4);
+select * from v1 natural right outer join t3 where c1 > (select a from v1 where v1.b<4);
+end;
+//
+call proc_test();
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	3	Using join buffer (flat, BNL join)
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	5	Using join buffer (incremental, BNL join)
+a	b	a	b	c1	c2
+1	1	3	3	1	1
+1	1	4	4	1	1
+1	1	5	5	1	1
+1	1	3	3	2	4
+1	1	4	4	2	4
+1	1	5	5	2	4
+1	1	3	3	6	3
+1	1	4	4	6	3
+1	1	5	5	6	3
+2	2	3	3	1	1
+2	2	4	4	1	1
+2	2	5	5	1	1
+2	2	3	3	2	4
+2	2	4	4	2	4
+2	2	5	5	2	4
+2	2	3	3	6	3
+2	2	4	4	6	3
+2	2	5	5	6	3
+3	3	3	3	1	1
+3	3	4	4	1	1
+3	3	5	5	1	1
+3	3	3	3	2	4
+3	3	4	4	2	4
+3	3	5	5	2	4
+3	3	3	3	6	3
+3	3	4	4	6	3
+3	3	5	5	6	3
+4	4	3	3	1	1
+4	4	4	4	1	1
+4	4	5	5	1	1
+4	4	3	3	2	4
+4	4	4	4	2	4
+4	4	5	5	2	4
+4	4	3	3	6	3
+4	4	4	4	6	3
+4	4	5	5	6	3
+5	5	3	3	1	1
+5	5	4	4	1	1
+5	5	5	5	1	1
+5	5	3	3	2	4
+5	5	4	4	2	4
+5	5	5	5	2	4
+5	5	3	3	6	3
+5	5	4	4	6	3
+5	5	5	5	6	3
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	index	NULL	PRIMARY	4	NULL	3	Using index
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+4	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+2	SUBQUERY	mt1	ref	b	b	5	const	2	
+a	c1
+4	6
+4	6
+4	6
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+2	UNION	mt1	index	NULL	PRIMARY	4	NULL	3	Using index
+2	UNION	t2	ALL	NULL	NULL	NULL	NULL	5	Using join buffer (flat, BNL join)
+NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+a	b
+3	3
+4	4
+5	5
+3	1
+4	1
+5	1
+3	2
+4	2
+5	2
+4	3
+5	3
+3	4
+5	4
+3	5
+4	5
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	PRIMARY	NULL	NULL	NULL	3	
+1	SIMPLE	t2	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.mt1.a	1	
+a	b	b
+3	3	3
+4	4	4
+5	5	5
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	b	NULL	NULL	NULL	3	
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	5	Using where; Using join buffer (flat, BNL join)
+a	b	a	b
+3	3	3	3
+4	4	4	4
+5	5	5	5
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	3	
+1	SIMPLE	mt1	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.t3.c1	1	Using where
+c1	c2	a	b
+1	1	NULL	NULL
+2	4	NULL	NULL
+6	3	NULL	NULL
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	
+1	PRIMARY	<subquery2>	eq_ref	distinct_key	distinct_key	4	func	1	
+1	PRIMARY	t2	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.t3.c1	1	Using where
+2	MATERIALIZED	mt1	range	PRIMARY,b	PRIMARY	4	NULL	2	Using where with pushed condition
+a	b	c1	c2
+2	2	2	4
+NULL	NULL	6	3
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using where; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+c1	c2	a	b
+6	3	3	3
+6	3	4	4
+6	3	5	5
+drop procedure proc_test;
+drop table mt1,t2,t3;
+drop view v1;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4),(6,3);
+alter table mt1 disable query optimization;
+prepare prep_test1 from "explain select * from v1,t3";
+prepare prep_test2 from "select * from v1,t3";
+execute prep_test1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	3	
+1	SIMPLE	t2	range	PRIMARY	PRIMARY	4	NULL	4	Using where with pushed condition; Using join buffer (flat, BNL join)
+execute prep_test2;
+a	b	c1	c2
+3	3	1	1
+3	3	2	4
+3	3	6	3
+4	4	1	1
+4	4	2	4
+4	4	6	3
+5	5	1	1
+5	5	2	4
+5	5	6	3
+alter table mt1 enable query optimization;
+prepare prep_test1 from "explain select * from v1,t3";
+prepare prep_test2 from "select * from v1,t3";
+execute prep_test1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	3	Using join buffer (flat, BNL join)
+execute prep_test2;
+a	b	c1	c2
+3	3	1	1
+4	4	1	1
+5	5	1	1
+3	3	2	4
+4	4	2	4
+5	5	2	4
+3	3	6	3
+4	4	6	3
+5	5	6	3
+prepare prep_test from "explain select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	index	NULL	PRIMARY	4	NULL	3	Using index
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+4	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+2	SUBQUERY	mt1	ref	b	b	5	const	2	
+prepare prep_test from "select (select a from v1 where v1.b=4) a,c1 from (select * from v1) dv,t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+a	c1
+4	6
+4	6
+4	6
+prepare prep_test from "explain select * from v1 union select v1.a,t2.b from v1,t2";
+execute prep_test;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+2	UNION	mt1	index	NULL	PRIMARY	4	NULL	3	Using index
+2	UNION	t2	ALL	NULL	NULL	NULL	NULL	5	Using join buffer (flat, BNL join)
+NULL	UNION RESULT	<union1,2>	ALL	NULL	NULL	NULL	NULL	NULL	
+prepare prep_test from "select * from v1 union select v1.a,t2.b from v1,t2";
+execute prep_test;
+a	b
+3	3
+4	4
+5	5
+3	1
+4	1
+5	1
+3	2
+4	2
+5	2
+4	3
+5	3
+3	4
+5	4
+3	5
+4	5
+prepare prep_test from "explain select * from t2 join v1 using(a)";
+execute prep_test;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	PRIMARY	NULL	NULL	NULL	3	
+1	SIMPLE	t2	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.mt1.a	1	
+prepare prep_test from "select * from t2 join v1 using(a)";
+execute prep_test;
+a	b	b
+3	3	3
+4	4	4
+5	5	5
+prepare prep_test from "explain select * from t2 join v1 on t2.b=v1.b";
+execute prep_test;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	b	NULL	NULL	NULL	3	
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	5	Using where; Using join buffer (flat, BNL join)
+prepare prep_test from "select * from t2 join v1 on t2.b=v1.b";
+execute prep_test;
+a	b	a	b
+3	3	3	3
+4	4	4	4
+5	5	5	5
+prepare prep_test from "explain select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+prepare prep_test from "select * from v1 inner join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+prepare prep_test from "explain select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+prepare prep_test from "select * from v1 straight_join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+prepare prep_test from "explain select * from t3 left join v1 on t3.c1=v1.a";
+execute prep_test;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t3	ALL	NULL	NULL	NULL	NULL	3	
+1	SIMPLE	mt1	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.t3.c1	1	Using where
+prepare prep_test from "select * from t3 left join v1 on t3.c1=v1.a";
+execute prep_test;
+c1	c2	a	b
+1	1	NULL	NULL
+2	4	NULL	NULL
+6	3	NULL	NULL
+prepare prep_test from "select * from t3 full join v1";
+execute prep_test;
+c1	c2	a	b
+1	1	3	3
+2	4	3	3
+6	3	3	3
+1	1	4	4
+2	4	4	4
+6	3	4	4
+1	1	5	5
+2	4	5	5
+6	3	5	5
+prepare prep_test from "explain select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+1	PRIMARY	t3	ALL	NULL	NULL	NULL	NULL	3	Using where with pushed condition; Using join buffer (flat, BNL join)
+2	SUBQUERY	mt1	range	b	b	5	NULL	2	Using where with pushed condition
+prepare prep_test from "select * from v1 natural left outer join t3 where c1 > (select a from v1 where v1.b<4)";
+execute prep_test;
+a	b	c1	c2
+3	3	6	3
+4	4	6	3
+5	5	6	3
+drop table  mt1,t2,t3;
+drop view v1;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(c1 int, c2 int);
+insert into t3 values(1,1),(2,4);
+create view v2 as select * from t3,v1 where a<5;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+explain select * from v1,v2 order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	1	Using temporary; Using filesort
+1	SIMPLE	mt2	ALL	NULL	NULL	NULL	NULL	2	Using join buffer (flat, BNL join)
+select * from v1,v2 order by v1.a;
+a	b	c1	c2	a	b
+3	3	1	1	3	3
+3	3	2	4	3	3
+create view v3 as select v2.* from t3,v2 where a<6;
+create table mt3 as select * from v3 maintained by user enable query optimization;
+explain select * from v1,v2,v3 order by v1.a;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	1	Using temporary; Using filesort
+1	SIMPLE	mt2	ALL	NULL	NULL	NULL	NULL	2	Using join buffer (flat, BNL join)
+1	SIMPLE	mt3	ALL	NULL	NULL	NULL	NULL	4	Using join buffer (incremental, BNL join)
+select * from v1,v2,v3 order by v1.a;
+a	b	c1	c2	a	b	c1	c2	a	b
+3	3	1	1	3	3	1	1	3	3
+3	3	1	1	3	3	1	1	3	3
+3	3	1	1	3	3	2	4	3	3
+3	3	1	1	3	3	2	4	3	3
+3	3	2	4	3	3	1	1	3	3
+3	3	2	4	3	3	1	1	3	3
+3	3	2	4	3	3	2	4	3	3
+3	3	2	4	3	3	2	4	3	3
+drop table mt1,mt2,mt3,t2,t3;
+drop view v1,v2,v3;
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t2 where a>2;
+create table mt1(primary key(a), key(b)) as select * from v1 maintained by user enable query optimization;
+create table t3(a int primary key, b int);
+insert into t3 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v2 as select * from t3 where a>2;
+create table mt2(primary key(a), key(b)) as select * from v2 maintained by user enable query optimization;
+explain select * from v1 where a in (select max(a) from v1 group by b);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	<subquery2>	ALL	distinct_key	NULL	NULL	NULL	3	
+1	PRIMARY	mt1	eq_ref	PRIMARY	PRIMARY	4	<subquery2>.max(a)	1	
+2	MATERIALIZED	mt1	ALL	NULL	NULL	NULL	NULL	3	Using temporary
+select * from v1 where a in (select max(a) from v1 group by b);
+a	b
+3	3
+4	4
+5	5
+explain select * from v1 where a = (select b from v1 where a = 4);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	const	PRIMARY	PRIMARY	4	const	1	
+2	SUBQUERY	mt1	const	PRIMARY	PRIMARY	4	const	1	
+select * from v1 where a = (select b from v1 where a = 4);
+a	b
+4	4
+explain select * from (select a, b from v1) as derived_v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	3	
+select * from (select a, b from v1) as derived_v1;
+a	b
+3	3
+4	4
+5	5
+explain select a, b from v1 where a = (select a from v2 where v1.a = v2.a);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	Using where
+2	DEPENDENT SUBQUERY	mt2	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.mt1.a	1	Using index
+select a, b from v1 where a = (select a from v2 where v1.a = v2.a);
+a	b
+3	3
+4	4
+5	5
+explain select * from v1 where exists (select * from v2 where v1.a = v2.a);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	PRIMARY	NULL	NULL	NULL	3	
+1	PRIMARY	mt2	eq_ref	PRIMARY	PRIMARY	4	materialized_view_select_sequoiadb.mt1.a	1	Using index
+select * from v1 where exists (select * from v2 where v1.a = v2.a);
+a	b
+3	3
+4	4
+5	5
+explain select * from v1 where not exists (select * from v2 where v2.a = 6);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	mt1	ALL	NULL	NULL	NULL	NULL	3	
+2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
+select * from v1 where not exists (select * from v2 where v2.a = 6);
+a	b
+3	3
+4	4
+5	5
+drop table mt1,mt2,t2,t3;
+drop view v1,v2;
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create table t2(a int primary key, b int);
+insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select a, count(*) from t1 where a>2 group by a;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+explain select * from v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	3	
+select * from v1;
+a	count(*)
+3	1
+4	1
+5	1
+create view v2 as select b from t1 where a > 1 group by b;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+explain select * from v2;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt2	ALL	NULL	NULL	NULL	NULL	4	
+select * from v2;
+b
+2
+3
+4
+5
+create view v3 as select a as a1,b as total from t1 having a1 > 1;
+create table mt3 as select * from v3 maintained by user enable query optimization;
+explain select * from v3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt3	ALL	NULL	NULL	NULL	NULL	4	
+select * from v3;
+a1	total
+2	2
+3	3
+4	4
+5	5
+create view v4 as select *,count(b) as total from t1;
+create table mt4 as select * from v4 maintained by user enable query optimization;
+explain select * from v4;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt4	ALL	NULL	NULL	NULL	NULL	1	
+select * from v4;
+a	b	total
+1	1	5
+create view v5 as select t1.a,t2.b from t1 join t2 where t1.a = t2.b;
+create table mt5 as select * from v5 maintained by user enable query optimization;
+explain select * from v5;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt5	ALL	NULL	NULL	NULL	NULL	5	
+select * from v5;
+a	b
+1	1
+2	2
+3	3
+4	4
+5	5
+create view v6 as select distinct * from t1 where a = 1;
+create table mt6 as select * from v6 maintained by user enable query optimization;
+explain select * from v6;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt6	ALL	NULL	NULL	NULL	NULL	1	
+select * from v6;
+a	b
+1	1
+create view v7 as select * from t1 where a = 1 limit 1;
+create table mt7 as select * from v7 maintained by user enable query optimization;
+explain select * from v7;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt7	ALL	NULL	NULL	NULL	NULL	1	
+select * from v7;
+a	b
+1	1
+drop table mt1,mt2,mt3,mt4,mt5,mt6,mt7,t1,t2;
+drop view v1,v2,v3,v4,v5,v6,v7;
+drop database materialized_view_select_sequoiadb;

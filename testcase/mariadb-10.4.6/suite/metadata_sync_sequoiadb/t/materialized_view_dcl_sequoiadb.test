@@ -1,0 +1,114 @@
+#seqDB-28570 #seqDB-28571 #seqDB-28572
+
+--source include/have_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
+
+connection conn1;
+--disable_warnings
+drop user if exists materialized_view_dcl_user;
+drop database if exists materialized_view_dcl_sequoiadb;
+--enable_warnings
+create database materialized_view_dcl_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_dcl_sequoiadb;
+
+
+# seqDB-28570:视图无权限、物化表有权限，对物化表做crud操作
+
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t1 where a>2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+create user 'materialized_view_dcl_user'@'%' identified by 'materialized_view_dcl_passwd';
+grant all privileges ON materialized_view_dcl_sequoiadb.mt1 to 'materialized_view_dcl_user'@'%' identified by 'materialized_view_dcl_passwd';
+flush privileges;
+
+connect ( conn3, $mysql_host1, 'materialized_view_dcl_user', 'materialized_view_dcl_passwd', $mysql_db, $mysql_port1 );
+connection conn3;
+
+use materialized_view_dcl_sequoiadb;
+--error 1142
+explain select * from v1 order by a;
+--error 1142
+select * from v1 order by a;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(6,6);
+select * from mt1 order by a;
+
+connection conn1;
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28571 物化表无权限、视图有权限，对视图做crud操作
+
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t1 where a>2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+grant all privileges on materialized_view_dcl_sequoiadb.v1 to 'materialized_view_dcl_user'@'%' identified by 'materialized_view_dcl_passwd';
+revoke all on materialized_view_dcl_sequoiadb.mt1 from 'materialized_view_dcl_user'@'%';
+flush privileges;
+
+connection conn3;
+
+use materialized_view_dcl_sequoiadb;
+explain select * from v1 order by a;
+select * from v1 order by a;
+
+--error 1142
+create index idx on mt1(a);
+--error 1142
+show create table mt1;
+--error 1142
+insert into mt1 values(6,6);
+--error 1142
+select * from mt1 order by a;
+
+connection conn1;
+drop table t1,mt1;
+drop view v1;
+
+
+# seqDB-28572 对物化表做权限管理，覆盖不同用户授予不同权限
+
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+
+create view v1 as select * from t1 where a>2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+revoke all on materialized_view_dcl_sequoiadb.v1 from 'materialized_view_dcl_user'@'%';
+grant select, delete on materialized_view_dcl_sequoiadb.* to 'materialized_view_dcl_user'@'%' identified by 'materialized_view_dcl_passwd';
+flush privileges;
+
+connection conn3;
+
+use materialized_view_dcl_sequoiadb;
+explain select * from v1 order by a;
+select * from v1 order by a;
+
+delete from mt1 where a = 5;
+select * from v1 order by a;
+
+--error 1142
+insert into mt1 values(6,6);
+--error 1142
+update mt1 set b = 7 where a = 6;
+
+connection conn1;
+drop table t1,mt1;
+drop view v1;
+
+
+drop user materialized_view_dcl_user;
+drop database materialized_view_dcl_sequoiadb;
+
+--source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
+--source include/uninstall_sequoiadb.inc
+

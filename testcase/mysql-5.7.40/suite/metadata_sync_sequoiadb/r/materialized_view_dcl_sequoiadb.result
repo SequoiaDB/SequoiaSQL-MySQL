@@ -1,0 +1,96 @@
+drop user if exists materialized_view_dcl_user;
+drop database if exists materialized_view_dcl_sequoiadb;
+create database materialized_view_dcl_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_dcl_sequoiadb;
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t1 where a>2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+create user 'materialized_view_dcl_user'@'%' identified by 'materialized_view_dcl_passwd';
+grant all privileges ON materialized_view_dcl_sequoiadb.mt1 to 'materialized_view_dcl_user'@'%' identified by 'materialized_view_dcl_passwd';
+Warnings:
+Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
+flush privileges;
+use materialized_view_dcl_sequoiadb;
+explain select * from v1 order by a;
+ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'v1'
+select * from v1 order by a;
+ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'v1'
+create index idx on mt1(a);
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1`(
+  KEY `idx` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_dcl_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+insert into mt1 values(6,6);
+select * from mt1 order by a;
+a	b
+3	3
+4	4
+5	5
+6	6
+drop table t1,mt1;
+drop view v1;
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t1 where a>2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+grant all privileges on materialized_view_dcl_sequoiadb.v1 to 'materialized_view_dcl_user'@'%' identified by 'materialized_view_dcl_passwd';
+Warnings:
+Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
+revoke all on materialized_view_dcl_sequoiadb.mt1 from 'materialized_view_dcl_user'@'%';
+flush privileges;
+use materialized_view_dcl_sequoiadb;
+explain select * from v1 order by a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	mt1	NULL	NULL	NULL	NULL	NULL	NULL	3	100.00	Using pushed ORDER BY; Storage engine handles access type
+Warnings:
+Note	1003	/* select#1 */ select `materialized_view_dcl_sequoiadb`.`mt1`.`a` AS `a`,`materialized_view_dcl_sequoiadb`.`mt1`.`b` AS `b` from ``.`` order by `materialized_view_dcl_sequoiadb`.`mt1`.`a`
+select * from v1 order by a;
+a	b
+3	3
+4	4
+5	5
+create index idx on mt1(a);
+ERROR 42000: INDEX command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+show create table mt1;
+ERROR 42000: SHOW command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+insert into mt1 values(6,6);
+ERROR 42000: INSERT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+select * from mt1 order by a;
+ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+drop table t1,mt1;
+drop view v1;
+create table t1(a int primary key, b int);
+insert into t1 values(1,1),(2,2),(3,3),(4,4),(5,5);
+create view v1 as select * from t1 where a>2;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+revoke all on materialized_view_dcl_sequoiadb.v1 from 'materialized_view_dcl_user'@'%';
+grant select, delete on materialized_view_dcl_sequoiadb.* to 'materialized_view_dcl_user'@'%' identified by 'materialized_view_dcl_passwd';
+Warnings:
+Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
+flush privileges;
+use materialized_view_dcl_sequoiadb;
+explain select * from v1 order by a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	mt1	NULL	NULL	NULL	NULL	NULL	NULL	3	100.00	Using pushed ORDER BY; Storage engine handles access type
+Warnings:
+Note	1003	/* select#1 */ select `materialized_view_dcl_sequoiadb`.`mt1`.`a` AS `a`,`materialized_view_dcl_sequoiadb`.`mt1`.`b` AS `b` from ``.`` order by `materialized_view_dcl_sequoiadb`.`mt1`.`a`
+select * from v1 order by a;
+a	b
+3	3
+4	4
+5	5
+delete from mt1 where a = 5;
+select * from v1 order by a;
+a	b
+3	3
+4	4
+insert into mt1 values(6,6);
+ERROR 42000: INSERT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+update mt1 set b = 7 where a = 6;
+ERROR 42000: UPDATE command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+drop table t1,mt1;
+drop view v1;
+drop user materialized_view_dcl_user;
+drop database materialized_view_dcl_sequoiadb;

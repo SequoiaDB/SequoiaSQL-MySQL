@@ -1,0 +1,149 @@
+#seqDB-27770 #seqDB-27771 #seqDB-27772 #seqDB-27773 #seqDB-27774
+
+--source include/have_sequoiadb.inc
+
+--disable_warnings
+drop database if exists materialized_view_rename_sequoiadb;
+--enable_warnings
+create database materialized_view_rename_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_rename_sequoiadb;
+
+
+# seqDB-27770:重命名物化表，alter table rename
+
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+alter table mt1 rename to new_mt1;
+
+explain select * from v1;
+
+show create table new_mt1;
+show create table v1;
+
+create index idx on new_mt1(a);
+show create table new_mt1;
+insert into new_mt1 values(3,4,5,6);
+select * from new_mt1 order by a;
+
+drop table new_mt1;
+drop view v1;
+
+
+# seqDB-27771:重命名物化表，rename table … to
+
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+rename table mt1 to new_mt1;
+
+explain select * from v1;
+
+show create table new_mt1;
+show create table v1;
+
+create index idx on new_mt1(a);
+show create table new_mt1;
+insert into new_mt1 values(3,4,5,6);
+select * from new_mt1 order by a;
+
+drop table new_mt1;
+drop view v1;
+
+
+# seqDB-27772:同时重命名多个表，包含不同类型的表如物化表、表
+
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+
+# 表存在
+rename table mt1 to new_mt1, t1 to new_t1, v1 to new_v1;
+show create table new_mt1;
+show create table new_t1;
+show create table new_v1;
+
+# 表部分不存在:
+--error 1017
+rename table new_mt1 to mt1, new_t1 to t1, t3 to new_t3, new_v1 to v1;    
+
+# 表都不存在
+--error 1017
+rename table mt2 to new_mt2, t2 to new_t2, v2 to new_v2;
+
+rename table new_mt1 to mt1, new_t1 to t1, new_v1 to v1; 
+explain select * from v1;
+
+show create table mt1;
+show create table v1;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+
+drop table mt1;
+drop view v1;
+
+
+# seqDB-27773:重命名为已存在的物化表
+
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+
+create view v2 as select * from t1 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+
+--error 1050
+rename table mt1 to mt2;
+
+--error 1050
+alter table mt1 rename to mt2;
+
+explain select * from v1;
+
+show create table mt1;
+show create table v1;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+
+drop table mt1,mt2;
+drop view v1,v2;
+
+
+# seqDB-27774:循环重命名物化表
+
+create view v1 as select * from t1 where a < 3;
+create table mt5 as select * from v1 maintained by user enable query optimization;
+
+let $i = 5;
+let $j = 4;
+while ($j) {
+eval rename table mt$i to mt$j;
+eval show create table mt$j;
+
+dec $i;
+dec $j;
+}
+
+explain select * from v1;
+show create table mt1;
+show create table v1;
+
+create index idx on mt1(a);
+show create table mt1;
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+
+drop table mt1;
+drop view v1;
+
+
+drop database materialized_view_rename_sequoiadb;
+
+--source include/uninstall_sequoiadb.inc

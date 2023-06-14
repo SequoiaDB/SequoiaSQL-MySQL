@@ -1,0 +1,177 @@
+drop database if exists materialized_view_rename_sequoiadb;
+create database materialized_view_rename_sequoiadb default character set utf8mb4 collate utf8mb4_bin;
+use materialized_view_rename_sequoiadb;
+create table t1(a int, b int, c int,d int);
+insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+alter table mt1 rename to new_mt1;
+explain select * from v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	new_mt1	ALL	NULL	NULL	NULL	NULL	2	
+show create table new_mt1;
+Table	Create Table
+new_mt1	CREATE TABLE `new_mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where `t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_rename_sequoiadb`.`new_mt1`
+create index idx on new_mt1(a);
+show create table new_mt1;
+Table	Create Table
+new_mt1	CREATE TABLE `new_mt1` (
+  KEY `idx` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+insert into new_mt1 values(3,4,5,6);
+select * from new_mt1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+3	4	5	6
+drop table new_mt1;
+drop view v1;
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+rename table mt1 to new_mt1;
+explain select * from v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	new_mt1	ALL	NULL	NULL	NULL	NULL	2	
+show create table new_mt1;
+Table	Create Table
+new_mt1	CREATE TABLE `new_mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where `t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_rename_sequoiadb`.`new_mt1`
+create index idx on new_mt1(a);
+show create table new_mt1;
+Table	Create Table
+new_mt1	CREATE TABLE `new_mt1` (
+  KEY `idx` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+insert into new_mt1 values(3,4,5,6);
+select * from new_mt1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+3	4	5	6
+drop table new_mt1;
+drop view v1;
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+rename table mt1 to new_mt1, t1 to new_t1, v1 to new_v1;
+show create table new_mt1;
+Table	Create Table
+new_mt1	CREATE TABLE `new_mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`new_v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table new_t1;
+Table	Create Table
+new_t1	CREATE TABLE `new_t1` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT NULL,
+  `d` int(11) DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+show create table new_v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+new_v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `new_v1` AS select `materialized_view_rename_sequoiadb`.`t1`.`a` AS `a`,`materialized_view_rename_sequoiadb`.`t1`.`b` AS `b`,`materialized_view_rename_sequoiadb`.`t1`.`c` AS `c`,`materialized_view_rename_sequoiadb`.`t1`.`d` AS `d` from `t1` where `materialized_view_rename_sequoiadb`.`t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_rename_sequoiadb`.`new_mt1`
+Warnings:
+Warning	1356	View 'materialized_view_rename_sequoiadb.new_v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+rename table new_mt1 to mt1, new_t1 to t1, t3 to new_t3, new_v1 to v1;
+ERROR 42S02: Table 'materialized_view_rename_sequoiadb.t3' doesn't exist
+rename table mt2 to new_mt2, t2 to new_t2, v2 to new_v2;
+ERROR 42S02: Table 'materialized_view_rename_sequoiadb.mt2' doesn't exist
+rename table new_mt1 to mt1, new_t1 to t1, new_v1 to v1;
+explain select * from v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	2	
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where `t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_rename_sequoiadb`.`mt1`
+create index idx on mt1(a);
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` (
+  KEY `idx` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+3	4	5	6
+drop table mt1;
+drop view v1;
+create view v1 as select * from t1 where a < 3;
+create table mt1 as select * from v1 maintained by user enable query optimization;
+create view v2 as select * from t1 where a < 3;
+create table mt2 as select * from v2 maintained by user enable query optimization;
+rename table mt1 to mt2;
+ERROR 42S01: Table 'mt2' already exists
+alter table mt1 rename to mt2;
+ERROR 42S01: Table 'mt2' already exists
+explain select * from v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	2	
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where `t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_rename_sequoiadb`.`mt1`
+create index idx on mt1(a);
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` (
+  KEY `idx` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+3	4	5	6
+drop table mt1,mt2;
+drop view v1,v2;
+create view v1 as select * from t1 where a < 3;
+create table mt5 as select * from v1 maintained by user enable query optimization;
+rename table mt5 to mt4;
+show create table mt4;
+Table	Create Table
+mt4	CREATE TABLE `mt4` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+rename table mt4 to mt3;
+show create table mt3;
+Table	Create Table
+mt3	CREATE TABLE `mt3` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+rename table mt3 to mt2;
+show create table mt2;
+Table	Create Table
+mt2	CREATE TABLE `mt2` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+rename table mt2 to mt1;
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+explain select * from v1;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	mt1	ALL	NULL	NULL	NULL	NULL	2	
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+show create table v1;
+View	Create View	character_set_client	collation_connection	materialized query table
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b`,`t1`.`c` AS `c`,`t1`.`d` AS `d` from `t1` where `t1`.`a` < 3	latin1	latin1_swedish_ci	`materialized_view_rename_sequoiadb`.`mt1`
+create index idx on mt1(a);
+show create table mt1;
+Table	Create Table
+mt1	CREATE TABLE `mt1` (
+  KEY `idx` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_rename_sequoiadb`.`v1` MAINTAINED BY USER ENABLE QUERY OPTIMIZATION 
+insert into mt1 values(3,4,5,6);
+select * from mt1 order by a;
+a	b	c	d
+1	1	1	1
+2	2	2	2
+3	4	5	6
+drop table mt1;
+drop view v1;
+drop database materialized_view_rename_sequoiadb;
