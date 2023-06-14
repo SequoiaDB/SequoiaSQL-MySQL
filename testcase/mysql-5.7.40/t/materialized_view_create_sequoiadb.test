@@ -254,16 +254,18 @@ insert into mt1 values(3);
 select * from mt1 order by a;
 drop table mt1;
 
-create TABLESPACE `ts1` add datafile 'ts1.ibd' engine=innodb;
-create table mt1 TABLESPACE ts1 as select * from v1 maintained by user;
+create TABLESPACE `ts_create` add datafile 'ts_create.ibd' engine=innodb;
+create table mt1 TABLESPACE ts_create as select * from v1 maintained by user;
 show create table mt1;
 show create table v1;
 create index idx on mt1(a);
 show create table mt1;
 insert into mt1 values(3);
 select * from mt1 order by a;
+
 drop table mt1;
 drop view v1;
+drop tablespace ts_create engine=innodb;
 
 #seqDB-27708
 create view v1 as select * from t1 where a < 3;

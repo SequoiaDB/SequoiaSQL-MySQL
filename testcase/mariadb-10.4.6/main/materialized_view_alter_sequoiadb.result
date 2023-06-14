@@ -540,6 +540,12 @@ a	b	c	d
 6	6	6	6
 drop table t1,mt1,t2;
 drop view v1,v2;
+drop tablespace ts1 engine=innodb;
+Warnings:
+Warning	1478	Table storage engine 'InnoDB' does not support the create option 'TABLESPACE or LOGFILE GROUP'
+drop tablespace ts2 engine=innodb;
+Warnings:
+Warning	1478	Table storage engine 'InnoDB' does not support the create option 'TABLESPACE or LOGFILE GROUP'
 create table t1(a int, b int, c int,d int);
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
 create view v1 as select * from t1 where a < 3;

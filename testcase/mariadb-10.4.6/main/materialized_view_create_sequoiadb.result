@@ -496,10 +496,10 @@ a
 2
 3
 drop table mt1;
-create TABLESPACE `ts1` add datafile 'ts1.ibd' engine=innodb;
+create TABLESPACE `ts_create` add datafile 'ts_create.ibd' engine=innodb;
 Warnings:
 Warning	1478	Table storage engine 'InnoDB' does not support the create option 'TABLESPACE or LOGFILE GROUP'
-create table mt1 TABLESPACE ts1 as select * from v1 maintained by user;
+create table mt1 TABLESPACE ts_create as select * from v1 maintained by user;
 show create table mt1;
 Table	Create Table
 mt1	CREATE TABLE `mt1` ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_create_sequoiadb`.`v1` MAINTAINED BY USER DISABLE QUERY OPTIMIZATION 
@@ -519,6 +519,9 @@ a
 2
 3
 drop table mt1;
+drop tablespace ts_create engine=innodb;
+Warnings:
+Warning	1478	Table storage engine 'InnoDB' does not support the create option 'TABLESPACE or LOGFILE GROUP'
 create table t2 (a int not null);
 insert into t2 values(1),(2);
 create view v2 as select * from t2;

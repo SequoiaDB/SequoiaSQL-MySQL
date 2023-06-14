@@ -285,6 +285,8 @@ a	b	c	d
 2	2	2	2
 drop table t1,mt1;
 drop view v1;
+drop tablespace ts1 engine=innodb;
+drop tablespace ts2 engine=innodb;
 create table t1(a int, b int, c int,d int);
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5);
 create view v1 as select * from t1 where a < 3;

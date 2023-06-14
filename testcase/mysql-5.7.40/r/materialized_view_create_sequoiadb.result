@@ -490,11 +490,11 @@ a
 2
 3
 drop table mt1;
-create TABLESPACE `ts1` add datafile 'ts1.ibd' engine=innodb;
-create table mt1 TABLESPACE ts1 as select * from v1 maintained by user;
+create TABLESPACE `ts_create` add datafile 'ts_create.ibd' engine=innodb;
+create table mt1 TABLESPACE ts_create as select * from v1 maintained by user;
 show create table mt1;
 Table	Create Table
-mt1	CREATE TABLE `mt1` /*!50100 TABLESPACE `ts1` */ ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_create_sequoiadb`.`v1` MAINTAINED BY USER DISABLE QUERY OPTIMIZATION 
+mt1	CREATE TABLE `mt1` /*!50100 TABLESPACE `ts_create` */ ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_create_sequoiadb`.`v1` MAINTAINED BY USER DISABLE QUERY OPTIMIZATION 
 show create table v1;
 View	Create View	character_set_client	collation_connection	materialized query table
 v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a` from `t1` where (`t1`.`a` < 3)	latin1	latin1_swedish_ci	`materialized_view_create_sequoiadb`.`mt1`
@@ -503,7 +503,7 @@ show create table mt1;
 Table	Create Table
 mt1	CREATE TABLE `mt1`(
   KEY `idx` (`a`)
-) /*!50100 TABLESPACE `ts1` */ ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_create_sequoiadb`.`v1` MAINTAINED BY USER DISABLE QUERY OPTIMIZATION 
+) /*!50100 TABLESPACE `ts_create` */ ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AS SELECT * FROM `materialized_view_create_sequoiadb`.`v1` MAINTAINED BY USER DISABLE QUERY OPTIMIZATION 
 insert into mt1 values(3);
 select * from mt1 order by a;
 a
@@ -512,6 +512,7 @@ a
 3
 drop table mt1;
 drop view v1;
+drop tablespace ts_create engine=innodb;
 create view v1 as select * from t1 where a < 3;
 create table mt1 partition by hash(a) as select * from v1 maintained by user;
 show create table mt1;

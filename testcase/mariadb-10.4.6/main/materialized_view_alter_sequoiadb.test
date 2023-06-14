@@ -378,6 +378,8 @@ select * from mt1 order by a;
 
 drop table t1,mt1,t2;
 drop view v1,v2;
+drop tablespace ts1 engine=innodb;
+drop tablespace ts2 engine=innodb;
 
 #seqDB-27760 修改物化表DISABLE KEYS/ENABLE KEYS
 
