@@ -44,6 +44,8 @@
             <package name="com.sequoiasql.metadatasync.serial"/>
             <package name="com.sequoiasql.statsrefresh.serial"/>
             <package name="com.sequoiasql.recyclebin.serial"/>
+            <package name="com.sequoiasql.partition"/>
+            <package name="com.sequoiasql.sequoiadb"/>
         </packages>
     </test>
 
