@@ -508,7 +508,7 @@ drop view v1;
 #create function func_test() returns int
 #begin
 #   declare rc int default 0;
-#   select v1.b into rc from v1,t3 order by t3.b asc limit 1;
+#   select v1.b into rc from v1 where v1.a = 4;
 #   return rc;
 #end;
 #//

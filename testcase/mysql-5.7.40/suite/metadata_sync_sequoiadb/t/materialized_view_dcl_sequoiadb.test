@@ -28,8 +28,10 @@ connect ( conn3, $mysql_host1, 'materialized_view_dcl_user', 'materialized_view_
 connection conn3;
 
 use materialized_view_dcl_sequoiadb;
+--replace_regex /'@'.* for/'@'hostname' for/
 --error 1142
 explain select * from v1 order by a;
+--replace_regex /'@'.* for/'@'hostname' for/
 --error 1142
 select * from v1 order by a;
 
@@ -61,12 +63,16 @@ use materialized_view_dcl_sequoiadb;
 explain select * from v1 order by a;
 select * from v1 order by a;
 
+--replace_regex /'@'.* for/'@'hostname' for/
 --error 1142
 create index idx on mt1(a);
+--replace_regex /'@'.* for/'@'hostname' for/
 --error 1142
 show create table mt1;
+--replace_regex /'@'.* for/'@'hostname' for/
 --error 1142
 insert into mt1 values(6,6);
+--replace_regex /'@'.* for/'@'hostname' for/
 --error 1142
 select * from mt1 order by a;
 
@@ -96,8 +102,10 @@ select * from v1 order by a;
 delete from mt1 where a = 5;
 select * from v1 order by a;
 
+--replace_regex /'@'.* for/'@'hostname' for/
 --error 1142
 insert into mt1 values(6,6);
+--replace_regex /'@'.* for/'@'hostname' for/
 --error 1142
 update mt1 set b = 7 where a = 6;
 

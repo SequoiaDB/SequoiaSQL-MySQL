@@ -14,9 +14,9 @@ connect   conn3, $mysql_host1, 'materialized_view_dcl_user', 'materialized_view_
 connection conn3;
 use materialized_view_dcl_sequoiadb;
 explain select * from v1 order by a;
-ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'v1'
+ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'hostname' for table 'v1'
 select * from v1 order by a;
-ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'v1'
+ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'hostname' for table 'v1'
 create index idx on mt1(a);
 show create table mt1;
 Table	Create Table
@@ -51,13 +51,13 @@ a	b
 4	4
 5	5
 create index idx on mt1(a);
-ERROR 42000: INDEX command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+ERROR 42000: INDEX command denied to user 'materialized_view_dcl_user'@'hostname' for table 'mt1'
 show create table mt1;
-ERROR 42000: SHOW command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+ERROR 42000: SHOW command denied to user 'materialized_view_dcl_user'@'hostname' for table 'mt1'
 insert into mt1 values(6,6);
-ERROR 42000: INSERT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+ERROR 42000: INSERT command denied to user 'materialized_view_dcl_user'@'hostname' for table 'mt1'
 select * from mt1 order by a;
-ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+ERROR 42000: SELECT command denied to user 'materialized_view_dcl_user'@'hostname' for table 'mt1'
 connection conn1;
 drop table t1,mt1;
 drop view v1;
@@ -84,9 +84,9 @@ a	b
 3	3
 4	4
 insert into mt1 values(6,6);
-ERROR 42000: INSERT command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+ERROR 42000: INSERT command denied to user 'materialized_view_dcl_user'@'hostname' for table 'mt1'
 update mt1 set b = 7 where a = 6;
-ERROR 42000: UPDATE command denied to user 'materialized_view_dcl_user'@'u1604-wxm' for table 'mt1'
+ERROR 42000: UPDATE command denied to user 'materialized_view_dcl_user'@'hostname' for table 'mt1'
 connection conn1;
 drop table t1,mt1;
 drop view v1;
