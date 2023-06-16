@@ -30,6 +30,7 @@
 #   34    failed to check if instance group exists
 #   64    command line usage error
 #   77    permission denied
+#   78    fail to add rules in firewall
 
 export LC_TIME=C
 PORT=3306
@@ -50,6 +51,7 @@ INSTGROUPNAME_MAX_LENGTH="${#INSTGROUPNAME_FIELD}"     # 13
 INSTNAME_MAX_LENGTH="${#INSTNAME_FIELD}"               # 8
 SQLDATA_MAX_LENGTH="${#SQLDATA_FIELD}"                 # 7
 SQLLOG_MAX_LENGTH="${#SQLLOG_FIELD}"                   # 6
+LOAD_STATS=false
 
 function lack_para()
 {
@@ -747,6 +749,19 @@ function start_inst()
    local ret=$?
    test $ret -ne 0 && { return $ret; }
    
+   #block the specific port on firewall to ensure statistics collection for all tables in SequoiaDB.
+   if [ $LOAD_STATS == true ]; then
+     sudo iptables -C INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
+     ret=$?
+     if [ $ret != 0 ];then
+        sudo iptables -A INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
+        ret=$?
+        if [ $ret != 0 ];then
+          echo "Fail to add rules in firewall."
+          return 78
+        fi
+     fi
+   fi
    #start
    echo "Starting instance $inst ..."
    #exec_cmd_with_print "$BIN_PATH/mysqld_safe --defaults-file=$SQLDATA/auto.cnf >> $SQLLOG 2>&1 & " "$SQLLOG"
@@ -769,7 +784,7 @@ function start_inst()
       `cat $SQLLOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
    fi
    test $rc -ne 0 && { echo "ERROR: Fail to start, please verify log $SQLLOG" >&2 && return 16; }
-   
+
    #check
    for ((i=0; i<15; i++));
    do
@@ -779,7 +794,7 @@ function start_inst()
          break;
       fi
    done 
-   
+
    for ((i=0; i<15; i++));
    do
       check_svcname_available $inst_port $CTL_LOG true >> /dev/null
@@ -788,8 +803,25 @@ function start_inst()
       else
          break;
       fi
-   done 
-   
+   done
+
+   . "$CONF_INST_PATH/${inst}.conf"
+   local socket_file=`cat $SQLDATA/auto.cnf | grep "^\s*socket" |awk -F'[ =]' '{print $NF }'`
+   local cmd="$BIN_PATH/mysql --no-defaults -uroot -S $socket_file -e \
+              'SELECT * from information_schema.tables AS t LEFT JOIN information_schema.statistics AS s \
+               on t.TABLE_SCHEMA=s.TABLE_SCHEMA and t.TABLE_NAME=s.TABLE_NAME \
+               where t.engine=\"SequoiaDB\";'"
+   exec_cmd_with_print "$cmd" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Fail to collect SequoiaDB tables statistics, please verify log $CTL_LOG" >&2 && exit 19; }
+   #unblock the specific port on firewall
+   sudo iptables -C INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
+   ret=$?
+   while [ $ret == 0 ]; do
+      sudo iptables -D INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
+      sudo iptables -C INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
+      ret=$?
+   done
+
    get_one_status $inst >> /dev/null
    local ret=$?
 
@@ -1352,11 +1384,11 @@ function build_help()
                                                      [--sdb-conn-addr=ADDR] [--sdb-user USER] 
                                                      [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] [--sdb-token TOKEN]"
    echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
-   echo "  ${ME} start      <INSTNAME>                           [--print]"
-   echo "  ${ME} startall                                        [--print]"
+   echo "  ${ME} start      <INSTNAME> [--load-stats]            [--print]"
+   echo "  ${ME} startall   [--load-stats]                       [--print]"
    echo "  ${ME} stop       <INSTNAME> [--force]                 [--print]"
    echo "  ${ME} stopall    [--force]                            [--print]"
-   echo "  ${ME} restart    <INSTNAME>                           [--print]"
+   echo "  ${ME} restart    <INSTNAME> [--load-stats]            [--print]"
    echo "  ${ME} status     [INSTNAME]"
    echo "  ${ME} join       <INSTANCE> <-g INST_GROUP_NAME> [-k INST_GROUP_KEY] [--force]"
    echo "  ${ME} leave      <INSTANCE> <-g INST_GROUP_NAME> [--force]"
@@ -1390,6 +1422,7 @@ function build_help()
    echo "  --print                                         default: not print screen"
    echo "  --baklog                                        default: don't backup LOGFILE"
    echo "  --force                                         perform enforcement actions"
+   echo "  --load-stats                                    Load statistics for all sequoiadb tables during mysqld startup"
    echo "  --sdb-conn-addr=ADDR                            SequoiaDB addresses,default:'localhost:11810'"
    echo "  --sdb-user=USER                                 SequoiaDB authentication user,default:''"
    echo "  --sdb-passwd=PASSWD                             SequoiaDB authentication password,default:''"
@@ -1433,7 +1466,7 @@ function build_help()
 #Parse command line parameters
 test $# -eq 0 && { build_help && exit 64; }
 
-ARGS=`getopt -o hvD:l:p:P:s:f:e:a:w:g:k: --long help,version,print,baklog,force,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-enable-mapping:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log:,optimizer-limit-pushdown-threshold: -n "${ME}" -- "$@"`
+ARGS=`getopt -o hvD:l:p:P:s:f:e:a:w:g:k: --long help,version,print,baklog,force,load-stats,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-enable-mapping:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log:,optimizer-limit-pushdown-threshold: -n "${ME}" -- "$@"`
 ret=$?
 test $ret -ne 0 && exit $ret
 
@@ -1501,6 +1534,9 @@ do
       -e )                                    LOG_ERROR_VERBOSITY=$2
                                               check_num_para "LOG-ERROR-VERBOSITY" "$LOG_ERROR_VERBOSITY"
                                               shift 2
+                                              ;;
+      --load-stats )                          LOAD_STATS=true
+                                              shift
                                               ;;
       --print )                               NEED_PRINTSCREEN=true
                                               shift
