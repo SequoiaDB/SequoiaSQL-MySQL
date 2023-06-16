@@ -241,6 +241,8 @@ typedef struct st_pending_log_replay_thread {
   bool is_created;
 } ha_pending_log_replay_thread;
 
+uint ha_sql_log_check_interval();
+uint ha_pending_log_check_interval();
 bool ha_is_open();
 bool ha_is_aborting();
 bool ha_is_ddl_playback_sync_point_enabled();

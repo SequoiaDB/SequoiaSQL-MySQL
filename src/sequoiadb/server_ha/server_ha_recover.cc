@@ -44,6 +44,10 @@
 #define HA_STMT_SHOW_TABLES "SHOW FULL TABLES FROM "
 #define HA_STMT_DROP_UDF_FUNC "DELETE FROM mysql.func"
 
+PSI_stage_info stage_checking_sql_log = {0, "Checking SQL log", 0};
+PSI_stage_info stage_checking_pending_log = {0, "Checking pending log", 0};
+PSI_stage_info stage_sleeping = {0, "Sleeping", 0};
+
 // instance group user name
 static char ha_inst_group_user[HA_MAX_MYSQL_USERNAME_LEN + 1] = {0};
 // local host IP, it's same with 'bind_address' if 'bind_address' is set,
@@ -1551,7 +1555,6 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                                 Sdb_conn &sdb_conn) {
   // replay limit every time
   static const int REPLAY_LIMIT = 100;
-  static const int SLEEP_SECONDS = 2;
   static const int MAX_TRY_COUNT = 3;
 
   int rc = 0;
@@ -1639,6 +1642,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
   while (!abort_loop) {
     curr_executed = 0;
     builder.reset();
+    THD_STAGE_INFO(thd, stage_checking_sql_log);
 
     {
       bson::BSONObjBuilder sub_builder(builder.subobjStart(HA_FIELD_SQL_ID));
@@ -1968,7 +1972,9 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
     }
     da->reset_diagnostics_area();
     if (curr_executed < REPLAY_LIMIT) {
-      sdb_set_clock_time(abstime, SLEEP_SECONDS);
+      thd->set_time();
+      THD_STAGE_INFO(thd, stage_sleeping);
+      sdb_set_clock_time_msec(abstime, ha_sql_log_check_interval());
       rc = mysql_cond_timedwait(&ha_thread->replay_stopped_cond,
                                 &ha_thread->replay_stopped_mutex, &abstime);
       DBUG_ASSERT(rc == 0 || rc == ETIMEDOUT);
@@ -2354,7 +2360,6 @@ void *ha_replay_pending_logs(void *arg) {
   bson::BSONObj order_by, result, cond, check_again_result;
   static const int REPLAY_PENDING_LOG_LIMIT = 100;
   static const int WAIT_PENDING_LOG_TIMEOUT = 30;
-  static const int CHECK_TIMEOUT = 60;
   static const int WAIT_RECOVER_TIMEOUT = 60;
   char err_buff[HA_BUF_LEN] = {0};
   longlong sleep_seconds = 0;
@@ -2404,10 +2409,19 @@ void *ha_replay_pending_logs(void *arg) {
   stopped_mutex_locked = true;
   replayer->stopped = false;
   while (!abort_loop && !mysqld_failed) {
+    THD_STAGE_INFO(thd, stage_checking_pending_log);
     sdb_set_debug_log(thd, sdb_debug_log(NULL));
     SDB_LOG_DEBUG("HA: Check pending log");
     if (!(sdb_conn.is_valid() && sdb_conn.is_authenticated())) {
+      // Set isolation level of SDB connection reading pending log to 'RU'
+      // used to fix SEQUOIASQLMAINSTREAM-1900
+      enum_tx_isolation saved_isolation_level = thd->tx_isolation;
+      ulong saved_thd_vars_isolation_level = thd->variables.tx_isolation;
+      thd->tx_isolation = ISO_READ_UNCOMMITTED;
+      thd->variables.tx_isolation = (ulong)ISO_READ_UNCOMMITTED;
       rc = sdb_conn.connect();
+      thd->tx_isolation = saved_isolation_level;
+      thd->variables.tx_isolation = (ulong)saved_thd_vars_isolation_level;
       if (rc) {
         SDB_LOG_ERROR("HA: Failed to connect sequoiadb, error code: %d", rc);
         goto sleep_secs;
@@ -2503,7 +2517,9 @@ void *ha_replay_pending_logs(void *arg) {
   sleep_secs:
     pending_log_cl.close();
     check_again_cl.close();
-    sdb_set_clock_time(abstime, CHECK_TIMEOUT);
+    thd->set_time();
+    THD_STAGE_INFO(thd, stage_sleeping);
+    sdb_set_clock_time_msec(abstime, ha_pending_log_check_interval());
     rc = mysql_cond_timedwait(&replayer->stopped_cond, &replayer->stopped_mutex,
                               &abstime);
     DBUG_ASSERT(rc == 0 || rc == ETIMEDOUT);

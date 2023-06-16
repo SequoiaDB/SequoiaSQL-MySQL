@@ -1329,6 +1329,19 @@ void sdb_set_clock_time(struct timespec &abstime, ulonglong sec) {
   abstime.tv_sec += sec;
 }
 
+void sdb_set_clock_time_msec(struct timespec &abstime, ulonglong msec) {
+  if (clock_gettime(CLOCK_MONOTONIC, &abstime)) {
+    DBUG_ASSERT(0);
+  }
+  const uint64_t increased = abstime.tv_nsec + msec * 1000 * 1000;
+  if ((increased >= 1000 * 1000 * 1000)) {
+    abstime.tv_sec += increased / (1000 * 1000 * 1000);
+    abstime.tv_nsec = increased % (1000 * 1000 * 1000);
+  } else {
+    abstime.tv_nsec = increased;
+  }
+}
+
 static bool sdb_collation_same(const CHARSET_INFO *cs1,
                                const CHARSET_INFO *cs2) {
   return ((cs1 == cs2) || 0 == strcmp(cs1->name, cs2->name));

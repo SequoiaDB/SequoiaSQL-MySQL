@@ -149,6 +149,8 @@ bool sdb_prefer_inst_mode_is_valid(const char *s);
 
 void sdb_set_clock_time(struct timespec &abstime, ulonglong sec);
 
+void sdb_set_clock_time_msec(struct timespec &abstime, ulonglong msec);
+
 int sdb_check_collation(THD *thd, Field *field);
 
 bool sdb_is_supported_charset(const CHARSET_INFO *cs1);

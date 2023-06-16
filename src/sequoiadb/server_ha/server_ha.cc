@@ -67,6 +67,9 @@ static my_bool ha_enable_full_recovery_sync_point = FALSE;
 static char ha_data_group_name[SDB_RG_NAME_MAX_SIZE + 1] = {0};
 static char *ha_data_group_name_ptr = ha_data_group_name;
 
+static uint sql_log_check_interval = 2000;
+static uint pending_log_check_interval = 60000;
+
 static MYSQL_SYSVAR_STR(inst_group_name, ha_inst_group_name,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC |
                             PLUGIN_VAR_READONLY,
@@ -119,6 +122,17 @@ static MYSQL_SYSVAR_BOOL(enable_full_recover_sync_point,
                          "(Default: OFF)"
                          /* 启用全量同步流程同步测试点。*/,
                          NULL, NULL, FALSE);
+static MYSQL_SYSVAR_UINT(
+    sql_log_check_interval, sql_log_check_interval, PLUGIN_VAR_OPCMDARG,
+    "Time interval for checking and executing SQL log. (Default: 2000)"
+    /*检查并执行未回放的 SQL 日志的时间间隔[0, 60000]，单位：ms。*/,
+    NULL, NULL, 2000, 0, 60000, 0);
+
+static MYSQL_SYSVAR_UINT(
+    pending_log_check_interval, pending_log_check_interval, PLUGIN_VAR_OPCMDARG,
+    "Time interval for checking and executing pending log. (Default: 60000)"
+    /*检查并执行未删除的恢复日志的时间间隔[0, 3600000]，单位：ms。*/,
+    NULL, NULL, 60000, 0, 3600000, 0);
 
 struct st_mysql_sys_var *ha_sys_vars[] = {
     MYSQL_SYSVAR(inst_group_name),
@@ -128,6 +142,8 @@ struct st_mysql_sys_var *ha_sys_vars[] = {
     MYSQL_SYSVAR(wait_sync_timeout),
     MYSQL_SYSVAR(enable_ddl_playback_sync_point),
     MYSQL_SYSVAR(enable_full_recover_sync_point),
+    MYSQL_SYSVAR(sql_log_check_interval),
+    MYSQL_SYSVAR(pending_log_check_interval),
     NULL};
 
 static struct st_mysql_show_var ha_status[] = {
@@ -137,6 +153,14 @@ static struct st_mysql_show_var ha_status[] = {
 
 static bool check_if_table_exists(THD *thd, TABLE_LIST *table);
 static bool is_pending_log_ignorable_error(THD *thd);
+
+uint ha_sql_log_check_interval() {
+  return sql_log_check_interval;
+}
+
+uint ha_pending_log_check_interval() {
+  return pending_log_check_interval;
+}
 
 bool ha_is_open() {
   return (ha_inst_group_name && 0 != strlen(ha_inst_group_name));
@@ -5019,6 +5043,17 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         goto error;
       }
 
+      // Remove pending log in HA transaction
+      rc = clear_pending_log(thd, sql_info);
+      if (0 != rc) {
+        SDB_LOG_ERROR(
+            "Failed to clear pending log before execute current DDL, rc: %d",
+            rc);
+        goto error;
+      }
+
+      DEBUG_SYNC(thd, "after_clear_pending_log");
+
       // simulate crash or error scenes after writing pending log
       if (SDB_ERROR_INJECT_CRASH("crash_after_writing_pending_log") ||
           SDB_ERROR_INJECT_ERROR("fail_after_writing_pending_log")) {
@@ -5113,13 +5148,6 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
 
         // if SQL statement executes successfully but failed to write
         // SQL log into sequoiadb
-        if (rc) {
-          sql_info->sdb_conn->rollback_transaction();
-          goto recover_state;
-        }
-
-        // clear pending log
-        rc = clear_pending_log(thd, sql_info);
         if (rc) {
           sql_info->sdb_conn->rollback_transaction();
           goto recover_state;
