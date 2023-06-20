@@ -3,6 +3,15 @@
 
 --source include/have_sequoiadb.inc
 
+--disable_warnings
+drop database if exists db_comment_sequoiadb;
+--enable_warnings
+
+create database db_comment_sequoiadb;
+drop database db_comment_sequoiadb;
+create database db_comment_sequoiadb;
+use db_comment_sequoiadb;
+
 CREATE TABLE t1(a INT, b TINYINT) comment="sequoiadb:{table_options:{ShardingKey:{a:1},ShardingType:\"hash\",Partition:1024,Compressed:true,CompressionType:\"lzw\",ReplSize:2,AutoSplit:true,AutoIndexId:true,EnsureShardingIndex:true,StrictDataMode:true}}";
 SHOW CREATE TABLE t1;
 INSERT INTO t1 VALUES (1, 1),(2, 2),(3, 3),(10, 10),(-1, -1);
@@ -294,4 +303,5 @@ SELECT * FROM range_tab ORDER BY id;
 SELECT * FROM hash_tab ORDER BY id;
 DROP TABLE range_tab,hash_tab;
 
+drop database db_comment_sequoiadb;
 --source include/uninstall_sequoiadb.inc
