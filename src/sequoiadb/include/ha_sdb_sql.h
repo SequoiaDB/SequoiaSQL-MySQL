@@ -454,6 +454,8 @@ int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
 
 uint sdb_aes_get_size(enum my_aes_mode mode, uint slen);
 
+int sdb_time_string_to_second(THD *thd, const char *str, time_t &seconds);
+
 bool sdb_datetime_to_timeval(THD *thd, const MYSQL_TIME *ltime,
                              struct timeval *tm, int *error_code);
 
