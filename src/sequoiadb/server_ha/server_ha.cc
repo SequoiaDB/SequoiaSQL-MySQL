@@ -5778,8 +5778,9 @@ static int upgrade_config_table() {
   HA_RC_CHECK(rc, error, "Failed to connect SequoiaDB, error: %s",
               ha_error_string(sdb_conn, rc, err_buf));
 
-  rc = sdb_conn.get_cl(ha_thread.sdb_group_name, HA_CONFIG_CL, config_cl);
-  HA_RC_CHECK(rc, error, "Failed to get '%s', error: %s", HA_CONFIG_CL,
+  rc = sdb_conn.get_cl(ha_thread.sdb_group_name, HA_CONFIG_CL, config_cl, true);
+  HA_RC_CHECK(rc, error, "Failed to get '%s.%s', error: %s",
+              ha_thread.sdb_group_name, HA_CONFIG_CL,
               ha_error_string(sdb_conn, rc, err_buf));
 
   rc = config_cl.get_index(HA_CONFIG_CONFIG_TYPE_INDEX, index_info);
