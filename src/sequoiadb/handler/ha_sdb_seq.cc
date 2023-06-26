@@ -226,7 +226,11 @@ error:
   goto done;
 }
 
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
 int ha_sdb_seq::write_row(uchar *buf) {
+#elif defined IS_MARIADB
+int ha_sdb_seq::write_row(const uchar *buf) {
+#endif
   int rc = 0;
   Sdb_conn *conn = NULL;
   bool created_cs = false;
@@ -314,10 +318,10 @@ int ha_sdb_seq::insert_into_sequence() {
   longlong reserved_until = -1;
   bson::BSONObj options;
   bson::BSONObjBuilder builder;
-  my_bitmap_map *old_map = NULL;
+  MY_BITMAP *old_map = NULL;
   SEQUENCE *seq = table->s->sequence;
 
-  old_map = dbug_tmp_use_all_columns(table, table->read_set);
+  old_map = sdb_dbug_tmp_use_all_columns(table, &table->read_set);
 
   reserved_until = table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->val_int();
   increment = table->field[SEQUENCE_FIELD_INCREMENT]->val_int();
@@ -365,7 +369,7 @@ int ha_sdb_seq::insert_into_sequence() {
   }
 
 done:
-  dbug_tmp_restore_column_map(table->read_set, old_map);
+  sdb_dbug_tmp_restore_column_map(&table->read_set, old_map);
   return rc;
 error:
   goto done;
@@ -564,7 +568,7 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
   longlong increment = 0;
   longlong current_value = 0;
   Sdb_conn *conn = NULL;
-  my_bitmap_map *old_map = NULL;
+  MY_BITMAP *old_map = NULL;
   bson::BSONObj obj;
   bson::BSONObj condition;
   bson::BSONObj selected;
@@ -622,7 +626,7 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
       }
     }
 
-    old_map = dbug_tmp_use_all_columns(table, table->write_set);
+    old_map = sdb_dbug_tmp_use_all_columns(table, &table->write_set);
     /* zero possible delete markers & null bits */
     memcpy(table->record[0], table->s->default_values, table->s->null_bytes);
     {
@@ -662,7 +666,7 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
       }
       table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->store(current_value, false);
     }
-    dbug_tmp_restore_column_map(table->write_set, old_map);
+    sdb_dbug_tmp_restore_column_map(&table->write_set, old_map);
   }
   SDB_EXCEPTION_CATCHER(rc,
                         "Failed to move to nex rnd table:%s.%s, exception:%s",

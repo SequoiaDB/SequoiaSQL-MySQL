@@ -48,7 +48,11 @@ class ha_spark : public handler {
   }
   int open(const char *name, int mode, uint test_if_locked);  // required
   int close(void);                                            // required
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
   int write_row(uchar *buf);
+#elif defined IS_MARIADB
+  int write_row(const uchar *buf);
+#endif
   int update_row(const uchar *old_data, uchar *new_data);
   int update_row(const uchar *old_data, const uchar *new_data);
   int delete_row(const uchar *buf);

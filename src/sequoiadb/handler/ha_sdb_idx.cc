@@ -663,14 +663,14 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
   const uchar *key_ptr;
   uint remainder, length;
   const key_range *ranges[2] = {start_key, end_key};
-  my_bitmap_map *old_map;
+  MY_BITMAP *old_map;
   bson::BSONObjBuilder builder[2];
 
   if (start_key == NULL && end_key == NULL) {
     return rc;
   }
 
-  old_map = dbug_tmp_use_all_columns(table, table->read_set);
+  old_map = sdb_dbug_tmp_use_all_columns(table, &table->read_set);
   try {
     for (uint i = 0; i <= 1; i++) {
       const KEY_PART_INFO *key_part;
@@ -761,7 +761,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             if (0 != rc) {
               SDB_LOG_ERROR(
                   "Failed to create condition for key:%s, table:%s, rc:%d",
-                  key_info->name, *key_part->field->table_name, rc);
+                  sdb_key_name(key_info), *key_part->field->table_name, rc);
               goto error;
             }
             break;
@@ -791,7 +791,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
               if (0 != rc) {
                 SDB_LOG_ERROR(
                     "Failed to create condition for key:%s, table:%s, rc:%d",
-                    key_info->name, *key_part->field->table_name, rc);
+                    sdb_key_name(key_info), *key_part->field->table_name, rc);
                 goto error;
               }
               break;
@@ -805,7 +805,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             if (0 != rc) {
               SDB_LOG_ERROR(
                   "Failed to create condition for key:%s, table:%s, rc:%d",
-                  key_info->name, *key_part->field->table_name, rc);
+                  sdb_key_name(key_info), *key_part->field->table_name, rc);
               goto error;
             }
             break;
@@ -819,7 +819,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
               if (0 != rc) {
                 SDB_LOG_ERROR(
                     "Failed to create condition for key:%s, table:%s, rc:%d",
-                    key_info->name, *key_part->field->table_name, rc);
+                    sdb_key_name(key_info), *key_part->field->table_name, rc);
                 goto error;
               }
               break;
@@ -835,7 +835,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             if (0 != rc) {
               SDB_LOG_ERROR(
                   "Failed to create condition for key:%s, table:%s, rc:%d",
-                  key_info->name, *key_part->field->table_name, rc);
+                  sdb_key_name(key_info), *key_part->field->table_name, rc);
               goto error;
             }
             break;
@@ -856,7 +856,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
         key_ptr += store_length;
       }
     }
-    dbug_tmp_restore_column_map(table->read_set, old_map);
+    sdb_dbug_tmp_restore_column_map(&table->read_set, old_map);
     start_cond = builder[0].obj();
     end_cond = builder[1].obj();
   }
@@ -868,7 +868,7 @@ done:
   return rc;
 
 error:
-  dbug_tmp_restore_column_map(table->read_set, old_map);
+  sdb_dbug_tmp_restore_column_map(&table->read_set, old_map);
   convert_sdb_code(rc);
   goto done;
 }
@@ -1069,14 +1069,14 @@ int sdb_fill_mcv_stat(const KEY *key_info, const bson::BSONObj &frac_obj,
   TABLE *table = key_info->table;
   bson::BSONObjIterator frac_it(frac_obj);
   bson::BSONObjIterator values_it(values_obj);
-  my_bitmap_map *org_bitmap[2] = {NULL, NULL};
+  MY_BITMAP *org_bitmap[2] = {NULL, NULL};
   enum_check_fields org_check_field_status = CHECK_FIELD_IGNORE;
   uint i = 0;
   uchar *tmp_buffer = NULL;
   uint total_str_field_len = 0;
 
-  dbug_tmp_use_all_columns(table, org_bitmap, table->read_set,
-                           table->write_set);
+  sdb_dbug_tmp_use_all_columns(table, org_bitmap, &table->read_set,
+                               &table->write_set);
   org_check_field_status = table->in_use->count_cuted_fields;
   table->in_use->count_cuted_fields = CHECK_FIELD_IGNORE;
 
@@ -1173,7 +1173,7 @@ done:
   if (tmp_buffer) {
     free(tmp_buffer);
   }
-  dbug_tmp_restore_column_maps(table->read_set, table->write_set, org_bitmap);
+  sdb_dbug_tmp_restore_column_maps(&table->read_set, &table->write_set, org_bitmap);
   table->in_use->count_cuted_fields = org_check_field_status;
   return rc;
 error:
@@ -1368,11 +1368,11 @@ ha_rows Sdb_match_cnt_estimator::eval_mcv() {
   const uchar *end_key_ptr = NULL;
   uint start_key_len = 0;
   uint end_key_len = 0;
-  my_bitmap_map *org_bitmap = NULL;
+  MY_BITMAP *org_bitmap = NULL;
   TABLE *table = m_key_info->table;
   double selectivity = 1.0;
 
-  org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
+  org_bitmap = sdb_dbug_tmp_use_all_columns(table, &table->write_set);
 
   if (0 == m_total_records) {
     DBUG_PRINT("info", ("no records in table"));
@@ -1419,7 +1419,7 @@ ha_rows Sdb_match_cnt_estimator::eval_mcv() {
   records =
       MAX(MIN_MATCH_COUNT, (ulonglong)((selectivity * m_total_records) + 0.5));
 done:
-  dbug_tmp_restore_column_map(table->write_set, org_bitmap);
+  sdb_dbug_tmp_restore_column_map(&table->write_set, org_bitmap);
   DBUG_PRINT("exit", ("Records: %lld", records));
   DBUG_RETURN(records);
 }
@@ -1986,10 +1986,10 @@ double Sdb_match_cnt_estimator::get_key_part_val(const KEY_PART_INFO *key_part,
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   const uchar *old_ptr = field->ptr;
-  my_bitmap_map *old_map = NULL;
+  MY_BITMAP *old_map = NULL;
 
   field->ptr = (uchar *)new_ptr;
-  old_map = dbug_tmp_use_all_columns(field->table, field->table->read_set);
+  old_map = sdb_dbug_tmp_use_all_columns(field->table, &field->table->read_set);
 
   switch (field->real_type()) {
     case MYSQL_TYPE_TINY:
@@ -2098,7 +2098,7 @@ double Sdb_match_cnt_estimator::get_key_part_val(const KEY_PART_INFO *key_part,
     default: { DBUG_ASSERT(false); }
   }
 
-  dbug_tmp_restore_column_map(field->table->read_set, old_map);
+  sdb_dbug_tmp_restore_column_map(&field->table->read_set, old_map);
   field->ptr = (uchar *)old_ptr;
   return value;
 }

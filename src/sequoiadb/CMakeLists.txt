@@ -78,14 +78,6 @@ if(SDB_BUILT_IN)
   endif()
   message(STATUS "Using SequoiaDB dynamic library: ${SDB_DYNAMIC_LIBRARY}")
 
-  mysql_add_plugin(sequoiadb
-                   ${SEQUOIADB_SOURCES}
-                   STORAGE_ENGINE
-                   MANDATORY
-                   RECOMPILE_FOR_EMBEDDED
-                   LINK_LIBRARIES
-                   ${SDB_DYNAMIC_LIBRARY})
-
   add_compile_options(-Wno-unused-variable -Wno-unused-function -Wno-write-strings -Wno-return-type)
   mysql_add_plugin(server_ha
                    ${SERVER_HA_FILES}
@@ -93,6 +85,20 @@ if(SDB_BUILT_IN)
                    LINK_LIBRARIES
                    ${SDB_DYNAMIC_LIBRARY}
                    RECOMPILE_FOR_EMBEDDED)
+  if(SDB_PROJECT_TYPE STREQUAL "mysql")
+    add_compile_options(-DIS_MYSQL)
+  else()
+    add_compile_options(-DIS_MARIADB)
+  endif()
+  mysql_add_plugin(sequoiadb
+                   ${SEQUOIADB_SOURCES}
+                   STORAGE_ENGINE
+                   MANDATORY
+                   RECOMPILE_FOR_EMBEDDED
+                   LINK_LIBRARIES
+                   ${SDB_DYNAMIC_LIBRARY})
+  add_compile_options(-Wno-unused-variable -Wno-unused-function -Wno-write-strings -Wno-return-type)
+
   string(FIND "${WITH_MYSQLD_LDFLAGS}" "${SDB_LDFLAGS}" POS)
   if(${POS} EQUAL -1)
     set(WITH_MYSQLD_LDFLAGS "${WITH_MYSQLD_LDFLAGS} ${SDB_LDFLAGS}"

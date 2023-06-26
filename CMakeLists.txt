@@ -77,7 +77,8 @@ function(prepare_sql_source sql_source_root sql_name)
                WORKING_DIRECTORY "${sql_source_root}"
                RESULT_VARIABLE tar_result
             )
-            IF (MYSQL AND (SQL_VERSION STREQUAL "5.7.40" OR SQL_VERSION STREQUAL "5.7.42"))
+            IF ((MYSQL AND (SQL_VERSION STREQUAL "5.7.40" OR SQL_VERSION STREQUAL "5.7.42"))
+		OR (MARIADB AND SQL_VERSION STREQUAL "10.4.28"))
                set(MYSQL_SRC_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}-3.4")
             ELSE()
                set(MYSQL_SRC_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}-3.4.4")
@@ -99,7 +100,8 @@ function(prepare_sql_source sql_source_root sql_name)
             WORKING_DIRECTORY "${sql_source_root}"
             RESULT_VARIABLE tar_result
          )
-         IF (MYSQL AND (SQL_VERSION STREQUAL "5.7.40" OR SQL_VERSION STREQUAL "5.7.42"))
+         IF ((MYSQL AND (SQL_VERSION STREQUAL "5.7.40" OR SQL_VERSION STREQUAL "5.7.42"))
+	     OR (MARIADB AND SQL_VERSION STREQUAL "10.4.28"))
             set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}-3.4")
          ELSE()
             set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}-3.4.4")

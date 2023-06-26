@@ -117,6 +117,83 @@ error:
 }
 #endif
 
+
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
+/*
+  The following bitmap code addresses compatibility issues between MySQL and
+  MariaDB, where MySQL is implemented as a reference to mariadb.
+  After analysis, it is found that MySQL does not store complete MY_BITMAP,
+  which may lead to unknown problems.
+*/
+static MY_BITMAP *sdb_tmp_use_all_columns(TABLE *table, MY_BITMAP **bitmap) {
+  MY_BITMAP *old= *bitmap;
+  *bitmap= &table->s->all_set;
+  return old;
+}
+
+MY_BITMAP *sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **bitmap) {
+#ifndef NDEBUG
+  if (!table || !bitmap)
+    return 0;
+  return sdb_tmp_use_all_columns(table, bitmap);
+#else
+  return 0;
+#endif
+}
+
+void sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **save,
+                                      MY_BITMAP **read_set, MY_BITMAP **write_set) {
+#ifndef NDEBUG
+  if (!table || !save || !read_set || !write_set)
+    return;
+  save[0] = *read_set;
+  save[1] = *write_set;
+  (void) sdb_tmp_use_all_columns(table, read_set);
+  (void) sdb_tmp_use_all_columns(table, write_set);
+#endif
+}
+
+static void sdb_tmp_restore_column_map(MY_BITMAP **bitmap, MY_BITMAP *old) {
+  *bitmap = old;
+}
+
+void sdb_dbug_tmp_restore_column_map(MY_BITMAP **bitmap, MY_BITMAP *old) {
+#ifndef NDEBUG
+  if (!bitmap)
+    return;
+  sdb_tmp_restore_column_map(bitmap, old);
+#endif
+}
+
+void sdb_dbug_tmp_restore_column_maps(MY_BITMAP **read_set, MY_BITMAP **write_set,
+                                      MY_BITMAP **old) {
+#ifndef NDEBUG
+  if (!read_set || !write_set || !old)
+    return;
+  sdb_tmp_restore_column_map(read_set, old[0]);
+  sdb_tmp_restore_column_map(write_set, old[1]);
+#endif
+}
+#elif defined IS_MARIADB
+MY_BITMAP *sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **bitmap) {
+  return dbug_tmp_use_all_columns(table, bitmap);
+}
+
+void sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **save,
+                                  MY_BITMAP **read_set, MY_BITMAP **write_set) {
+  dbug_tmp_use_all_columns(table, save, read_set, write_set);
+}
+
+void sdb_dbug_tmp_restore_column_map(MY_BITMAP **bitmap, MY_BITMAP *old) {
+  dbug_tmp_restore_column_map(bitmap, old);
+}
+
+void sdb_dbug_tmp_restore_column_maps(MY_BITMAP **read_set, MY_BITMAP **write_set,
+                                      MY_BITMAP **old) {
+  dbug_tmp_restore_column_maps(read_set, write_set, old);
+}
+#endif
+
 #if defined IS_MYSQL
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -902,6 +979,7 @@ bool sdb_field_default_values_is_null(const Create_field *definition) {
 my_thread_id sdb_thread_id(THD *thd) {
   return thd->thread_id();
 }
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1364,7 +1442,11 @@ bool sdb_field_has_update_def_func(const Field *field) {
 }
 
 Field *sdb_field_clone(Field *field, MEM_ROOT *root) {
+#if defined MYSQL_VERSION_ID == 100406
   return field->clone(root, (my_ptrdiff_t)0);
+#else
+  return field->clone(root, NULL, (my_ptrdiff_t)0);
+#endif
 }
 
 bool sdb_is_insert_into_on_duplicate(THD *thd) {

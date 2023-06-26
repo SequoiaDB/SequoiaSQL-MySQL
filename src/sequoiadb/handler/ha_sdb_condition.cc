@@ -536,11 +536,11 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
             break;
           }
           TABLE *table = item_fld->field->table;
-          my_bitmap_map *old_write_map =
-              dbug_tmp_use_all_columns(table, table->write_set);
+          MY_BITMAP *old_write_map =
+              sdb_dbug_tmp_use_all_columns(table, &table->write_set);
           bitmap_set_bit(table->write_set, item_fld->field->field_index);
           item_fld->field->store(0);
-          dbug_tmp_restore_column_map(table->write_set, old_write_map);
+          sdb_dbug_tmp_restore_column_map(&table->write_set, old_write_map);
           if (item_fld->field->is_null()) {
             item_fld->field->set_notnull();
           }

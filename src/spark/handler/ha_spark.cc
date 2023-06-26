@@ -149,7 +149,11 @@ int ha_spark::close(void) {
   DBUG_RETURN(0);
 }
 
-int ha_spark::write_row(uchar *buf) {
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406) 
+  int ha_spark::write_row(uchar *buf) {
+#elif defined IS_MARIADB
+  int ha_spark::write_row(const uchar *buf) {
+#endif
   DBUG_ENTER("ha_spark::write_row");
   DBUG_RETURN(0);
 }
@@ -286,7 +290,11 @@ int ha_spark::convert_row_to_mysql_row(uchar *record) {
   SQLCHAR col_name[MAX_NAME_LEN + 1] = {0};
 
   my_bool is_select = (SQLCOM_SELECT == thd_sql_command(ha_thd()));
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
   my_bitmap_map *org_bitmap = NULL;
+#elif defined IS_MARIADB
+  MY_BITMAP *org_bitmap = NULL;
+#endif
   /*Reset record fields NULL bit flag.*/
   memset(record, 0, table->s->null_bytes);
 
@@ -296,7 +304,11 @@ int ha_spark::convert_row_to_mysql_row(uchar *record) {
   }
 
   if (!is_select || table->write_set != table->read_set) {
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
     org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
+#elif defined IS_MARIADB
+    org_bitmap = dbug_tmp_use_all_columns(table, &table->write_set);
+#endif
   }
 
   ret = SQLNumResultCols(m_stmt, &n_columns);
@@ -522,7 +534,11 @@ int ha_spark::convert_row_to_mysql_row(uchar *record) {
   }
 done:
   if (!is_select || table->write_set != table->read_set) {
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
     dbug_tmp_restore_column_map(table->write_set, org_bitmap);
+#elif defined IS_MARIADB
+    dbug_tmp_restore_column_map(&table->write_set, org_bitmap);
+#endif
   }
   return ret;
 error:

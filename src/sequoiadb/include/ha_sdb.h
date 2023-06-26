@@ -288,7 +288,11 @@ class ha_sdb : public handler {
     We implement this in ha_example.cc. It's not an obligatory method;
     skip it and and MySQL will treat it as not implemented.
   */
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
   int write_row(uchar *buf);
+#elif defined  IS_MARIADB
+  int write_row(const uchar *buf);
+#endif
 
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;

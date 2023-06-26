@@ -220,9 +220,15 @@ int sdb_append_bound_cond(enum_sdb_bound_type type, partition_info *part_info,
       while (pos++ <= part_id) {
         part_elem = part_it++;
       }
+#if MYSQL_VERSION_ID == 100406
       if ((partition_element::HISTORY == part_elem->type() &&
            SDB_UP_BOUND == type) ||
           (partition_element::CURRENT == part_elem->type() &&
+#else
+      if ((partition_element::HISTORY == part_elem->type &&
+           SDB_UP_BOUND == type) ||
+          (partition_element::CURRENT == part_elem->type &&
+#endif
            SDB_LOW_BOUND == type)) {
         bson::BSONObjBuilder(sub_builder.subobjStart(sdb_field_name(field)))
             .appendTimestamp(matcher, END_TIMESTAMP.tv_sec * 1000,
@@ -645,7 +651,11 @@ error:
   goto done;
 }
 
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
 bool ha_sdb_part_wrapper::setup_engine_array(MEM_ROOT *mem_root) {
+#elif defined IS_MARIADB
+bool ha_sdb_part_wrapper::setup_engine_array(MEM_ROOT *mem_root, handlerton *first_engine) {
+#endif
   bool rs = false;
   if (create_handlers(mem_root)) {
     clear_handler_file();
@@ -1470,7 +1480,11 @@ void ha_sdb_part_wrapper::get_dynamic_partition_info(PARTITION_STATS *stat_info,
   stat_info->check_sum_null = stats.checksum_null;
 }
 
+#if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
 int ha_sdb_part_wrapper::write_row(uchar *buf) {
+#elif defined IS_MARIADB
+int ha_sdb_part_wrapper::write_row(const uchar *buf) {
+#endif
   int rc = 0;
   rc = m_file[0]->ha_write_row(buf);
   if (rc) {
@@ -1641,9 +1655,14 @@ int ha_sdb_part::get_sharding_key(partition_info *part_info,
       case VERSIONING_PARTITION: {
         // VERSIONING
         if (is_versioning_range_part) {
+#if MYSQL_VERSION_ID == 100406
           field_num = part_info->part_field_list.elements;
           for (uint i = 0; i < field_num; ++i) {
             field = part_info->part_field_array[i];
+#else
+          Field **part_fields = part_info->part_field_array;
+          while((field = *(part_fields++))) {
+#endif
             builder.append(sdb_field_name(field), 1);
           }
         } else {
@@ -1954,7 +1973,11 @@ int ha_sdb_part::get_attach_options(partition_info *part_info,
       DBUG_ASSERT(0 == part_info->vers_info->limit);
       DBUG_ASSERT(INTERVAL_LAST == part_info->vers_info->interval.type);
       const char *field_name = sdb_field_name(part_info->part_field_array[0]);
+#if MYSQL_VERSION_ID == 100406
       if (partition_element::HISTORY == part_elem->type()) {
+#else
+      if (partition_element::HISTORY == part_elem->type) {
+#endif
         bson::BSONObjBuilder(builder.subobjStart(SDB_FIELD_LOW_BOUND))
             .appendMinKey(field_name)
             .done();
@@ -1962,7 +1985,11 @@ int ha_sdb_part::get_attach_options(partition_info *part_info,
             .appendTimestamp(field_name, END_TIMESTAMP.tv_sec * 1000,
                              END_TIMESTAMP.tv_usec)
             .done();
+#if MYSQL_VERSION_ID == 100406
       } else if (partition_element::CURRENT == part_elem->type()) {
+#else
+      } else if (partition_element::CURRENT == part_elem->type) {
+#endif
         bson::BSONObjBuilder(builder.subobjStart(SDB_FIELD_LOW_BOUND))
             .appendTimestamp(field_name, END_TIMESTAMP.tv_sec * 1000,
                              END_TIMESTAMP.tv_usec)

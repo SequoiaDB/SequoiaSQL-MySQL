@@ -607,10 +607,10 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
             rc = HA_ERR_OUT_OF_MEM;
             break;
           }
-          my_bitmap_map *org_sets[2];
-          dbug_tmp_use_all_columns(converter->table, org_sets,
-                                   converter->table->read_set,
-                                   converter->table->write_set);
+          MY_BITMAP *org_sets[2];
+          sdb_dbug_tmp_use_all_columns(converter->table, org_sets,
+                                   &converter->table->read_set,
+                                   &converter->table->write_set);
           type_conversion_status status =
               converter->store(p_str->ptr(), p_str->length(), p_str->charset());
           if (TYPE_OK == status) {
@@ -622,8 +622,8 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
           } else {
             rc = SDB_ERR_COND_UNEXPECTED_ITEM;
           }
-          dbug_tmp_restore_column_maps(converter->table->read_set,
-                                       converter->table->write_set, org_sets);
+          sdb_dbug_tmp_restore_column_maps(&converter->table->read_set,
+                                       &converter->table->write_set, org_sets);
           delete converter;
           break;
         }
