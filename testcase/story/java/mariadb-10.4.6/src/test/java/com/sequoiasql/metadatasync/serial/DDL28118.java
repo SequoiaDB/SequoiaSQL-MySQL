@@ -108,8 +108,8 @@ public class DDL28118 extends MysqlTestBase {
         List< String > exp1 = new ArrayList<>();
         exp1.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `a` int(11) DEFAULT NULL,\n"
-                + "  `b` char(20) COLLATE utf8mb4_bin DEFAULT NULL,\n"
-                + "  `d` char(20) COLLATE utf8mb4_bin DEFAULT NULL\n"
+                + "  `b` char(20) DEFAULT NULL,\n"
+                + "  `d` char(20) DEFAULT NULL\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );
         Assert.assertEquals( act1, exp1 );
 

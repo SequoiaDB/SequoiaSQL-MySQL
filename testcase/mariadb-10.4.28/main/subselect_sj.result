@@ -1307,15 +1307,15 @@ x
 m
 c
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'x'
-Warning	1292	Truncated incorrect DOUBLE value: 'm'
-Warning	1292	Truncated incorrect DOUBLE value: 'c'
-Warning	1292	Truncated incorrect DOUBLE value: 'x'
-Warning	1292	Truncated incorrect DOUBLE value: 'm'
-Warning	1292	Truncated incorrect DOUBLE value: 'c'
-Warning	1292	Truncated incorrect DOUBLE value: 'x'
-Warning	1292	Truncated incorrect DOUBLE value: 'm'
-Warning	1292	Truncated incorrect DOUBLE value: 'c'
+Warning	1292	Truncated incorrect DECIMAL value: 'x'
+Warning	1292	Truncated incorrect DECIMAL value: 'm'
+Warning	1292	Truncated incorrect DECIMAL value: 'c'
+Warning	1292	Truncated incorrect DECIMAL value: 'x'
+Warning	1292	Truncated incorrect DECIMAL value: 'm'
+Warning	1292	Truncated incorrect DECIMAL value: 'c'
+Warning	1292	Truncated incorrect DECIMAL value: 'x'
+Warning	1292	Truncated incorrect DECIMAL value: 'm'
+Warning	1292	Truncated incorrect DECIMAL value: 'c'
 drop table t1,t2,t3,t4;
 #
 # BUG#751484: Valgrind warning / sporadic crash in evaluate_join_record sql_select.cc:14099 with semijoin
@@ -1631,8 +1631,8 @@ f1	f2	f3	f3
 4	0	0	0
 0	NULL	NULL	NULL
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'foo'
-Warning	1292	Truncated incorrect DOUBLE value: 'foo'
+Warning	1292	Truncated incorrect DECIMAL value: 'foo'
+Warning	1292	Truncated incorrect DECIMAL value: 'foo'
 DROP TABLE t1, t2, t3, t4;
 set @tmp803457=@@optimizer_switch;
 #

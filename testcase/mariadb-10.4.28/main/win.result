@@ -2880,7 +2880,7 @@ SHOW CREATE TABLE fv_result;
 Table	Create Table
 fv_result	CREATE TABLE `fv_result` (
   `somedate` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT * FROM fv_result;
 somedate
 2017-07-20 12:47:56

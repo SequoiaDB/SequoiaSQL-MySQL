@@ -1181,7 +1181,7 @@ select id from t1 where column_get(str,4 as char(100)) = repeat("a", 100);
 id
 5
 Warnings:
-Warning	1292	Truncated incorrect CHAR(100) value: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+Warning	1292	Truncated incorrect CHAR(100) value: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...'
 update t1 set str=column_add(str, 4, repeat("b", 10000)) where id=5;
 select id from t1 where column_get(str,4 as char(100000)) = repeat("b", 10000);
 id
@@ -1858,7 +1858,7 @@ t1	CREATE TABLE `t1` (
   `dyncol2_check` int(11) DEFAULT column_check(`dyncol2`),
   `dyncol1_list` text DEFAULT column_list(`dyncol1`),
   `dyncol1_json` text DEFAULT column_json(`dyncol1`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (name,value) VALUES ('name0', 'value0');
 SELECT value_dyncol0_name0, value_dyncol1_name1 FROM t1;
 value_dyncol0_name0	value_dyncol1_name1

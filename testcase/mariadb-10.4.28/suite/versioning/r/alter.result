@@ -10,7 +10,7 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t drop system versioning;
 ERROR HY000: Table `t` is not system-versioned
 alter table t add system versioning;
@@ -18,7 +18,7 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t add column y int;
 ERROR HY000: Not allowed for system-versioned `test_versioning_alter`.`t`. Change @@system_versioning_alter_history to proceed with ALTER.
 alter table t add primary key (a);
@@ -30,7 +30,7 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 set system_versioning_alter_history= keep;
 alter table t add system versioning;
 alter table t drop system versioning, drop column row_start;
@@ -54,7 +54,7 @@ add column trx_end timestamp(6) not null as row end invisible,
 add period for system_time(trx_start, trx_end),
 add system versioning;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'as row start invisible,
-add column trx_end timestamp(6) not null as row end invi' at line 2
+add column trx_end timestamp(6) not null as row end i...' at line 2
 alter table t
 add column trx_start timestamp(6) as row start invisible,
 add column trx_end timestamp(6) as row end invisible,
@@ -67,7 +67,7 @@ t	CREATE TABLE `t` (
   `trx_start` timestamp(6) GENERATED ALWAYS AS ROW START INVISIBLE,
   `trx_end` timestamp(6) GENERATED ALWAYS AS ROW END INVISIBLE,
   PERIOD FOR SYSTEM_TIME (`trx_start`, `trx_end`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t drop system versioning;
 ERROR HY000: Wrong parameters for `t`: missing 'DROP COLUMN `trx_start`'
 alter table t drop column trx_start, drop column trx_end;
@@ -78,7 +78,7 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t add column trx_start timestamp(6) as row start;
 ERROR HY000: Table `t` is not system-versioned
 alter table t add system versioning;
@@ -86,14 +86,14 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t add column b int;
 show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t add column c int;
 show create table t;
 Table	Create Table
@@ -101,7 +101,7 @@ t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t add column d int first;
 show create table t;
 Table	Create Table
@@ -110,7 +110,7 @@ t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t add column e int after d;
 show create table t;
 Table	Create Table
@@ -120,7 +120,7 @@ t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t drop column a;
 show create table t;
 Table	Create Table
@@ -129,7 +129,7 @@ t	CREATE TABLE `t` (
   `e` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 create or replace table t (
 a int,
 row_start timestamp(6) as row start invisible,
@@ -149,7 +149,7 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t drop column row_start;
 ERROR 42000: Can't DROP COLUMN `row_start`; check that it exists
 alter table t drop column row_end;
@@ -174,7 +174,7 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 insert into t values(2);
 select * from t for system_time all;
 a
@@ -206,7 +206,7 @@ Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 select * from t;
 a	b
 3	NULL
@@ -226,7 +226,7 @@ Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t modify a int with system versioning;
 ERROR HY000: Table `t` is not system-versioned
 alter table t modify a int without system versioning;
@@ -238,14 +238,14 @@ Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL WITHOUT SYSTEM VERSIONING,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t modify a int with system versioning;
 show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 create or replace table t(
 a int
 ) engine=sequoiadb;
@@ -313,7 +313,7 @@ t	CREATE TABLE `t` (
   `c` int(11) DEFAULT NULL,
   PRIMARY KEY (`b`),
   UNIQUE KEY `c` (`c`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t;
 a	b	c
 1	2	3
@@ -389,7 +389,7 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `c` text DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 create or replace table t (a int) with system versioning;
 alter table t drop column a;
 ERROR HY000: Table `t` must have at least one versioned column
@@ -424,7 +424,7 @@ t	CREATE TABLE `t` (
   `row_start` timestamp(6) GENERATED ALWAYS AS ROW START,
   `row_end` timestamp(6) GENERATED ALWAYS AS ROW END,
   PERIOD FOR SYSTEM_TIME (`row_start`, `row_end`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 alter table t
 drop column row_start,
 drop column row_end,
@@ -434,7 +434,7 @@ show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t drop period for system_time;
 ERROR HY000: Table `t` is not system-versioned
 create or replace table t (
@@ -456,14 +456,14 @@ ERROR HY000: Table `t` is already system-versioned
 #
 use mysql;
 create or replace table t (x int) with system versioning;
-ERROR HY000: System-versioned tables in the `mysql` database are not suported
+ERROR HY000: System-versioned tables in the `mysql` database are not supported
 alter table db add system versioning;
-ERROR HY000: System-versioned tables in the `mysql` database are not suported
+ERROR HY000: System-versioned tables in the `mysql` database are not supported
 use test_versioning_alter;
 # MDEV-15956 Strange ER_UNSUPPORTED_ACTION_ON_GENERATED_COLUMN upon ALTER on versioning column
 create or replace table t1 (i int, j int as (i), s timestamp(6) as row start, e timestamp(6) as row end, period for system_time(s,e)) with system versioning;
 alter table t1 modify s timestamp(6) as row start;
-ERROR HY000: Can not change system versioning field `s`
+ERROR HY000: Duplicate ROW START column `s`
 # ignore CHECK for historical rows
 create or replace table t (a int) with system versioning;
 insert into t values (0), (1);
@@ -497,7 +497,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) GENERATED ALWAYS AS (0) STORED
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 select * from t1;
 a	b
 1	0
@@ -513,7 +513,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL WITHOUT SYSTEM VERSIONING
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 select * from t1;
 a	b
 1	0

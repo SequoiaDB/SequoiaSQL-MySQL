@@ -4055,13 +4055,13 @@ t2	CREATE TABLE `t2` (
 SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
-  `data` char(64) COLLATE utf8mb4_bin DEFAULT NULL,
+  `data` char(64) DEFAULT NULL,
   `i` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
-  `stuff` char(15) COLLATE utf8mb4_bin DEFAULT NULL
+  `stuff` char(15) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE metasync_scptpkg.tfw_relation;
 Table	Create Table
@@ -4074,11 +4074,11 @@ SHOW CREATE TABLE metasync_scptpkg.tfw_dict;
 Table	Create Table
 tfw_dict	CREATE TABLE `tfw_dict` (
   `ID` bigint(20) DEFAULT NULL,
-  `CODE` text COLLATE utf8mb4_bin DEFAULT NULL,
+  `CODE` text DEFAULT NULL,
   `NUM` int(11) DEFAULT NULL,
   `PID` bigint(20) DEFAULT NULL,
-  `NAME` text COLLATE utf8mb4_bin DEFAULT NULL,
-  `TIPS` text COLLATE utf8mb4_bin DEFAULT NULL,
+  `NAME` text DEFAULT NULL,
+  `TIPS` text DEFAULT NULL,
   `VERSION` int(11) DEFAULT NULL,
   `SELECTED` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
@@ -4099,7 +4099,7 @@ tfw_invoke_api_log	CREATE TABLE `tfw_invoke_api_log` (
   KEY `INDEX_INVOKE_API_APPID` (`APPID`),
   KEY `INDEX_INVOKE_API_APIURI` (`APIURI`),
   KEY `INDEX_INVOKE_API_SUCCEED` (`SUCCEED`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 SELECT * FROM metasync_scptpkg.tfw_relation ORDER BY ID;
 ID	MENUID	ROLEID
 968410495344181258	37	2
@@ -4179,13 +4179,13 @@ t2	CREATE TABLE `t2` (
 SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
-  `data` char(64) COLLATE utf8mb4_bin DEFAULT NULL,
+  `data` char(64) DEFAULT NULL,
   `i` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
-  `stuff` char(15) COLLATE utf8mb4_bin DEFAULT NULL
+  `stuff` char(15) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE metasync_scptpkg.tfw_relation;
 Table	Create Table
@@ -4198,11 +4198,11 @@ SHOW CREATE TABLE metasync_scptpkg.tfw_dict;
 Table	Create Table
 tfw_dict	CREATE TABLE `tfw_dict` (
   `ID` bigint(20) DEFAULT NULL,
-  `CODE` text COLLATE utf8mb4_bin DEFAULT NULL,
+  `CODE` text DEFAULT NULL,
   `NUM` int(11) DEFAULT NULL,
   `PID` bigint(20) DEFAULT NULL,
-  `NAME` text COLLATE utf8mb4_bin DEFAULT NULL,
-  `TIPS` text COLLATE utf8mb4_bin DEFAULT NULL,
+  `NAME` text DEFAULT NULL,
+  `TIPS` text DEFAULT NULL,
   `VERSION` int(11) DEFAULT NULL,
   `SELECTED` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
@@ -4223,7 +4223,7 @@ tfw_invoke_api_log	CREATE TABLE `tfw_invoke_api_log` (
   KEY `INDEX_INVOKE_API_APPID` (`APPID`),
   KEY `INDEX_INVOKE_API_APIURI` (`APIURI`),
   KEY `INDEX_INVOKE_API_SUCCEED` (`SUCCEED`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 DROP DATABASE metasync_procedure;
 DROP DATABASE metasync_scptpkg;
 connection conn2;

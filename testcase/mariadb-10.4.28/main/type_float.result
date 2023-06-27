@@ -67,7 +67,7 @@ t2	CREATE TABLE `t2` (
   `col2` double(22,5) DEFAULT NULL,
   `col3` double DEFAULT NULL,
   `col4` double DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1,t2;
 create table t1 (a float);
 insert into t1 values (1);
@@ -210,7 +210,7 @@ show create table t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `d` double(18,9) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2, t3;
 create table t1 select  105213674794682365.00 + 0.0 x;
 show warnings;
@@ -584,7 +584,7 @@ Warnings:
 Warning	1264	Out of range value for column 'd1' at row 1
 INSERT IGNORE INTO t1 SELECT d2, d2 FROM t1;
 Warnings:
-Warning	1264	Out of range value for column 'd1' at row 2
+Warning	1264	Out of range value for column 'd1' at row 1
 SELECT * FROM t1;
 d1	d2
 999.99	10000000.55
@@ -614,10 +614,10 @@ INSERT IGNORE INTO t1 (f,d10_10,d53_10) SELECT d53_10, d53_10, d53_10 FROM t1;
 Warnings:
 Level	Warning
 Code	1264
-Message	Out of range value for column 'f' at row 2
+Message	Out of range value for column 'f' at row 1
 Level	Warning
 Code	1264
-Message	Out of range value for column 'd10_10' at row 2
+Message	Out of range value for column 'd10_10' at row 1
 SELECT * FROM t1;
 f	-3.40282e38
 d10_10	-0.9999999999
@@ -667,43 +667,43 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `1.01e1` double NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create or replace table t1 as select truncate(10.000000000001e1, 30) as t;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `t` double(47,30) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create or replace table t1 as select truncate(10.000000000001e1, 31) as t;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `t` double NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create or replace table t1 as select truncate(10.000000000001e1, 39) as t;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `t` double NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create or replace table t1 as select truncate(10.000000000001e1, 51) as t;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `t` double NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create or replace table t1 as select truncate(10.000000000001e1, 20)/2 as t;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `t` double(41,24) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create or replace table t1 as select truncate(10.000000000001e1, 28)/2 as t;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `t` double DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table if exists t1;
 #
 # MDEV-11586 UNION of FLOAT type results in erroneous precision
@@ -798,7 +798,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` float DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT * FROM t1;
 c1
 0.671437
@@ -810,14 +810,14 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `c1` varchar(12) DEFAULT NULL,
   `c2` varchar(12) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1, t2;
 CREATE TABLE t1 (a FLOAT DEFAULT CAST(0.671437 AS FLOAT));
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` float DEFAULT (cast(0.671437 as float))
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 (id INT NOT NULL PRIMARY KEY, a FLOAT);
 INSERT INTO t1 VALUES (1, 0.671437),(2, 0.671437);

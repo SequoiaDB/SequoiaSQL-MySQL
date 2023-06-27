@@ -114,7 +114,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `round(1, 6)` int(1) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1;
 round(1, 6)
 1
@@ -283,7 +283,6 @@ truncate(4, cast(-2 as unsigned))	truncate(4, 18446744073709551614)	truncate(4, 
 4	4	0
 Warnings:
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
-Note	1105	Cast to unsigned converted negative integer to it's positive complement
 select round(10000000000000000000, -19), truncate(10000000000000000000, -19);
 round(10000000000000000000, -19)	truncate(10000000000000000000, -19)
 10000000000000000000	10000000000000000000
@@ -361,9 +360,7 @@ SELECT b DIV 900 y FROM t1 GROUP BY y;
 y
 0
 Warnings:
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warning	1292	Truncated incorrect DECIMAL value: 'str1'
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warning	1292	Truncated incorrect DECIMAL value: 'str2'
 SELECT c DIV 900 y FROM t1 GROUP BY y;
 y
@@ -495,7 +492,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `C` varchar(23) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # Bug#11764994  57900: CREATE TABLE .. SELECT ASSERTS SCALE >= 0 && PRECISION > 0 && SCALE <= PR
@@ -662,7 +659,7 @@ foo
 2
 Warnings:
 Warning	1292	Truncated incorrect DOUBLE value: '53064635.445796e3130837'
-Warning	1292	Truncated incorrect DOUBLE value: '179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,'
+Warning	1292	Truncated incorrect DOUBLE value: '179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,0...'
 #
 # Bug #58137 char(0) column cause:
 #            my_gcvt: Assertion `width > 0 && to != ((void *)0)' failed
@@ -773,13 +770,13 @@ STDDEV_SAMP(EXPORT_SET(t1, -1379790335835635712, (i1 + 'o'), (MD5(d1))))
 NULL
 Warnings:
 Warning	1292	Truncated incorrect DOUBLE value: 'o'
-Warning	1292	Truncated incorrect DOUBLE value: '98e466c7ff40fe6b95cde24200f376303-13797903358356357128e466c7ff40fe6b95cde24200f376303-13797903358356357128e466c7ff40fe6b95cde242'
+Warning	1292	Truncated incorrect DOUBLE value: '98e466c7ff40fe6b95cde24200f376303-13797903358356357128e466c7ff40fe6b95cde24200f376303-13797903358356357128e466c7ff40fe6b95cde...'
 Warning	1292	Truncated incorrect DOUBLE value: 'o'
-Warning	1292	Truncated incorrect DOUBLE value: '-1379790335835635712e315457d879863c6ccf2ddee5562fc24-1379790335835635712e315457d879863c6ccf2ddee5562fc24-1379790335835635712e315'
+Warning	1292	Truncated incorrect DOUBLE value: '-1379790335835635712e315457d879863c6ccf2ddee5562fc24-1379790335835635712e315457d879863c6ccf2ddee5562fc24-1379790335835635712e...'
 Warning	1292	Truncated incorrect DOUBLE value: 'o'
-Warning	1292	Truncated incorrect DOUBLE value: '7b4dd517b633f1f6304b773523b5279747b4dd517b633f1f6304b773523b5279747b4dd517b633f1f6304b773523b527974-1379790335835635712b4dd517b6'
+Warning	1292	Truncated incorrect DOUBLE value: '7b4dd517b633f1f6304b773523b5279747b4dd517b633f1f6304b773523b5279747b4dd517b633f1f6304b773523b527974-1379790335835635712b4dd51...'
 Warning	1292	Truncated incorrect DOUBLE value: 'o'
-Warning	1292	Truncated incorrect DOUBLE value: '-1379790335835635712b0e107767ea830fd3318893e40412a43-1379790335835635712b0e107767ea830fd3318893e40412a43-1379790335835635712b0e1'
+Warning	1292	Truncated incorrect DOUBLE value: '-1379790335835635712b0e107767ea830fd3318893e40412a43-1379790335835635712b0e107767ea830fd3318893e40412a43-1379790335835635712b...'
 DROP TABLE t1;
 CREATE TABLE t1 (a VARCHAR(128));
 INSERT INTO t1 VALUES ('1e310');
@@ -829,10 +826,10 @@ ROUND(10e0,NULL) AS c3;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` double DEFAULT NULL,
+  `c1` int(2) DEFAULT NULL,
   `c2` double DEFAULT NULL,
   `c3` double DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # MDEV-12857 Out-of-range errors on CREATE..SELECT 2222222222 DIV 1
@@ -848,7 +845,7 @@ t1	CREATE TABLE `t1` (
   `d01` int(1) DEFAULT NULL,
   `d09` int(9) DEFAULT NULL,
   `d10` bigint(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT * FROM t1;
 d01	2
 d09	222222222
@@ -866,7 +863,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` bigint(11) unsigned NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT a, HEX(a) FROM t2;
 a	HEX(a)
 4294967296	100000000
@@ -1281,7 +1278,7 @@ t2	CREATE TABLE `t2` (
   `d_time` int(7) unsigned DEFAULT NULL,
   `d_date` int(8) unsigned DEFAULT NULL,
   `d_datetime` bigint(14) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1, t2;
 SET sql_mode=DEFAULT;
 #

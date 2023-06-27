@@ -33,13 +33,13 @@ table7, table8, table9, table10, table11, table12, table13,
 table14, table15, table16, table17, table18, table19, table20,
 table21, table22, table23, table24, table25, table26, table27,
 table28;
-ERROR 42S02: Unknown table 'mysqltest_drop.table1,mysqltest_drop.table2,mysqltest_drop.table3,mysqltest_drop.table4,mysqltest_dr'
+ERROR 42S02: Unknown table 'mysqltest_drop.table1,mysqltest_drop.table2,mysqltest_drop.table3,mysqltest_drop.table4,mysqltest...'
 drop table table1, table2, table3, table4, table5, table6,
 table7, table8, table9, table10, table11, table12, table13,
 table14, table15, table16, table17, table18, table19, table20,
 table21, table22, table23, table24, table25, table26, table27,
 table28, table29, table30;
-ERROR 42S02: Unknown table 'mysqltest_drop.table1,mysqltest_drop.table2,mysqltest_drop.table3,mysqltest_drop.table4,mysqltest_dr'
+ERROR 42S02: Unknown table 'mysqltest_drop.table1,mysqltest_drop.table2,mysqltest_drop.table3,mysqltest_drop.table4,mysqltest...'
 use test_drop;
 drop database mysqltest_drop;
 flush tables with read lock;

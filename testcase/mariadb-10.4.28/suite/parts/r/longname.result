@@ -53,7 +53,7 @@ t	CREATE TABLE `t` (
   `id` int(10) NOT NULL,
   `id2` int(10) NOT NULL,
   PRIMARY KEY (`id`,`id2`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`id`)
 SUBPARTITION BY HASH (`id2`)
 SUBPARTITIONS 2

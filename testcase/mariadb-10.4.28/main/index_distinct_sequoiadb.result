@@ -36,7 +36,7 @@ t1	CREATE TABLE `t1` (
   KEY `field1_2` (`field1`,`field2`,`field3`),
   KEY `field1_3` (`field1`,`field2`,`field3`,`field4`,`field5`),
   KEY `field1_4` (`field1`,`field2`,`field3`,`field4`,`field5`,`field6`,`field7`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show index from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	1	field1	1	field1	A	NULL	NULL	NULL	YES	BTREE		

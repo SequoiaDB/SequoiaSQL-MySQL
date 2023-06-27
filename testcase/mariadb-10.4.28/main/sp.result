@@ -2386,7 +2386,7 @@ show create table t3|
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `bug2773()` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t3|
 drop function bug2773|
 drop procedure if exists bug3788|
@@ -2446,9 +2446,9 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` char(16) NOT NULL DEFAULT '',
   `data` int(11) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 Database	Create Database
-test_sp	CREATE DATABASE `test_sp` /*!40100 DEFAULT CHARACTER SET latin1 */
+test_sp	CREATE DATABASE `test_sp` /*!40100 DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci */
 Database (foo)
 Level	Code	Message
 Field	Type	Null	Key	Default	Extra
@@ -2467,9 +2467,9 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` char(16) NOT NULL DEFAULT '',
   `data` int(11) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 Database	Create Database
-test_sp	CREATE DATABASE `test_sp` /*!40100 DEFAULT CHARACTER SET latin1 */
+test_sp	CREATE DATABASE `test_sp` /*!40100 DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci */
 Database (foo)
 Level	Code	Message
 Field	Type	Null	Key	Default	Extra
@@ -3802,17 +3802,17 @@ call bug12589_1()|
 Table	Create Table
 tm1	CREATE TEMPORARY TABLE `tm1` (
   `spv1` decimal(3,3) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 call bug12589_2()|
 Table	Create Table
 tm1	CREATE TEMPORARY TABLE `tm1` (
   `spv1` decimal(6,3) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 call bug12589_3()|
 Table	Create Table
 tm1	CREATE TEMPORARY TABLE `tm1` (
   `spv1` decimal(6,3) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop procedure bug12589_1|
 drop procedure bug12589_2|
 drop procedure bug12589_3|
@@ -4227,7 +4227,7 @@ select v, isnull(v);
 end if;
 end;
 end|
-ERROR 42S22: Unknown column 'undefined_var' in 'field list'
+ERROR 42000: Undeclared variable: undefined_var
 create procedure bug14643_2()
 begin
 declare continue handler for sqlexception select 'boo' as 'Handler';
@@ -4239,7 +4239,7 @@ select 2;
 end case;
 select undefined_var;
 end|
-ERROR 42S22: Unknown column 'undefined_var' in 'field list'
+ERROR 42000: Undeclared variable: undefined_var
 drop procedure if exists bug14304|
 drop table if exists t3, t4|
 create table t3(a int primary key auto_increment)|
@@ -4269,7 +4269,7 @@ create procedure bug14376()
 begin
 declare x int default x;
 end|
-ERROR 42S22: Unknown column 'x' in 'field list'
+ERROR 42000: Undeclared variable: x
 create procedure bug14376()
 begin
 declare x int default 42;
@@ -4455,7 +4455,7 @@ select 'no' as 'v';
 end if;
 select 'done' as 'End';
 end|
-ERROR 42S22: Unknown column 'v' in 'field list'
+ERROR 42000: Undeclared variable: v
 create procedure bug14498_2()
 begin
 declare continue handler for sqlexception select 'error' as 'Handler';
@@ -4464,7 +4464,7 @@ select 'yes' as 'v';
 end while;
 select 'done' as 'End';
 end|
-ERROR 42S22: Unknown column 'v' in 'field list'
+ERROR 42000: Undeclared variable: v
 create procedure bug14498_3()
 begin
 declare continue handler for sqlexception select 'error' as 'Handler';
@@ -4473,7 +4473,7 @@ select 'maybe' as 'v';
 until v end repeat;
 select 'done' as 'End';
 end|
-ERROR 42S22: Unknown column 'v' in 'field list'
+ERROR 42000: Undeclared variable: v
 create procedure bug14498_4()
 begin
 declare continue handler for sqlexception select 'error' as 'Handler';
@@ -4487,7 +4487,7 @@ select '?' as 'v';
 end case;
 select 'done' as 'End';
 end|
-ERROR 42S22: Unknown column 'v' in 'field list'
+ERROR 42000: Undeclared variable: v
 create procedure bug14498_5()
 begin
 declare continue handler for sqlexception select 'error' as 'Handler';
@@ -4501,7 +4501,7 @@ select '?' as 'v';
 end case;
 select 'done' as 'End';
 end|
-ERROR 42S22: Unknown column 'v' in 'field list'
+ERROR 42000: Undeclared variable: v
 drop table if exists t3|
 drop procedure if exists bug15231_1|
 drop procedure if exists bug15231_2|
@@ -4780,7 +4780,7 @@ show create table t3|
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `i` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t3|
 i
 0
@@ -4791,7 +4791,7 @@ show create table t3|
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `j` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t3|
 j
 0
@@ -4889,19 +4889,19 @@ use mysqltest1_sp|
 call p1()|
 show create database mysqltest1_sp|
 Database	Create Database
-mysqltest1_sp	CREATE DATABASE `mysqltest1_sp` /*!40100 DEFAULT CHARACTER SET koi8r */
+mysqltest1_sp	CREATE DATABASE `mysqltest1_sp` /*!40100 DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci */
 show create database mysqltest2_sp|
 Database	Create Database
-mysqltest2_sp	CREATE DATABASE `mysqltest2_sp` /*!40100 DEFAULT CHARACTER SET utf8 */
+mysqltest2_sp	CREATE DATABASE `mysqltest2_sp` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 alter database mysqltest1_sp character set utf8|
 use mysqltest2_sp|
 call mysqltest1_sp.p1()|
 show create database mysqltest1_sp|
 Database	Create Database
-mysqltest1_sp	CREATE DATABASE `mysqltest1_sp` /*!40100 DEFAULT CHARACTER SET koi8r */
+mysqltest1_sp	CREATE DATABASE `mysqltest1_sp` /*!40100 DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci */
 show create database mysqltest2_sp|
 Database	Create Database
-mysqltest2_sp	CREATE DATABASE `mysqltest2_sp` /*!40100 DEFAULT CHARACTER SET utf8 */
+mysqltest2_sp	CREATE DATABASE `mysqltest2_sp` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 drop database mysqltest1_sp|
 drop database mysqltest2_sp|
 use test_sp|
@@ -4953,19 +4953,19 @@ CREATE FUNCTION mysqltest2_sp.bug16211_f4() RETURNS CHAR(10) CHARSET koi8r
 RETURN ""|
 SHOW CREATE FUNCTION bug16211_f1|
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-bug16211_f1		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f1`() RETURNS char(10) CHARSET utf8
+bug16211_f1		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f1`() RETURNS char(10) CHARSET utf8 COLLATE utf8_general_ci
 RETURN ""	latin1	latin1_swedish_ci	utf8_general_ci
 SHOW CREATE FUNCTION bug16211_f2|
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-bug16211_f2		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f2`() RETURNS char(10) CHARSET koi8r
+bug16211_f2		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f2`() RETURNS char(10) CHARSET koi8r COLLATE koi8r_general_ci
 RETURN ""	latin1	latin1_swedish_ci	utf8_general_ci
 SHOW CREATE FUNCTION mysqltest2_sp.bug16211_f3|
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-bug16211_f3		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f3`() RETURNS char(10) CHARSET utf8
+bug16211_f3		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f3`() RETURNS char(10) CHARSET utf8 COLLATE utf8_general_ci
 RETURN ""	latin1	latin1_swedish_ci	utf8_general_ci
 SHOW CREATE FUNCTION mysqltest2_sp.bug16211_f4|
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-bug16211_f4		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f4`() RETURNS char(10) CHARSET koi8r
+bug16211_f4		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f4`() RETURNS char(10) CHARSET koi8r COLLATE koi8r_general_ci
 RETURN ""	latin1	latin1_swedish_ci	utf8_general_ci
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
@@ -5003,19 +5003,19 @@ ALTER DATABASE mysqltest1_sp CHARACTER SET cp1251|
 ALTER DATABASE mysqltest2_sp CHARACTER SET cp1251|
 SHOW CREATE FUNCTION bug16211_f1|
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-bug16211_f1		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f1`() RETURNS char(10) CHARSET utf8
+bug16211_f1		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f1`() RETURNS char(10) CHARSET utf8 COLLATE utf8_general_ci
 RETURN ""	latin1	latin1_swedish_ci	utf8_general_ci
 SHOW CREATE FUNCTION bug16211_f2|
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-bug16211_f2		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f2`() RETURNS char(10) CHARSET koi8r
+bug16211_f2		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f2`() RETURNS char(10) CHARSET koi8r COLLATE koi8r_general_ci
 RETURN ""	latin1	latin1_swedish_ci	utf8_general_ci
 SHOW CREATE FUNCTION mysqltest2_sp.bug16211_f3|
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-bug16211_f3		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f3`() RETURNS char(10) CHARSET utf8
+bug16211_f3		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f3`() RETURNS char(10) CHARSET utf8 COLLATE utf8_general_ci
 RETURN ""	latin1	latin1_swedish_ci	utf8_general_ci
 SHOW CREATE FUNCTION mysqltest2_sp.bug16211_f4|
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-bug16211_f4		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f4`() RETURNS char(10) CHARSET koi8r
+bug16211_f4		CREATE DEFINER=`root`@`localhost` FUNCTION `bug16211_f4`() RETURNS char(10) CHARSET koi8r COLLATE koi8r_general_ci
 RETURN ""	latin1	latin1_swedish_ci	utf8_general_ci
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
@@ -5251,7 +5251,7 @@ CREATE DEFINER=longer_than_80_45678901234567890123456789012345678901234567890123
 BEGIN
 SET @a = 1;
 END|
-ERROR HY000: String 'longer_than_80_4567890123456789012345678901234567890123456789012345678' is too long for user name (should be no longer than 80)
+ERROR HY000: String 'longer_than_80_4567890123456789012345678901234567890123456789012345...' is too long for user name (should be no longer than 80)
 CREATE DEFINER=some_user_name@1234567890abcdefghij1234567890abcdefghij1234567890abcdefghijQWERTY
 FUNCTION bug16899_f1() RETURNS INT
 BEGIN
@@ -5278,7 +5278,7 @@ drop database if exists това_е_дълго_име_за_база_данни_�
 create database това_е_дълго_име_за_база_данни_нали|
 INSERT INTO mysql.proc VALUES ('това_е_дълго_име_за_база_данни_нали','това_е_процедура_с_доста_дълго_име_нали_и_още_по_дълго','PROCEDURE','това_е_процедура_с_доста_дълго_име_нали_и_още_по_дълго','SQL','CONTAINS_SQL','NO','DEFINER','','','bad_body','root@localhost',now(), now(),'','', 'utf8', 'utf8_general_ci', 'utf8_general_ci', 'n/a', 'NONE')|
 call това_е_дълго_име_за_база_данни_нали.това_е_процедура_с_доста_дълго_име_нали_и_още_по_дълго()|
-ERROR HY000: Failed to load routine това_е_дълго_име_за_база_данни_нали.това_е_процедура_с_доста_дълго_име_нали_и_още_по_дълго. The table mysql.proc is missing, corrupt, or contains bad data (internal code -6)
+ERROR HY000: Failed to load routine това_е_дълго_име_за_база_данни_нали.това_е_процедура_с_доста_дълго_име_нали_и_още_по_дълго (internal code -6). For more details, run SHOW WARNINGS
 drop database това_е_дълго_име_за_база_данни_нали|
 CREATE TABLE t3 (
 Member_ID varchar(15) NOT NULL,
@@ -6040,7 +6040,7 @@ examplebug20777	CREATE TABLE `examplebug20777` (
   `2**64-2` bigint(20) unsigned DEFAULT NULL,
   `2**64-1` bigint(20) unsigned DEFAULT NULL,
   `2**64` bigint(20) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from examplebug20777 order by i;
 i	2**63-2	2**63-1	2**63	2**63+1	2**64-2	2**64-1	2**64
 0	9223372036854775806	9223372036854775807	9223372036854775808	9223372036854775809	18446744073709551614	18446744073709551615	18446744073709551615
@@ -6383,7 +6383,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `v` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 DROP TABLE t1;
 
@@ -6394,7 +6394,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `v` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 DROP TABLE t1;
 
@@ -6403,7 +6403,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `v` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 DROP TABLE t1;
 
@@ -6414,7 +6414,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `v` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 DROP TABLE t1;
 
@@ -6822,7 +6822,7 @@ Another_very_long_enum_element_identifier
 
 SHOW CREATE FUNCTION f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
-f1		CREATE DEFINER=`root`@`localhost` FUNCTION `f1`(p INT) RETURNS enum('Very_long_enum_element_identifier','Another_very_long_enum_element_identifier') CHARSET latin1
+f1		CREATE DEFINER=`root`@`localhost` FUNCTION `f1`(p INT) RETURNS enum('Very_long_enum_element_identifier','Another_very_long_enum_element_identifier') CHARSET latin1 COLLATE latin1_swedish_ci
 BEGIN
 CASE p
 WHEN 1 THEN
@@ -8316,7 +8316,7 @@ DECLARE name VARCHAR(10);
 SET name="hello";
 call p1(name2);
 END|
-ERROR 42S22: Unknown column 'name2' in 'field list'
+ERROR 42000: Undeclared variable: name2
 call p2();
 a
 hello
@@ -8551,11 +8551,11 @@ RETURN a = timestamp'2038-01-19 03:14:07.999999'
 END
 $$
 SELECT f1(e) FROM t1;
-ERROR 22007: Truncated incorrect DOUBLE value: '2001-01-01 10:20:30.000000'
+ERROR 22007: Truncated incorrect DECIMAL value: '2001-01-01 10:20:30.000000'
 SELECT f2(e) FROM t1;
-ERROR 22007: Truncated incorrect DOUBLE value: '2001-01-01 10:20:30.000000'
+ERROR 22007: Truncated incorrect DECIMAL value: '2001-01-01 10:20:30.000000'
 SELECT f3(e) FROM t1;
-ERROR 22007: Truncated incorrect DOUBLE value: '2001-01-01 10:20:30.000000'
+ERROR 22007: Truncated incorrect DECIMAL value: '2001-01-01 10:20:30.000000'
 DROP FUNCTION f1;
 DROP FUNCTION f2;
 DROP FUNCTION f3;
@@ -8598,7 +8598,7 @@ t2	CREATE TABLE `t2` (
   `c1` varchar(11) DEFAULT NULL,
   `c2` varchar(11) DEFAULT NULL,
   `c3` varchar(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1,t2;
 DROP FUNCTION f1;
 CREATE FUNCTION f1() RETURNS TINYTEXT CHARACTER SET latin1 RETURN '';
@@ -8609,7 +8609,7 @@ t1	CREATE TABLE `t1` (
   `c1` tinytext DEFAULT NULL,
   `c2` tinytext DEFAULT NULL,
   `c3` varchar(255) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP FUNCTION f1;
 CREATE FUNCTION f1() RETURNS TEXT CHARACTER SET latin1 RETURN '';
@@ -8620,7 +8620,7 @@ t1	CREATE TABLE `t1` (
   `c1` text DEFAULT NULL,
   `c2` text DEFAULT NULL,
   `c3` text DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP FUNCTION f1;
 CREATE FUNCTION f1() RETURNS MEDIUMTEXT CHARACTER SET latin1 RETURN '';
@@ -8631,7 +8631,7 @@ t1	CREATE TABLE `t1` (
   `c1` mediumtext DEFAULT NULL,
   `c2` mediumtext DEFAULT NULL,
   `c3` mediumtext DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP FUNCTION f1;
 CREATE FUNCTION f1() RETURNS LONGTEXT CHARACTER SET latin1 RETURN '';
@@ -8642,7 +8642,7 @@ t1	CREATE TABLE `t1` (
   `c1` longtext DEFAULT NULL,
   `c2` longtext DEFAULT NULL,
   `c3` longtext DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP FUNCTION f1;
 CREATE FUNCTION f1() RETURNS TINYTEXT CHARACTER SET utf8 RETURN '';
@@ -8650,10 +8650,10 @@ CREATE TABLE t1 AS SELECT f1() AS c1, COALESCE(f1()) AS c2, CONCAT(f1()) AS c3;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` tinytext CHARACTER SET utf8 DEFAULT NULL,
-  `c2` text CHARACTER SET utf8 DEFAULT NULL,
-  `c3` varchar(255) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` tinytext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c2` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c3` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP FUNCTION f1;
 CREATE FUNCTION f1() RETURNS TEXT CHARACTER SET utf8 RETURN '';
@@ -8661,10 +8661,10 @@ CREATE TABLE t1 AS SELECT f1() AS c1, COALESCE(f1()) AS c2, CONCAT(f1()) AS c3;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` text CHARACTER SET utf8 DEFAULT NULL,
-  `c2` mediumtext CHARACTER SET utf8 DEFAULT NULL,
-  `c3` mediumtext CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c2` mediumtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c3` mediumtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP FUNCTION f1;
 CREATE FUNCTION f1() RETURNS MEDIUMTEXT CHARACTER SET utf8 RETURN '';
@@ -8672,10 +8672,10 @@ CREATE TABLE t1 AS SELECT f1() AS c1, COALESCE(f1()) AS c2, CONCAT(f1()) AS c3;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` mediumtext CHARACTER SET utf8 DEFAULT NULL,
-  `c2` longtext CHARACTER SET utf8 DEFAULT NULL,
-  `c3` longtext CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` mediumtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c2` longtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c3` longtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP FUNCTION f1;
 CREATE FUNCTION f1() RETURNS LONGTEXT CHARACTER SET utf8 RETURN '';
@@ -8683,10 +8683,10 @@ CREATE TABLE t1 AS SELECT f1() AS c1, COALESCE(f1()) AS c2, CONCAT(f1()) AS c3;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` longtext CHARACTER SET utf8 DEFAULT NULL,
-  `c2` longtext CHARACTER SET utf8 DEFAULT NULL,
-  `c3` longtext CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` longtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c2` longtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c3` longtext CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP FUNCTION f1;
 #

@@ -37,7 +37,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL DEFAULT nextval(`multi_inst_group_sequence_table`.`s1`),
-  `name` char(16) COLLATE utf8mb4_bin DEFAULT NULL,
+  `name` char(16) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 insert into t1(name) VALUES ('Jack'),('Bob'),('Zhangsan'),('Tom');
@@ -63,7 +63,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL DEFAULT nextval(`multi_inst_group_sequence_table`.`s1`),
-  `name` char(16) COLLATE utf8mb4_bin DEFAULT NULL,
+  `name` char(16) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 insert into t1(name) VALUES ('Jack'),('Bob'),('Zhangsan'),('Tom');

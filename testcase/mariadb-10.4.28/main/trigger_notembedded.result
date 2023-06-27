@@ -25,7 +25,7 @@ connection wl2818_definer_con;
 CREATE TRIGGER trg1 AFTER INSERT ON t1
 FOR EACH ROW
 INSERT INTO t2 VALUES(CURRENT_USER());
-ERROR 42000: TRIGGER command denied to user 'mysqltest_trigger_notembedded_dfn'@'localhost' for table 't1'
+ERROR 42000: TRIGGER command denied to user 'mysqltest_trigger_notembedded_dfn'@'localhost' for table `mysqltest_trigger_notembedded_db1`.`t1`
 disconnect wl2818_definer_con;
 connection default;
 GRANT TRIGGER ON mysqltest_trigger_notembedded_db1.t1 TO mysqltest_trigger_notembedded_dfn@localhost;
@@ -40,12 +40,12 @@ REVOKE TRIGGER ON mysqltest_trigger_notembedded_db1.t1 FROM mysqltest_trigger_no
 connect  wl2818_definer_con,localhost,mysqltest_trigger_notembedded_dfn,,mysqltest_trigger_notembedded_db1;
 connection wl2818_definer_con;
 DROP TRIGGER trg1;
-ERROR 42000: TRIGGER command denied to user 'mysqltest_trigger_notembedded_dfn'@'localhost' for table 't1'
+ERROR 42000: TRIGGER command denied to user 'mysqltest_trigger_notembedded_dfn'@'localhost' for table `mysqltest_trigger_notembedded_db1`.`t1`
 disconnect wl2818_definer_con;
 connect  wl2818_definer_con,localhost,mysqltest_trigger_notembedded_dfn,,mysqltest_trigger_notembedded_db1;
 connection wl2818_definer_con;
 INSERT INTO t1 VALUES(0);
-ERROR 42000: TRIGGER command denied to user 'mysqltest_trigger_notembedded_dfn'@'localhost' for table 't1'
+ERROR 42000: TRIGGER command denied to user 'mysqltest_trigger_notembedded_dfn'@'localhost' for table `mysqltest_trigger_notembedded_db1`.`t1`
 disconnect wl2818_definer_con;
 connection default;
 GRANT TRIGGER ON mysqltest_trigger_notembedded_db1.t1 TO mysqltest_trigger_notembedded_dfn@localhost;
@@ -97,7 +97,7 @@ REVOKE INSERT ON mysqltest_trigger_notembedded_db1.t2 FROM mysqltest_trigger_not
 connection wl2818_invoker_con;
 use mysqltest_trigger_notembedded_db1;
 INSERT INTO t1 VALUES(3);
-ERROR 42000: INSERT command denied to user 'mysqltest_trigger_notembedded_dfn'@'localhost' for table 't2'
+ERROR 42000: INSERT command denied to user 'mysqltest_trigger_notembedded_dfn'@'localhost' for table `mysqltest_trigger_notembedded_db1`.`t2`
 SELECT * FROM t1;
 num_value
 1
@@ -195,8 +195,8 @@ use mysqltest_trigger_notembedded_db1;
 GRANT DELETE ON mysqltest_trigger_notembedded_db1.* TO mysqltest_trigger_notembedded_u1@localhost;
 SHOW GRANTS FOR mysqltest_trigger_notembedded_u1@localhost;
 Grants for mysqltest_trigger_notembedded_u1@localhost
-GRANT USAGE ON *.* TO 'mysqltest_trigger_notembedded_u1'@'localhost'
-GRANT DELETE, TRIGGER ON `mysqltest_trigger_notembedded_db1`.* TO 'mysqltest_trigger_notembedded_u1'@'localhost'
+GRANT USAGE ON *.* TO `mysqltest_trigger_notembedded_u1`@`localhost`
+GRANT DELETE, TRIGGER ON `mysqltest_trigger_notembedded_db1`.* TO `mysqltest_trigger_notembedded_u1`@`localhost`
 connection bug15166_u1_con;
 use mysqltest_trigger_notembedded_db1;
 CREATE TRIGGER t1_trg_after_delete AFTER DELETE ON t1
@@ -561,7 +561,7 @@ INSERT INTO t2 VALUES (2);
 connection default;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM mysqltest_trigger_notembedded_u1@localhost;
 UPDATE IGNORE t1, t2 SET t1.a1 = 2, t2.a1 = 3 WHERE t1.a1 = 1 AND t2.a1 = 2;
-ERROR 42000: TRIGGER command denied to user 'mysqltest_trigger_notembedded_u1'@'localhost' for table 't1'
+ERROR 42000: TRIGGER command denied to user 'mysqltest_trigger_notembedded_u1'@'localhost' for table `mysqltest_trigger_notembedded_db1`.`t1`
 DROP DATABASE mysqltest_trigger_notembedded_db1;
 DROP USER mysqltest_trigger_notembedded_u1@localhost;
 disconnect con1;

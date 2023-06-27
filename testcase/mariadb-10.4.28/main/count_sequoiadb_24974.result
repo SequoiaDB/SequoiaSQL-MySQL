@@ -9,7 +9,7 @@ Table	Create Table
 count_sequoiadb_24974	CREATE TABLE `count_sequoiadb_24974` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT count(a),count(b) FROM count_sequoiadb_24974;
 count(a)	count(b)
 3	0

@@ -36,23 +36,23 @@ Tata	4.0000000000
 Tatiana	4.0000000000
 select name, percentile_disc(0.5)  within group(order by score) over (partition by name) as c from t1;
 name	c
-Chun	3.0000000000
-Chun	3.0000000000
-Kaolin	4.0000000000
-Kaolin	4.0000000000
-Kaolin	4.0000000000
-Tata	4.0000000000
-Tatiana	4.0000000000
+Chun	3.0000
+Chun	3.0000
+Kaolin	4.0000
+Kaolin	4.0000
+Kaolin	4.0000
+Tata	4.0000
+Tatiana	4.0000
 # no partition clause
 select name, percentile_disc(0.5) within group(order by score)  over ()  from t1;
 name	percentile_disc(0.5) within group(order by score)  over ()
-Chun	4.0000000000
-Chun	4.0000000000
-Kaolin	4.0000000000
-Kaolin	4.0000000000
-Kaolin	4.0000000000
-Tata	4.0000000000
-Tatiana	4.0000000000
+Chun	4.0000
+Chun	4.0000
+Kaolin	4.0000
+Kaolin	4.0000
+Kaolin	4.0000
+Tata	4.0000
+Tatiana	4.0000
 select name, percentile_cont(0.5) within group(order by score)  over ()  from t1;
 name	percentile_cont(0.5) within group(order by score)  over ()
 Chun	4.0000000000
@@ -79,13 +79,13 @@ Tata	4.0000000000
 Tatiana	4.0000000000
 select * from ( select name , percentile_disc(0.5) within group ( order by score) over (partition by name ) from t1 ) as t;
 name	percentile_disc(0.5) within group ( order by score) over (partition by name )
-Chun	3.0000000000
-Chun	3.0000000000
-Kaolin	4.0000000000
-Kaolin	4.0000000000
-Kaolin	4.0000000000
-Tata	4.0000000000
-Tatiana	4.0000000000
+Chun	3.0000
+Chun	3.0000
+Kaolin	4.0000
+Kaolin	4.0000
+Kaolin	4.0000
+Tata	4.0000
+Tatiana	4.0000
 select name from t1 a where (select  percentile_disc(0.5) within group (order by score) over (partition by name) from t1 b limit 1) >= 0.5;
 name
 Chun
@@ -118,13 +118,13 @@ ERROR HY000: percentile_disc function only accepts arguments that can be convert
 #complete query with partition column
 select name,cume_dist() over (partition by name order by score), percentile_disc(0.5)  within group(order by score) over (partition by name) as c from t1;
 name	cume_dist() over (partition by name order by score)	c
-Chun	0.5000000000	3.0000000000
-Chun	1.0000000000	3.0000000000
-Kaolin	0.3333333333	4.0000000000
-Kaolin	0.6666666667	4.0000000000
-Kaolin	1.0000000000	4.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	3.0000
+Chun	1.0000000000	3.0000
+Kaolin	0.3333333333	4.0000
+Kaolin	0.6666666667	4.0000
+Kaolin	1.0000000000	4.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name, percentile_cont(0.5)  within group(order by score) over (partition by name) as c from t1;
 name	c
 Chun	5.0000000000
@@ -136,94 +136,94 @@ Tata	4.0000000000
 Tatiana	4.0000000000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.1)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	3.0000000000
-Chun	1.0000000000	3.0000000000
-Kaolin	0.3333333333	3.0000000000
-Kaolin	0.6666666667	3.0000000000
-Kaolin	1.0000000000	3.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	3.0000
+Chun	1.0000000000	3.0000
+Kaolin	0.3333333333	3.0000
+Kaolin	0.6666666667	3.0000
+Kaolin	1.0000000000	3.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.2)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	3.0000000000
-Chun	1.0000000000	3.0000000000
-Kaolin	0.3333333333	3.0000000000
-Kaolin	0.6666666667	3.0000000000
-Kaolin	1.0000000000	3.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	3.0000
+Chun	1.0000000000	3.0000
+Kaolin	0.3333333333	3.0000
+Kaolin	0.6666666667	3.0000
+Kaolin	1.0000000000	3.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.3)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	3.0000000000
-Chun	1.0000000000	3.0000000000
-Kaolin	0.3333333333	3.0000000000
-Kaolin	0.6666666667	3.0000000000
-Kaolin	1.0000000000	3.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	3.0000
+Chun	1.0000000000	3.0000
+Kaolin	0.3333333333	3.0000
+Kaolin	0.6666666667	3.0000
+Kaolin	1.0000000000	3.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.4)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	3.0000000000
-Chun	1.0000000000	3.0000000000
-Kaolin	0.3333333333	4.0000000000
-Kaolin	0.6666666667	4.0000000000
-Kaolin	1.0000000000	4.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	3.0000
+Chun	1.0000000000	3.0000
+Kaolin	0.3333333333	4.0000
+Kaolin	0.6666666667	4.0000
+Kaolin	1.0000000000	4.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.5)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	3.0000000000
-Chun	1.0000000000	3.0000000000
-Kaolin	0.3333333333	4.0000000000
-Kaolin	0.6666666667	4.0000000000
-Kaolin	1.0000000000	4.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	3.0000
+Chun	1.0000000000	3.0000
+Kaolin	0.3333333333	4.0000
+Kaolin	0.6666666667	4.0000
+Kaolin	1.0000000000	4.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.6)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	7.0000000000
-Chun	1.0000000000	7.0000000000
-Kaolin	0.3333333333	4.0000000000
-Kaolin	0.6666666667	4.0000000000
-Kaolin	1.0000000000	4.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	7.0000
+Chun	1.0000000000	7.0000
+Kaolin	0.3333333333	4.0000
+Kaolin	0.6666666667	4.0000
+Kaolin	1.0000000000	4.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.7)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	7.0000000000
-Chun	1.0000000000	7.0000000000
-Kaolin	0.3333333333	7.0000000000
-Kaolin	0.6666666667	7.0000000000
-Kaolin	1.0000000000	7.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	7.0000
+Chun	1.0000000000	7.0000
+Kaolin	0.3333333333	7.0000
+Kaolin	0.6666666667	7.0000
+Kaolin	1.0000000000	7.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.8)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	7.0000000000
-Chun	1.0000000000	7.0000000000
-Kaolin	0.3333333333	7.0000000000
-Kaolin	0.6666666667	7.0000000000
-Kaolin	1.0000000000	7.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	7.0000
+Chun	1.0000000000	7.0000
+Kaolin	0.3333333333	7.0000
+Kaolin	0.6666666667	7.0000
+Kaolin	1.0000000000	7.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(0.9)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	7.0000000000
-Chun	1.0000000000	7.0000000000
-Kaolin	0.3333333333	7.0000000000
-Kaolin	0.6666666667	7.0000000000
-Kaolin	1.0000000000	7.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	7.0000
+Chun	1.0000000000	7.0000
+Kaolin	0.3333333333	7.0000
+Kaolin	0.6666666667	7.0000
+Kaolin	1.0000000000	7.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select name,cume_dist() over (partition by name order by score) as b, percentile_disc(1)  within group(order by score) over (partition by name) as c from t1;
 name	b	c
-Chun	0.5000000000	7.0000000000
-Chun	1.0000000000	7.0000000000
-Kaolin	0.3333333333	7.0000000000
-Kaolin	0.6666666667	7.0000000000
-Kaolin	1.0000000000	7.0000000000
-Tata	1.0000000000	4.0000000000
-Tatiana	1.0000000000	4.0000000000
+Chun	0.5000000000	7.0000
+Chun	1.0000000000	7.0000
+Kaolin	0.3333333333	7.0000
+Kaolin	0.6666666667	7.0000
+Kaolin	1.0000000000	7.0000
+Tata	1.0000000000	4.0000
+Tatiana	1.0000000000	4.0000
 select median(score) over (partition by name), percentile_cont(0)  within group(order by score) over (partition by name) as c from t1;
 median(score) over (partition by name)	c
 5.0000000000	3.0000000000

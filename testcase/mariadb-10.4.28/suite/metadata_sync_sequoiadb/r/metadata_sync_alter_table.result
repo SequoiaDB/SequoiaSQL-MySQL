@@ -38,7 +38,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(255) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251
+) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_ci
 SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
@@ -129,9 +129,9 @@ connection conn2;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `y` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `y` varchar(255) DEFAULT NULL,
   `a` int(11) DEFAULT NULL,
-  `x` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `x` varchar(255) DEFAULT NULL,
   `d` int(11) DEFAULT NULL,
   `e` int(11) DEFAULT NULL,
   `f` int(11) DEFAULT NULL,
@@ -143,14 +143,14 @@ t1	CREATE TABLE `t1` (
   `l` datetime NOT NULL,
   `m` time NOT NULL,
   `n` year(4) NOT NULL,
-  `o` char(1) COLLATE utf8mb4_bin NOT NULL,
-  `p` varchar(255) COLLATE utf8mb4_bin NOT NULL,
+  `o` char(1) NOT NULL,
+  `p` varchar(255) NOT NULL,
   `q` binary(1) NOT NULL,
   `r` varbinary(255) NOT NULL,
   `s` blob NOT NULL,
-  `t` text COLLATE utf8mb4_bin NOT NULL,
-  `u` enum('a','b') COLLATE utf8mb4_bin NOT NULL,
-  `v` set('a','b') COLLATE utf8mb4_bin DEFAULT NULL,
+  `t` text NOT NULL,
+  `u` enum('a','b') NOT NULL,
+  `v` set('a','b') DEFAULT NULL,
   `w` int(11) NOT NULL DEFAULT 10,
   `z` int(11) DEFAULT NULL COMMENT 'alter table'
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
@@ -225,36 +225,36 @@ connection conn2;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` char(8) COLLATE utf8mb4_bin NOT NULL,
+  `a` char(8) NOT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `a` char(8) COLLATE utf8mb4_bin NOT NULL,
+  `a` char(8) NOT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
-  `a` char(8) COLLATE utf8mb4_bin NOT NULL
+  `a` char(8) NOT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
-  `a` char(8) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` char(8) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   UNIQUE KEY `a` (`b`,`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t5;
 Table	Create Table
 t5	CREATE TABLE `t5` (
-  `a` char(8) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` char(8) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t6;
 Table	Create Table
 t6	CREATE TABLE `t6` (
-  `a` char(8) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` char(8) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` float DEFAULT NULL,
   KEY `a` (`a`,`c`,`b`)
@@ -463,8 +463,8 @@ t13	CREATE TABLE `t13` (
 SHOW CREATE TABLE t14;
 Table	Create Table
 t14	CREATE TABLE `t14` (
-  `a` enum('a','b','c') COLLATE utf8mb4_bin DEFAULT NULL,
-  `b` set('a','b','c') COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` enum('a','b','c') DEFAULT NULL,
+  `b` set('a','b','c') DEFAULT NULL,
   `c` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;

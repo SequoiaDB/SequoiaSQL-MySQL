@@ -49,25 +49,25 @@ alter table metasync_22556.t1 add column b int not null;
 connection conn1;
 show create database metasync_22556;
 Database	Create Database
-metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 show create table metasync_22556.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL AUTO_INCREMENT,
   `b` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn2;
 show create database metasync_22556;
 Database	Create Database
-metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 show create table metasync_22556.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL AUTO_INCREMENT,
   `b` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn1;
 alter database metasync_22556 character set = 'latin2';
 connection conn2;
@@ -75,13 +75,13 @@ drop table metasync_22556.t1;
 connection conn1;
 show create database metasync_22556;
 Database	Create Database
-metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET latin2 */
+metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET latin2 COLLATE latin2_general_ci */
 show create table metasync_22556.t1;
 ERROR 42S02: Table 'metasync_22556.t1' doesn't exist
 connection conn2;
 show create database metasync_22556;
 Database	Create Database
-metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET latin2 */
+metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET latin2 COLLATE latin2_general_ci */
 show create table metasync_22556.t1;
 ERROR 42S02: Table 'metasync_22556.t1' doesn't exist
 connection conn1;
@@ -106,7 +106,7 @@ alter function metasync_22557.f1 comment 'modify function';
 connection conn1;
 show create database metasync_22557;
 Database	Create Database
-metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 show create function metasync_22557.f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
@@ -119,7 +119,7 @@ END	latin1	latin1_swedish_ci	latin1_swedish_ci
 connection conn2;
 show create database metasync_22557;
 Database	Create Database
-metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 show create function metasync_22557.f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
@@ -136,13 +136,13 @@ drop function metasync_22557.f1;
 connection conn1;
 show create database metasync_22557;
 Database	Create Database
-metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET latin2 */
+metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET latin2 COLLATE latin2_general_ci */
 show create function metasync_22557.f1;
 ERROR 42000: FUNCTION f1 does not exist
 connection conn2;
 show create database metasync_22557;
 Database	Create Database
-metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET latin2 */
+metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET latin2 COLLATE latin2_general_ci */
 show create function metasync_22557.f1;
 ERROR 42000: FUNCTION f1 does not exist
 connection conn1;
@@ -166,13 +166,13 @@ drop trigger metasync_22558.ins_num1;
 connection conn1;
 show create database metasync_22558;
 Database	Create Database
-metasync_22558	CREATE DATABASE `metasync_22558` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_22558	CREATE DATABASE `metasync_22558` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 show create trigger metasync_22558.ins_num1;
 ERROR HY000: Trigger does not exist
 connection conn2;
 show create database metasync_22558;
 Database	Create Database
-metasync_22558	CREATE DATABASE `metasync_22558` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_22558	CREATE DATABASE `metasync_22558` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 show create trigger metasync_22558.ins_num1;
 ERROR HY000: Trigger does not exist
 connection conn1;
@@ -186,23 +186,23 @@ create index a on metasync_22560.t1(a);
 connection conn1;
 show create database metasync_22560;
 Database	Create Database
-metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET latin1 */
+metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci */
 show create table metasync_22560.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn2;
 show create database metasync_22560;
 Database	Create Database
-metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET latin1 */
+metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci */
 show create table metasync_22560.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn1;
 alter database metasync_22560 character set = 'utf8';
 connection conn2;
@@ -210,21 +210,21 @@ drop index a on metasync_22560.t1;
 connection conn1;
 show create database metasync_22560;
 Database	Create Database
-metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 show create table metasync_22560.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn2;
 show create database metasync_22560;
 Database	Create Database
-metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 show create table metasync_22560.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn1;
 drop database metasync_22560;
 connection conn1;
@@ -252,7 +252,7 @@ t1	CREATE TABLE `t1` (
   `b` char(255) DEFAULT NULL,
   `c` int(11) NOT NULL DEFAULT 10,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create function meta_sync_test.f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
@@ -270,7 +270,7 @@ t1	CREATE TABLE `t1` (
   `b` char(255) DEFAULT NULL,
   `c` int(11) NOT NULL DEFAULT 10,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create function meta_sync_test.f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
@@ -292,7 +292,7 @@ t1	CREATE TABLE `t1` (
   `b` char(255) DEFAULT NULL,
   `d` bigint(20) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create function meta_sync_test.f1;
 ERROR 42000: FUNCTION f1 does not exist
 connection conn2;
@@ -303,7 +303,7 @@ t1	CREATE TABLE `t1` (
   `b` char(255) DEFAULT NULL,
   `d` bigint(20) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create function meta_sync_test.f1;
 ERROR 42000: FUNCTION f1 does not exist
 connection conn1;
@@ -321,7 +321,7 @@ Table	Create Table
 account	CREATE TABLE `account` (
   `acct_num` int(11) DEFAULT NULL,
   `amount` decimal(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create trigger meta_sync_test.ins_num1;
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
 ins_num1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` trigger meta_sync_test.ins_num1 before insert on account for each row set @sum = @sum + NEW.amount	latin1	latin1_swedish_ci	latin1_swedish_ci	x
@@ -331,7 +331,7 @@ Table	Create Table
 account	CREATE TABLE `account` (
   `acct_num` int(11) DEFAULT NULL,
   `amount` decimal(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create trigger meta_sync_test.ins_num1;
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
 ins_num1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` trigger meta_sync_test.ins_num1 before insert on account for each row set @sum = @sum + NEW.amount	latin1	latin1_swedish_ci	latin1_swedish_ci	x
@@ -346,7 +346,7 @@ account	CREATE TABLE `account` (
   `acct_num` int(11) DEFAULT NULL,
   `amount` decimal(10,2) DEFAULT NULL,
   `c` int(11) NOT NULL DEFAULT 10
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create trigger meta_sync_test.ins_num1;
 ERROR HY000: Trigger does not exist
 connection conn2;
@@ -356,7 +356,7 @@ account	CREATE TABLE `account` (
   `acct_num` int(11) DEFAULT NULL,
   `amount` decimal(10,2) DEFAULT NULL,
   `c` int(11) NOT NULL DEFAULT 10
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create trigger meta_sync_test.ins_num1;
 ERROR HY000: Trigger does not exist
 connection conn1;
@@ -377,14 +377,14 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn2;
 show create table meta_sync_test.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn1;
 alter table meta_sync_test.t1 rename as meta_sync_test.t2;
 connection conn1;
@@ -395,7 +395,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` int(11) DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn2;
 show create table meta_sync_test.t1;
 ERROR 42S02: Table 'meta_sync_test.t1' doesn't exist
@@ -404,7 +404,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` int(11) DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn1;
 drop table meta_sync_test.t2;
 connection conn1;
@@ -424,10 +424,10 @@ t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create view meta_sync_test.v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where `meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`)	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where `meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a` limit 1)	latin1	latin1_swedish_ci
 connection conn2;
 show create table meta_sync_test.t1;
 Table	Create Table
@@ -435,10 +435,10 @@ t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create view meta_sync_test.v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where `meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`)	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where `meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a` limit 1)	latin1	latin1_swedish_ci
 connection conn1;
 drop table meta_sync_test.t1;
 connection conn2;
@@ -486,7 +486,7 @@ t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL AUTO_INCREMENT,
   `b` int(11) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create function meta_sync_test.f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
@@ -602,7 +602,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `name` char(255) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn2;
 show create table meta_sync_test.v1;
 View	Create View	character_set_client	collation_connection
@@ -638,7 +638,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `name` char(255) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 connection conn1;
 drop table meta_sync_test.t1;
 connection conn2;
@@ -705,19 +705,19 @@ flush privileges;
 connection conn1;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
-GRANT SELECT ON `meta_sync_22567`.`v1` TO 'user_22567'@'%'
-GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
-GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO 'user_22567'@'%'
-GRANT EXECUTE ON FUNCTION `meta_sync_22567`.`f1` TO 'user_22567'@'%'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT SELECT ON `meta_sync_22567`.`v1` TO `user_22567`@`%`
+GRANT INSERT ON `meta_sync_22567`.`t1` TO `user_22567`@`%`
+GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO `user_22567`@`%`
+GRANT EXECUTE ON FUNCTION `meta_sync_22567`.`f1` TO `user_22567`@`%`
 connection conn2;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
-GRANT SELECT ON `meta_sync_22567`.`v1` TO 'user_22567'@'%'
-GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
-GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO 'user_22567'@'%'
-GRANT EXECUTE ON FUNCTION `meta_sync_22567`.`f1` TO 'user_22567'@'%'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT SELECT ON `meta_sync_22567`.`v1` TO `user_22567`@`%`
+GRANT INSERT ON `meta_sync_22567`.`t1` TO `user_22567`@`%`
+GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO `user_22567`@`%`
+GRANT EXECUTE ON FUNCTION `meta_sync_22567`.`f1` TO `user_22567`@`%`
 connection conn1;
 revoke insert on table meta_sync_22567.t1 from user_22567;
 revoke select on table meta_sync_22567.v1 from user_22567;
@@ -727,24 +727,24 @@ flush privileges;
 connection conn1;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
 connection conn2;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
 connection conn1;
 grant all on meta_sync_22567.* to 'user_22567';
 flush privileges;
 connection conn1;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
-GRANT ALL PRIVILEGES ON `meta_sync_22567`.* TO 'user_22567'@'%'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT ALL PRIVILEGES ON `meta_sync_22567`.* TO `user_22567`@`%`
 connection conn2;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
-GRANT ALL PRIVILEGES ON `meta_sync_22567`.* TO 'user_22567'@'%'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT ALL PRIVILEGES ON `meta_sync_22567`.* TO `user_22567`@`%`
 connection conn1;
 alter database meta_sync_22567 character set = 'latin2';
 connection conn2;
@@ -753,11 +753,11 @@ flush privileges;
 connection conn1;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
 connection conn2;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
 connection conn1;
 drop table meta_sync_22567.t1;
 connection conn2;
@@ -769,11 +769,11 @@ drop procedure meta_sync_22567.p1;
 connection conn1;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
 connection conn2;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%' IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
+GRANT USAGE ON *.* TO `user_22567`@`%` IDENTIFIED BY PASSWORD '*140D0156CAAF8B9DFDD066C4A4636A3388A8F5C0'
 connection conn1;
 drop database meta_sync_22567;
 drop user user_22567;
@@ -820,7 +820,7 @@ comment 'alter procedure comment';
 connection conn1;
 SHOW CREATE DATABASE metasync_22559_22564;
 Database	Create Database
-metasync_22559_22564	CREATE DATABASE `metasync_22559_22564` /*!40100 DEFAULT CHARACTER SET ucs2 */
+metasync_22559_22564	CREATE DATABASE `metasync_22559_22564` /*!40100 DEFAULT CHARACTER SET ucs2 COLLATE ucs2_general_ci */
 SHOW CREATE PROCEDURE p1;
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x1 char(16), x2 char(16), y int )
@@ -835,7 +835,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
-  `b` char(8) COLLATE utf8mb4_bin DEFAULT NULL,
+  `b` char(8) DEFAULT NULL,
   `c` longblob DEFAULT NULL,
   `d` date DEFAULT NULL,
   PRIMARY KEY (`a`)
@@ -844,7 +844,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` int(11) DEFAULT 1,
-  `b` char(8) COLLATE utf8mb4_bin DEFAULT ''
+  `b` char(8) DEFAULT ''
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin WITH SYSTEM VERSIONING
 connection conn1;
 ALTER DATABASE metasync_22559_22564 CHARACTER SET cp1251;
@@ -860,7 +860,7 @@ ERROR 42S02: Table 'metasync_22559_22564.t2' doesn't exist
 connection conn2;
 SHOW CREATE DATABASE metasync_22559_22564;
 Database	Create Database
-metasync_22559_22564	CREATE DATABASE `metasync_22559_22564` /*!40100 DEFAULT CHARACTER SET cp1251 */
+metasync_22559_22564	CREATE DATABASE `metasync_22559_22564` /*!40100 DEFAULT CHARACTER SET cp1251 COLLATE cp1251_general_ci */
 SHOW CREATE PROCEDURE p1;
 ERROR 42000: PROCEDURE p1 does not exist
 DROP DATABASE metasync_22559_22564;
@@ -899,7 +899,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` char(16) COLLATE utf8mb4_bin DEFAULT 'zhangsan',
+  `name` char(16) DEFAULT 'zhangsan',
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SELECT * FROM t1 ORDER BY id;

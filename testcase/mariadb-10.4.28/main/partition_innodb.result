@@ -366,7 +366,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 drop table t1;
 create table t1 (a int)
@@ -380,7 +380,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (`a`)
 (PARTITION `p0` VALUES IN (0) ENGINE = SequoiaDB)
 drop table t1;
@@ -459,7 +459,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `int_column` int(11) DEFAULT NULL,
   `char_column` char(5) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`int_column`)
 SUBPARTITION BY KEY (`char_column`)
 SUBPARTITIONS 2
@@ -501,7 +501,7 @@ t1	CREATE TABLE `t1` (
   `a` bigint(20) NOT NULL,
   `b` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 2
 SELECT * FROM t1;
@@ -529,7 +529,7 @@ t1	CREATE TABLE `t1` (
   `a` bigint(20) NOT NULL,
   `b` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 2
 SELECT * FROM t1;
@@ -857,7 +857,7 @@ Warnings:
 Warning	1366	Incorrect integer value: 'three' for column `test_partition_innodb`.`t2`.`b` at row 2
 UPDATE v SET a = NULL;
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'foo'
+Warning	1292	Truncated incorrect DECIMAL value: 'foo'
 DROP view v;
 DROP TABLE t1, t2;
 CREATE TABLE t (f1 INT, f2 INT, KEY(f2)) ENGINE=SEQUOIADB PARTITION BY HASH (f1) PARTITIONS 2;

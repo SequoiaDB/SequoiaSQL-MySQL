@@ -806,6 +806,7 @@ id	a	b	c
 [Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ {"$timestamp": "1970-01-01-08.00.01.000000"}, {"$timestamp": "2038-01-19-11.14.07.999999"}, {"$timestamp": "2012-01-02-20.12.12.000000"}, {"$timestamp": "2012-01-02-20.12.12.000001"} ] } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a='a1';
 id	a	b	c
+Warning	1292	Incorrect datetime value: 'a1'
 Warning	1292	Truncated incorrect datetime value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
@@ -957,7 +958,7 @@ id	a	b	c
 7	2012-01-02 12:12:12.000000	a	2012-01-02 12:12:12
 select * from t1 where a='a1';
 id	a	b	c
-Warning	1292	Truncated incorrect datetime value: 'a1'
+Warning	1292	Incorrect datetime value: 'a1'
 Warnings:
 select * from t1 where a=c;
 id	a	b	c
@@ -1305,7 +1306,7 @@ hex(a)	hex(c)
 [Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 3, 8 ] } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select hex(a),hex(c) from t1 where a='a1';
 hex(a)	hex(c)
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select hex(a),hex(c) from t1 where a<8;
@@ -1411,7 +1412,7 @@ hex(a)	hex(c)
 3	3
 select hex(a),hex(c) from t1 where a='a1';
 hex(a)	hex(c)
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select hex(a),hex(c) from t1 where a<8;
 hex(a)	hex(c)
@@ -1545,7 +1546,7 @@ id	a	b	c
 [Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1902, 2155, 1904 ] } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a='a1';
 id	a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a<2156;
@@ -2532,7 +2533,7 @@ id	a	b	c
 7	125	7	124
 select * from t1 where a = 'a1';
 id	a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -2723,7 +2724,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 1	0	1	0
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -2925,7 +2926,7 @@ id	a	b	c
 4	32767	4	32767
 select * from t1 where a = 'a1';
 id	a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -3113,7 +3114,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 1	0	1	0
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a = c;
@@ -3297,7 +3298,7 @@ id	a	b	c
 2	-8388606	2	-8388605
 select * from t1 where a = 'a1';
 id	a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -3484,7 +3485,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 1	0	1	0
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -3679,7 +3680,7 @@ id	a	b	c
 6	2147483646	6	2147483646
 select * from t1 where a = 'a1';
 id	a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a = c;
@@ -3870,7 +3871,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 1	0	1	0
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -4063,7 +4064,7 @@ id	a	b	c
 6	922337203685477806	6	922337203685477806.0
 select * from t1 where a = 'a1';
 id	a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -4149,7 +4150,7 @@ id	a	b	c
 6	922337203685477806	6	922337203685477806.0
 select * from t1 where a = 'a1';
 id	a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -4254,7 +4255,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 1	0	1	0.0
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a = c;
@@ -4345,7 +4346,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 1	0	1	0.0
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -7998,28 +7999,28 @@ SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 ORDER BY t2.id, t2.vc LIM
 0	bc
 0	op
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
-Warning	1292	Truncated incorrect DOUBLE value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
+Warning	1292	Truncated incorrect DECIMAL value: 'op'
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 CREATE TABLE t3 SELECT * FROM t1 WHERE id > 5 LIMIT 5;
 INSERT INTO t3 SELECT * FROM t1 LIMIT 3 OFFSET 2;
@@ -13800,7 +13801,7 @@ count(*)
 1
 EXPLAIN SELECT count(*) FROM t1 WHERE id in(1,2);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY	PRIMARY	4	NULL	2	Using where with pushed condition; Using index
+1	SIMPLE	t1	index	PRIMARY	PRIMARY	4	NULL	10	Using where with pushed condition; Using index
 SELECT count(*) FROM t1 WHERE id in(1,2);
 count(*)
 2

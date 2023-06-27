@@ -209,7 +209,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` int(10) unsigned DEFAULT NULL,
   `least____b_b` int(10) unsigned DEFAULT NULL,
   `greatest_b_b` int(10) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -242,7 +242,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` decimal(10,0) DEFAULT NULL,
   `greatest_a_b` decimal(10,0) DEFAULT NULL,
   `greatest_b_a` decimal(10,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -417,7 +417,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` int(11) DEFAULT NULL,
   `least____b_b` int(11) DEFAULT NULL,
   `greatest_b_b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -450,7 +450,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` int(11) DEFAULT NULL,
   `greatest_a_b` int(11) DEFAULT NULL,
   `greatest_b_a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -625,7 +625,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` bigint(20) unsigned DEFAULT NULL,
   `least____b_b` bigint(20) unsigned DEFAULT NULL,
   `greatest_b_b` bigint(20) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -658,7 +658,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` decimal(20,0) DEFAULT NULL,
   `greatest_a_b` decimal(20,0) DEFAULT NULL,
   `greatest_b_a` decimal(20,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -833,7 +833,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` bigint(20) DEFAULT NULL,
   `least____b_b` bigint(20) DEFAULT NULL,
   `greatest_b_b` bigint(20) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -866,7 +866,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` bigint(20) DEFAULT NULL,
   `greatest_a_b` bigint(20) DEFAULT NULL,
   `greatest_b_a` bigint(20) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -1010,7 +1010,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` bit(8) DEFAULT NULL,
   `least____b_b` bit(8) DEFAULT NULL,
   `greatest_b_b` bit(8) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -1043,7 +1043,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` decimal(10,0) DEFAULT NULL,
   `greatest_a_b` decimal(10,0) DEFAULT NULL,
   `greatest_b_a` decimal(10,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -1187,7 +1187,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` bit(8) DEFAULT NULL,
   `least____b_b` bit(8) DEFAULT NULL,
   `greatest_b_b` bit(8) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -1220,7 +1220,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` int(10) unsigned DEFAULT NULL,
   `greatest_a_b` int(10) unsigned DEFAULT NULL,
   `greatest_b_a` int(10) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -1364,7 +1364,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` bit(8) DEFAULT NULL,
   `least____b_b` bit(8) DEFAULT NULL,
   `greatest_b_b` bit(8) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -1397,7 +1397,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` bit(8) DEFAULT NULL,
   `greatest_a_b` bit(8) DEFAULT NULL,
   `greatest_b_a` bit(8) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -1541,7 +1541,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` smallint(6) DEFAULT NULL,
   `least____b_b` smallint(6) DEFAULT NULL,
   `greatest_b_b` smallint(6) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -1574,7 +1574,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` double DEFAULT NULL,
   `greatest_a_b` double DEFAULT NULL,
   `greatest_b_a` double DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -1718,7 +1718,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` varchar(1) DEFAULT NULL,
   `least____b_b` varchar(1) DEFAULT NULL,
   `greatest_b_b` varchar(1) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -1751,7 +1751,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` varchar(10) DEFAULT NULL,
   `greatest_a_b` varchar(10) DEFAULT NULL,
   `greatest_b_a` varchar(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -1895,7 +1895,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` year(4) DEFAULT NULL,
   `least____b_b` year(4) DEFAULT NULL,
   `greatest_b_b` year(4) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -1928,7 +1928,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` decimal(10,0) DEFAULT NULL,
   `greatest_a_b` decimal(10,0) DEFAULT NULL,
   `greatest_b_a` decimal(10,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -2072,7 +2072,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` year(4) DEFAULT NULL,
   `least____b_b` year(4) DEFAULT NULL,
   `greatest_b_b` year(4) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -2105,7 +2105,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` int(10) unsigned DEFAULT NULL,
   `greatest_a_b` int(10) unsigned DEFAULT NULL,
   `greatest_b_a` int(10) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -2250,7 +2250,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` time DEFAULT NULL,
   `least____b_b` time DEFAULT NULL,
   `greatest_b_b` time DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -2283,7 +2283,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` datetime DEFAULT NULL,
   `greatest_a_b` datetime DEFAULT NULL,
   `greatest_b_a` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 SET timestamp=DEFAULT;
@@ -2429,7 +2429,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` time DEFAULT NULL,
   `least____b_b` time DEFAULT NULL,
   `greatest_b_b` time DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -2462,7 +2462,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` datetime DEFAULT NULL,
   `greatest_a_b` datetime DEFAULT NULL,
   `greatest_b_a` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 SET timestamp=DEFAULT;
@@ -2608,7 +2608,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` time DEFAULT NULL,
   `least____b_b` time DEFAULT NULL,
   `greatest_b_b` time DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -2641,7 +2641,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` datetime DEFAULT NULL,
   `greatest_a_b` datetime DEFAULT NULL,
   `greatest_b_a` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 SET timestamp=DEFAULT;
@@ -2787,7 +2787,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` date DEFAULT NULL,
   `least____b_b` date DEFAULT NULL,
   `greatest_b_b` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -2820,7 +2820,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` datetime DEFAULT NULL,
   `greatest_a_b` datetime DEFAULT NULL,
   `greatest_b_a` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 SET timestamp=DEFAULT;
@@ -2980,7 +2980,7 @@ t2	CREATE TABLE `t2` (
   `ifnull___b_b` varchar(10) DEFAULT NULL,
   `least____b_b` varchar(10) DEFAULT NULL,
   `greatest_b_b` varchar(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t2 AS
@@ -3018,7 +3018,7 @@ t2	CREATE TABLE `t2` (
   `least____b_a` double DEFAULT NULL,
   `greatest_a_b` double DEFAULT NULL,
   `greatest_b_a` double DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -3034,7 +3034,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `LEAST(1.0,'10')` double NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # MDEV-657 LP:873142 - GREATEST() does not always return same signness of argument types
@@ -3077,7 +3077,7 @@ t2	CREATE TABLE `t2` (
   `LEAST(a,a)` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `LEAST(b,b)` datetime DEFAULT NULL,
   `LEAST(a,b)` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 SET timestamp=DEFAULT;
@@ -3099,7 +3099,7 @@ t2	CREATE TABLE `t2` (
   `c2` mediumblob DEFAULT NULL,
   `c3` blob DEFAULT NULL,
   `c4` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 MAX(COALESCE(c1)) AS c1,
 MAX(COALESCE(c2)) AS c2,
@@ -3126,7 +3126,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `c1` varchar(1) DEFAULT NULL,
   `c2` varchar(255) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 MAX(COALESCE(c1)) AS c1,
 MAX(COALESCE(c2)) AS c2
@@ -3147,9 +3147,9 @@ FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `c1` varchar(1) CHARACTER SET utf8 DEFAULT NULL,
-  `c2` varchar(255) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c2` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 MAX(COALESCE(c1)) AS c1,
 MAX(COALESCE(c2)) AS c2
@@ -3174,7 +3174,7 @@ t2	CREATE TABLE `t2` (
   `c1` varchar(1) DEFAULT NULL,
   `c2` varchar(255) DEFAULT NULL,
   `c3` text DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 MAX(COALESCE(c1)) AS c1,
 MAX(COALESCE(c2)) AS c2,
@@ -3198,10 +3198,10 @@ FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `c1` varchar(1) CHARACTER SET utf8 DEFAULT NULL,
-  `c2` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `c3` text CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c2` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c3` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 MAX(COALESCE(c1)) AS c1,
 MAX(COALESCE(c2)) AS c2,
@@ -3224,7 +3224,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `c1` varchar(1) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 MAX(COALESCE(c1)) AS c1
 FROM t1;
@@ -3242,8 +3242,8 @@ FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `c1` varchar(1) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 MAX(COALESCE(c1)) AS c1
 FROM t1;
@@ -3271,7 +3271,7 @@ t2	CREATE TABLE `t2` (
   `c2` blob DEFAULT NULL,
   `c3` mediumblob DEFAULT NULL,
   `c4` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 @c1:=c1 AS c1,
 @c2:=c2 AS c2,
@@ -3297,7 +3297,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `c1` varchar(1) DEFAULT NULL,
   `c2` varchar(255) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 @c1:=c1 AS c1,
 @c2:=c2 AS c2
@@ -3317,9 +3317,9 @@ FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `c1` varchar(1) CHARACTER SET utf8 DEFAULT NULL,
-  `c2` varchar(255) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c2` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 @c1:=c1 AS c1,
 @c2:=c2 AS c2
@@ -3343,7 +3343,7 @@ t2	CREATE TABLE `t2` (
   `c1` varchar(1) DEFAULT NULL,
   `c2` varchar(255) DEFAULT NULL,
   `c3` text DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 @c:=c1 AS c1,
 @c:=c2 AS c2,
@@ -3366,10 +3366,10 @@ FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `c1` varchar(1) CHARACTER SET utf8 DEFAULT NULL,
-  `c2` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `c3` text CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c2` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `c3` text CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 @c:=c1 AS c1,
 @c:=c2 AS c2,
@@ -3391,7 +3391,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `c1` varchar(1) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 @c:=c1 AS c1
 FROM t1;
@@ -3408,8 +3408,8 @@ FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `c1` varchar(1) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT
 @c:=c1 AS c1
 FROM t1;
@@ -3447,7 +3447,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(20) DEFAULT NULL,
   `b` varchar(20) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # MDEV-11015 Assertion failed: precision > 0 in decimal_bin_size upon SELECT with DISTINCT, CAST and other functions
@@ -3494,9 +3494,9 @@ COALESCE(_latin1'aaa',_utf8 0xC39F) AS c2;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET utf8 NOT NULL,
-  `c2` varchar(3) CHARACTER SET utf8 NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `c2` varchar(3) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT * FROM t1;
 c1	c2
 aaa	aaa
@@ -3528,7 +3528,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` decimal(64,0) DEFAULT NULL,
   `GREATEST(a,b)` decimal(64,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -3540,7 +3540,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` double(255,4) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -3552,7 +3552,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a)` float(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2, t1;
 CREATE TABLE t1 (a FLOAT(10,2));
 CREATE TABLE t2 AS SELECT LEAST(a,a) FROM t1;
@@ -3560,7 +3560,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,a)` float(19,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2, t1;
 CREATE TABLE t1 (a TINYINT(1));
 CREATE TABLE t2 AS SELECT COALESCE(a) FROM t1;
@@ -3568,7 +3568,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a)` tinyint(4) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2, t1;
 CREATE TABLE t1 (a TINYINT(1));
 CREATE TABLE t2 AS SELECT LEAST(a,a) FROM t1;
@@ -3576,7 +3576,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,a)` tinyint(4) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2, t1;
 #
 # MDEV-12875 Wrong VIEW column data type for COALESCE(int_column)
@@ -3600,7 +3600,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` bigint(11) NOT NULL,
   `c2` bigint(11) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT
 9 AS i1, COALESCE(9) AS c1,
@@ -3690,7 +3690,7 @@ t1	CREATE TABLE `t1` (
   `c21` decimal(21,0) NOT NULL,
   `i22` decimal(22,0) NOT NULL,
   `c22` decimal(22,0) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT * FROM t1;
 i1	9
 c1	9
@@ -3766,7 +3766,7 @@ t2	CREATE TABLE `t2` (
   `c2` smallint(6) DEFAULT NULL,
   `c3` smallint(6) DEFAULT NULL,
   `c4` smallint(6) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2,t1;
 CREATE TABLE t1 AS SELECT
 connection_id() AS c0,
@@ -3782,7 +3782,7 @@ t1	CREATE TABLE `t1` (
   `c2` int(10) unsigned NOT NULL,
   `c3` int(10) unsigned NOT NULL,
   `c4` int(10) unsigned NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # MDEV-17759 Assertion `precision > 0' failed in decimal_bin_size upon CREATE TABLE .. SELECT
@@ -3799,7 +3799,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `f0` decimal(1,0) DEFAULT NULL,
   `f1` decimal(1,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1, t2;
 SET sql_mode=DEFAULT;
 #
@@ -3868,7 +3868,7 @@ t1	CREATE TABLE `t1` (
   `i2` date DEFAULT NULL,
   `i3` datetime DEFAULT NULL,
   `i4` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET timestamp=UNIX_TIMESTAMP('2001-01-01 10:20:30');
 CREATE TABLE t1 AS SELECT LEAST(CURRENT_DATE,CURRENT_TIME) AS c1;
@@ -3879,7 +3879,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` datetime NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET old_mode=ZERO_DATE_TIME_CAST;
 CREATE TABLE t1 AS SELECT LEAST(CURRENT_DATE,CURRENT_TIME) AS c1;
@@ -3892,7 +3892,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET old_mode=DEFAULT;
 SET timestamp=DEFAULT;
@@ -3913,7 +3913,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` time DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET sql_mode=DEFAULT;
 #
@@ -3985,7 +3985,7 @@ t1	CREATE TABLE `t1` (
   `i2` date DEFAULT NULL,
   `i3` datetime DEFAULT NULL,
   `i4` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET timestamp=UNIX_TIMESTAMP('2001-01-01 10:20:30');
 CREATE TABLE t1 AS SELECT LEAST(CURRENT_DATE,CURRENT_TIME) AS c1;
@@ -3996,7 +3996,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` datetime NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET old_mode=ZERO_DATE_TIME_CAST;
 CREATE TABLE t1 AS SELECT LEAST(CURRENT_DATE,CURRENT_TIME) AS c1;
@@ -4009,7 +4009,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET old_mode=DEFAULT;
 SET timestamp=DEFAULT;
@@ -4030,7 +4030,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` time DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET sql_mode=DEFAULT;
 #
@@ -4094,7 +4094,7 @@ t1	CREATE TABLE `t1` (
   `dbl` double DEFAULT NULL,
   `sint` bigint(10) DEFAULT NULL,
   `uint` bigint(20) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET sql_mode=DEFAULT;
 #

@@ -181,11 +181,11 @@ info: Rows matched: 1  Changed: 1  Warnings: 0
 update t1 set a=10001 order by id limit 2;
 affected rows: 2
 info: Rows matched: 2  Changed: 2  Warnings: 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[enable_query_cache_update_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[enable_query_cache_update_sequoiadb.t1]
 update t1 set a=10002 where a=10000 order by id limit 1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[enable_query_cache_update_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[enable_query_cache_update_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
 1	10001	update	sa

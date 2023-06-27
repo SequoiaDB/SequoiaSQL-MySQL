@@ -363,7 +363,7 @@ t3	CREATE TABLE `t3` (
   `a` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `b` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (unix_timestamp(`a`))
 PARTITIONS 3
 DROP TABLE t3;
@@ -381,7 +381,7 @@ t3	CREATE TABLE `t3` (
   `a` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `b` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (unix_timestamp(`a`))
 PARTITIONS 3
 DROP TABLE t3;
@@ -399,7 +399,7 @@ t3	CREATE TABLE `t3` (
   `a` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE current_timestamp(),
   `b` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (unix_timestamp(`a`))
 PARTITIONS 3
 DROP TABLE t3;
@@ -417,7 +417,7 @@ t3	CREATE TABLE `t3` (
   `a` timestamp NOT NULL DEFAULT current_timestamp(),
   `b` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (unix_timestamp(`a`))
 PARTITIONS 3
 DROP TABLE t3;
@@ -435,7 +435,7 @@ t3	CREATE TABLE `t3` (
   `a` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `b` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 3
 DROP TABLE t3;
@@ -453,7 +453,7 @@ t3	CREATE TABLE `t3` (
   `a` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `b` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 3
 DROP TABLE t3;
@@ -471,7 +471,7 @@ t3	CREATE TABLE `t3` (
   `a` datetime NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE current_timestamp(),
   `b` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 3
 DROP TABLE t3;
@@ -489,7 +489,7 @@ t3	CREATE TABLE `t3` (
   `a` datetime NOT NULL DEFAULT current_timestamp(),
   `b` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 3
 DROP TABLE t3;

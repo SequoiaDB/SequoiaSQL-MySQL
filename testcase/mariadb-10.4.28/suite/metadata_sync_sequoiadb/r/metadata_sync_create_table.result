@@ -76,8 +76,8 @@ t6	CREATE TABLE `t6` (
 SHOW CREATE TABLE t7;
 Table	Create Table
 t7	CREATE TABLE `t7` (
-  `a` char(1) COLLATE utf8mb4_bin DEFAULT NULL,
-  `b` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` char(1) DEFAULT NULL,
+  `b` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t8;
 Table	Create Table
@@ -89,19 +89,19 @@ SHOW CREATE TABLE t9;
 Table	Create Table
 t9	CREATE TABLE `t9` (
   `a` blob DEFAULT NULL,
-  `b` text COLLATE utf8mb4_bin DEFAULT NULL
+  `b` text DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t10;
 Table	Create Table
 t10	CREATE TABLE `t10` (
-  `a` set('a','b','c') COLLATE utf8mb4_bin DEFAULT NULL,
-  `b` enum('a','b','c') COLLATE utf8mb4_bin DEFAULT NULL
+  `a` set('a','b','c') DEFAULT NULL,
+  `b` enum('a','b','c') DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t11;
 Table	Create Table
 t11	CREATE TABLE `t11` (
-  `a` set('a','b','c') COLLATE utf8mb4_bin DEFAULT NULL,
-  `b` enum('a','b','c') COLLATE utf8mb4_bin DEFAULT NULL
+  `a` set('a','b','c') DEFAULT NULL,
+  `b` enum('a','b','c') DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t12;
 Table	Create Table
@@ -114,7 +114,7 @@ t12	CREATE TABLE `t12` (
 SHOW CREATE TABLE t13;
 Table	Create Table
 t13	CREATE TABLE `t13` (
-  `a` longtext COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`a`))
+  `a` longtext DEFAULT NULL CHECK (json_valid(`a`))
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13;
@@ -157,43 +157,43 @@ connection conn2;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` varchar(255) DEFAULT NULL,
   KEY `idx` (`a`(10))
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `a` varchar(255) COLLATE utf8mb4_bin NOT NULL,
+  `a` varchar(255) NOT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` varchar(255) DEFAULT NULL,
   KEY `idx` (`a`(10))
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` varchar(255) DEFAULT NULL,
   KEY `idx` (`a`(10)) USING HASH
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t5;
 Table	Create Table
 t5	CREATE TABLE `t5` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` varchar(255) DEFAULT NULL,
   KEY `a` (`a`(10)) KEY_BLOCK_SIZE=10
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t6;
 Table	Create Table
 t6	CREATE TABLE `t6` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` varchar(255) DEFAULT NULL,
   KEY `a` (`a`(10)) COMMENT 'create index'
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t7;
 Table	Create Table
 t7	CREATE TABLE `t7` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a` varchar(255) DEFAULT NULL,
   KEY `a` (`a`(10)) COMMENT 'create "index"'
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
@@ -292,14 +292,14 @@ Table	Create Table
 t3	CREATE TABLE `t3` (
   `a` int(11) NOT NULL DEFAULT 1000,
   `b` blob NOT NULL DEFAULT 'blob',
-  `t` text COLLATE utf8mb4_bin NOT NULL DEFAULT 'text',
+  `t` text NOT NULL DEFAULT 'text',
   `c` int(11) DEFAULT (`a` + 1),
   `d` int(11) DEFAULT uuid_short()
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
-  `a` varchar(255) CHARACTER SET utf8 DEFAULT NULL
+  `a` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t5;
 Table	Create Table
@@ -310,7 +310,7 @@ t5	CREATE TABLE `t5` (
 SHOW CREATE TABLE t6;
 Table	Create Table
 t6	CREATE TABLE `t6` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t7;
 Table	Create Table
@@ -444,7 +444,7 @@ SUBPARTITION BY HASH (`b`)
 SHOW CREATE TABLE t8;
 Table	Create Table
 t8	CREATE TABLE `t8` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AVG_ROW_LENGTH=12
 SHOW CREATE TABLE t9;
 Table	Create Table
@@ -454,12 +454,12 @@ t9	CREATE TABLE `t9` (
 SHOW CREATE TABLE t10;
 Table	Create Table
 t10	CREATE TABLE `t10` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin CONNECTION='connect_string'
 SHOW CREATE TABLE t11;
 Table	Create Table
 t11	CREATE TABLE `t11` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin CONNECTION='connect_string'
 connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11;
@@ -509,72 +509,72 @@ connection conn2;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin DELAY_KEY_WRITE=1
 SHOW CREATE TABLE t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t5;
 Table	Create Table
 t5	CREATE TABLE `t5` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin KEY_BLOCK_SIZE=1024
 SHOW CREATE TABLE t6;
 Table	Create Table
 t6	CREATE TABLE `t6` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin MIN_ROWS=1 MAX_ROWS=1024
 SHOW CREATE TABLE t7;
 Table	Create Table
 t7	CREATE TABLE `t7` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin PACK_KEYS=0
 SHOW CREATE TABLE t9;
 Table	Create Table
 t9	CREATE TABLE `t9` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin ROW_FORMAT=COMPRESSED
 SHOW CREATE TABLE t10;
 Table	Create Table
 t10	CREATE TABLE `t10` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t11;
 Table	Create Table
 t11	CREATE TABLE `t11` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin STATS_PERSISTENT=1 STATS_AUTO_RECALC=1 STATS_SAMPLE_PAGES=10
 SHOW CREATE TABLE t12;
 Table	Create Table
 t12	CREATE TABLE `t12` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t13;
 Table	Create Table
 t13	CREATE TABLE `t13` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin TRANSACTIONAL=1
 SHOW CREATE TABLE t14;
 Table	Create Table
 t14	CREATE TABLE `t14` (
-  `a` text COLLATE utf8mb4_bin DEFAULT NULL
+  `a` text DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t15;
 Table	Create Table
 t15	CREATE TABLE `t15` (
-  `a` text COLLATE utf8mb4_bin DEFAULT NULL
+  `a` text DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t16;
 Table	Create Table
 t16	CREATE TABLE `t16` (
-  `a` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL
+  `a` varchar(255) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
 DROP TABLE t1,t2,t4,t5,t6,t7,t9,t10,t11,t12,t13,t14;
@@ -722,22 +722,22 @@ t1	CREATE TABLE "t1" (
 SHOW CREATE TABLE "t2";
 Table	Create Table
 t2	CREATE TABLE "t2" (
-  "a" char(1) COLLATE utf8mb4_bin DEFAULT NULL
+  "a" char(1) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE "    t3";
 Table	Create Table
     t3	CREATE TABLE "    t3" (
-  "a" char(1) COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'This is a Test, \\''s\nn	t comment???nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'
+  "a" char(1) DEFAULT NULL COMMENT 'This is a Test, \\''s\nn	t comment???nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE "\tt1\nn1\rr1";
 Table	Create Table
 \tt1\nn1\rr1	CREATE TABLE "\tt1\nn1\rr1" (
-  "a" char(1) COLLATE utf8mb4_bin DEFAULT NULL
+  "a" char(1) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE "中文表名";
 Table	Create Table
 ????	CREATE TABLE "????" (
-  "a" char(1) COLLATE utf8mb4_bin DEFAULT NULL
+  "a" char(1) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 DROP TABLE "t1","t2","    t3","\tt1\nn1\rr1","中文表名";
 connection conn1;

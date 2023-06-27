@@ -353,7 +353,7 @@ drop view v1;
 CREATE TEMPORARY SEQUENCE t1;
 select next value for t1;
 drop temporary table t1;
---error ER_NO_SUCH_TABLE
+--error 4091
 select previous value for t1;
 CREATE SEQUENCE t1 start with 1 minvalue 1 maxvalue 10 increment by 1 cache 10;
 select next value for t1;
@@ -369,7 +369,7 @@ drop sequence t1;
 CREATE TEMPORARY SEQUENCE t1 engine=sequoiadb;
 select next value for t1;
 drop temporary table t1;
---error ER_NO_SUCH_TABLE
+--error 4091
 select previous value for t1;
 CREATE SEQUENCE t1 start with 1 minvalue 1 maxvalue 10 increment by 1 cache 10 engine=sequoiadb;
 select next value for t1;
@@ -460,7 +460,7 @@ drop table s;
 create temporary sequence s;
 drop temporary table s;
 create temporary table s (i int);
---error ER_UNKNOWN_SEQUENCES
+--error 4090
 drop temporary sequence s;
 drop table s;
 

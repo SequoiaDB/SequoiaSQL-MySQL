@@ -31,7 +31,7 @@ ddl_20109_2	CREATE TABLE `ddl_20109_2` (
   `e` int(5) DEFAULT NULL,
   PRIMARY KEY (`a`),
   KEY `index_e` (`e`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='表2'
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='表2'
 drop table ddl_20109_2;
 show tables like 'ddl_20109_2';
 Tables_in_db_20109 (ddl_20109_2)

@@ -2378,6 +2378,8 @@ CREATE TABLE t2 (
 a2 int, b2 int, filler2 char(64) default ' ', 
 PRIMARY KEY idx(a2,b2,filler2)
 ) ;
+Warnings:
+Warning	1280	Name 'idx' ignored for PRIMARY key.
 CREATE TABLE t3 (b3 int, c3 int, INDEX idx(b3));
 INSERT INTO t1(a1) VALUES 
 (4), (7), (1), (9), (8), (5), (3), (6), (2);
@@ -3001,8 +3003,8 @@ ORDER BY t2.v;
 MAX(t1.i)
 NULL
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'x'
-Warning	1292	Truncated incorrect DOUBLE value: 'y'
+Warning	1292	Truncated incorrect DECIMAL value: 'x'
+Warning	1292	Truncated incorrect DECIMAL value: 'y'
 DROP TABLE t1,t2;
 #
 # Bug #45092: join buffer contains two blob columns one of which is
@@ -3658,8 +3660,8 @@ FROM t1 LEFT JOIN
 WHERE t3.a BETWEEN 3 AND 11 OR t1.a <= t2.c;
 a
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'h'
-Warning	1292	Truncated incorrect DOUBLE value: 'j'
+Warning	1292	Truncated incorrect DECIMAL value: 'h'
+Warning	1292	Truncated incorrect DECIMAL value: 'j'
 SET SESSION optimizer_switch = 'outer_join_with_cache=off';
 SET SESSION join_cache_level = DEFAULT;
 DROP TABLE t1,t2,t3;

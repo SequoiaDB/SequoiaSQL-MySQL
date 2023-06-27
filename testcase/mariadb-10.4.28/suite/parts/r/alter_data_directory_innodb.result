@@ -13,17 +13,19 @@ SHOW CREATE TABLE t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `p1` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB,
  PARTITION `p2` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB)
 ALTER TABLE t ADD PRIMARY KEY pk(a), ALGORITHM=INPLACE;
+Warnings:
+Warning	1280	Name 'pk' ignored for PRIMARY key.
 SHOW CREATE TABLE t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `p1` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB,
  PARTITION `p2` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB)
@@ -32,19 +34,21 @@ SHOW CREATE TABLE t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `p1` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB,
  PARTITION `p2` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB)
 SET @TMP = @@GLOBAL.INNODB_FILE_PER_TABLE;
 SET GLOBAL INNODB_FILE_PER_TABLE=OFF;
 ALTER TABLE t ADD PRIMARY KEY pk(a), ALGORITHM=INPLACE;
+Warnings:
+Warning	1280	Name 'pk' ignored for PRIMARY key.
 SHOW CREATE TABLE t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `p1` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB,
  PARTITION `p2` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB)
@@ -59,7 +63,7 @@ Table	Create Table
 t	CREATE TABLE `t` (
   `a` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `p1` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB,
  PARTITION `p2` DATA DIRECTORY = 'MYSQLTEST_VARDIR/tmp/partitions_here/' ENGINE = SequoiaDB)

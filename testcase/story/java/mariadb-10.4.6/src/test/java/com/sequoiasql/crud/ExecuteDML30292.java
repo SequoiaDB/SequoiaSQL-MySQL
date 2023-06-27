@@ -245,7 +245,7 @@ public class ExecuteDML30292 extends MysqlTestBase {
         List< String > act3 = new ArrayList<>();
         act3.add( "tb2_30292|CREATE TABLE `tb2_30292` (\n"
                 + "  `a` int(11) DEFAULT NULL,\n"
-                + "  `b` varchar(28) COLLATE utf8mb4_bin DEFAULT NULL,\n"
+                + "  `b` varchar(28) DEFAULT NULL,\n"
                 + "  KEY `a` (`a`)\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );
         Assert.assertEquals( act3, show1 );

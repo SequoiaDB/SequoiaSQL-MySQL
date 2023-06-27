@@ -87,7 +87,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `name` varchar(10) DEFAULT NULL,
   `level` smallint(5) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=ucs2
+) ENGINE=SequoiaDB DEFAULT CHARSET=ucs2 COLLATE=ucs2_general_ci
 insert into t1 values ('string',1);
 select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 concat(name,space(level))	concat(name, repeat(' ',level))
@@ -184,9 +184,9 @@ RPAD(_ucs2 X'0420',10,_ucs2 X'0421') r;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `l` varchar(10) CHARACTER SET ucs2 DEFAULT NULL,
-  `r` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `l` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `r` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # Bug #51876 : crash/memory underrun when loading data with ucs2 
@@ -238,9 +238,9 @@ alter table t1 add key(a);
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET ucs2 DEFAULT NULL,
+  `a` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ("a"),("abc"),("abcd"),("hello"),("test");
 select * from t1 where a like "abc%";
 a
@@ -603,8 +603,8 @@ create table t1 (a enum('x','y','z') character set ucs2);
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` enum('x','y','z') CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` enum('x','y','z') CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ('x');
 insert into t1 values ('y');
 insert into t1 values ('z');
@@ -617,8 +617,8 @@ alter table t1 change a a enum('x','y','z','d','e','ä','ö','ü') character set uc
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` enum('x','y','z','d','e','ä','ö','ü') CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` enum('x','y','z','d','e','ä','ö','ü') CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ('D');
 insert into t1 values ('E ');
 insert into t1 values ('Ä');
@@ -639,8 +639,8 @@ create table t1 (a set ('x','y','z','ä','ö','ü') character set ucs2);
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` set('x','y','z','ä','ö','ü') CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` set('x','y','z','ä','ö','ü') CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ('x');
 insert into t1 values ('y');
 insert into t1 values ('z');
@@ -861,9 +861,9 @@ CREATE TABLE t1 AS SELECT REPEAT('a',1) AS a, 1 AS b LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(1) CHARACTER SET ucs2 DEFAULT NULL,
+  `a` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   `b` int(1) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('s',0),(_latin1 0xDF,1);
 SELECT * FROM t1 ORDER BY a, b;
 a	b
@@ -1181,7 +1181,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `status` enum('active','passive') CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT 'passive'
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 ALTER TABLE t1 ADD a int NOT NULL AFTER status;
 CREATE TABLE t2 (
 status enum('active','passive') collate ucs2_turkish_ci 
@@ -1191,7 +1191,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `status` enum('active','passive') CHARACTER SET ucs2 COLLATE ucs2_turkish_ci NOT NULL DEFAULT 'passive'
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 ALTER TABLE t2 ADD a int NOT NULL AFTER status;
 DROP TABLE t1,t2;
 select password(name) from bug20536;
@@ -1346,9 +1346,9 @@ select null, null;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `s1` varchar(64) CHARACTER SET ucs2 DEFAULT NULL,
-  `s2` varchar(64) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `s1` varchar(64) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `s2` varchar(64) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 delete from t1;
 insert into t1 values('aaa','aaa');
 insert into t1 values('aaa|qqq','qqq');
@@ -1508,8 +1508,8 @@ create table t1 as select concat(1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select hex(c1) from t1;
 hex(c1)
 0031
@@ -1521,8 +1521,8 @@ create table t1 as select concat(18446744073709551615) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(20) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(20) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select hex(c1) from t1;
 hex(c1)
 00310038003400340036003700340034003000370033003700300039003500350031003600310035
@@ -1534,8 +1534,8 @@ create table t1 as select concat(1.1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select hex(c1) from t1;
 hex(c1)
 0031002E0031
@@ -1547,8 +1547,8 @@ create table t1 as select concat(1+2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(1-2));
 hex(concat(1-2))
@@ -1557,8 +1557,8 @@ create table t1 as select concat(1-2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(1*2));
 hex(concat(1*2))
@@ -1567,8 +1567,8 @@ create table t1 as select concat(1*2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(1/2));
 hex(concat(1/2))
@@ -1577,8 +1577,8 @@ create table t1 as select concat(1/2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(7) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(7) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(1 div 2));
 hex(concat(1 div 2))
@@ -1587,8 +1587,8 @@ create table t1 as select concat(1 div 2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(1 % 2));
 hex(concat(1 % 2))
@@ -1597,8 +1597,8 @@ create table t1 as select concat(1 % 2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(-1));
 hex(concat(-1))
@@ -1607,8 +1607,8 @@ create table t1 as select concat(-1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(-(1+2)));
 hex(concat(-(1+2)))
@@ -1617,8 +1617,8 @@ create table t1 as select concat(-(1+2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(1|2));
 hex(concat(1|2))
@@ -1627,8 +1627,8 @@ create table t1 as select concat(1|2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(1&2));
 hex(concat(1&2))
@@ -1637,8 +1637,8 @@ create table t1 as select concat(1&2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(bit_count(12)));
 hex(concat(bit_count(12)))
@@ -1647,8 +1647,8 @@ create table t1 as select concat(bit_count(12)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(2<<1));
 hex(concat(2<<1))
@@ -1657,8 +1657,8 @@ create table t1 as select concat(2<<1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(2>>1));
 hex(concat(2>>1))
@@ -1667,8 +1667,8 @@ create table t1 as select concat(2>>1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(~0));
 hex(concat(~0))
@@ -1677,8 +1677,8 @@ create table t1 as select concat(~0) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(3^2));
 hex(concat(3^2))
@@ -1687,8 +1687,8 @@ create table t1 as select concat(3^2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(abs(-2)));
 hex(concat(abs(-2)))
@@ -1697,8 +1697,8 @@ create table t1 as select concat(abs(-2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(exp(2)),1));
 hex(left(concat(exp(2)),1))
@@ -1707,8 +1707,8 @@ create table t1 as select concat(exp(2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(log(2)),1));
 hex(left(concat(log(2)),1))
@@ -1717,8 +1717,8 @@ create table t1 as select concat(log(2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(log2(2)),1));
 hex(left(concat(log2(2)),1))
@@ -1727,8 +1727,8 @@ create table t1 as select concat(log2(2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(log10(2)),1));
 hex(left(concat(log10(2)),1))
@@ -1737,8 +1737,8 @@ create table t1 as select concat(log10(2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(sqrt(2)),1));
 hex(left(concat(sqrt(2)),1))
@@ -1747,8 +1747,8 @@ create table t1 as select concat(sqrt(2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(pow(2,2)),1));
 hex(left(concat(pow(2,2)),1))
@@ -1757,8 +1757,8 @@ create table t1 as select concat(pow(2,2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(acos(0.5)),1));
 hex(left(concat(acos(0.5)),1))
@@ -1767,8 +1767,8 @@ create table t1 as select concat(acos(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(asin(0.5)),1));
 hex(left(concat(asin(0.5)),1))
@@ -1777,8 +1777,8 @@ create table t1 as select concat(asin(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(atan(0.5)),1));
 hex(left(concat(atan(0.5)),1))
@@ -1787,8 +1787,8 @@ create table t1 as select concat(atan(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(cos(0.5)),1));
 hex(left(concat(cos(0.5)),1))
@@ -1797,8 +1797,8 @@ create table t1 as select concat(cos(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(sin(0.5)),1));
 hex(left(concat(sin(0.5)),1))
@@ -1807,8 +1807,8 @@ create table t1 as select concat(sin(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(tan(0.5)),1));
 hex(left(concat(tan(0.5)),1))
@@ -1817,8 +1817,8 @@ create table t1 as select concat(tan(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(degrees(0)));
 hex(concat(degrees(0)))
@@ -1827,8 +1827,8 @@ create table t1 as select concat(degrees(0)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(radians(0)));
 hex(concat(radians(0)))
@@ -1837,8 +1837,8 @@ create table t1 as select concat(radians(0)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(ceiling(0.5)));
 hex(concat(ceiling(0.5)))
@@ -1847,8 +1847,8 @@ create table t1 as select concat(ceiling(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(floor(0.5)));
 hex(concat(floor(0.5)))
@@ -1857,8 +1857,8 @@ create table t1 as select concat(floor(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(round(0.5)));
 hex(concat(round(0.5)))
@@ -1867,8 +1867,8 @@ create table t1 as select concat(round(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(sign(0.5)));
 hex(concat(sign(0.5)))
@@ -1877,15 +1877,15 @@ create table t1 as select concat(sign(0.5)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(rand()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(length('a')));
 hex(concat(length('a')))
@@ -1894,8 +1894,8 @@ create table t1 as select concat(length('a')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(char_length('a')));
 hex(concat(char_length('a')))
@@ -1904,8 +1904,8 @@ create table t1 as select concat(char_length('a')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(bit_length('a')));
 hex(concat(bit_length('a')))
@@ -1914,8 +1914,8 @@ create table t1 as select concat(bit_length('a')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(11) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(11) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(coercibility('a')));
 hex(concat(coercibility('a')))
@@ -1924,8 +1924,8 @@ create table t1 as select concat(coercibility('a')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(locate('a','a')));
 hex(concat(locate('a','a')))
@@ -1934,8 +1934,8 @@ create table t1 as select concat(locate('a','a')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(11) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(11) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(field('c','a','b','c')));
 hex(concat(field('c','a','b','c')))
@@ -1944,8 +1944,8 @@ create table t1 as select concat(field('c','a','b','c')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(ascii(61)));
 hex(concat(ascii(61)))
@@ -1954,8 +1954,8 @@ create table t1 as select concat(ascii(61)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(ord(61)));
 hex(concat(ord(61)))
@@ -1964,8 +1964,8 @@ create table t1 as select concat(ord(61)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(7) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(7) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(find_in_set('b','a,b,c,d')));
 hex(concat(find_in_set('b','a,b,c,d')))
@@ -1974,8 +1974,8 @@ create table t1 as select concat(find_in_set('b','a,b,c,d')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select md5('a'), hex(md5('a'));
 md5('a')	hex(md5('a'))
@@ -1984,8 +1984,8 @@ create table t1 as select md5('a') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(32) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(32) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select old_password('a'), hex(old_password('a'));
 old_password('a')	hex(old_password('a'))
@@ -1994,8 +1994,8 @@ create table t1 as select old_password('a') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(16) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(16) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select password('a'), hex(password('a'));
 password('a')	hex(password('a'))
@@ -2004,8 +2004,8 @@ create table t1 as select password('a') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(41) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(41) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select sha('a'), hex(sha('a'));
 sha('a')	hex(sha('a'))
@@ -2014,8 +2014,8 @@ create table t1 as select sha('a') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(40) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(40) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select sha1('a'), hex(sha1('a'));
 sha1('a')	hex(sha1('a'))
@@ -2024,8 +2024,8 @@ create table t1 as select sha1('a') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(40) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(40) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(cast('-1' as signed)));
 hex(concat(cast('-1' as signed)))
@@ -2034,8 +2034,8 @@ create table t1 as select concat(cast('-1' as signed)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(cast('1' as unsigned)));
 hex(concat(cast('1' as unsigned)))
@@ -2044,8 +2044,8 @@ create table t1 as select concat(cast('1' as unsigned)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(cast(1/2 as decimal(5,5))));
 hex(concat(cast(1/2 as decimal(5,5))))
@@ -2054,8 +2054,8 @@ create table t1 as select concat(cast(1/2 as decimal(5,5))) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(7) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(7) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(cast('2001-01-02 03:04:05' as date)));
 hex(concat(cast('2001-01-02 03:04:05' as date)))
@@ -2064,8 +2064,8 @@ create table t1 as select concat(cast('2001-01-02 03:04:05' as date)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1;
 c1
 2001-01-02
@@ -2077,8 +2077,8 @@ create table t1 as select concat(cast('2001-01-02 03:04:05' as time)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1;
 c1
 03:04:05
@@ -2090,8 +2090,8 @@ create table t1 as select concat(cast('2001-01-02' as datetime)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1;
 c1
 2001-01-02 00:00:00
@@ -2103,8 +2103,8 @@ create table t1 as select concat(least(1,2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(greatest(1,2)));
 hex(concat(greatest(1,2)))
@@ -2113,8 +2113,8 @@ create table t1 as select concat(greatest(1,2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(case when 11 then 22 else 33 end));
 hex(concat(case when 11 then 22 else 33 end))
@@ -2123,8 +2123,8 @@ create table t1 as select concat(case when 11 then 22 else 33 end) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(coalesce(1,2)));
 hex(concat(coalesce(1,2)))
@@ -2133,8 +2133,8 @@ create table t1 as select concat(coalesce(1,2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat_ws(1,2,3));
 hex(concat_ws(1,2,3))
@@ -2143,8 +2143,8 @@ create table t1 as select concat_ws(1,2,3) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(group_concat(1,2,3));
 hex(group_concat(1,2,3))
@@ -2153,15 +2153,15 @@ create table t1 as select group_concat(1,2,3) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` mediumtext CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` mediumtext CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select 1 as c1 union select 'a';
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 NOT NULL DEFAULT ''
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci NOT NULL DEFAULT ''
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select hex(c1) from t1 order by c1;
 hex(c1)
 0031
@@ -2171,8 +2171,8 @@ create table t1 as select concat(last_insert_id()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(benchmark(0,0)));
 hex(concat(benchmark(0,0)))
@@ -2181,8 +2181,8 @@ create table t1 as select concat(benchmark(0,0)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(sleep(0)));
 hex(concat(sleep(0)))
@@ -2191,8 +2191,8 @@ create table t1 as select concat(sleep(0)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(is_free_lock('xxxx')));
 hex(concat(is_free_lock('xxxx')))
@@ -2201,22 +2201,22 @@ create table t1 as select concat(is_free_lock('xxxx')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(is_used_lock('a')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(release_lock('a')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(crc32('')));
 hex(concat(crc32('')))
@@ -2225,8 +2225,8 @@ create table t1 as select concat(crc32('')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(uncompressed_length('')));
 hex(concat(uncompressed_length('')))
@@ -2235,15 +2235,15 @@ create table t1 as select concat(uncompressed_length('')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(connection_id()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(inet_aton('127.1.1.1')));
 hex(concat(inet_aton('127.1.1.1')))
@@ -2252,8 +2252,8 @@ create table t1 as select concat(inet_aton('127.1.1.1')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(inet_ntoa(2130772225)));
 hex(concat(inet_ntoa(2130772225)))
@@ -2265,8 +2265,8 @@ c1
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(31) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(31) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select 1;
 1
@@ -2278,8 +2278,8 @@ create table t1 as select concat(row_count()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(found_rows()));
 hex(concat(found_rows()))
@@ -2288,22 +2288,22 @@ create table t1 as select concat(found_rows()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(uuid_short()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(uuid()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(36) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(36) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select coercibility(uuid()), coercibility(cast('a' as char character set latin1));
 coercibility(uuid())	coercibility(cast('a' as char character set latin1))
@@ -2316,14 +2316,14 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(37) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(master_pos_wait('non-existent',0,2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(@a1:=1));
 hex(concat(@a1:=1))
@@ -2335,9 +2335,9 @@ hex(c1)
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL,
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   `c2` int(1) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 set @a2=1;
 select hex(concat(@a2));
@@ -2350,9 +2350,9 @@ hex(c1)
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(20) CHARACTER SET ucs2 DEFAULT NULL,
+  `c1` varchar(20) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   `c2` bigint(20) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(@a1:=sqrt(1)));
 hex(concat(@a1:=sqrt(1)))
@@ -2364,9 +2364,9 @@ hex(c1)
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL,
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   `c2` double DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 set @a2=sqrt(1);
 select hex(concat(@a2));
@@ -2379,9 +2379,9 @@ hex(c1)
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL,
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   `c2` double DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(@a1:=1.1));
 hex(concat(@a1:=1.1))
@@ -2393,9 +2393,9 @@ hex(c1)
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL,
+  `c1` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   `c2` decimal(2,1) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 set @a2=1.1;
 select hex(concat(@a2));
@@ -2408,9 +2408,9 @@ hex(c1)
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(83) CHARACTER SET ucs2 DEFAULT NULL,
+  `c1` varchar(83) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   `c2` decimal(65,38) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(@@ft_max_word_len));
 hex(concat(@@ft_max_word_len))
@@ -2422,8 +2422,8 @@ hex(c1)
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat('a'='a' IS TRUE));
 hex(concat('a'='a' IS TRUE))
@@ -2432,8 +2432,8 @@ create table t1 as select concat('a'='a' IS TRUE) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat('a'='a' IS NOT TRUE));
 hex(concat('a'='a' IS NOT TRUE))
@@ -2442,8 +2442,8 @@ create table t1 as select concat('a'='a' IS NOT TRUE) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(NOT 'a'='a'));
 hex(concat(NOT 'a'='a'))
@@ -2452,8 +2452,8 @@ create table t1 as select concat(NOT 'a'='a') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat('a' IS NULL));
 hex(concat('a' IS NULL))
@@ -2462,8 +2462,8 @@ create table t1 as select concat('a' IS NULL) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat('a' IS NOT NULL));
 hex(concat('a' IS NOT NULL))
@@ -2472,8 +2472,8 @@ create table t1 as select concat('a' IS NOT NULL) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat('a' rlike 'a'));
 hex(concat('a' rlike 'a'))
@@ -2482,8 +2482,8 @@ create table t1 as select concat('a' IS NOT NULL) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(strcmp('a','b')));
 hex(concat(strcmp('a','b')))
@@ -2492,8 +2492,8 @@ create table t1 as select concat(strcmp('a','b')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat('a' like 'a'));
 hex(concat('a' like 'a'))
@@ -2502,8 +2502,8 @@ create table t1 as select concat('a' like 'b') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat('a' between 'b' and 'c'));
 hex(concat('a' between 'b' and 'c'))
@@ -2512,8 +2512,8 @@ create table t1 as select concat('a' between 'b' and 'c') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat('a' in ('a','b')));
 hex(concat('a' in ('a','b')))
@@ -2522,8 +2522,8 @@ create table t1 as select concat('a' in ('a','b')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(interval(23, 1, 15, 17, 30, 44, 200)));
 hex(concat(interval(23, 1, 15, 17, 30, 44, 200)))
@@ -2532,8 +2532,8 @@ create table t1 as select concat(interval(23, 1, 15, 17, 30, 44, 200)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(ifnull(1,'a'));
 hex(ifnull(1,'a'))
@@ -2542,8 +2542,8 @@ create table t1 as select ifnull(1,'a') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(ifnull(1,1)));
 hex(concat(ifnull(1,1)))
@@ -2552,8 +2552,8 @@ create table t1 as select concat(ifnull(1,1)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(ifnull(1.1,1.1)));
 hex(concat(ifnull(1.1,1.1)))
@@ -2562,8 +2562,8 @@ create table t1 as select concat(ifnull(1.1,1.1)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(if(1,'b',1));
 hex(if(1,'b',1))
@@ -2572,8 +2572,8 @@ create table t1 as select if(1,'b',1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(if(1,1,'b'));
 hex(if(1,1,'b'))
@@ -2582,8 +2582,8 @@ create table t1 as select if(1,1,'b') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(if(1,1,1)));
 hex(concat(if(1,1,1)))
@@ -2592,8 +2592,8 @@ create table t1 as select concat(if(1,1,1)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(nullif(1,2)));
 hex(concat(nullif(1,2)))
@@ -2602,8 +2602,8 @@ create table t1 as select concat(nullif(1,2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(Dimension(GeomFromText('LINESTRING(0 0,10 10)'))));
 hex(concat(Dimension(GeomFromText('LINESTRING(0 0,10 10)'))))
@@ -2612,8 +2612,8 @@ create table t1 as select concat(Dimension(GeomFromText('LINSTRING(0 0,10 10)'))
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(NumGeometries(MultiPointFromText('MULTIPOINT(0 0,10 10)'))));
 hex(concat(NumGeometries(MultiPointFromText('MULTIPOINT(0 0,10 10)'))))
@@ -2622,8 +2622,8 @@ create table t1 as select concat(NumGeometries(MultiPointFromText('MULTIPOINT(0 
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(NumPoints(MultiPointFromText('LINESTRING(0 0,10 10)'))));
 hex(concat(NumPoints(MultiPointFromText('LINESTRING(0 0,10 10)'))))
@@ -2632,8 +2632,8 @@ create table t1 as select concat(NumPoints(MultiPointFromText('LINESTRING(0 0,10
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(SRID(MultiPointFromText('MULTIPOINT(0 0,10 10)'))));
 hex(concat(SRID(MultiPointFromText('MULTIPOINT(0 0,10 10)'))))
@@ -2642,8 +2642,8 @@ create table t1 as select concat(SRID(MultiPointFromText('MULTIPOINT(0 0,10 10)'
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(NumInteriorRings(PolygonFromText('POLYGON((0 0,50 0,50 50,0 50,0 0), (10 10,20 10,20 20,10 20,10 10))'))));
 hex(concat(NumInteriorRings(PolygonFromText('POLYGON((0 0,50 0,50 50,0 50,0 0), (10 10,20 10,20 20,10 20,10 10))'))))
@@ -2652,8 +2652,8 @@ create table t1 as select concat(NumInteriorRings(PolygonFromText('POLYGON((0 0,
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(IsEmpty(GeomFromText('POINT(1 1)'))));
 hex(concat(IsEmpty(GeomFromText('POINT(1 1)'))))
@@ -2662,8 +2662,8 @@ create table t1 as select concat(IsEmpty(GeomFromText('Point(1 1)'))) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(21) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(21) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(IsSimple(GeomFromText('POINT(1 1)'))));
 hex(concat(IsSimple(GeomFromText('POINT(1 1)'))))
@@ -2672,8 +2672,8 @@ create table t1 as select concat(IsSimple(GeomFromText('Point(1 1)'))) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(IsClosed(GeomFromText('LineString(1 1,2 2)'))));
 hex(concat(IsClosed(GeomFromText('LineString(1 1,2 2)'))))
@@ -2682,8 +2682,8 @@ create table t1 as select concat(IsClosed(GeomFromText('LineString(1 1,2 2)'))) 
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(Equals(GeomFromText('Point(1 1)'),GeomFromText('Point(1 1)'))));
 hex(concat(Equals(GeomFromText('Point(1 1)'),GeomFromText('Point(1 1)'))))
@@ -2697,8 +2697,8 @@ create table t1 as select concat(x(GeomFromText('Point(1 2)'))) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(y(GeomFromText('Point(1 2)'))));
 hex(concat(y(GeomFromText('Point(1 2)'))))
@@ -2707,8 +2707,8 @@ create table t1 as select concat(x(GeomFromText('Point(1 2)'))) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(GLength(GeomFromText('LineString(1 2,2 2)'))));
 hex(concat(GLength(GeomFromText('LineString(1 2,2 2)'))))
@@ -2717,8 +2717,8 @@ create table t1 as select concat(GLength(GeomFromText('LineString(1 2, 2 2)'))) 
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(Area(GeomFromText('Polygon((0 0,1 0,1 1,0 1,0 0))'))));
 hex(concat(Area(GeomFromText('Polygon((0 0,1 0,1 1,0 1,0 0))'))))
@@ -2727,8 +2727,8 @@ create table t1 as select concat(Area(GeomFromText('Polygon((0 0,1 0,1 1,0 1,0 0
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(23) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(23) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(GeometryType(GeomFromText('Point(1 2)'))));
 hex(concat(GeometryType(GeomFromText('Point(1 2)'))))
@@ -2737,8 +2737,8 @@ create table t1 as select concat(GeometryType(GeomFromText('Point(1 2)'))) as c1
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(20) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(20) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(AsText(GeomFromText('Point(1 2)'))));
 hex(concat(AsText(GeomFromText('Point(1 2)'))))
@@ -2747,8 +2747,8 @@ create table t1 as select concat(AsText(GeomFromText('Point(1 2)'))) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` longtext CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` longtext CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(period_add(200902, 2)));
 hex(concat(period_add(200902, 2)))
@@ -2757,8 +2757,8 @@ create table t1 as select concat(period_add(200902, 2)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(6) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(6) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(period_diff(200902, 200802)));
 hex(concat(period_diff(200902, 200802)))
@@ -2770,8 +2770,8 @@ Warning	1265	Data truncated for column 'c1' at row 1
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(6) CHARACTER SET ucs2 NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(6) CHARACTER SET ucs2 COLLATE ucs2_general_ci NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(to_days(20090224)));
 hex(concat(to_days(20090224)))
@@ -2780,8 +2780,8 @@ create table t1 as select concat(to_days(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(6) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(6) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(dayofmonth(20090224)));
 hex(concat(dayofmonth(20090224)))
@@ -2790,8 +2790,8 @@ create table t1 as select concat(dayofmonth(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(dayofyear(20090224)));
 hex(concat(dayofyear(20090224)))
@@ -2800,8 +2800,8 @@ create table t1 as select concat(dayofyear(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(hour('10:11:12')));
 hex(concat(hour('10:11:12')))
@@ -2810,8 +2810,8 @@ create table t1 as select concat(hour('10:11:12')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(minute('10:11:12')));
 hex(concat(minute('10:11:12')))
@@ -2820,8 +2820,8 @@ create table t1 as select concat(minute('10:11:12')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(second('10:11:12')));
 hex(concat(second('10:11:12')))
@@ -2830,8 +2830,8 @@ create table t1 as select concat(second('10:11:12')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(quarter(20090224)));
 hex(concat(quarter(20090224)))
@@ -2840,8 +2840,8 @@ create table t1 as select concat(quarter(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(week(20090224)));
 hex(concat(week(20090224)))
@@ -2850,8 +2850,8 @@ create table t1 as select concat(week(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(yearweek(20090224)));
 hex(concat(yearweek(20090224)))
@@ -2860,8 +2860,8 @@ create table t1 as select concat(yearweek(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(6) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(6) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(year(20090224)));
 hex(concat(year(20090224)))
@@ -2870,8 +2870,8 @@ create table t1 as select concat(year(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(weekday(20090224)));
 hex(concat(weekday(20090224)))
@@ -2880,8 +2880,8 @@ create table t1 as select concat(weekday(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(dayofweek(20090224)));
 hex(concat(dayofweek(20090224)))
@@ -2890,8 +2890,8 @@ create table t1 as select concat(dayofweek(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(unix_timestamp(20090224)));
 hex(concat(unix_timestamp(20090224)))
@@ -2900,8 +2900,8 @@ create table t1 as select concat(unix_timestamp(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(17) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(17) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(time_to_sec('10:11:12')));
 hex(concat(time_to_sec('10:11:12')))
@@ -2910,8 +2910,8 @@ create table t1 as select concat(time_to_sec('10:11:12')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(17) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(17) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(extract(year from 20090702)));
 hex(concat(extract(year from 20090702)))
@@ -2920,8 +2920,8 @@ create table t1 as select concat(extract(year from 20090702)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(microsecond('12:00:00.123456')));
 hex(concat(microsecond('12:00:00.123456')))
@@ -2930,8 +2930,8 @@ create table t1 as select concat(microsecond('12:00:00.123456')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(6) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(6) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(month(20090224)));
 hex(concat(month(20090224)))
@@ -2940,15 +2940,15 @@ create table t1 as select concat(month(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(last_day('2003-02-05')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select c1, hex(c1) from t1;
 c1	hex(c1)
 2003-02-28	0032003000300033002D00300032002D00320038
@@ -2957,8 +2957,8 @@ create table t1 as select concat(from_days(730669)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select c1, hex(c1) from t1;
 c1	hex(c1)
 2000-07-03	0032003000300030002D00300037002D00300033
@@ -2967,22 +2967,22 @@ create table t1 as select concat(curdate()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(utc_date()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(curtime()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select repeat('a',20) as c1 limit 0;
 set timestamp=1216359724;
@@ -2997,8 +2997,8 @@ create table t1 as select concat(utc_time()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(sec_to_time(2378)));
 hex(concat(sec_to_time(2378)))
@@ -3007,8 +3007,8 @@ create table t1 as select concat(sec_to_time(2378)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(timediff('2001-01-02 00:00:00', '2001-01-01 00:00:00')));
 hex(concat(timediff('2001-01-02 00:00:00', '2001-01-01 00:00:00')))
@@ -3017,8 +3017,8 @@ create table t1 as select concat(timediff('2001-01-02 00:00:00', '2001-01-01 00:
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(maketime(10,11,12)));
 hex(concat(maketime(10,11,12)))
@@ -3027,8 +3027,8 @@ create table t1 as select concat(maketime(10,11,12)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(get_format(DATE,'USA'));
 hex(get_format(DATE,'USA'))
@@ -3037,8 +3037,8 @@ create table t1 as select get_format(DATE,'USA') as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(17) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(17) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(concat(from_unixtime(1111885200)),4));
 hex(left(concat(from_unixtime(1111885200)),4))
@@ -3047,8 +3047,8 @@ create table t1 as select concat(from_unixtime(1111885200)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(convert_tz('2004-01-01 12:00:00','+10:00','-6:00')));
 hex(concat(convert_tz('2004-01-01 12:00:00','+10:00','-6:00')))
@@ -3057,8 +3057,8 @@ create table t1 as select concat(convert_tz('2004-01-01 12:00:00','+10:00','-6:0
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(date_add('2004-01-01 12:00:00', interval 1 day)));
 hex(concat(date_add('2004-01-01 12:00:00', interval 1 day)))
@@ -3067,8 +3067,8 @@ create table t1 as select concat(date_add('2004-01-01 12:00:00', interval 1 day)
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1;
 c1
 2004-01-02 12:00:00
@@ -3080,8 +3080,8 @@ create table t1 as select concat(makedate(2009,1)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1;
 c1
 2009-01-01
@@ -3090,22 +3090,22 @@ create table t1 as select concat(now()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(utc_timestamp()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(sysdate()) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(addtime('00:00:00','11:22:33')));
 hex(concat(addtime('00:00:00','11:22:33')))
@@ -3114,8 +3114,8 @@ create table t1 as select concat(addtime('00:00:00','11:22:33')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(26) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(26) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(concat(subtime('23:59:59','11:22:33')));
 hex(concat(subtime('23:59:59','11:22:33')))
@@ -3124,8 +3124,8 @@ create table t1 as select concat(subtime('23:59:59','11:22:33')) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(26) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(26) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(elt(1,2,3));
 hex(elt(1,2,3))
@@ -3134,8 +3134,8 @@ create table t1 as select elt(1,2,3) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(export_set(1,2,3,4,2));
 hex(export_set(1,2,3,4,2))
@@ -3144,8 +3144,8 @@ create table t1 as select export_set(1,2,3,4,2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(127) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(127) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(insert(1133,3,0,22));
 hex(insert(1133,3,0,22))
@@ -3154,8 +3154,8 @@ create table t1 as select insert(1133,3,0,22) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(6) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(6) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(lcase(123));
 hex(lcase(123))
@@ -3164,8 +3164,8 @@ create table t1 as select lcase(123) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(left(123,1));
 hex(left(123,1))
@@ -3174,8 +3174,8 @@ create table t1 as select left(123,1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(lower(123));
 hex(lower(123))
@@ -3184,8 +3184,8 @@ create table t1 as select lower(123) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(lpad(1,2,0));
 hex(lpad(1,2,0))
@@ -3194,8 +3194,8 @@ create table t1 as select lpad(1,2,0) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(ltrim(1));
 hex(ltrim(1))
@@ -3204,8 +3204,8 @@ create table t1 as select ltrim(1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(mid(1,1,1));
 hex(mid(1,1,1))
@@ -3214,8 +3214,8 @@ create table t1 as select mid(1,1,1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(repeat(1,2));
 hex(repeat(1,2))
@@ -3224,8 +3224,8 @@ create table t1 as select repeat(1,2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(replace(1,1,2));
 hex(replace(1,1,2))
@@ -3234,8 +3234,8 @@ create table t1 as select replace(1,1,2) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(reverse(12));
 hex(reverse(12))
@@ -3244,8 +3244,8 @@ create table t1 as select reverse(12) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(right(123,1));
 hex(right(123,1))
@@ -3254,8 +3254,8 @@ create table t1 as select right(123,1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(rpad(1,2,0));
 hex(rpad(1,2,0))
@@ -3264,8 +3264,8 @@ create table t1 as select rpad(1,2,0) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(rtrim(1));
 hex(rtrim(1))
@@ -3274,8 +3274,8 @@ create table t1 as select rtrim(1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(soundex(1));
 hex(soundex(1))
@@ -3284,8 +3284,8 @@ create table t1 as select soundex(1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(substring(1,1,1));
 hex(substring(1,1,1))
@@ -3294,8 +3294,8 @@ create table t1 as select substring(1,1,1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(trim(1));
 hex(trim(1))
@@ -3304,8 +3304,8 @@ create table t1 as select trim(1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(ucase(1));
 hex(ucase(1))
@@ -3314,8 +3314,8 @@ create table t1 as select ucase(1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select hex(upper(1));
 hex(upper(1))
@@ -3324,15 +3324,15 @@ create table t1 as select upper(1) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(1) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select repeat(' ', 64) as a limit 0;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(64) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` varchar(64) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ("1.1"), ("2.1");
 select a, hex(a) from t1;
 a	hex(a)
@@ -3353,8 +3353,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a tinyint zerofill);
 insert into t1 values (1), (10), (100);
@@ -3381,8 +3381,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(12) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(12) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a smallint);
 insert into t1 values (1);
@@ -3393,8 +3393,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(6) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(6) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a smallint zerofill);
 insert into t1 values (1), (10), (100), (1000), (10000);
@@ -3415,8 +3415,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(9) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(9) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a mediumint zerofill);
 insert into t1 values (1), (10), (100), (1000), (10000);
@@ -3437,8 +3437,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(11) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(11) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a int zerofill);
 insert into t1 values (1), (10), (100), (1000), (10000);
@@ -3459,8 +3459,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(20) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(20) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a bigint zerofill);
 insert into t1 values (1), (10), (100), (1000), (10000);
@@ -3484,8 +3484,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(12) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(12) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a float zerofill);
 insert into t1 values (1.1), (10.1), (100.1), (1000.1), (10000.1);
@@ -3509,8 +3509,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(22) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(22) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a double zerofill);
 insert into t1 values (1.1), (10.1), (100.1), (1000.1), (10000.1);
@@ -3531,8 +3531,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a bit(64));
 insert into t1 values (1);
@@ -3544,7 +3544,7 @@ show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `concat(a)` varbinary(64) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
 insert into t1 values (0);
@@ -3567,8 +3567,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a date);
 insert into t1 values ('2001-02-03');
@@ -3581,8 +3581,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a time);
 insert into t1 values (1);
@@ -3599,8 +3599,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a datetime);
 insert into t1 values ('2001-02-03 04:05:06');
@@ -3613,8 +3613,8 @@ create table t2 as select concat(a) from t1;
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `concat(a)` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `concat(a)` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1, t2;
 create table t1 (a tinyint);
 insert into t1 values (1);
@@ -3917,14 +3917,14 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(f1(1)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create view v1 as select concat(f1(1)) as c1;
 show columns from v1;
 Field	Type	Null	Key	Default	Extra
@@ -3948,14 +3948,14 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` decimal(18,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(f1(123.45)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(20) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create view v1 as select concat(f1(123.45)) as c1;
 show columns from v1;
 Field	Type	Null	Key	Default	Extra
@@ -3979,14 +3979,14 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` float DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(f1(123.45)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(12) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create view v1 as select concat(f1(123.45)) as c1;
 show columns from v1;
 Field	Type	Null	Key	Default	Extra
@@ -4010,14 +4010,14 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 as select concat(f1(cast('2001-01-02' as date))) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 create view v1 as select concat(f1(cast('2001-01-02' as date))) as c1;
 show columns from v1;
 Field	Type	Null	Key	Default	Extra
@@ -4091,117 +4091,117 @@ FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `CONCAT(a)` varchar(9) CHARACTER SET ucs2 DEFAULT NULL,
-  `IFNULL(a,'')` varchar(9) CHARACTER SET ucs2 NOT NULL,
-  `IF(a,a,'')` varchar(9) CHARACTER SET ucs2 DEFAULT NULL,
-  `CASE WHEN a THEN a ELSE '' END` varchar(9) CHARACTER SET ucs2 DEFAULT NULL,
-  `COALESCE(a,'')` varchar(9) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `CONCAT(a)` varchar(9) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `IFNULL(a,'')` varchar(9) CHARACTER SET ucs2 COLLATE ucs2_general_ci NOT NULL,
+  `IF(a,a,'')` varchar(9) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `CASE WHEN a THEN a ELSE '' END` varchar(9) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `COALESCE(a,'')` varchar(9) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT CONCAT_WS(1,2,3) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `CONCAT_WS(1,2,3)` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `CONCAT_WS(1,2,3)` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT INSERT(1133,3,0,22) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `INSERT(1133,3,0,22)` varchar(6) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `INSERT(1133,3,0,22)` varchar(6) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT LCASE(a) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `LCASE(a)` varchar(9) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `LCASE(a)` varchar(9) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT UCASE(a) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `UCASE(a)` varchar(9) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `UCASE(a)` varchar(9) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT REPEAT(1,2) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `REPEAT(1,2)` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `REPEAT(1,2)` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT LEFT(123,2) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `LEFT(123,2)` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `LEFT(123,2)` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT RIGHT(123,2) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `RIGHT(123,2)` varchar(2) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `RIGHT(123,2)` varchar(2) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT LTRIM(123) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `LTRIM(123)` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `LTRIM(123)` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT RTRIM(123) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `RTRIM(123)` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `RTRIM(123)` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT ELT(1,111,222,333) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `ELT(1,111,222,333)` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `ELT(1,111,222,333)` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT REPLACE(111,2,3) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `REPLACE(111,2,3)` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `REPLACE(111,2,3)` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT SUBSTRING_INDEX(111,111,1) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `SUBSTRING_INDEX(111,111,1)` varchar(3) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `SUBSTRING_INDEX(111,111,1)` varchar(3) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT MAKE_SET(111,222,3) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `MAKE_SET(111,222,3)` varchar(5) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `MAKE_SET(111,222,3)` varchar(5) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT SOUNDEX(1) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `SOUNDEX(1)` varchar(4) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `SOUNDEX(1)` varchar(4) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT EXPORT_SET(1,'Y','N','',8);
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `EXPORT_SET(1,'Y','N','',8)` varchar(64) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `EXPORT_SET(1,'Y','N','',8)` varchar(64) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -4242,11 +4242,11 @@ DATE_SUB(CAST('2007-08-03 17:33:00' AS DATETIME), INTERVAL 1 MINUTE) AS field_da
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `field_str1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL,
-  `field1_str2` varchar(19) CHARACTER SET ucs2 DEFAULT NULL,
+  `field_str1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `field1_str2` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
   `field_date` date DEFAULT NULL,
   `field_datetime` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SELECT
 DATE_SUB('2007-08-03', INTERVAL 1 DAY) AS field_str1,
@@ -4289,11 +4289,11 @@ DATE_ADD('2001-01-01 10:01:01',interval 10 second) AS date_add2;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `addtime1` varchar(26) CHARACTER SET ucs2 DEFAULT NULL,
-  `addtime2` varchar(26) CHARACTER SET ucs2 DEFAULT NULL,
-  `date_add1` varchar(19) CHARACTER SET ucs2 DEFAULT NULL,
-  `date_add2` varchar(19) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `addtime1` varchar(26) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `addtime2` varchar(26) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `date_add1` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL,
+  `date_add2` varchar(19) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT * FROM t1;
 addtime1	addtime2	date_add1	date_add2
 20:01:01	20:01:01	2001-01-01 10:01:11	2001-01-01 10:01:11
@@ -4359,7 +4359,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `d` date DEFAULT NULL,
   `bad` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1, t2;
 SET NAMES latin1;
 SET sql_mode='';
@@ -4506,14 +4506,14 @@ CREATE TABLE t1 AS SELECT 'a' AS a;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(1) CHARACTER SET ucs2 NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_general_ci NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t2 AS SELECT WEIGHT_STRING(a) AS ws FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a)) FROM t1;
 HEX(WEIGHT_STRING(a))
 0041
@@ -4526,14 +4526,14 @@ CREATE TABLE t1 AS SELECT REPEAT('a',5) AS a;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(5) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` varchar(5) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t2 AS SELECT WEIGHT_STRING(a) AS ws FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a)) FROM t1;
 HEX(WEIGHT_STRING(a))
 00410041004100410041
@@ -4546,7 +4546,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(6) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a AS CHAR(3))) FROM t1;
 HEX(WEIGHT_STRING(a AS CHAR(3)))
 004100410041
@@ -4559,7 +4559,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(20) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a AS CHAR(10))) FROM t1;
 HEX(WEIGHT_STRING(a AS CHAR(10)))
 0041004100410041004100200020002000200020
@@ -4751,13 +4751,13 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_bin NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t2 AS SELECT WEIGHT_STRING(a) AS ws FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a)) FROM t1;
 HEX(WEIGHT_STRING(a))
 0061
@@ -4771,13 +4771,13 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(5) CHARACTER SET ucs2 COLLATE ucs2_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t2 AS SELECT WEIGHT_STRING(a) AS ws FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a)) FROM t1;
 HEX(WEIGHT_STRING(a))
 00610061006100610061
@@ -4790,7 +4790,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(6) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a AS CHAR(3))) FROM t1;
 HEX(WEIGHT_STRING(a AS CHAR(3)))
 006100610061
@@ -4803,7 +4803,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(20) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a AS CHAR(10))) FROM t1;
 HEX(WEIGHT_STRING(a AS CHAR(10)))
 0061006100610061006100200020002000200020
@@ -5079,8 +5079,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 64) AS a LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(64) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` varchar(64) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('');
 SELECT CHARSET(CONCAT(a,'2001-01-08 00:00:00' - INTERVAL 7 DAY)) FROM t1;
 CHARSET(CONCAT(a,'2001-01-08 00:00:00' - INTERVAL 7 DAY))
@@ -5221,7 +5221,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) CHARACTER SET ucs2 COLLATE ucs2_german2_ci DEFAULT NULL,
   `b` int(1) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('s',0),(_latin1 0xDF,1);
 SELECT * FROM t1 ORDER BY a, b;
 a	b
@@ -5281,7 +5281,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT * FROM t1 WHERE CONCAT(c1)='a';
 c1
@@ -5299,7 +5299,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT * FROM t1 WHERE 'a'=CONCAT(c1);
 c1
@@ -5317,7 +5317,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('%'),('% ');
 SELECT * FROM t1 WHERE '% '=CONCAT(c1);
 c1
@@ -5335,7 +5335,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('%'),('% ');
 SELECT * FROM t1 WHERE '%'=CONCAT(c1);
 c1
@@ -5356,7 +5356,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
 a	LENGTH(a)
@@ -5376,8 +5376,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS c1 LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT * FROM t1 WHERE CONCAT(c1)='a';
 c1
@@ -5394,8 +5394,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS c1 LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT * FROM t1 WHERE 'a'=CONCAT(c1);
 c1
@@ -5412,8 +5412,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS c1 LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('%'),('% ');
 SELECT * FROM t1 WHERE '% '=CONCAT(c1);
 c1
@@ -5430,8 +5430,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS c1 LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('%'),('% ');
 SELECT * FROM t1 WHERE '%'=CONCAT(c1);
 c1
@@ -5451,8 +5451,8 @@ CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
 a	LENGTH(a)
@@ -5505,8 +5505,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS t LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `t` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `t` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('abcdefghi'),('ABCDEFGHI');
 SELECT CONCAT(t2,'-',t2) c2 FROM (SELECT LOWER(t) t2 FROM t1) sub;
 c2
@@ -5573,7 +5573,7 @@ CREATE TABLE t1 (a VARCHAR(10) PRIMARY KEY) COLLATE 'ucs2_general_nopad_ci';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(10) COLLATE ucs2_general_nopad_ci NOT NULL,
+  `a` varchar(10) NOT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=ucs2 COLLATE=ucs2_general_nopad_ci
 INSERT INTO t1 VALUES ('abc'),('abc  '),(' a'),(' a '),('a   ');
@@ -5712,7 +5712,7 @@ CREATE TABLE t1 (a VARCHAR(10) PRIMARY KEY) COLLATE 'ucs2_nopad_bin';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(10) COLLATE ucs2_nopad_bin NOT NULL,
+  `a` varchar(10) NOT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=ucs2 COLLATE=ucs2_nopad_bin
 INSERT INTO t1 VALUES ('abc'),('abc  '),(' a'),(' a '),('a   ');

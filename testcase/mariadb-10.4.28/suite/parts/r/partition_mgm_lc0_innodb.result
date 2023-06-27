@@ -55,7 +55,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `parta` ENGINE = SequoiaDB,
  PARTITION `partB` ENGINE = SequoiaDB,
@@ -83,7 +83,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `parta` ENGINE = SequoiaDB,
  PARTITION `partB` ENGINE = SequoiaDB,
@@ -120,7 +120,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `parta` ENGINE = SequoiaDB,
  PARTITION `partB` ENGINE = SequoiaDB,
@@ -199,7 +199,7 @@ SHOW CREATE TABLE tablea;
 Table	Create Table
 tablea	CREATE TABLE `tablea` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `parta` ENGINE = SequoiaDB,
  PARTITION `partB` ENGINE = SequoiaDB,
@@ -226,7 +226,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 # Cleaning up after KEY PARTITIONING test
 DROP TABLE TableA;
 # 2.0 HASH partitioning mgm
@@ -292,7 +292,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `parta` ENGINE = SequoiaDB,
  PARTITION `partB` ENGINE = SequoiaDB,
@@ -320,7 +320,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `parta` ENGINE = SequoiaDB,
  PARTITION `partB` ENGINE = SequoiaDB,
@@ -357,7 +357,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `parta` ENGINE = SequoiaDB,
  PARTITION `partB` ENGINE = SequoiaDB,
@@ -436,7 +436,7 @@ SHOW CREATE TABLE tablea;
 Table	Create Table
 tablea	CREATE TABLE `tablea` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `parta` ENGINE = SequoiaDB,
  PARTITION `partB` ENGINE = SequoiaDB,
@@ -463,7 +463,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 # Cleaning up after HASH PARTITIONING test
 DROP TABLE TableA;
 # 3.0 RANGE partitioning mgm
@@ -518,7 +518,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `parta` VALUES LESS THAN (4) ENGINE = SequoiaDB,
  PARTITION `partB` VALUES LESS THAN (7) ENGINE = SequoiaDB,
@@ -549,7 +549,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `parta` VALUES LESS THAN (4) ENGINE = SequoiaDB,
  PARTITION `partB` VALUES LESS THAN (7) ENGINE = SequoiaDB,
@@ -587,7 +587,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `parta` VALUES LESS THAN (4) ENGINE = SequoiaDB,
  PARTITION `partD` VALUES LESS THAN (8) COMMENT = 'Previously partB and partly Partc' ENGINE = SequoiaDB,
@@ -667,7 +667,7 @@ SHOW CREATE TABLE tablea;
 Table	Create Table
 tablea	CREATE TABLE `tablea` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `parta` VALUES LESS THAN (4) ENGINE = SequoiaDB,
  PARTITION `partB` VALUES LESS THAN (7) ENGINE = SequoiaDB,
@@ -694,7 +694,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 # Cleaning up after RANGE PARTITIONING test
 DROP TABLE TableA;
 # 4.0 LIST partitioning mgm
@@ -749,7 +749,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (`a`)
 (PARTITION `parta` VALUES IN (1,8,9) ENGINE = SequoiaDB,
  PARTITION `partB` VALUES IN (2,10,11) ENGINE = SequoiaDB,
@@ -780,7 +780,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (`a`)
 (PARTITION `parta` VALUES IN (1,8,9) ENGINE = SequoiaDB,
  PARTITION `partB` VALUES IN (2,10,11) ENGINE = SequoiaDB,
@@ -818,7 +818,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (`a`)
 (PARTITION `Partc` VALUES IN (1,7) COMMENT = 'Mix 1 of old parta and Partc' ENGINE = SequoiaDB,
  PARTITION `parta` VALUES IN (3,9) COMMENT = 'Mix 2 of old parta and Partc' ENGINE = SequoiaDB,
@@ -890,7 +890,7 @@ SHOW CREATE TABLE tablea;
 Table	Create Table
 tablea	CREATE TABLE `tablea` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (`a`)
 (PARTITION `parta` VALUES IN (1,8,9) ENGINE = SequoiaDB,
  PARTITION `partB` VALUES IN (2,10,11) ENGINE = SequoiaDB,
@@ -914,7 +914,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 # Cleaning up after LIST PARTITIONING test
 DROP TABLE TableA;
 # Cleaning up before exit

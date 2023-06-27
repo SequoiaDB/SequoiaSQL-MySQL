@@ -551,7 +551,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `GeomFromWKB(POINT(1,3))` geometry DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 CREATE TABLE `t1` (`object_id` bigint(20) unsigned NOT NULL default '0', `geo`
 geometry NOT NULL default '') ENGINE=SequoiaDB;
@@ -1451,8 +1451,8 @@ SELECT 1 FROM g1 WHERE a >= ANY
 (SELECT 1 FROM g1 WHERE a = geomfromtext('') OR a) ;
 1
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
 DROP TABLE g1;
 #
 # Bug#16451878 GEOMETRY QUERY CRASHES SERVER
@@ -1480,7 +1480,7 @@ NULL
 #
 create table t1 (pt point);
 insert into t1 values(Geomfromtext('POLYGON((1 1, 2 2, 2 1, 1 1))'));
-ERROR 22007: Incorrect POINT value: 'POLYGON' for column `test_gis`.`t1`.`pt` at row 1
+ERROR 22007: Incorrect POINT value: 'POLYGON((1 1,2 2,2 1,1 1))' for column `test_gis`.`t1`.`pt` at row 1
 drop table t1;
 SELECT st_astext(ST_Buffer(ST_PolygonFromText('POLYGON((3 5, 2 4, 2 5, 3 5))'), -100));
 st_astext(ST_Buffer(ST_PolygonFromText('POLYGON((3 5, 2 4, 2 5, 3 5))'), -100))
@@ -1543,28 +1543,28 @@ drop table t1;
 SHOW CREATE TABLE information_schema.geometry_columns;
 Table	Create Table
 GEOMETRY_COLUMNS	CREATE TEMPORARY TABLE `GEOMETRY_COLUMNS` (
-  `F_TABLE_CATALOG` varchar(512) NOT NULL DEFAULT '',
-  `F_TABLE_SCHEMA` varchar(64) NOT NULL DEFAULT '',
-  `F_TABLE_NAME` varchar(64) NOT NULL DEFAULT '',
-  `F_GEOMETRY_COLUMN` varchar(64) NOT NULL DEFAULT '',
-  `G_TABLE_CATALOG` varchar(512) NOT NULL DEFAULT '',
-  `G_TABLE_SCHEMA` varchar(64) NOT NULL DEFAULT '',
-  `G_TABLE_NAME` varchar(64) NOT NULL DEFAULT '',
-  `G_GEOMETRY_COLUMN` varchar(64) NOT NULL DEFAULT '',
-  `STORAGE_TYPE` tinyint(2) NOT NULL DEFAULT 0,
-  `GEOMETRY_TYPE` int(7) NOT NULL DEFAULT 0,
-  `COORD_DIMENSION` tinyint(2) NOT NULL DEFAULT 0,
-  `MAX_PPR` tinyint(2) NOT NULL DEFAULT 0,
-  `SRID` smallint(5) NOT NULL DEFAULT 0
-) ENGINE=MEMORY DEFAULT CHARSET=utf8
+  `F_TABLE_CATALOG` varchar(512) NOT NULL,
+  `F_TABLE_SCHEMA` varchar(64) NOT NULL,
+  `F_TABLE_NAME` varchar(64) NOT NULL,
+  `F_GEOMETRY_COLUMN` varchar(64) NOT NULL,
+  `G_TABLE_CATALOG` varchar(512) NOT NULL,
+  `G_TABLE_SCHEMA` varchar(64) NOT NULL,
+  `G_TABLE_NAME` varchar(64) NOT NULL,
+  `G_GEOMETRY_COLUMN` varchar(64) NOT NULL,
+  `STORAGE_TYPE` tinyint(2) NOT NULL,
+  `GEOMETRY_TYPE` int(7) NOT NULL,
+  `COORD_DIMENSION` tinyint(2) NOT NULL,
+  `MAX_PPR` tinyint(2) NOT NULL,
+  `SRID` smallint(5) NOT NULL
+) ENGINE=MEMORY DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
 SHOW CREATE TABLE information_schema.spatial_ref_sys;
 Table	Create Table
 SPATIAL_REF_SYS	CREATE TEMPORARY TABLE `SPATIAL_REF_SYS` (
-  `SRID` smallint(5) NOT NULL DEFAULT 0,
-  `AUTH_NAME` varchar(512) NOT NULL DEFAULT '',
-  `AUTH_SRID` int(5) NOT NULL DEFAULT 0,
-  `SRTEXT` varchar(2048) NOT NULL DEFAULT ''
-) ENGINE=MEMORY DEFAULT CHARSET=utf8
+  `SRID` smallint(5) NOT NULL,
+  `AUTH_NAME` varchar(512) NOT NULL,
+  `AUTH_SRID` int(5) NOT NULL,
+  `SRTEXT` varchar(2048) NOT NULL
+) ENGINE=MEMORY DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
 10.1 tests
 create table t1(g GEOMETRY(9,4) REF_SYSTEM_ID=101, pt POINT(8,2), pg GEOMETRY REF_SYSTEM_ID=102);
 SELECT SRID from information_schema.geometry_columns WHERE f_table_schema='test_gis' and G_TABLE_NAME='t1';
@@ -1579,7 +1579,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `CONTAINS(NULL, NULL)` int(1) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # MDEV-7334 valgrind warning "unitialized bytes" in 10.1.
@@ -1655,7 +1655,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `w1` int(1) DEFAULT NULL,
   `w2` int(1) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1,t2;
 CREATE TABLE t1 (
 id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -1692,7 +1692,7 @@ t1	CREATE TABLE `t1` (
   `a` point DEFAULT NULL,
   `x` double DEFAULT st_x(`a`),
   `y` double DEFAULT st_y(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (Point(1,2));
 SELECT x,y FROM t1;
 x	y
@@ -1704,7 +1704,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` geometry DEFAULT NULL,
   `area` double DEFAULT st_area(`g`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (g) VALUES (GeomFromText('POLYGON((0 0,20 0,20 20,0 20,0 0))'));
 SELECT area FROM t1;
 area
@@ -1716,7 +1716,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` geometry DEFAULT NULL,
   `length` double DEFAULT st_length(`g`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (g) VALUES (GeomFromText('LINESTRING(0 0,20 0,20 20,0 20,0 0)'));
 SELECT length FROM t1;
 length
@@ -1728,7 +1728,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` point DEFAULT NULL,
   `distance` double DEFAULT st_distance(`g`,point(0,0))
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (g) VALUES (Point(1,0));
 SELECT distance FROM t1;
 distance
@@ -1740,7 +1740,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` text DEFAULT NULL,
   `g` geometry DEFAULT st_geometryfromtext(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES ('point(1 1)');
 SELECT AsText(g) FROM t1;
 AsText(g)
@@ -1753,7 +1753,7 @@ t1	CREATE TABLE `t1` (
   `x` int(11) DEFAULT NULL,
   `y` int(11) DEFAULT NULL,
   `g` geometry DEFAULT point(`x`,`y`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (x,y) VALUES (10,20);
 SELECT AsText(g) FROM t1;
 AsText(g)
@@ -1765,7 +1765,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT st_pointn(`a`,2)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('LineString(1 1,2 2,3 3)'));
 SELECT AsText(b) FROM t1;
 AsText(b)
@@ -1777,7 +1777,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT st_startpoint(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('LineString(1 1,2 2,3 3)'));
 SELECT AsText(b) FROM t1;
 AsText(b)
@@ -1790,7 +1790,7 @@ t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT NULL,
   `c` geometry DEFAULT geometrycollection(`a`,`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a,b) VALUES (Point(1,1), Point(2,2));
 SELECT AsText(c) FROM t1;
 AsText(c)
@@ -1802,7 +1802,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT st_geometryfromwkb(st_aswkb(`a`),20)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('POINT(1 1)', 10));
 SELECT AsText(a), SRID(a), AsText(b), SRID(b) FROM t1;
 AsText(a)	SRID(a)	AsText(b)	SRID(b)
@@ -1814,7 +1814,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT st_boundary(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('POLYGON((10 10, 10 20, 20 20, 20 10, 10 10))'));
 SELECT AsText(b) FROM t1;
 AsText(b)
@@ -1826,7 +1826,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT st_buffer(`a`,10)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('POLYGON((10 10, 10 20, 20 20, 20 10, 10 10))'));
 SELECT GeometryType(b) FROM t1;
 GeometryType(b)
@@ -1838,7 +1838,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT st_centroid(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('POLYGON((10 10, 10 20, 20 20, 20 10, 10 10))'));
 SELECT AsText(b) FROM t1;
 AsText(b)
@@ -1850,7 +1850,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT st_envelope(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('LineString(1 1,4 4)'));
 SELECT AsText(b) FROM t1;
 AsText(b)
@@ -1862,7 +1862,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT st_pointonsurface(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('POLYGON((10 10, 10 20, 20 20, 20 10, 10 10))'));
 SELECT GeometryType(b) FROM t1;
 GeometryType(b)
@@ -1875,7 +1875,7 @@ t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT point(1,1),
   `c` geometry DEFAULT st_union(`a`,`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (Point(0,0));
 SELECT AsText(c) FROM t1;
 AsText(c)
@@ -1887,7 +1887,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` varchar(20) DEFAULT st_geometrytype(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (Point(0, 0));
 SELECT b FROM t1;
 b
@@ -1899,7 +1899,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT st_issimple(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (Point(0, 0));
 SELECT b FROM t1;
 b
@@ -1911,7 +1911,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT st_isempty(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (Point(0, 0));
 SELECT b FROM t1;
 b
@@ -1923,7 +1923,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT st_isring(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('LineString(0 0,0 1,1 1,1 0,0 0)'));
 SELECT b FROM t1;
 b
@@ -1935,7 +1935,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT st_isclosed(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('LineString(0 0,0 1,1 1,1 0,0 0)'));
 SELECT b FROM t1;
 b
@@ -1947,7 +1947,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT st_dimension(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (Buffer(Point(1,1),1));
 SELECT b FROM t1;
 b
@@ -1959,7 +1959,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT st_numgeometries(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (ST_UNION(Point(1,1),Point(0,0)));
 SELECT b FROM t1;
 b
@@ -1971,7 +1971,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT st_numinteriorrings(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('Polygon((0 0,0 3,3 3,3 0,0 0),(1 1,1 2,2 2,2 1,1 1))'));
 SELECT b FROM t1;
 b
@@ -1983,7 +1983,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT st_numpoints(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (LineString(Point(1,1),Point(0,0)));
 SELECT b FROM t1;
 b
@@ -1995,7 +1995,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` int(11) DEFAULT srid(`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES (GeomFromText('Point(1 1)', 100));
 SELECT b FROM t1;
 b
@@ -2008,7 +2008,7 @@ t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT NULL,
   `c` int(11) DEFAULT mbrdisjoint(`a`,`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a,b) VALUES (Point(1,1),Point(1,1));
 SELECT c FROM t1;
 c
@@ -2021,7 +2021,7 @@ t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT NULL,
   `c` int(11) DEFAULT st_disjoint(`a`,`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a,b) VALUES (Point(1,1),Point(1,1));
 SELECT c FROM t1;
 c
@@ -2034,7 +2034,7 @@ t1	CREATE TABLE `t1` (
   `a` geometry DEFAULT NULL,
   `b` geometry DEFAULT NULL,
   `c` int(11) DEFAULT st_relate(`a`,`b`,'T*F**FFF*')
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a,b) VALUES (Point(1,1),Point(1,1));
 SELECT c FROM t1;
 c
@@ -2096,31 +2096,31 @@ CREATE TABLE t2 AS SELECT CASE WHEN TRUE THEN a ELSE b END FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `CASE WHEN TRUE THEN a ELSE b END` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT COALESCE(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IF(TRUE,a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(TRUE,a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IFNULL(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IFNULL(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT b FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a VARCHAR(10), b Point)
 
@@ -2128,31 +2128,31 @@ CREATE TABLE t2 AS SELECT CASE WHEN TRUE THEN a ELSE b END FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `CASE WHEN TRUE THEN a ELSE b END` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT COALESCE(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IF(TRUE,a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(TRUE,a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IFNULL(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IFNULL(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT b FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a TINYTEXT, b Point)
 
@@ -2160,31 +2160,31 @@ CREATE TABLE t2 AS SELECT CASE WHEN TRUE THEN a ELSE b END FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `CASE WHEN TRUE THEN a ELSE b END` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT COALESCE(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IF(TRUE,a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(TRUE,a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IFNULL(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IFNULL(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT b FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a TEXT, b Point)
 
@@ -2192,31 +2192,31 @@ CREATE TABLE t2 AS SELECT CASE WHEN TRUE THEN a ELSE b END FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `CASE WHEN TRUE THEN a ELSE b END` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT COALESCE(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IF(TRUE,a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(TRUE,a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IFNULL(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IFNULL(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT b FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a MEDIUMTEXT, b Point)
 
@@ -2224,31 +2224,31 @@ CREATE TABLE t2 AS SELECT CASE WHEN TRUE THEN a ELSE b END FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `CASE WHEN TRUE THEN a ELSE b END` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT COALESCE(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IF(TRUE,a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(TRUE,a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IFNULL(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IFNULL(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT b FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a LONGTEXT, b Point)
 
@@ -2256,31 +2256,31 @@ CREATE TABLE t2 AS SELECT CASE WHEN TRUE THEN a ELSE b END FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `CASE WHEN TRUE THEN a ELSE b END` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT COALESCE(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IF(TRUE,a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(TRUE,a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IFNULL(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IFNULL(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT b FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a TINYINT, b Point)
 
@@ -2597,25 +2597,25 @@ CREATE TABLE t2 AS SELECT CASE WHEN TRUE THEN a ELSE b END FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `CASE WHEN TRUE THEN a ELSE b END` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT COALESCE(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IF(TRUE,a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(TRUE,a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IFNULL(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IFNULL(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT b FROM t1
 ERROR: 
@@ -2627,25 +2627,25 @@ CREATE TABLE t2 AS SELECT CASE WHEN TRUE THEN a ELSE b END FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `CASE WHEN TRUE THEN a ELSE b END` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT COALESCE(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `COALESCE(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IF(TRUE,a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(TRUE,a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT IFNULL(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `IFNULL(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT b FROM t1
 ERROR: 
@@ -2655,14 +2655,14 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `COALESCE(NULL, Point(1,1))` point DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT NULL UNION SELECT Point(1,1);
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `NULL` point DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP PROCEDURE p1;
 DROP PROCEDURE p2;
@@ -3604,7 +3604,7 @@ CREATE TABLE t2 AS SELECT LEAST(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a VARCHAR(10), b Point)
 
@@ -3612,7 +3612,7 @@ CREATE TABLE t2 AS SELECT LEAST(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a TINYTEXT, b Point)
 
@@ -3620,7 +3620,7 @@ CREATE TABLE t2 AS SELECT LEAST(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a TEXT, b Point)
 
@@ -3628,7 +3628,7 @@ CREATE TABLE t2 AS SELECT LEAST(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a MEDIUMTEXT, b Point)
 
@@ -3636,7 +3636,7 @@ CREATE TABLE t2 AS SELECT LEAST(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a LONGTEXT, b Point)
 
@@ -3644,7 +3644,7 @@ CREATE TABLE t2 AS SELECT LEAST(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a TINYINT, b Point)
 
@@ -3737,7 +3737,7 @@ CREATE TABLE t2 AS SELECT LEAST(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 -------------------------------------
 CREATE TABLE t1 (a SET(0x61), b Point)
 
@@ -3745,13 +3745,13 @@ CREATE TABLE t2 AS SELECT LEAST(a,b) FROM t1
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a,b)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t1 AS SELECT LEAST(NULL, Point(1,1));
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `LEAST(NULL, Point(1,1))` point DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP PROCEDURE p1;
 DROP PROCEDURE p2;
@@ -3996,14 +3996,14 @@ t1	CREATE TABLE `t1` (
   `p0` point DEFAULT NULL,
   `p1` point DEFAULT NULL,
   `p2` point DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT LEAST(Point(0,0),Point(0,0)) AS p1;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `p1` point DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 (
 c_geometry GEOMETRY,
@@ -4036,7 +4036,7 @@ t2	CREATE TABLE `t2` (
   `COALESCE(NULL, c_multilinestring)` multilinestring DEFAULT NULL,
   `COALESCE(NULL, c_multipolygon)` multipolygon DEFAULT NULL,
   `COALESCE(NULL, c_geometrycollection)` geometrycollection DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT
 COALESCE(c_geometry, NULL),
@@ -4059,7 +4059,7 @@ t2	CREATE TABLE `t2` (
   `COALESCE(c_multilinestring, NULL)` multilinestring DEFAULT NULL,
   `COALESCE(c_multipolygon, NULL)` multipolygon DEFAULT NULL,
   `COALESCE(c_geometrycollection, NULL)` geometrycollection DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT
 COALESCE(c_geometry, c_geometry),
@@ -4082,7 +4082,7 @@ t2	CREATE TABLE `t2` (
   `COALESCE(c_multilinestring, c_multilinestring)` multilinestring DEFAULT NULL,
   `COALESCE(c_multipolygon, c_multipolygon)` multipolygon DEFAULT NULL,
   `COALESCE(c_geometrycollection, c_geometrycollection)` geometrycollection DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -4093,7 +4093,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` point DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE PROCEDURE p1(name TEXT)
 BEGIN
@@ -4112,56 +4112,56 @@ t2	CREATE TABLE `t2` (
   `a1` geometry DEFAULT NULL,
   `a2` geometry DEFAULT NULL,
   `a3` geometry DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CALL p1('point');
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a1` point DEFAULT NULL,
   `a2` point DEFAULT NULL,
   `a3` point DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CALL p1('linestring');
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a1` linestring DEFAULT NULL,
   `a2` linestring DEFAULT NULL,
   `a3` linestring DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CALL p1('polygon');
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a1` polygon DEFAULT NULL,
   `a2` polygon DEFAULT NULL,
   `a3` polygon DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CALL p1('multipoint');
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a1` multipoint DEFAULT NULL,
   `a2` multipoint DEFAULT NULL,
   `a3` multipoint DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CALL p1('multilinestring');
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a1` multilinestring DEFAULT NULL,
   `a2` multilinestring DEFAULT NULL,
   `a3` multilinestring DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CALL p1('multipolygon');
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a1` multipolygon DEFAULT NULL,
   `a2` multipolygon DEFAULT NULL,
   `a3` multipolygon DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CALL p1('geometrycollection');
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a1` geometrycollection DEFAULT NULL,
   `a2` geometrycollection DEFAULT NULL,
   `a3` geometrycollection DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP PROCEDURE p1;
 #
 # MDEV-12798 Item_param does not preserve exact field type in EXECUTE IMMEDIATE 'CREATE TABLE AS SELECT ?' USING POINT(1,1)
@@ -4171,7 +4171,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `?` point NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 PREPARE stmt FROM 'CREATE OR REPLACE TABLE t1 AS SELECT ?';
 EXECUTE stmt USING POINT(1,1);
@@ -4179,7 +4179,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `?` point NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # MDEV-12854 Synchronize CREATE..SELECT data type and result set metadata data type for INT functions
@@ -4236,7 +4236,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` polygon DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT ST_ASTEXT(g) FROM t1;
 ST_ASTEXT(g)
 POLYGON((1 1,1 1,1 1,1 1,1 1))
@@ -4252,7 +4252,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` geometry DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT ST_GEOMETRYTYPE(g) FROM t1;
 ST_GEOMETRYTYPE(g)
 POINT
@@ -4303,7 +4303,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` geometry DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT ST_ASTEXT(g), SRID(g) FROM t1;
 ST_ASTEXT(g)	SRID(g)
 POINT(1 1)	1
@@ -4797,7 +4797,7 @@ t1	CREATE TABLE `t1` (
   `COALESCE(POINT(1,1),0x60)` longblob DEFAULT NULL,
   `LEAST(0x60,POINT(1,1))` longblob DEFAULT NULL,
   `LEAST(POINT(1,1),0x60)` longblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SELECT 0x60+POINT(1,1);
 ERROR HY000: Illegal parameter data types bigint and geometry for operation '+'

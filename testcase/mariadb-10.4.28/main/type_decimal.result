@@ -176,9 +176,8 @@ Note	1265	Data truncated for column 'a' at row 2
 insert ignore into t1 values ("1e+18446744073709551615"),("1e+18446744073709551616"),("1e-9223372036854775807"),("1e-9223372036854775809");
 Warnings:
 Warning	1264	Out of range value for column 'a' at row 1
-Warning	1366	Incorrect decimal value: '1e+18446744073709551616' for column `X`.`t1`.`a` at row 2
+Warning	1264	Out of range value for column 'a' at row 2
 Note	1265	Data truncated for column 'a' at row 3
-Warning	1366	Incorrect decimal value: '1e-9223372036854775809' for column `X`.`t1`.`a` at row 4
 insert ignore into t1 values ("123.4e"),("123.4e+2"),("123.4e-2"),("123e1"),("123e+0");
 Warnings:
 Warning	1265	Data truncated for column 'a' at row 1
@@ -209,7 +208,7 @@ a
 99999999.99
 0.00
 99999999.99
-0.00
+99999999.99
 0.00
 0.00
 123.40
@@ -513,14 +512,14 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `d` decimal(5,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 (d decimal);
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `d` decimal(10,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 (d decimal(66,0));
 ERROR 42000: Too big precision 66 specified for 'd'. Maximum is 65
@@ -693,7 +692,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` decimal(10,0) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select round(a,b) as c from t1 order by c;
 c
 1000
@@ -806,7 +805,7 @@ SHOW CREATE TABLE t1dec102;
 Table	Create Table
 t1dec102	CREATE TABLE `t1dec102` (
   `a` decimal(10,2)/*old*/ DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SHOW COLUMNS FROM t1dec102;
 Field	Type	Null	Key	Default	Extra
 a	decimal(10,2)/*old*/	YES		NULL	
@@ -860,7 +859,7 @@ SHOW CREATE TABLE t1dec102;
 Table	Create Table
 t1dec102	CREATE TABLE `t1dec102` (
   `a` decimal(10,2)/*old*/ DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t1 AS SELECT a, MAX(a), COALESCE(a) FROM t1dec102;
 SHOW CREATE TABLE t1;
 Table	Create Table
@@ -868,14 +867,14 @@ t1	CREATE TABLE `t1` (
   `a` decimal(10,2) DEFAULT NULL,
   `MAX(a)` decimal(10,2) DEFAULT NULL,
   `COALESCE(a)` decimal(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT a FROM t1dec102 UNION SELECT a FROM t1dec102;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` decimal(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP TABLE t1dec102;
 #
@@ -893,14 +892,14 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `MAX(a)` decimal(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT COALESCE(a) FROM t1dec102;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `COALESCE(a)` decimal(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 (a BIGINT);
 CREATE TABLE t2 AS SELECT a FROM t1dec102 UNION SELECT a FROM t1;
@@ -908,7 +907,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` decimal(21,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 CREATE TABLE t1 (a MEDIUMINT);
@@ -917,7 +916,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` decimal(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 CREATE TABLE t1 (a YEAR);
@@ -926,7 +925,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` decimal(10,2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 DROP TABLE t1dec102;

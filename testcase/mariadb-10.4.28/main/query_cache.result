@@ -533,6 +533,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxx
 xxxxxxxxxxxxxxxxxxxxxxxxy
 reset query cache;
 set max_sort_length=20;
+Warnings:
+Warning	1292	Truncated incorrect max_sort_length value: '20'
 select c from t1 order by c, id;
 c
 xxxxxxxxxxxxxxxxxxxxxxxx

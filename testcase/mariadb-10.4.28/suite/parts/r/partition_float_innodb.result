@@ -9,7 +9,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` float NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `pa1` MAX_ROWS = 20 MIN_ROWS = 2 ENGINE = SequoiaDB,
  PARTITION `pa2` MAX_ROWS = 30 MIN_ROWS = 3 ENGINE = SequoiaDB,
@@ -45,7 +45,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` float NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 10
 insert into t2 values (-3.402823466E+38), (-3.402823466E+37), (-123.456), (0), (1234546.789), (123.456), (1.5);
@@ -97,7 +97,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` double NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `pa1` MAX_ROWS = 20 MIN_ROWS = 2 ENGINE = SequoiaDB,
  PARTITION `pa2` MAX_ROWS = 30 MIN_ROWS = 3 ENGINE = SequoiaDB,
@@ -135,7 +135,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` double NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 10
 insert into t2 values (-2.2250738585072014E+208), (-2.2250738585072014E-208), (-1.5), (-1), (0), (1.5), (1234.567), (2.2250738585072014E+208);

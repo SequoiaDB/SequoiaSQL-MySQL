@@ -22,7 +22,7 @@ partition_sequoiadb_25072_1	CREATE TABLE `partition_sequoiadb_25072_1` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (year(`produced_date`))
 (PARTITION `p0` VALUES LESS THAN (1990) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES LESS THAN (2000) ENGINE = SequoiaDB)
@@ -43,7 +43,7 @@ partition_sequoiadb_25072_1	CREATE TABLE `partition_sequoiadb_25072_1` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (year(`produced_date`))
 (PARTITION `p0` VALUES LESS THAN (1990) ENGINE = SequoiaDB)
 INSERT INTO partition_sequoiadb_25072_1 VALUES(3,'1850-01-01','name3','company3');
@@ -62,7 +62,7 @@ partition_sequoiadb_25072_2	CREATE TABLE `partition_sequoiadb_25072_2` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (year(`produced_date`))
 (PARTITION `p0` VALUES LESS THAN (1990) ENGINE = SequoiaDB)
 INSERT INTO partition_sequoiadb_25072_2 VALUES(4,'1900-01-01','name4','company4');

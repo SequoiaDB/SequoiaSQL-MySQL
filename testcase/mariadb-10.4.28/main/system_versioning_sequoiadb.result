@@ -17,14 +17,14 @@ t1	CREATE TABLE `t1` (
   `x` int(11) NOT NULL,
   `y` int(11) DEFAULT NULL,
   PRIMARY KEY (`x`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `x` int(11) NOT NULL,
   `y` int(11) DEFAULT NULL,
   PRIMARY KEY (`x`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1(x,y) VALUES (1,1),(2,2),(3,3);
 INSERT INTO t2(x,y) VALUES (1,1),(2,2),(3,3);
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY x;
@@ -39,7 +39,7 @@ t1	CREATE TABLE `t1` (
   `x` int(11) NOT NULL,
   `y` int(11) DEFAULT NULL,
   PRIMARY KEY (`x`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1(x,y) VALUES (4,4);
 SELECT * FROM t1 ORDER BY x;
 x	y
@@ -66,14 +66,14 @@ t1	CREATE TABLE `t1` (
   `name` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`x`,`te`),
   PERIOD FOR SYSTEM_TIME (`ts`, `te`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `x` int(11) NOT NULL,
   `y` int(11) DEFAULT NULL,
   PRIMARY KEY (`x`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 INSERT INTO t1(name) VALUES ('Joe'),('Bob'),('Mary');
 INSERT INTO t2(x,y) VALUES (4,4);
 UPDATE t1 SET name = 'update_name' WHERE x < 3;
@@ -131,7 +131,7 @@ t1	CREATE TABLE `t1` (
   `start_timestamp` timestamp(6) GENERATED ALWAYS AS ROW START,
   `end_timestamp` timestamp(6) GENERATED ALWAYS AS ROW END,
   PERIOD FOR SYSTEM_TIME (`start_timestamp`, `end_timestamp`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -141,7 +141,7 @@ t2	CREATE TABLE `t2` (
   `end_timestamp` timestamp(6) GENERATED ALWAYS AS ROW END INVISIBLE,
   PRIMARY KEY (`x`,`end_timestamp`),
   PERIOD FOR SYSTEM_TIME (`start_timestamp`, `end_timestamp`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 INSERT INTO t1(x,y) VALUES (1,1),(2,2),(3,3);
 INSERT IGNORE INTO t1(x,y) VALUES (1,-1),(4,4);
 REPLACE INTO t1(x,y) VALUES (4,-2),(5,5);
@@ -339,7 +339,7 @@ t1	CREATE TABLE `t1` (
   `y` int(11) DEFAULT NULL,
   `z` int(11) DEFAULT NULL WITHOUT SYSTEM VERSIONING,
   PRIMARY KEY (`x`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -347,7 +347,7 @@ t2	CREATE TABLE `t2` (
   `y` int(11) DEFAULT NULL WITHOUT SYSTEM VERSIONING,
   `z` int(11) NOT NULL,
   PRIMARY KEY (`z`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 INSERT INTO t1(y,z) VALUES (1,1),(2,2),(3,3);
 INSERT INTO t2 VALUES (1,1,1),(2,2,2),(3,3,3);
 UPDATE t1 SET z = -1 WHERE x = 1;
@@ -376,7 +376,7 @@ t1	CREATE TABLE `t1` (
   `y` int(11) DEFAULT NULL,
   `z` int(11) DEFAULT NULL WITHOUT SYSTEM VERSIONING,
   PRIMARY KEY (`x`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -384,7 +384,7 @@ t2	CREATE TABLE `t2` (
   `y` int(11) DEFAULT NULL WITHOUT SYSTEM VERSIONING,
   `z` int(11) NOT NULL,
   PRIMARY KEY (`z`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 UPDATE t1 SET z = -2 WHERE x = 2;
 UPDATE t2 SET x = -2 WHERE x = 2;
 SELECT * FROM t1 ORDER BY x;
@@ -427,14 +427,14 @@ t1	CREATE TABLE `t1` (
   `end_time` datetime NOT NULL,
   PRIMARY KEY (`id`),
   PERIOD FOR `dt_period` (`start_time`, `end_time`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `id` int(11) DEFAULT NULL,
   `te` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `ts` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1(start_time,end_time) VALUES ('1997-01-01 00:00:00', '2001-01-01 10:10:10');
 INSERT INTO t1(start_time,end_time) VALUES ('2005-05-05 10:10:10', '2010-10-10 10:10:10');
 INSERT INTO t1(start_time,end_time) VALUES ('2008-08-08 08:08:08', '2018-10-10 10:10:10');
@@ -460,7 +460,7 @@ t1	CREATE TABLE `t1` (
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -468,7 +468,7 @@ t2	CREATE TABLE `t2` (
   `te` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `ts` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PERIOD FOR `timestamp_period` (`ts`, `te`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1(start_time,end_time) VALUES ('2020-12-12 00:00:00', '2021-01-01 00:00:00');
 INSERT INTO t2 VALUES (4, '2020-12-12 00:00:00', '1998-09-09 09:09:09');
 UPDATE t1
@@ -501,8 +501,6 @@ id
 4
 4
 4
-4
-8
 8
 DROP TABLE t1,t2;
 CREATE TABLE t1(
@@ -525,7 +523,7 @@ t1	CREATE TABLE `t1` (
   `date_2` date NOT NULL,
   PRIMARY KEY (`id`),
   PERIOD FOR `date_period` (`date_1`, `date_2`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -534,7 +532,7 @@ t2	CREATE TABLE `t2` (
   `te` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000',
   PRIMARY KEY (`ts`),
   PERIOD FOR `timestamp_period` (`ts`, `te`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1(name,date_1,date_2) VALUES ('Joe', '1997-01-01', '2001-01-01');
 INSERT INTO t1(name,date_1,date_2) VALUES ('Mary', '2005-05-05', '2010-10-10');
 INSERT INTO t1(name,date_1,date_2) VALUES ('Bob', '2008-08-08', '2018-10-10');
@@ -640,7 +638,7 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`id`,`row_end`),
   PERIOD FOR SYSTEM_TIME (`row_start`, `row_end`),
   PERIOD FOR `application_time` (`date_1`, `date_2`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -649,7 +647,7 @@ t2	CREATE TABLE `t2` (
   `date_1` date DEFAULT NULL,
   `date_2` date DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1(name,date_1,date_2) VALUES ('Joe', '1997-01-01', '2001-01-01');
 INSERT INTO t1(name,date_1,date_2) VALUES ('Mary', '2005-05-05', '2010-10-10');
 INSERT INTO t1(name,date_1,date_2) VALUES ('Bob', '2008-08-08', '2018-10-10');
@@ -748,7 +746,7 @@ t1	CREATE TABLE `t1` (
   `row_end` timestamp(6) GENERATED ALWAYS AS ROW END INVISIBLE,
   PRIMARY KEY (`id`,`row_end`),
   PERIOD FOR SYSTEM_TIME (`row_start`, `row_end`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -758,7 +756,7 @@ t2	CREATE TABLE `t2` (
   `date_2` date NOT NULL,
   PRIMARY KEY (`id`),
   PERIOD FOR `date_period` (`date_1`, `date_2`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci WITH SYSTEM VERSIONING
 INSERT INTO t1(name,date_1,date_2) VALUES ('David', '1998-01-01', '2008-01-01');
 UPDATE t1 SET name = 'third update: David' WHERE id > 5;
 UPDATE t2 SET name = 'first update: Joe' WHERE id < 2;
@@ -849,7 +847,7 @@ t1	CREATE TABLE `t1` (
   `end_timestamp` timestamp(6) GENERATED ALWAYS AS ROW END INVISIBLE,
   PRIMARY KEY (`x`,`end_timestamp`),
   PERIOD FOR SYSTEM_TIME (`start_timestamp`, `end_timestamp`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { x: 1 }, ShardingType: "hash", AutoSplit: true } }' WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci COMMENT='sequoiadb:{ table_options: { ShardingKey: { x: 1 }, ShardingType: "hash", AutoSplit: true } }' WITH SYSTEM VERSIONING
 INSERT INTO t1(x,y) VALUES (1,1),(2,2),(3,3);
 UPDATE t1 SET y = y * 2 WHERE x < 3;
 DELETE FROM t1 WHERE x > 2;

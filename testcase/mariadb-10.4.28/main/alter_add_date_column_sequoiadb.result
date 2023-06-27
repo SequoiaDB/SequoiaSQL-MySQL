@@ -281,7 +281,7 @@ tb_29313	CREATE TABLE `tb_29313` (
   `a` int(11) DEFAULT NULL,
   `b` date DEFAULT NULL,
   `d` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29313;
 connect  conn29314,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29314;
@@ -566,7 +566,7 @@ tb_29314	CREATE TABLE `tb_29314` (
   `a` int(11) DEFAULT NULL,
   `b` datetime DEFAULT NULL,
   `d` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29314;
 connect  conn29720,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29720;
@@ -880,7 +880,7 @@ tb_29720	CREATE TABLE `tb_29720` (
   `b` year(4) DEFAULT NULL,
   `c` year(4) DEFAULT 0000,
   `d` year(4) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29720;
 connect  conn29721,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29721;
@@ -1195,7 +1195,7 @@ tb_29721	CREATE TABLE `tb_29721` (
   `b` time DEFAULT NULL,
   `c` time DEFAULT '00:00:00',
   `d` time DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29721;
 connect  conn29722,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29722;
@@ -1451,7 +1451,7 @@ Table	Create Table
 tb_29722	CREATE TABLE `tb_29722` (
   `a` int(11) DEFAULT NULL,
   `b` timestamp NOT NULL DEFAULT '2004-05-06 00:00:00'
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29722;
 connect  conn29315,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29315;
@@ -1766,7 +1766,7 @@ tb_29315	CREATE TABLE `tb_29315` (
   `b` date DEFAULT NULL,
   `c` date DEFAULT '0000-00-00',
   `d` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29315;
 connect  conn29316,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29316;
@@ -2081,7 +2081,7 @@ tb_29316	CREATE TABLE `tb_29316` (
   `b` datetime DEFAULT NULL,
   `c` datetime DEFAULT '0000-00-00 00:00:00',
   `d` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29316;
 connect  conn29723,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29723;
@@ -2396,7 +2396,7 @@ tb_29723	CREATE TABLE `tb_29723` (
   `b` year(4) DEFAULT NULL,
   `c` year(4) DEFAULT 0000,
   `d` year(4) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29723;
 connect  conn29724,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29724;
@@ -2711,7 +2711,7 @@ tb_29724	CREATE TABLE `tb_29724` (
   `b` time DEFAULT NULL,
   `c` time DEFAULT '00:00:00',
   `d` time DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 disconnect conn29724;
 connect  conn29725,localhost,root,,,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection conn29725;
@@ -2997,7 +2997,7 @@ tb_29725	CREATE TABLE `tb_29725` (
   `a` int(11) DEFAULT NULL,
   `b` timestamp NOT NULL DEFAULT '2004-05-06 00:00:00',
   `c` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 set profiling=off;
 set session sql_mode=default;
 drop table tb_29313,tb_29314,tb_29315,tb_29316,tb_29720,tb_29721,tb_29722,tb_29723,tb_29724,tb_29725;

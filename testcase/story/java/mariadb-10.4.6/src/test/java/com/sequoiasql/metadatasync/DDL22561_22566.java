@@ -72,7 +72,7 @@ public class DDL22561_22566 extends MysqlTestBase {
         List< String > exp1 = new ArrayList<>();
         exp1.add( "tb_22566|CREATE TABLE `tb_22566` (\n"
                 + "  `a` tinyint(4) NOT NULL AUTO_INCREMENT,\n"
-                + "  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,\n"
+                + "  `e` enum('y','n','giveup') DEFAULT NULL,\n"
                 + "  PRIMARY KEY (`a`)\n"
                 + ") ENGINE=SequoiaDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );
         Assert.assertEquals( act1, exp1 );
@@ -110,8 +110,8 @@ public class DDL22561_22566 extends MysqlTestBase {
         List< String > exp4 = new ArrayList<>();
         exp4.add( "tb_22566|CREATE TABLE `tb_22566` (\n"
                 + "  `a` tinyint(4) NOT NULL AUTO_INCREMENT,\n"
-                + "  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,\n"
-                + "  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',\n"
+                + "  `e` enum('y','n','giveup') DEFAULT NULL,\n"
+                + "  `c` char(8) DEFAULT 'char',\n"
                 + "  PRIMARY KEY (`a`)\n"
                 + ") ENGINE=SequoiaDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
                 + " PARTITION BY HASH (`a`)\n" + "PARTITIONS 4" );
@@ -125,7 +125,7 @@ public class DDL22561_22566 extends MysqlTestBase {
         List< String > act6 = jdbc2.query( "show create database " + dbName );
         List< String > exp6 = new ArrayList<>();
         exp6.add(
-                "db_22561|CREATE DATABASE `db_22561` /*!40100 DEFAULT CHARACTER SET ucs2 */" );
+                "db_22561|CREATE DATABASE `db_22561` /*!40100 DEFAULT CHARACTER SET ucs2 COLLATE ucs2_general_ci */" );
         Assert.assertEquals( act6, exp6 );
         List< String > act7 = jdbc1.query(
                 "select * from " + dbName + "." + tbName + " order by a" );
@@ -151,8 +151,8 @@ public class DDL22561_22566 extends MysqlTestBase {
         List< String > exp9 = new ArrayList<>();
         exp9.add( "tb_22566|CREATE TABLE `tb_22566` (\n"
                 + "  `a` tinyint(4) NOT NULL,\n"
-                + "  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,\n"
-                + "  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',\n"
+                + "  `e` enum('y','n','giveup') DEFAULT NULL,\n"
+                + "  `c` char(8) DEFAULT 'char',\n"
                 + "  PRIMARY KEY (`a`)\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
                 + " PARTITION BY HASH (`a`)\n" + "PARTITIONS 4" );
@@ -169,7 +169,7 @@ public class DDL22561_22566 extends MysqlTestBase {
         List< String > act12 = jdbc1.query( "show create database " + dbName );
         List< String > exp12 = new ArrayList<>();
         exp12.add(
-                "db_22561|CREATE DATABASE `db_22561` /*!40100 DEFAULT CHARACTER SET cp1251 */" );
+                "db_22561|CREATE DATABASE `db_22561` /*!40100 DEFAULT CHARACTER SET cp1251 COLLATE cp1251_general_ci */" );
         Assert.assertEquals( act12, exp12 );
 
         // clear table in the ending

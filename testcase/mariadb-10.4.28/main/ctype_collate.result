@@ -487,7 +487,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `latin1_f` char(32) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SHOW FIELDS FROM  t1;
 Field	Type	Null	Key	Default	Extra
 latin1_f	char(32)	NO		NULL	
@@ -497,7 +497,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `latin1_f` char(32) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SHOW FIELDS FROM  t1;
 Field	Type	Null	Key	Default	Extra
 latin1_f	char(32)	YES		NULL	
@@ -505,7 +505,7 @@ ALTER TABLE t1 CHARACTER SET latin1 COLLATE latin1_bin;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `latin1_f` char(32) COLLATE latin1_bin DEFAULT NULL
+  `latin1_f` char(32) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
 SHOW FIELDS FROM  t1;
 Field	Type	Null	Key	Default	Extra
@@ -610,8 +610,8 @@ select least(_latin1'a',_latin2'b',_latin5'c' collate latin5_turkish_ci) as f1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `f1` varchar(1) CHARACTER SET latin5 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `f1` varchar(1) CHARACTER SET latin5 COLLATE latin5_turkish_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select case _latin1'a' when _latin2'b' then 1 when _latin5'c' collate
 latin5_turkish_ci then 2 else 3 end;
@@ -655,7 +655,7 @@ CREATE TABLE t1 AS SELECT ' - ' AS a UNION SELECT getText();
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(20) COLLATE latin1_german2_ci DEFAULT NULL
+  `a` varchar(20) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci
 DROP TABLE t1;
 DROP FUNCTION getText;
@@ -673,7 +673,7 @@ CREATE TABLE t1 AS SELECT ' - ' AS a UNION SELECT getText();
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(20) COLLATE latin1_german2_ci DEFAULT NULL
+  `a` varchar(20) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci
 DROP TABLE t1;
 DROP FUNCTION getText;
@@ -693,6 +693,8 @@ CREATE TABLE t1 (
 b LONGTEXT CHARACTER SET "latin1" COLLATE "latin1_bin",
 PRIMARY KEY b (b(32))
 );
+Warnings:
+Warning	1280	Name 'b' ignored for PRIMARY key.
 INSERT INTO t1 (b) VALUES ('a'), (_binary 0x1), (_binary 0x0), ('');
 select hex(b) from t1 force index (PRIMARY) where b<'zzz';
 hex(b)

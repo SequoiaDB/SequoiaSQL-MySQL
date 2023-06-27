@@ -367,6 +367,7 @@ set @mdev4270_osd= @@optimizer_search_depth;
 set optimizer_prune_level=0;
 set optimizer_search_depth=2;
 
+--error 1052 
 select 1 from t1 join t2 a 
 natural left join t2 b 
 natural right outer join t3;

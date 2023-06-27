@@ -161,7 +161,9 @@ date_format('1999-12-31','%x-%v')	date_format('2000-01-01','%x-%v')
 1999-52	1999-52
 select dayname("1962-03-03"),dayname("1962-03-03")+0;
 dayname("1962-03-03")	dayname("1962-03-03")+0
-Saturday	5
+Saturday	0
+Warnings:
+Warning	1292	Truncated incorrect DOUBLE value: 'Saturday'
 select monthname("1972-03-04"),monthname("1972-03-04")+0;
 monthname("1972-03-04")	monthname("1972-03-04")+0
 March	0
@@ -953,7 +955,7 @@ t1	CREATE TABLE `t1` (
   `curtime() - curtime()` int(9) NOT NULL,
   `sec_to_time(1) + 0` int(9) DEFAULT NULL,
   `from_unixtime(1) + 0` bigint(16) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 SELECT SEC_TO_TIME(3300000);
 SEC_TO_TIME(3300000)
@@ -2155,8 +2157,8 @@ Warning	1292	Truncated incorrect DECIMAL value: '2005-05-0410'
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
-  `f2` varchar(26) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `f2` varchar(22) DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT * FROM t2;
 f2
 0.000000
@@ -2177,13 +2179,13 @@ CREATE TABLE t1 (a TIMESTAMP(3));
 INSERT INTO t1 VALUES ('2001-01-01 10:20:30.999');
 SELECT CAST(COALESCE(a,a) AS SIGNED) AS c1, CAST(COALESCE(a,a) AS DECIMAL(25,3)) AS c2, ROUND(COALESCE(a,a)) AS c2  FROM t1;
 c1	c2	c2
-20010101102030	20010101102030.999	20010101102031
+20010101102030	20010101102030.999	2001-01-01 10:20:31
 DROP TABLE t1;
 CREATE TABLE t1 (a TIME(3));
 INSERT INTO t1 VALUES ('10:20:30.999');
 SELECT CAST(COALESCE(a,a) AS SIGNED) AS c1, CAST(COALESCE(a,a) AS DECIMAL(25,3)) AS c2, ROUND(COALESCE(a,a)) AS c2  FROM t1;
 c1	c2	c2
-102030	102030.999	102031
+102030	102030.999	10:20:31
 DROP TABLE t1;
 SELECT
 CAST(COALESCE(DATE('2001-01-01'),TIMESTAMP('2001-01-02 10:20:30')) AS SIGNED) AS c1,
@@ -2277,7 +2279,7 @@ t1	CREATE TABLE `t1` (
   `c2` varchar(10) DEFAULT NULL,
   `c3` varchar(10) DEFAULT NULL,
   `c4` varchar(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # MDEV-4870 Wrong values of CASE, COALESCE, IFNULL on a combination of different temporal types
@@ -3238,7 +3240,7 @@ t2	CREATE TABLE `t2` (
   `EXTRACT(HOUR_MICROSECOND FROM a)` bigint(13) DEFAULT NULL,
   `EXTRACT(MINUTE_MICROSECOND FROM a)` bigint(11) DEFAULT NULL,
   `EXTRACT(SECOND_MICROSECOND FROM a)` int(9) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1,t2;
 CREATE TABLE t1 (a TIME(6));
 INSERT INTO t1 VALUES ('-838:59:59.999999'),('838:59:59.999999');
@@ -3419,7 +3421,7 @@ t2	CREATE TABLE `t2` (
   `EXTRACT(HOUR_MICROSECOND FROM a)` bigint(13) DEFAULT NULL,
   `EXTRACT(MINUTE_MICROSECOND FROM a)` bigint(11) DEFAULT NULL,
   `EXTRACT(SECOND_MICROSECOND FROM a)` int(9) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1,t2;
 #
 # MDEV-14926 AddressSanitizer: heap-use-after-free in make_date_time on weird combination of functions
@@ -3513,7 +3515,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(19) DEFAULT NULL,
   `c2` varchar(26) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT * FROM t1;
 c1	c2
 2001-01-02	10:20:31
@@ -3579,7 +3581,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `TO_SECONDS('9999-12-31 23:59:59')` bigint(12) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET sql_mode=DEFAULT;
 #
@@ -3705,7 +3707,7 @@ t1	CREATE TABLE `t1` (
   `c3` varchar(4) DEFAULT NULL,
   `c4` varchar(2) DEFAULT NULL,
   `c5` varchar(8) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 EXECUTE IMMEDIATE
 "CREATE TABLE t1 AS SELECT
@@ -3725,7 +3727,7 @@ t1	CREATE TABLE `t1` (
   `c3` varchar(4) DEFAULT NULL,
   `c4` varchar(2) DEFAULT NULL,
   `c5` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 #
 # MDEV-16152 Expressions with INTERVAL return bad results in some cases
@@ -6191,7 +6193,7 @@ t2	CREATE TABLE `t2` (
   `EXTRACT(DAY_MINUTE FROM a)` int(7) DEFAULT NULL,
   `EXTRACT(DAY_SECOND FROM a)` int(9) DEFAULT NULL,
   `EXTRACT(DAY_MICROSECOND FROM a)` bigint(15) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t2;
 DROP TABLE t1;
 #

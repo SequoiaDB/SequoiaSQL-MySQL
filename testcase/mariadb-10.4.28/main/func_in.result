@@ -415,7 +415,7 @@ HEX(a)
 7FFFFFFFFFFFFFFE
 7FFFFFFFFFFFFFFF
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'abc'
+Warning	1292	Truncated incorrect DECIMAL value: 'abc'
 CREATE TABLE t3 (a BIGINT UNSIGNED);
 INSERT INTO t3 VALUES (9223372036854775551);
 SELECT HEX(a) FROM t3 WHERE a IN (9223372036854775807, 42);
@@ -443,21 +443,21 @@ f1
 a
 1
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 select f1, case f1 when 'a' then '+' when 1 then '-' end from t1;
 f1	case f1 when 'a' then '+' when 1 then '-' end
 a	+
 b	NULL
 1	-
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 create index t1f1_idx on t1(f1);
 select f1 from t1 where f1 in ('a',1);
 f1
 1
 a
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 select f1 from t1 where f1 in ('a','b');
 f1
 a
@@ -466,8 +466,8 @@ select f1 from t1 where f1 in (2,1);
 f1
 1
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 create table t2(f2 int, index t2f2(f2));
 insert into t2 values(0),(1),(2);
 select f2 from t2 where f2 in ('a',2);
@@ -475,22 +475,22 @@ f2
 0
 2
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
 select f2 from t2 where f2 in ('a','b');
 f2
 0
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 select f2 from t2 where f2 in (1,'b');
 f2
 0
 1
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 drop table t1, t2;
 create table t1 (a time, key(a));
 insert into t1 values (),(),(),(),(),(),(),(),(),();
@@ -705,22 +705,22 @@ SELECT '0x' IN (0);
 '0x' IN (0)
 1
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '0x'
+Warning	1292	Truncated incorrect DECIMAL value: '0x'
 SELECT '0x' IN (0,1);
 '0x' IN (0,1)
 1
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '0x'
+Warning	1292	Truncated incorrect DECIMAL value: '0x'
 SELECT ('0x',1) IN ((0,1));
 ('0x',1) IN ((0,1))
 1
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '0x'
+Warning	1292	Truncated incorrect DECIMAL value: '0x'
 SELECT ('0x',1) IN ((0,1),(1,1));
 ('0x',1) IN ((0,1),(1,1))
 1
 Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '0x'
+Warning	1292	Truncated incorrect DECIMAL value: '0x'
 #
 # End of 10.4 tests
 #

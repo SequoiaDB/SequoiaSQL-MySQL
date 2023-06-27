@@ -190,7 +190,7 @@ t1	CREATE TABLE `t1` (
   UNIQUE KEY `b` (`b`),
   UNIQUE KEY `b_2` (`b`,`f`),
   UNIQUE KEY `e` (`e`(16),`g`(16))
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show keys from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	0	PRIMARY	1	a	x	x	x	x		BTREE		

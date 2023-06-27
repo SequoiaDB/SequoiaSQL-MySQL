@@ -334,8 +334,13 @@ drop table t1,t3;
 --echo # String* Field_varstring::val_str(String*, String*)
 --echo #
 
-SET optimizer_switch = REPLACE( @@optimizer_switch, '=on', '=off' );
-SET optimizer_switch='in_to_exists=on,exists_to_in=on';
+#SET optimizer_switch = REPLACE( @@optimizer_switch, '=on', '=off' );
+#SET optimizer_switch='in_to_exists=on,exists_to_in=on';
+
+SELECT REPLACE( @@optimizer_switch, '=on', '=off' ) INTO @value;
+SELECT REPLACE( @value, 'in_to_exists=off', 'in_to_exists=on' ) INTO @value;
+SELECT REPLACE( @value, 'exists_to_in=off', 'exists_to_in=on' ) INTO @value;
+SET optimizer_switch=@value;
 
 CREATE TABLE t1 ( a VARCHAR(1) );
 INSERT INTO t1 VALUES ('k'),('m');
@@ -470,8 +475,14 @@ WHERE EXISTS ( SELECT * FROM t1 WHERE a > alias.a AND a = alias.b );
 #SELECT * FROM t1 AS alias
 #WHERE EXISTS ( SELECT * FROM t1 WHERE a > alias.a AND a = alias.b );
 
-SET optimizer_switch = REPLACE( @@optimizer_switch, '=on', '=off' );
-SET optimizer_switch = 'exists_to_in=on,materialization=on,semijoin=off';
+#SET optimizer_switch = REPLACE( @@optimizer_switch, '=on', '=off' );
+#SET optimizer_switch = 'exists_to_in=on,materialization=on,semijoin=off';
+SELECT REPLACE( @@optimizer_switch, '=on', '=off' ) INTO @value;
+SELECT REPLACE( @value, 'materialization=off', 'materialization=on' ) INTO @value;
+SELECT REPLACE( @value, 'exists_to_in=off', 'exists_to_in=on' ) INTO @value;
+SELECT REPLACE( @value, 'semijoin=on', 'semijoin=off' ) INTO @value;
+SET optimizer_switch=@value;
+
 SELECT * FROM t1 AS alias
 WHERE EXISTS ( SELECT * FROM t1 WHERE a > alias.a AND a = alias.b );
 #explain extended

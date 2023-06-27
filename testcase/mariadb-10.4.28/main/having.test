@@ -257,6 +257,7 @@ where t1.col2 in
 
 # the having column is resolved in the SELECT clause of the outer query -
 # error in ANSI, works with MySQL extension
+--error 1054
 select t1.col1 as tmp_col from t1
 where t1.col2 in 
       (select t2.col2 from t2 

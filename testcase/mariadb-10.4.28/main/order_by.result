@@ -740,6 +740,8 @@ insert into t1 set a = concat(repeat('x', 19), 'z');
 insert into t1 set a = concat(repeat('x', 19), 'ab');
 insert into t1 set a = concat(repeat('x', 19), 'aa');
 set max_sort_length=20;
+Warnings:
+Warning	1292	Truncated incorrect max_sort_length value: '20'
 select a from t1 order by a;
 a
 xxxxxxxxxxxxxxxxxxxaa

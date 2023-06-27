@@ -40,7 +40,7 @@ w
 y
 EXPLAIN SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 AND col_varchar_16_key = 'u';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	list_part_table	index_merge	col_varchar_16_key,col_int_key	col_int_key,col_varchar_16_key	5,67	NULL	1	Using intersect(col_int_key,col_varchar_16_key); Using where
+1	SIMPLE	list_part_table	ref	col_varchar_16_key,col_int_key	col_varchar_16_key	67	const	6	Using where
 SELECT `col_varchar_16` AS field1 FROM list_part_table WHERE col_int_key = 1 AND col_varchar_16_key = 'u';
 field1
 h

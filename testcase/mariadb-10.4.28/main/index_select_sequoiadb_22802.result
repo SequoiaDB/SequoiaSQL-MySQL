@@ -20,7 +20,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 EXPLAIN SELECT * FROM t1 WHERE a>19;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index	PRIMARY,ab	ab	3	NULL	#	Using where with pushed condition; Using index
@@ -72,7 +72,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	#	Using where with pushed condition; Using index
@@ -134,7 +134,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ba	4	NULL	#	Using where with pushed condition; Using index
@@ -172,7 +172,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 EXPLAIN SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ba	5	NULL	#	Using where with pushed condition; Using index
@@ -210,7 +210,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 EXPLAIN SELECT * FROM t1 WHERE a in (1,2,3);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	PRIMARY,ab	ab	8	NULL	#	Using where with pushed condition; Using index

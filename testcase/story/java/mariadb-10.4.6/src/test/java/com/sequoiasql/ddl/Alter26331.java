@@ -100,7 +100,7 @@ public class Alter26331 extends MysqlTestBase {
         List< String > exp2 = new ArrayList<>();
         exp2.add( clName + "|CREATE TABLE `" + clName + "` (\n"
                 + "  `id` int(11) DEFAULT NULL,\n"
-                + "  `name_bak` varchar(10) COLLATE utf8mb4_bin DEFAULT NULL\n"
+                + "  `name_bak` varchar(10) DEFAULT NULL\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );
         Assert.assertEquals( act2, exp2 );
         List< String > act3 = jdbc.query(

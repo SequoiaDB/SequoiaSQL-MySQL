@@ -357,7 +357,7 @@ t1	CREATE TABLE `t1` (
   `t1_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`t1_id`),
   KEY `t1_name` (`t1_name`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=2000 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=2000 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE `t1`;
 create table t1(a int not null auto_increment primary key);
 create table t2(a int not null auto_increment primary key, t1a int);
@@ -524,7 +524,7 @@ t1	CREATE TABLE `t1` (
   `id` tinyint(4) NOT NULL AUTO_INCREMENT,
   `name` char(30) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (name) VALUES ('dog');
 UPDATE t1 SET id=-1 WHERE id=1;
 INSERT INTO t1 (name) VALUES ('cat');
@@ -563,7 +563,7 @@ t1	CREATE TABLE `t1` (
   `id` tinyint(4) NOT NULL AUTO_INCREMENT,
   `name` char(30) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 id	name
 1	dog
 id	name
@@ -577,7 +577,7 @@ t1	CREATE TABLE `t1` (
   `id` smallint(6) NOT NULL AUTO_INCREMENT,
   `name` char(30) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 id	name
 1	dog
 id	name
@@ -591,7 +591,7 @@ t1	CREATE TABLE `t1` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
   `name` char(30) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 id	name
 1	dog
 id	name
@@ -605,7 +605,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` char(30) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 id	name
 1	dog
 id	name
@@ -619,7 +619,7 @@ t1	CREATE TABLE `t1` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` char(30) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 id	name
 1	dog
 id	name
@@ -633,7 +633,7 @@ t1	CREATE TABLE `t1` (
   `id` float NOT NULL AUTO_INCREMENT,
   `name` char(30) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 id	name
 1	dog
 id	name
@@ -647,7 +647,7 @@ t1	CREATE TABLE `t1` (
   `id` double NOT NULL AUTO_INCREMENT,
   `name` char(30) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 id	name
 1	dog
 id	name

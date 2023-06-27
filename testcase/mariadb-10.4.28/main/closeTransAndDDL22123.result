@@ -30,7 +30,7 @@ closeTransAndDDL22123_2	CREATE TABLE `closeTransAndDDL22123_2` (
   `e` int(5) DEFAULT NULL,
   PRIMARY KEY (`a`),
   KEY `index_c` (`c`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='表2'
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='表2'
 drop table closeTransAndDDL22123_2;
 show tables like 'closeTransAndDDL22123_2';
 Tables_in_db_22123 (closeTransAndDDL22123_2)

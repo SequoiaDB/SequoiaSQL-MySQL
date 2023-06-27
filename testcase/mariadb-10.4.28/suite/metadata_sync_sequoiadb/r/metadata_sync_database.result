@@ -61,13 +61,13 @@ Database	Create Database
 metasync_cs1	CREATE DATABASE `metasync_cs1` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin */
 SHOW CREATE DATABASE metasync_cs2;
 Database	Create Database
-metasync_cs2	CREATE DATABASE `metasync_cs2` /*!40100 DEFAULT CHARACTER SET utf8 */
+metasync_cs2	CREATE DATABASE `metasync_cs2` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */
 SHOW CREATE DATABASE metasync_cs3;
 Database	Create Database
-metasync_cs3	CREATE DATABASE `metasync_cs3` /*!40100 DEFAULT CHARACTER SET utf32 */
+metasync_cs3	CREATE DATABASE `metasync_cs3` /*!40100 DEFAULT CHARACTER SET utf32 COLLATE utf32_general_ci */
 SHOW CREATE DATABASE metasync_cs31;
 Database	Create Database
-metasync_cs31	CREATE DATABASE `metasync_cs31` /*!40100 DEFAULT CHARACTER SET big5 */
+metasync_cs31	CREATE DATABASE `metasync_cs31` /*!40100 DEFAULT CHARACTER SET big5 COLLATE big5_chinese_ci */
 SHOW CREATE DATABASE metasync_cs4;
 ERROR 42000: Unknown database 'metasync_cs4'
 SHOW CREATE DATABASE metasync_cs5;
@@ -77,7 +77,7 @@ Database	Create Database
 metasync_cs6	CREATE DATABASE `metasync_cs6` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin */
 SHOW CREATE SCHEMA metasync_schem1;
 Database	Create Database
-metasync_schem1	CREATE DATABASE `metasync_schem1` /*!40100 DEFAULT CHARACTER SET big5 */
+metasync_schem1	CREATE DATABASE `metasync_schem1` /*!40100 DEFAULT CHARACTER SET big5 COLLATE big5_chinese_ci */
 SET sql_mode='ANSI_QUOTES';
 SHOW CREATE DATABASE "metasync_\tt1\nt2\\t3";
 Database	Create Database
@@ -93,16 +93,16 @@ ALTER SCHEMA metasync_schem1 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2
 connection conn1;
 SHOW CREATE DATABASE metasync_cs2;
 Database	Create Database
-metasync_cs2	CREATE DATABASE `metasync_cs2` /*!40100 DEFAULT CHARACTER SET ucs2 */
+metasync_cs2	CREATE DATABASE `metasync_cs2` /*!40100 DEFAULT CHARACTER SET ucs2 COLLATE ucs2_general_ci */
 SHOW CREATE DATABASE metasync_cs3;
 Database	Create Database
-metasync_cs3	CREATE DATABASE `metasync_cs3` /*!40100 DEFAULT CHARACTER SET ucs2 */
+metasync_cs3	CREATE DATABASE `metasync_cs3` /*!40100 DEFAULT CHARACTER SET ucs2 COLLATE ucs2_general_ci */
 SHOW CREATE DATABASE metasync_cs31;
 Database	Create Database
-metasync_cs31	CREATE DATABASE `metasync_cs31` /*!40100 DEFAULT CHARACTER SET ucs2 */
+metasync_cs31	CREATE DATABASE `metasync_cs31` /*!40100 DEFAULT CHARACTER SET ucs2 COLLATE ucs2_general_ci */
 SHOW CREATE SCHEMA metasync_schem1;
 Database	Create Database
-metasync_schem1	CREATE DATABASE `metasync_schem1` /*!40100 DEFAULT CHARACTER SET ucs2 */
+metasync_schem1	CREATE DATABASE `metasync_schem1` /*!40100 DEFAULT CHARACTER SET ucs2 COLLATE ucs2_general_ci */
 DROP DATABASE IF EXISTS metasync_cs1;
 DROP DATABASE metasync_cs2;
 DROP DATABASE metasync_cs3;

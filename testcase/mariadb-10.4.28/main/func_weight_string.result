@@ -51,14 +51,14 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `w` varbinary(4) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 select weight_string(repeat('t',66000)) as w;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `w` mediumblob DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 select weight_string(NULL);
 weight_string(NULL)
@@ -138,7 +138,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(10) DEFAULT NULL,
   `b` varbinary(10) DEFAULT weight_string(`a`,0,10,65)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 (a) VALUES ('a');
 SELECT a, HEX(b) FROM t1;
 a	HEX(b)

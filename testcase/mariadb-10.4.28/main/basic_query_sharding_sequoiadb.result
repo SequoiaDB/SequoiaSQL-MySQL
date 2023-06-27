@@ -930,16 +930,16 @@ string
 word
 SELECT c FROM t1 WHERE b NOT IN ("abcd", "22222", "11111");
 c
+testc2
+helloworld
 1234567
-testc6
+xxyyzz
 ABCD2e
 testc1
-testc2
+testc6
 testc3
-helloworld
 string
 testc4
-xxyyzz
 SELECT * FROM t1 WHERE b LIKE "abc%";
 a	b	c
 6	abcd	testc5
@@ -953,32 +953,32 @@ a	b	c
 3	1234567	1234567
 SELECT * FROM t1 WHERE b != "abcd2e";
 a	b	c
-14	11111	11111
+11	helloworld	helloworld
 3	1234567	1234567
-7	22222	22222
-1	ABCD	ABCD
-15	ABCD1e	testc6
+8	xxyyzz	xxyyzz
 6	abcd	testc5
 2	abcd1e	testc1
+15	ABCD1e	testc6
+7	22222	22222
 10	ccccc	testc3
-11	helloworld	helloworld
 12	string	string
 9	word	testc4
-8	xxyyzz	xxyyzz
+1	ABCD	ABCD
+14	11111	11111
 SELECT * FROM t1 WHERE b <> "ABCD";
 a	b	c
-14	11111	11111
+5	abcd2e	testc2
+11	helloworld	helloworld
 3	1234567	1234567
-7	22222	22222
-15	ABCD1e	testc6
+8	xxyyzz	xxyyzz
 4	ABCD2e	ABCD2e
 2	abcd1e	testc1
-5	abcd2e	testc2
+15	ABCD1e	testc6
+7	22222	22222
 10	ccccc	testc3
-11	helloworld	helloworld
 12	string	string
 9	word	testc4
-8	xxyyzz	xxyyzz
+14	11111	11111
 SELECT b,c FROM t1 WHERE b = c;
 b	c
 11111	11111
@@ -1159,7 +1159,7 @@ SELECT * FROM t1 WHERE CHAR(ASCII(a)) = 'a' OR ORD(a) = 't' ;
 a	b
 
 	
-Warning	1292	Truncated incorrect DOUBLE value: 't'
+Warning	1292	Truncated incorrect DECIMAL value: 't'
 Warnings:
 abc	
 abcdefg	z
@@ -1356,7 +1356,7 @@ SELECT * FROM t1 WHERE CHAR(ASCII(a)) = 'a' OR ORD(a) = 't' ;
 a	b
 
 	
-Warning	1292	Truncated incorrect DOUBLE value: 't'
+Warning	1292	Truncated incorrect DECIMAL value: 't'
 Warnings:
 abc	
 abcdefg	z
@@ -2493,26 +2493,6 @@ Warning	1292	Truncated incorrect DECIMAL value: 'yew                            
 Warning	1292	Truncated incorrect DECIMAL value: 'yew                                                             '
 Warning	1292	Truncated incorrect DECIMAL value: 'yew                                                             '
 Warning	1292	Truncated incorrect DECIMAL value: 'yew                                                             '
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warnings:
 SELECT COUNT(DISTINCT(t1.c)), LEFT(d, 256) AS comment FROM t1 LEFT JOIN t2 ON t1.a=t2.a GROUP BY comment;
 COUNT(DISTINCT(t1.c))	comment
@@ -2744,26 +2724,6 @@ Warning	1292	Truncated incorrect DECIMAL value: 'yew                            
 Warning	1292	Truncated incorrect DECIMAL value: 'yew                                                             '
 Warning	1292	Truncated incorrect DECIMAL value: 'yew                                                             '
 Warning	1292	Truncated incorrect DECIMAL value: 'yew                                                             '
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warnings:
 SELECT COUNT(DISTINCT(t1.c)), LEFT(d, 256) AS comment FROM t1 LEFT JOIN t2 ON t1.a=t2.a GROUP BY comment;
 COUNT(DISTINCT(t1.c))	comment
@@ -3447,7 +3407,7 @@ a	b	c
 2	ac	2190-03-22
 20	erw	1997-07-21
 4	wa	1990-02-22
-Warning	1292	Truncated incorrect DOUBLE value: 'abc'
+Warning	1292	Truncated incorrect DECIMAL value: 'abc'
 Warnings:
 SELECT * FROM t1 WHERE b != ALL (SELECT b FROM t2 WHERE b < 'www');
 a	b
@@ -3555,7 +3515,7 @@ a	b	c
 2	ac	2190-03-22
 20	erw	1997-07-21
 4	wa	1990-02-22
-Warning	1292	Truncated incorrect DOUBLE value: 'abc'
+Warning	1292	Truncated incorrect DECIMAL value: 'abc'
 Warnings:
 SELECT * FROM t1 WHERE b != ALL (SELECT b FROM t2 WHERE b < 'www');
 a	b
@@ -14311,17 +14271,17 @@ SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 LIMIT 2 OFFSET 1;
 (SELECT a FROM t1 WHERE t1.a=t2.vc)	vc
 0	bc
 NULL	123
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
-Warning	1292	Truncated incorrect DOUBLE value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
+Warning	1292	Truncated incorrect DECIMAL value: 'bc'
 Warnings:
 CREATE TABLE t3 SELECT * FROM t1 WHERE id > 5 LIMIT 5;
 INSERT INTO t3 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 2;
@@ -14390,7 +14350,7 @@ gis_search	CREATE TABLE `gis_search` (
   `geoco2` geometrycollection DEFAULT NULL,
   `geom2` geometry DEFAULT NULL,
   PRIMARY KEY (`gid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SET @point1 = ST_PointFromText('POINT(1 1)');
 SET @point2 = ST_PointFromText('POINT(10 10)');
 SET @point3 = ST_PointFromText('POINT(20 10)');
@@ -15536,12 +15496,6 @@ gid	ST_AsText(poly)	ST_AsText(poly2)
 1206	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
 select gid, ST_AsText(poly),ST_AsText(poly2) FROM gis_search where ST_Distance(poly,poly2)=0;
 gid	ST_AsText(poly)	ST_AsText(poly2)
-1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
-1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
-1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
-1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
-1205	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
-1206	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
 select gid, ST_AsText(poin),ST_AsText(line),ST_AsText(ST_EndPoint(line)) FROM gis_search where poin!=ST_EndPoint(line);
 gid	ST_AsText(poin)	ST_AsText(line)	ST_AsText(ST_EndPoint(line))
 1701	POINT(1 1)	LINESTRING(0 0,10 10)	POINT(10 10)

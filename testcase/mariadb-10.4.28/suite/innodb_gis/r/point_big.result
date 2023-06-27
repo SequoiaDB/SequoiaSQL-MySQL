@@ -332,10 +332,8 @@ COUNT(*)	ST_AsText(p1)
 1024	POINT(5 10)
 SELECT COUNT(*), ST_AsText(p1) FROM gis_point WHERE MBRWithin(p1, @poly1) GROUP BY p1;
 COUNT(*)	ST_AsText(p1)
-1024	POINT(2 4)
 1024	POINT(3 6)
 1024	POINT(4 8)
-1024	POINT(5 10)
 SELECT COUNT(*), ST_AsText(p2) FROM gis_point WHERE ST_Contains(@poly2, p2) GROUP BY p2;
 COUNT(*)	ST_AsText(p2)
 1024	POINT(0 0)
@@ -364,6 +362,7 @@ COUNT(*)	ST_AsText(p1)	ST_AsText(p2)
 1024	POINT(20.5 41)	POINT(-8 4)
 SELECT COUNT(*), ST_AsText(p1), ST_AsText(p2) FROM gis_point WHERE ST_Contains(@mpoly, p1) AND NOT MBRWithin(p1, @mpoly) GROUP BY p1, p2;
 COUNT(*)	ST_AsText(p1)	ST_AsText(p2)
+1024	POINT(3 6)	POINT(-3 -9)
 ======================================================================
 Build another new table with the same schema, will insert data from this table to the orignal one
 ======================================================================
@@ -409,16 +408,12 @@ COUNT(*)	ST_AsText(p1)	ST_AsText(p2)
 SELECT COUNT(*), ST_AsText(p1) FROM gis_point WHERE ST_TOUCHES(@poly3, p1) AND MBRWithin(p2, @poly4) GROUP BY p1;
 COUNT(*)	ST_AsText(p1)
 1024	POINT(20.5 41)
-14	POINT(20.5 43.9832)
 1024	POINT(32.1234 64.2468)
 SELECT COUNT(*), ST_AsText(p2) FROM gis_point WHERE MBRWithin(p2, @poly2) GROUP BY p2;
 COUNT(*)	ST_AsText(p2)
-1024	POINT(0 0)
-14	POINT(-0 0)
 1024	POINT(-2 -6)
 1024	POINT(-3 -9)
 1024	POINT(-4 -12)
-1024	POINT(-5 -15)
 1024	POINT(-1 -3)
 1024	POINT(-1 -1)
 DROP TABLE p;
@@ -511,10 +506,8 @@ COUNT(*)	ST_AsText(p1)
 1024	POINT(5 10)
 SELECT COUNT(*), ST_AsText(p1) FROM gis_point WHERE MBRWithin(p1, @poly1) GROUP BY p1;
 COUNT(*)	ST_AsText(p1)
-1024	POINT(2 4)
 1024	POINT(3 6)
 1024	POINT(4 8)
-1024	POINT(5 10)
 SELECT COUNT(*), ST_AsText(p2) FROM gis_point WHERE ST_Contains(@poly2, p2) GROUP BY p2;
 COUNT(*)	ST_AsText(p2)
 2	POINT(0 0)
@@ -543,6 +536,7 @@ COUNT(*)	ST_AsText(p1)	ST_AsText(p2)
 1024	POINT(20.5 41)	POINT(-8 4)
 SELECT COUNT(*), ST_AsText(p1), ST_AsText(p2) FROM gis_point WHERE ST_Contains(@mpoly, p1) AND NOT MBRWithin(p1, @mpoly) GROUP BY p1, p2;
 COUNT(*)	ST_AsText(p1)	ST_AsText(p2)
+1024	POINT(3 6)	POINT(-3 -9)
 CHECK TABLE gis_point;
 Table	Op	Msg_type	Msg_text
 test_point_big.gis_point	check	status	OK

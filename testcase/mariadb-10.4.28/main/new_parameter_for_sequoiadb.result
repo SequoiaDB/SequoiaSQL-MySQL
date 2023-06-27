@@ -42,7 +42,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 set session sequoiadb_execute_only_in_mysql=off;
 CREATE TABLE t1 ( a INT PRIMARY KEY);
@@ -54,7 +54,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 set session sequoiadb_execute_only_in_mysql=off;
 DROP TABLE t1;
 set session sequoiadb_execute_only_in_mysql=on;

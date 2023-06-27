@@ -330,7 +330,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bit(27) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB,
@@ -846,7 +846,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` timestamp NULL DEFAULT NULL,
   `tz` varchar(16) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (unix_timestamp(`a`))
 (PARTITION `p0` VALUES LESS THAN (0) ENGINE = SequoiaDB,
  PARTITION `p-2000` VALUES LESS THAN (946684800) ENGINE = SequoiaDB,
@@ -1320,7 +1320,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` timestamp NULL DEFAULT NULL,
   `tz` varchar(16) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (unix_timestamp(`a`))
 (PARTITION `p0` VALUES LESS THAN (0) ENGINE = SequoiaDB,
  PARTITION `p-2000` VALUES LESS THAN (946684800) ENGINE = SequoiaDB,

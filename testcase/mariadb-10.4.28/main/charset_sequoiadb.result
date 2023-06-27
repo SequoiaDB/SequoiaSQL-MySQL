@@ -16,7 +16,7 @@ SHOW CREATE TABLE charset_sequoiadb;
 Table	Create Table
 charset_sequoiadb	CREATE TABLE `charset_sequoiadb` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` varchar(10) CHARACTER SET utf8mb4 DEFAULT NULL,
+  `a` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `a` (`a`,`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
@@ -118,7 +118,7 @@ SHOW CREATE TABLE charset_sequoiadb;
 Table	Create Table
 charset_sequoiadb	CREATE TABLE `charset_sequoiadb` (
   `a` int(11) NOT NULL,
-  `b` varchar(10) CHARACTER SET utf8mb4 DEFAULT NULL,
+  `b` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `c` int(11) DEFAULT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin

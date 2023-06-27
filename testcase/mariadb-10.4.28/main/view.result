@@ -2669,7 +2669,7 @@ DROP VIEW IF EXISTS v2;
 CREATE TABLE t1(a INT, b INT);
 CREATE DEFINER=longer_than_80_456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789@localhost
 VIEW v1 AS SELECT a FROM t1;
-ERROR HY000: String 'longer_than_80_4567890123456789012345678901234567890123456789012345678' is too long for user name (should be no longer than 80)
+ERROR HY000: String 'longer_than_80_4567890123456789012345678901234567890123456789012345...' is too long for user name (should be no longer than 80)
 CREATE DEFINER=some_user_name@1234567890abcdefghij1234567890abcdefghij1234567890abcdefghijQWERTY
 VIEW v2 AS SELECT b FROM t1;
 ERROR HY000: String '1234567890abcdefghij1234567890abcdefghij1234567890abcdefghijQWERTY' is too long for host name (should be no longer than 60)
@@ -5489,7 +5489,7 @@ t2	CREATE TABLE `t2` (
   `code` int(11) DEFAULT NULL,
   `COUNT(DISTINCT country)` bigint(21) NOT NULL,
   `MAX(id)` int(11)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t3 AS
 SELECT code, COUNT(DISTINCT country), MAX(id) FROM v1 GROUP BY code ORDER BY MAX(id);
 SHOW CREATE TABLE t3;
@@ -5498,7 +5498,7 @@ t3	CREATE TABLE `t3` (
   `code` int(11) DEFAULT NULL,
   `COUNT(DISTINCT country)` bigint(21) NOT NULL,
   `MAX(id)` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP VIEW v1;
 DROP TABLE t1,t2,t3;
 #
@@ -5726,7 +5726,7 @@ INSERT INTO t3 VALUES (1),(8);
 CREATE VIEW v1 AS SELECT * FROM t1 LEFT JOIN ( SELECT t2.* FROM t2 INNER JOIN t3 ON ( k = j ) ) AS alias1 ON ( i = j );
 show create view v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `test_view`.`t1`.`i` AS `i`,`alias1`.`j` AS `j` from (`test_view`.`t1` left join (select `test_view`.`t2`.`j` AS `j` from (`test_view`.`t2` join `test_view`.`t3` on(`test_view`.`t3`.`k` = `test_view`.`t2`.`j`))) `alias1` on(`test_view`.`t1`.`i` = `alias1`.`j`))	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`i` AS `i`,`alias1`.`j` AS `j` from (`t1` left join (select `t2`.`j` AS `j` from (`t2` join `t3` on(`t3`.`k` = `t2`.`j`))) `alias1` on(`t1`.`i` = `alias1`.`j`))	latin1	latin1_swedish_ci
 SELECT * FROM t1 LEFT JOIN ( SELECT t2.* FROM t2 INNER JOIN t3 ON ( k = j ) ) AS alias1 ON ( i = j );
 i	j
 3	NULL
@@ -5884,7 +5884,7 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 show create view v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `testalias`.`testcase` AS `testcase` from (select case when 1 in (select `test_view`.`t1`.`a` from `test_view`.`t1` where `test_view`.`t1`.`a` < 2) then 1 end AS `testcase`) `testalias`	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `testalias`.`testcase` AS `testcase` from (select case when 1 in (select `t1`.`a` from `t1` where `t1`.`a` < 2) then 1 end AS `testcase`) `testalias`	latin1	latin1_swedish_ci
 SELECT * FROM v1;
 testcase
 1

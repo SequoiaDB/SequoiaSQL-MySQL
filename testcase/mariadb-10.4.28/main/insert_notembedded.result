@@ -34,7 +34,7 @@ GRANT  INSERT,DELETE,SELECT  ON table_target3   TO   user20989@localhost;
 connect  user20989,localhost,user20989,,meow;
 connection user20989;
 REPLACE INTO    table_target2 VALUES ('00X45Y78','2006-07-12 07:50:00');
-ERROR 42000: INSERT, DELETE command denied to user 'user20989'@'localhost' for table 'table_target2'
+ERROR 42000: INSERT, DELETE command denied to user 'user20989'@'localhost' for table `meow`.`table_target2`
 REPLACE INTO    view_target2  VALUES ('12X45Y78','2006-07-12 07:50:00');
 connection root;
 disconnect user20989;

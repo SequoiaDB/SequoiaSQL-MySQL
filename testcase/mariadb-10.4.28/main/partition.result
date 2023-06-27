@@ -95,7 +95,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
   `b` int(11) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 2
 SELECT * FROM t1;
@@ -191,7 +191,7 @@ t1	CREATE TABLE `t1` (
   `ddddddddd` int(11) NOT NULL DEFAULT 0,
   `new_field0` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`ID`,`aaaa,aaaaa`,`ddddddddd`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`ID`)
 SUBPARTITION BY LINEAR KEY (`ID`,`aaaa,aaaaa`)
 SUBPARTITIONS 2
@@ -268,7 +268,7 @@ t1	CREATE TABLE `t1` (
   `a` timestamp NOT NULL DEFAULT current_timestamp(),
   `b` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (unix_timestamp(`a`))
 (PARTITION `p1` VALUES LESS THAN (1199134800) ENGINE = SequoiaDB,
  PARTITION `p3` VALUES LESS THAN (1247688000) ENGINE = SequoiaDB,
@@ -346,7 +346,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 SET sql_mode='';
 CREATE TABLE t1 (a INT)
@@ -380,7 +380,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -555,7 +555,7 @@ INSERT INTO `t1` VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),
 INSERT INTO `t2` VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20);
 EXPLAIN PARTITIONS SELECT c1 FROM t1 WHERE (c1 > 10 AND c1 < 13) OR (c1 > 17 AND c1 < 20);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	NULL	range	c1	c1	5	NULL	4	Using where with pushed condition; Using index
+1	SIMPLE	t1	NULL	index	c1	c1	5	NULL	20	Using where with pushed condition; Using index
 FLUSH STATUS;
 SELECT c1 FROM t1 WHERE (c1 > 10 AND c1 < 13) OR (c1 > 17 AND c1 < 20);
 c1
@@ -565,8 +565,8 @@ c1
 19
 SHOW STATUS LIKE 'Handler_read_%';
 Variable_name	Value
-Handler_read_first	0
-Handler_read_key	2
+Handler_read_first	1
+Handler_read_key	0
 Handler_read_last	0
 Handler_read_next	4
 Handler_read_prev	0
@@ -783,7 +783,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 SUBPARTITION BY KEY (`a`)
 (PARTITION `p0` VALUES LESS THAN (1) ENGINE = SequoiaDB,
@@ -793,7 +793,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 SUBPARTITION BY KEY (`a`)
 (PARTITION `p0` VALUES LESS THAN (1) ENGINE = SequoiaDB,
@@ -815,7 +815,7 @@ t1	CREATE TABLE `t1` (
   `b` int(11) NOT NULL,
   `c` int(11) NOT NULL,
   PRIMARY KEY (`a`,`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 drop table t1;
 CREATE TABLE t1 (
@@ -993,7 +993,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (`a`)
 (PARTITION `x1` VALUES IN (1) ENGINE = SequoiaDB)
 drop table t1;
@@ -1019,7 +1019,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 PARTITIONS 5
 drop table t1;
@@ -1049,7 +1049,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `p0` VALUES LESS THAN (10) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES LESS THAN (20) ENGINE = SequoiaDB,
@@ -1074,7 +1074,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `x1` VALUES LESS THAN (6) ENGINE = SequoiaDB,
  PARTITION `x3` VALUES LESS THAN (8) ENGINE = SequoiaDB,
@@ -1137,7 +1137,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1146,7 +1146,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1155,7 +1155,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1164,7 +1164,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1173,7 +1173,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 (a int)
 engine=sequoiadb
@@ -1184,7 +1184,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1194,7 +1194,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1
 engine=sequoiadb
 partition by key(a)
@@ -1204,7 +1204,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1217,7 +1217,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1228,7 +1228,7 @@ t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1
 engine=sequoiadb
 partition by key (a)
@@ -1239,7 +1239,7 @@ t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1252,7 +1252,7 @@ t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1266,7 +1266,7 @@ t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1405,7 +1405,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 SUBPARTITION BY HASH (`a`)
 (PARTITION `p0` VALUES LESS THAN (100) ENGINE = SequoiaDB)
@@ -1415,7 +1415,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 SUBPARTITION BY HASH (`a`)
 (PARTITION `p0` VALUES LESS THAN (100)
@@ -1429,14 +1429,14 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 alter table t1 add partition (partition p1);
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 (PARTITION `p0` ENGINE = SequoiaDB,
  PARTITION `p1` ENGINE = SequoiaDB)
@@ -1506,7 +1506,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (`a`)
 (PARTITION `p1` VALUES IN (1) ENGINE = SequoiaDB,
  PARTITION `p2` VALUES IN (2) ENGINE = SequoiaDB)
@@ -1520,7 +1520,7 @@ t2	CREATE TABLE `t2` (
   `a` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `c` char(10) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='no comment'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci COMMENT='no comment'
  PARTITION BY KEY (`a`)
 drop table t2;
 create table t1 (f1 int) partition by hash (f1) as select 1;
@@ -1710,7 +1710,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (`a`)
 (PARTITION `p0` VALUES IN (NULL) ENGINE = SequoiaDB)
 DROP TABLE t1;
@@ -1753,7 +1753,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 drop table t1;
 CREATE TABLE t1 (a int) ENGINE=SEQUOIADB PARTITION BY KEY(a);
@@ -1822,7 +1822,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY KEY (`a`)
 PARTITIONS 10
 insert into t1 values (18446744073709551615), (0xFFFFFFFFFFFFFFFE),
@@ -1982,7 +1982,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`b`)
 (PARTITION `p1` VALUES LESS THAN (10) ENGINE = SequoiaDB,
  PARTITION `p2` VALUES LESS THAN (20) ENGINE = SequoiaDB)

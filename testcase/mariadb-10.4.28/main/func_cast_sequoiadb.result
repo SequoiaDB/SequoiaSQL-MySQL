@@ -79,30 +79,30 @@ SELECT * FROM t1 WHERE a = CAST('1.0' AS SIGNED);
 a	b	c
 1	9	2008-01-01
 1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warning	1292	Truncated incorrect INTEGER value: '1.0'
 Warnings:
 SELECT * FROM t1 WHERE a = CAST(1.000 AS SIGNED);
 a	b	c
 1	9	2008-01-01
 1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
 a	b	c
@@ -117,15 +117,15 @@ a	b	c
 2019#01#01	13	2016-06-06
 2019-01-01	21	2011-09-01
 2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -145,15 +145,15 @@ a	b	c
 2147483647	2	2001-01-02
 4294967294	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -165,15 +165,15 @@ a	b	c
 1.00	5	2013-01-01
 1.01	6	2009-11-01
 1.02	7	2004-04-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -189,43 +189,43 @@ a	b	c
 2147483647	2	2001-01-02
 4294967294	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS UNSIGNED);
 a	b	c
 1	9	2008-01-01
 1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a = CAST(1.01 AS UNSIGNED);
 a	b	c
 1	9	2008-01-01
 1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
 a	b	c
@@ -242,15 +242,15 @@ a	b	c
 2019.01.01	16	2012-05-01
 2147483647	2	2001-01-02
 4294967294	-1	2001-01-03
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -258,15 +258,15 @@ b	11	2002-01-01
 SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
 a	b	c
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
 a	b	c
@@ -280,15 +280,15 @@ a	b	c
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -304,15 +304,15 @@ a	b	c
 2147483647	2	2001-01-02
 4294967294	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warning	1292	Truncated incorrect INTEGER value: '123abc4'
 Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
@@ -968,30 +968,30 @@ SELECT * FROM t1 WHERE a = CAST('1.0' AS SIGNED);
 a	b	c
 1	9	2008-01-01
 1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warning	1292	Truncated incorrect INTEGER value: '1.0'
 Warnings:
 SELECT * FROM t1 WHERE a = CAST(1.000 AS SIGNED);
 a	b	c
 1	9	2008-01-01
 1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
 a	b	c
@@ -1006,15 +1006,15 @@ a	b	c
 2019#01#01	13	2016-06-06
 2019-01-01	21	2011-09-01
 2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -1034,15 +1034,15 @@ a	b	c
 2147483647	2	2001-01-02
 4294967294	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -1054,15 +1054,15 @@ a	b	c
 1.00	5	2013-01-01
 1.01	6	2009-11-01
 1.02	7	2004-04-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -1078,43 +1078,43 @@ a	b	c
 2147483647	2	2001-01-02
 4294967294	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS UNSIGNED);
 a	b	c
 1	9	2008-01-01
 1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a = CAST(1.01 AS UNSIGNED);
 a	b	c
 1	9	2008-01-01
 1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
 a	b	c
@@ -1131,15 +1131,15 @@ a	b	c
 2019.01.01	16	2012-05-01
 2147483647	2	2001-01-02
 4294967294	-1	2001-01-03
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -1147,15 +1147,15 @@ b	11	2002-01-01
 SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
 a	b	c
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
 a	b	c
@@ -1169,15 +1169,15 @@ a	b	c
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
 Note	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warnings:
 a	3	2000-01-01
 a1	1	2001-01-01
@@ -1193,15 +1193,15 @@ a	b	c
 2147483647	2	2001-01-02
 4294967294	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'a1'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
+Warning	1292	Truncated incorrect DECIMAL value: '2001#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2001.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019#01#01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019-01-01'
+Warning	1292	Truncated incorrect DECIMAL value: '2019.01.01'
+Warning	1292	Truncated incorrect DECIMAL value: 'a'
+Warning	1292	Truncated incorrect DECIMAL value: 'a1'
+Warning	1292	Truncated incorrect DECIMAL value: 'b'
 Warning	1292	Truncated incorrect INTEGER value: '123abc4'
 Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
@@ -2040,8 +2040,6 @@ Warning	1292	Truncated incorrect datetime value: '1'
 Warning	1292	Truncated incorrect datetime value: '2147483647'
 Warning	1292	Truncated incorrect datetime value: '4294967294'
 Warning	1292	Truncated incorrect datetime value: '9999999999'
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
@@ -2501,8 +2499,6 @@ Warning	1292	Truncated incorrect datetime value: '1'
 Warning	1292	Truncated incorrect datetime value: '2147483647'
 Warning	1292	Truncated incorrect datetime value: '4294967294'
 Warning	1292	Truncated incorrect datetime value: '9999999999'
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
@@ -2947,8 +2943,6 @@ Warning	1292	Truncated incorrect datetime value: '1'
 Warning	1292	Truncated incorrect datetime value: '2147483647'
 Warning	1292	Truncated incorrect datetime value: '4294967294'
 Warning	1292	Truncated incorrect datetime value: '9999999999'
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
@@ -3420,8 +3414,6 @@ Warning	1292	Truncated incorrect datetime value: '1'
 Warning	1292	Truncated incorrect datetime value: '2147483647'
 Warning	1292	Truncated incorrect datetime value: '4294967294'
 Warning	1292	Truncated incorrect datetime value: '9999999999'
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
@@ -3923,8 +3915,6 @@ Warning	1292	Truncated incorrect time value: '-4294967299'
 Warning	1292	Truncated incorrect time value: '2147483647'
 Warning	1292	Truncated incorrect time value: '4294967294'
 Warning	1292	Truncated incorrect time value: '9999999999'
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
@@ -4548,8 +4538,6 @@ Warning	1292	Truncated incorrect time value: '-4294967299'
 Warning	1292	Truncated incorrect time value: '2147483647'
 Warning	1292	Truncated incorrect time value: '4294967294'
 Warning	1292	Truncated incorrect time value: '9999999999'
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
-Warning	1918	Encountered illegal value '' when converting to DECIMAL
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c

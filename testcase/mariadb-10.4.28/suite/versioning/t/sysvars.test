@@ -35,16 +35,16 @@ set system_versioning_asof= 1;
 set system_versioning_asof= 1.1;
 
 --echo # GLOBAL @@system_versioning_asof
-set global system_versioning_asof= '1911-11-11 11:11:11.1111119';
+set global system_versioning_asof= '1991-11-11 11:11:11.1111119';
 show global variables like 'system_versioning_asof';
 
-set global system_versioning_asof= '1900-01-01 00:00:00';
+set global system_versioning_asof= '1990-01-01 00:00:00';
 show global variables like 'system_versioning_asof';
 
-set global system_versioning_asof= timestamp'1911-11-11 11:11:11.1111119';
+set global system_versioning_asof= timestamp'1991-11-11 11:11:11.1111119';
 show global variables like 'system_versioning_asof';
 
-set @ts= timestamp'1900-01-01 00:00:00';
+set @ts= timestamp'1990-01-01 00:00:00';
 set global system_versioning_asof= @ts;
 show global variables like 'system_versioning_asof';
 
@@ -52,26 +52,32 @@ set global system_versioning_asof= default;
 select @@global.system_versioning_asof;
 
 --echo # SESSION @@system_versioning_asof
-set system_versioning_asof= '1911-11-11 11:11:11.1111119';
+set system_versioning_asof= '1991-11-11 11:11:11.1111119';
 show variables like 'system_versioning_asof';
 
-set system_versioning_asof= '1900-01-01 00:00:00';
+set system_versioning_asof= '1990-01-01 00:00:00';
 show variables like 'system_versioning_asof';
 
-set system_versioning_asof= timestamp'1911-11-11 11:11:11.1111119';
+set system_versioning_asof= timestamp'1991-11-11 11:11:11.1111119';
 show variables like 'system_versioning_asof';
 
-set @ts= timestamp'1900-01-01 00:00:00';
+set @ts= timestamp'1990-01-01 00:00:00';
 set system_versioning_asof= @ts;
 show variables like 'system_versioning_asof';
 
 --echo # DEFAULT: value is copied from GLOBAL to SESSION
-set global system_versioning_asof= timestamp'1911-11-11 11:11:11.111111';
-set system_versioning_asof= '1900-01-01 00:00:00';
+set global time_zone= "+03:00";
+set time_zone= "+10:00";
+set global system_versioning_asof= timestamp'1991-11-11 11:11:11.111111';
+set system_versioning_asof= '1990-01-01 00:00:00';
 select @@global.system_versioning_asof != @@system_versioning_asof as different;
 set system_versioning_asof= default;
+select @@global.system_versioning_asof != @@system_versioning_asof as different;
+set global system_versioning_asof= default;
 select @@global.system_versioning_asof = @@system_versioning_asof as equal;
 
+set global time_zone= DEFAULT;
+set time_zone= DEFAULT;
 set global system_versioning_asof= DEFAULT;
 set system_versioning_asof= DEFAULT;
 select @@global.system_versioning_asof, @@system_versioning_asof;

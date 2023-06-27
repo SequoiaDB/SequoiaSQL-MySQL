@@ -40,7 +40,7 @@ t2	CREATE TABLE `t2` (
   `rec.b` varchar(10) DEFAULT NULL,
   `rec.c` double DEFAULT NULL,
   `rec.d` decimal(10,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP PROCEDURE p1;
 #
@@ -65,7 +65,7 @@ t2	CREATE TABLE `t2` (
   `rec.b` varchar(10) DEFAULT NULL,
   `rec.c` double DEFAULT NULL,
   `rec.d` decimal(10,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 DROP PROCEDURE p1;
 #
@@ -90,7 +90,7 @@ t2	CREATE TABLE `t2` (
   `rec.b` varchar(10) DEFAULT NULL,
   `rec.c` double DEFAULT NULL,
   `rec.d` decimal(10,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP VIEW v1;
 DROP TABLE t1;
 DROP PROCEDURE p1;
@@ -117,7 +117,7 @@ t2	CREATE TABLE `t2` (
   `rec.b` varchar(10) DEFAULT NULL,
   `rec.c` double DEFAULT NULL,
   `rec.d` decimal(10,0) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP VIEW v1;
 DROP TABLE t1;
 DROP PROCEDURE p1;
@@ -693,7 +693,7 @@ t2	CREATE TABLE `t2` (
   `a` int(11) DEFAULT NULL,
   `b` text DEFAULT NULL,
   `c` char(1) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP PROCEDURE p2;
 DROP PROCEDURE p1;
 DROP TABLE t1;
@@ -792,10 +792,10 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `int11` int(11) DEFAULT NULL,
   `text0` text DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `int11` int(11) DEFAULT NULL,
   `text0` text DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;

@@ -121,11 +121,11 @@ drop sequence if exists t1;
 Warnings:
 Note	4091	Unknown SEQUENCE: 'test_sequence_create.t1'
 create sequence t1 start with 10 maxvalue=9;
-ERROR HY000: Sequence 'test_sequence_create.t1' values are conflicting
+ERROR HY000: Sequence 'test_sequence_create.t1' has out of range value for options
 create sequence t1 minvalue= 100 maxvalue=10;
-ERROR HY000: Sequence 'test_sequence_create.t1' values are conflicting
+ERROR HY000: Sequence 'test_sequence_create.t1' has out of range value for options
 create sequence t1 start with 9 minvalue=10;
-ERROR HY000: Sequence 'test_sequence_create.t1' values are conflicting
+ERROR HY000: Sequence 'test_sequence_create.t1' has out of range value for options
 create or replace sequence t1 maxvalue=13, increment by -1;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ' increment by -1' at line 1
 create or replace sequence t1 start with= 10 maxvalue=13;
@@ -137,7 +137,7 @@ ERROR 42000: You have an error in your SQL syntax; check the manual that corresp
 create or replace sequence t1 start with 10 min_value=1 NO MINVALUE;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'NO MINVALUE' at line 1
 create sequence t1 start with 10 maxvalue=9223372036854775807;
-ERROR HY000: Sequence 'test_sequence_create.t1' values are conflicting
+ERROR HY000: Sequence 'test_sequence_create.t1' has out of range value for options
 create sequence t1 start with 10 minvalue=-9223372036854775808;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '9223372036854775808' at line 1
 create sequence t1 RESTART WITH 10;
@@ -374,7 +374,7 @@ next value for t1
 1
 drop temporary table t1;
 select previous value for t1;
-ERROR 42S02: Table 'test_sequence_create.t1' doesn't exist
+ERROR 42S02: Unknown SEQUENCE: 't1'
 CREATE SEQUENCE t1 start with 1 minvalue 1 maxvalue 10 increment by 1 cache 10;
 select next value for t1;
 next value for t1
@@ -403,7 +403,7 @@ next value for t1
 1
 drop temporary table t1;
 select previous value for t1;
-ERROR 42S02: Table 'test_sequence_create.t1' doesn't exist
+ERROR 42S02: Unknown SEQUENCE: 't1'
 CREATE SEQUENCE t1 start with 1 minvalue 1 maxvalue 10 increment by 1 cache 10 engine=sequoiadb;
 select next value for t1;
 next value for t1
@@ -483,7 +483,7 @@ s	CREATE TABLE `s` (
   `cache` bigint(21) NOT NULL,
   `cycle` tinyint(1) unsigned NOT NULL,
   `round` bigint(21) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create table s2;
 Table	Create Table
 s2	CREATE TABLE `s2` (
@@ -495,7 +495,7 @@ s2	CREATE TABLE `s2` (
   `cache` bigint(21) NOT NULL,
   `cycle` tinyint(1) unsigned NOT NULL,
   `round` bigint(21) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create sequence s;
 ERROR 42S02: 'test_sequence_create.s' is not a SEQUENCE
 show create sequence s2;
@@ -511,7 +511,7 @@ show create table s;
 Table	Create Table
 s	CREATE TEMPORARY TABLE `s` (
   `i` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table s;
 create or replace sequence s;
 create temporary sequence s;
@@ -561,7 +561,7 @@ create temporary sequence s;
 drop temporary table s;
 create temporary table s (i int);
 drop temporary sequence s;
-ERROR 42S02: Unknown SEQUENCE: 'test_sequence_create.s'
+ERROR 42S02: 'test_sequence_create.s' is not a SEQUENCE
 drop table s;
 #
 # MDEV-15115 Assertion failure in CREATE SEQUENCE...ROW_FORMAT=REDUNDANT

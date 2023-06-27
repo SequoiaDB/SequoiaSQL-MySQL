@@ -160,7 +160,7 @@ set server_ha_wait_sync_timeout = 0;
 connection conn2;
 #BUG #SEQUOIASQLMAINSTREAM-870
 #BUG #SEQUOIASQLMAINSTREAM-830
---error ER_NO_SUCH_TABLE
+--error 4091
 SELECT nextval(s2);
 set server_ha_wait_sync_timeout = 0;
 

@@ -317,7 +317,7 @@ alter table t1 add index idx_ab(a, b);
 alter table t1 add index idx_ba(b, a);
 explain select * from t1 where a < '269:09:02';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	7	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where a < '269:09:02' limit 5;
 a	b
 -837:15:03	-837:15:03
@@ -331,7 +331,7 @@ index_select_sequoiadb_22806.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22806.t1	analyze	status	OK
 explain select * from t1 where a < '269:09:02';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	7	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where a < '269:09:02' limit 5;
 a	b
 -837:15:03	-837:15:03
@@ -365,7 +365,7 @@ a	b
 269:11:02	269:11:02
 explain select * from t1 where a > '-313:10:04' and a < '789:09:03';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	7	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where a > '-313:10:04' and a < '789:09:03' limit 5;
 a	b
 -313:09:03	-313:09:03
@@ -379,7 +379,7 @@ index_select_sequoiadb_22806.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22806.t1	analyze	status	OK
 explain select * from t1 where a > '-313:10:04' and a < '789:09:03';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	7	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where a > '-313:10:04' and a < '789:09:03' limit 5;
 a	b
 -313:09:03	-313:09:03
@@ -389,7 +389,7 @@ a	b
 -313:10:03	-313:10:03
 explain select * from t1 where b > '-313:10:04' and a < '789:09:03';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	PRIMARY,idx_b,idx_ab,idx_ba	idx_ab	7	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,idx_b,idx_ab,idx_ba	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where b > '-313:10:04' and a < '789:09:03' limit 5;
 a	b
 -313:09:03	-313:09:03
@@ -403,7 +403,7 @@ index_select_sequoiadb_22806.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22806.t1	analyze	status	OK
 explain select * from t1 where b > '-313:10:04' and a < '789:09:03';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	PRIMARY,idx_b,idx_ab,idx_ba	idx_ab	7	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,idx_b,idx_ab,idx_ba	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where b > '-313:10:04' and a < '789:09:03' limit 5;
 a	b
 -313:09:03	-313:09:03
@@ -445,7 +445,7 @@ a	b
 818:08:02	818:08:02
 explain select * from t1 where a between '-392:09:02' and '269:09:02';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	7	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where a between '-392:09:02' and '269:09:02' limit 5;
 a	b
 -392:06:00	-392:06:00
@@ -459,7 +459,7 @@ index_select_sequoiadb_22806.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22806.t1	analyze	status	OK
 explain select * from t1 where a between '-392:09:02' and '269:09:02';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	7	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where a between '-392:09:02' and '269:09:02' limit 5;
 a	b
 -392:06:00	-392:06:00

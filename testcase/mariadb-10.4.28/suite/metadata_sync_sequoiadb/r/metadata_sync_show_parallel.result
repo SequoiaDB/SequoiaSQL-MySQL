@@ -93,7 +93,7 @@ flush privileges;
 connection conn2;
 show create user metadata_sync_user_23109;
 CREATE USER for metadata_sync_user_23109@%
-CREATE USER 'metadata_sync_user_23109'@'%' IDENTIFIED BY PASSWORD '*86887E3903D16A1494F5B518A57EF1D38197DAC8'
+CREATE USER `metadata_sync_user_23109`@`%` IDENTIFIED BY PASSWORD '*86887E3903D16A1494F5B518A57EF1D38197DAC8'
 connection conn1;
 drop user metadata_sync_user_23109;
 flush privileges;

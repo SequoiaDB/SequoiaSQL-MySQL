@@ -6,16 +6,16 @@ USE mysqltest1_ctype_create;
 CREATE DATABASE mysqltest2_ctype_create;
 SHOW CREATE DATABASE mysqltest1_ctype_create;
 Database	Create Database
-mysqltest1_ctype_create	CREATE DATABASE `mysqltest1_ctype_create` /*!40100 DEFAULT CHARACTER SET cp1251 */
+mysqltest1_ctype_create	CREATE DATABASE `mysqltest1_ctype_create` /*!40100 DEFAULT CHARACTER SET cp1251 COLLATE cp1251_general_ci */
 SHOW CREATE DATABASE mysqltest2_ctype_create;
 Database	Create Database
-mysqltest2_ctype_create	CREATE DATABASE `mysqltest2_ctype_create` /*!40100 DEFAULT CHARACTER SET latin5 */
+mysqltest2_ctype_create	CREATE DATABASE `mysqltest2_ctype_create` /*!40100 DEFAULT CHARACTER SET latin5 COLLATE latin5_turkish_ci */
 CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
 SHOW CREATE TABLE mysqltest2_ctype_create.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin5
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin5 COLLATE=latin5_turkish_ci
 DROP TABLE mysqltest2_ctype_create.t1;
 ALTER DATABASE mysqltest2_ctype_create DEFAULT CHARACTER SET latin7;
 CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
@@ -23,7 +23,7 @@ SHOW CREATE TABLE mysqltest2_ctype_create.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin7
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin7 COLLATE=latin7_general_ci
 DROP DATABASE mysqltest2_ctype_create;
 CREATE DATABASE mysqltest2_ctype_create CHARACTER SET latin2;
 CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
@@ -31,7 +31,7 @@ SHOW CREATE TABLE mysqltest2_ctype_create.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin2
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin2 COLLATE=latin2_general_ci
 DROP DATABASE mysqltest2_ctype_create;
 USE mysqltest1_ctype_create;
 CREATE TABLE t1 (a char(10));
@@ -39,21 +39,21 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251
+) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_ci
 DROP TABLE t1;
 CREATE TABLE t1 (a char(10)) DEFAULT CHARACTER SET latin1;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 CREATE TABLE t1 (a char(10)) 
 DEFAULT CHARACTER SET latin1 COLLATE latin1_german1_ci;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` char(10) COLLATE latin1_german1_ci DEFAULT NULL
+  `a` char(10) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_german1_ci
 DROP TABLE t1;
 create table t1 (a char) character set latin1 character set latin2;
@@ -70,7 +70,7 @@ use mysqltest2_ctype_create;
 ALTER DATABASE DEFAULT CHARACTER SET latin2;
 show create database mysqltest2_ctype_create;
 Database	Create Database
-mysqltest2_ctype_create	CREATE DATABASE `mysqltest2_ctype_create` /*!40100 DEFAULT CHARACTER SET latin2 */
+mysqltest2_ctype_create	CREATE DATABASE `mysqltest2_ctype_create` /*!40100 DEFAULT CHARACTER SET latin2 COLLATE latin2_general_ci */
 drop database mysqltest2_ctype_create;
 ALTER DATABASE DEFAULT CHARACTER SET latin2;
 ERROR 3D000: No database selected

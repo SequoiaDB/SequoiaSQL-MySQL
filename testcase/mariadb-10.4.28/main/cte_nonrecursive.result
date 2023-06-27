@@ -344,7 +344,7 @@ with t(c) as (select a from t1 where b >= 'c')
 select * from t r1 where r1.c=4;
 show create view v3;
 View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS with t as (select `t1`.`a` AS `c` from `t1` where `t1`.`b` >= 'c')select `r1`.`c` AS `c` from `t` `r1` where `r1`.`c` = 4	latin1	latin1_swedish_ci
+v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS with t(c) as (select `t1`.`a` AS `c` from `t1` where `t1`.`b` >= 'c')select `r1`.`c` AS `c` from `t` `r1` where `r1`.`c` = 4	latin1	latin1_swedish_ci
 select * from v3;
 c
 4
@@ -356,7 +356,7 @@ with t(c) as (select a from t1 where b >= 'c')
 select * from t r1, t r2 where r1.c=r2.c and r2.c=4;
 show create view v4;
 View	Create View	character_set_client	collation_connection
-v4	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v4` AS with t as (select `test_cte_nonrecursive`.`t1`.`a` AS `c` from `test_cte_nonrecursive`.`t1` where `test_cte_nonrecursive`.`t1`.`b` >= 'c')select `r1`.`c` AS `c`,`r2`.`c` AS `d` from (`t` `r1` join (select `test_cte_nonrecursive`.`t1`.`a` AS `c` from `test_cte_nonrecursive`.`t1` where `test_cte_nonrecursive`.`t1`.`b` >= 'c') `r2`) where `r1`.`c` = `r2`.`c` and `r2`.`c` = 4	latin1	latin1_swedish_ci
+v4	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v4` AS with t(c) as (select `t1`.`a` AS `c` from `t1` where `t1`.`b` >= 'c')select `r1`.`c` AS `c`,`r2`.`c` AS `d` from (`t` `r1` join `t` `r2`) where `r1`.`c` = `r2`.`c` and `r2`.`c` = 4	latin1	latin1_swedish_ci
 select * from v4;
 c	d
 4	4
@@ -728,10 +728,10 @@ select a from t1;
 show table status;
 show create view v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with t as (select `s`.`a` AS `a` from (select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test_cte_nonrecursive`.`t2` join `t`) where `test_cte_nonrecursive`.`t2`.`b` = `t`.`a`)select `r`.`a` AS `a` from `r`	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with t as (select `s`.`a` AS `a` from (select `t1`.`a` AS `a` from `t1`) `s`), r as (select `t`.`a` AS `a` from (`t2` join `t`) where `t2`.`b` = `t`.`a`)select `r`.`a` AS `a` from `r`	latin1	latin1_swedish_ci
 show create view v2;
 View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS with t as (select `s`.`a` AS `a` from (select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test_cte_nonrecursive`.`t2` join `t`) where `test_cte_nonrecursive`.`t2`.`b` = `t`.`a`)select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`	latin1	latin1_swedish_ci
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS with t as (select `s`.`a` AS `a` from (select `t1`.`a` AS `a` from `t1`) `s`), r as (select `t`.`a` AS `a` from (`t2` join `t`) where `t2`.`b` = `t`.`a`)select `t1`.`a` AS `a` from `t1`	latin1	latin1_swedish_ci
 select * from v1;
 a
 2
@@ -829,9 +829,9 @@ with cte as
 union
 (select a from t1 where a < 2);
 a
-7
-5
 4
+5
+7
 1
 prepare stmt from "with cte as
 (select a from t1 where a between 4 and 7 group by a)
@@ -840,15 +840,15 @@ union
 (select a from t1 where a < 2)";
 execute stmt;
 a
-7
-5
 4
+5
+7
 1
 execute stmt;
 a
-7
-5
 4
+5
+7
 1
 deallocate prepare stmt;
 with cte as
@@ -858,9 +858,9 @@ union
 (select a from cte where exists( select a from t1 where cte.a=t1.a ));
 a
 1
-7
-5
 4
+5
+7
 prepare stmt from "with cte as
 (select a from t1 where a between 4 and 7 group by a)
 (select a from t1 where a < 2)
@@ -869,15 +869,15 @@ union
 execute stmt;
 a
 1
-7
-5
 4
+5
+7
 execute stmt;
 a
 1
-7
-5
 4
+5
+7
 deallocate prepare stmt;
 with cte as
 (select a from t1 where a between 4 and 7)

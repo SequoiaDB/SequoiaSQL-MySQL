@@ -399,7 +399,7 @@ a	b
 28	28
 explain select * from t1 where a in ('19', '73', '20', '66', '97');
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	1	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where a in ('19', '73', '20', '66', '97');
 a	b
 19	19
@@ -413,7 +413,7 @@ index_select_sequoiadb_22807.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22807.t1	analyze	status	OK
 explain select * from t1 where a in ('19', '73', '20', '66', '97');
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	1	NULL	x	Using where with pushed condition; Using index
+1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	3	NULL	x	Using where with pushed condition; Using index
 select * from t1 where a in ('19', '73', '20', '66', '97');
 a	b
 19	19
@@ -576,7 +576,7 @@ a	b
 28	28
 explain select * from t1 where a in ('19', '60', '20', '66', '43');
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	8	NULL	x	Using where; Using index
+1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	10	NULL	x	Using where; Using index
 select * from t1 where a in ('19', '60', '20', '66', '43');
 a	b
 19	19
@@ -589,7 +589,7 @@ index_select_sequoiadb_22807.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22807.t1	analyze	status	OK
 explain select * from t1 where a in ('19', '60', '20', '66', '43');
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,idx_ab	idx_ab	8	NULL	x	Using where; Using index
+1	SIMPLE	t1	index	PRIMARY,idx_ab	idx_ab	10	NULL	x	Using where; Using index
 select * from t1 where a in ('19', '60', '20', '66', '43');
 a	b
 19	19

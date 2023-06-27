@@ -28,12 +28,12 @@ connection conn2;
 set server_ha_wait_sync_timeout = 10;
 SHOW GRANTS FOR 'metaSync_mix_ruser1'@'localhost';
 Grants for metaSync_mix_ruser1@localhost
-GRANT metaSync_mix_role1 TO 'metaSync_mix_ruser1'@'localhost'
-GRANT USAGE ON *.* TO 'metaSync_mix_ruser1'@'localhost'
+GRANT `metaSync_mix_role1` TO `metaSync_mix_ruser1`@`localhost`
+GRANT USAGE ON *.* TO `metaSync_mix_ruser1`@`localhost`
 SHOW GRANTS FOR 'metaSync_mix_ruser2'@'localhost';
 Grants for metaSync_mix_ruser2@localhost
-GRANT metaSync_mix_role2 TO 'metaSync_mix_ruser2'@'localhost'
-GRANT USAGE ON *.* TO 'metaSync_mix_ruser2'@'localhost'
+GRANT `metaSync_mix_role2` TO `metaSync_mix_ruser2`@`localhost`
+GRANT USAGE ON *.* TO `metaSync_mix_ruser2`@`localhost`
 SELECT * FROM mysql.roles_mapping WHERE Role='metaSync_mix_role1' AND user LIKE 'metaSync_mix_ruser%';
 Host	User	Role	Admin_option
 localhost	metaSync_mix_ruser1	metaSync_mix_role1	N
@@ -46,10 +46,10 @@ FLUSH PRIVILEGES;
 connection conn1;
 SHOW GRANTS FOR 'metaSync_mix_ruser1'@'localhost';
 Grants for metaSync_mix_ruser1@localhost
-GRANT USAGE ON *.* TO 'metaSync_mix_ruser1'@'localhost'
+GRANT USAGE ON *.* TO `metaSync_mix_ruser1`@`localhost`
 SHOW GRANTS FOR 'metaSync_mix_ruser2'@'localhost';
 Grants for metaSync_mix_ruser2@localhost
-GRANT USAGE ON *.* TO 'metaSync_mix_ruser2'@'localhost'
+GRANT USAGE ON *.* TO `metaSync_mix_ruser2`@`localhost`
 SELECT * FROM mysql.roles_mapping WHERE Role = 'metaSync_mix_role1';
 Host	User	Role	Admin_option
 SELECT * FROM mysql.roles_mapping WHERE Role = 'metaSync_mix_role2';

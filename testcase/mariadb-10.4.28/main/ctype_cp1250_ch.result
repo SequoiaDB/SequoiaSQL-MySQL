@@ -91,7 +91,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `name` varchar(10) DEFAULT NULL,
   `level` smallint(5) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=cp1250
+) ENGINE=SequoiaDB DEFAULT CHARSET=cp1250 COLLATE=cp1250_general_ci
 insert into t1 values ('string',1);
 select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 concat(name,space(level))	concat(name, repeat(' ',level))
@@ -108,8 +108,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS c1 LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT * FROM t1 WHERE CONCAT(c1)='a';
 c1
@@ -126,8 +126,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS c1 LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT * FROM t1 WHERE 'a'=CONCAT(c1);
 c1
@@ -144,8 +144,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS c1 LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('%'),('% ');
 SELECT * FROM t1 WHERE '% '=CONCAT(c1);
 c1
@@ -162,8 +162,8 @@ CREATE TABLE t1 AS SELECT REPEAT('a', 10) AS c1 LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(10) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `c1` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('%'),('% ');
 SELECT * FROM t1 WHERE '%'=CONCAT(c1);
 c1
@@ -183,8 +183,8 @@ CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+  `a` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
 a	LENGTH(a)
@@ -282,7 +282,7 @@ level smallint unsigned);
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `name` varchar(10) COLLATE cp1250_czech_cs DEFAULT NULL,
+  `name` varchar(10) DEFAULT NULL,
   `level` smallint(5) unsigned DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=cp1250 COLLATE=cp1250_czech_cs
 insert into t1 values ('string',1);
@@ -458,13 +458,13 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) CHARACTER SET cp1250 COLLATE cp1250_czech_cs NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t2 AS SELECT WEIGHT_STRING(a) AS ws FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(2) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a)) FROM t1;
 HEX(WEIGHT_STRING(a))
 A402
@@ -478,13 +478,13 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(5) CHARACTER SET cp1250 COLLATE cp1250_czech_cs DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 CREATE TABLE t2 AS SELECT WEIGHT_STRING(a) AS ws FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a)) FROM t1;
 HEX(WEIGHT_STRING(a))
 A4A4A4A4A40202020202
@@ -497,7 +497,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a AS CHAR(3))) FROM t1;
 HEX(WEIGHT_STRING(a AS CHAR(3)))
 A4A4A4A4A40202020202
@@ -510,7 +510,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `ws` varbinary(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 SELECT HEX(WEIGHT_STRING(a AS CHAR(10))) FROM t1;
 HEX(WEIGHT_STRING(a AS CHAR(10)))
 A4A4A4A4A40202020202

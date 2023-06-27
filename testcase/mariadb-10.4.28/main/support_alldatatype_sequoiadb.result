@@ -319,7 +319,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` geometry DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 DROP TABLE t1;
 create table t1(a int, b int);
 insert into t1 values(null, 1);
@@ -1193,56 +1193,56 @@ gis_point	CREATE TABLE `gis_point` (
   `fid` int(11) NOT NULL,
   `g` point DEFAULT NULL,
   PRIMARY KEY (`fid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create table gis_line;
 Table	Create Table
 gis_line	CREATE TABLE `gis_line` (
   `fid` int(11) NOT NULL,
   `g` linestring DEFAULT NULL,
   PRIMARY KEY (`fid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create table gis_polygon;
 Table	Create Table
 gis_polygon	CREATE TABLE `gis_polygon` (
   `fid` int(11) NOT NULL,
   `g` polygon DEFAULT NULL,
   PRIMARY KEY (`fid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create table gis_multi_point;
 Table	Create Table
 gis_multi_point	CREATE TABLE `gis_multi_point` (
   `fid` int(11) NOT NULL,
   `g` multipoint DEFAULT NULL,
   PRIMARY KEY (`fid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create table gis_multi_line;
 Table	Create Table
 gis_multi_line	CREATE TABLE `gis_multi_line` (
   `fid` int(11) NOT NULL,
   `g` multilinestring DEFAULT NULL,
   PRIMARY KEY (`fid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create table gis_multi_polygon;
 Table	Create Table
 gis_multi_polygon	CREATE TABLE `gis_multi_polygon` (
   `fid` int(11) NOT NULL,
   `g` multipolygon DEFAULT NULL,
   PRIMARY KEY (`fid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create table gis_geometrycollection;
 Table	Create Table
 gis_geometrycollection	CREATE TABLE `gis_geometrycollection` (
   `fid` int(11) NOT NULL,
   `g` geometrycollection DEFAULT NULL,
   PRIMARY KEY (`fid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 show create table gis_geometry;
 Table	Create Table
 gis_geometry	CREATE TABLE `gis_geometry` (
   `fid` int(11) NOT NULL,
   `g` geometry DEFAULT NULL,
   PRIMARY KEY (`fid`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into gis_point values
 (101, ST_PointFromText('POINT(10 10)')),
 (102, ST_PointFromText('POINT(20 10)')),

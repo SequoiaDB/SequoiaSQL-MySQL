@@ -13,7 +13,7 @@ t1	CREATE TABLE `t1` (
   `b` blob DEFAULT NULL,
   `c` varchar(16) DEFAULT 'Filler...',
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY HASH (`a`)
 PARTITIONS 3
 INSERT INTO t1 (a, b) VALUES (1, 0xdeadbeef), (2, "text filler"),

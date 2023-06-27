@@ -1724,13 +1724,9 @@ INSERT INTO t1 (fd) SELECT fd FROM t1;
 INSERT INTO t1 (fd) SELECT fd FROM t1;
 SELECT * FROM t1 WHERE fd='😁';
 id	fd
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9F\x98\x81' for column `X`.`t1`.`fd` at row 1
 select count(*) from t1 where fd <'😁';
 count(*)
 40960
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9F\x98\x81' for column `X`.`t1`.`fd` at row 1
 select count(*) from t1 ignore index (ix_fd) where fd <'😁';
 count(*)
 40960

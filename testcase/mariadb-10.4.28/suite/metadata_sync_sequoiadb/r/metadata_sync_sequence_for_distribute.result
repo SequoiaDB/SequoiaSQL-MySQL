@@ -268,7 +268,7 @@ DROP SEQUENCE s2;
 set server_ha_wait_sync_timeout = 0;
 connection conn2;
 SELECT nextval(s2);
-ERROR 42S02: Table 'metasync_seq.s2' doesn't exist
+ERROR 42S02: Unknown SEQUENCE: 's2'
 set server_ha_wait_sync_timeout = 0;
 connection conn1;
 DROP DATABASE metasync_seq;

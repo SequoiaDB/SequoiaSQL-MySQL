@@ -12,7 +12,7 @@ about:text	CREATE TABLE `about:text` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `about:text` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table `about:text`;
 drop table if exists t1;
 create table t1(a int) engine=SequoiaDB;

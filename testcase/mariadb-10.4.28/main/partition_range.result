@@ -7,7 +7,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (to_days(`a`))
 SUBPARTITION BY HASH (to_seconds(`a`))
 (PARTITION `p0` VALUES LESS THAN (1) ENGINE = SequoiaDB)
@@ -38,7 +38,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (to_seconds(`a`))
 (PARTITION `p0` VALUES LESS THAN (63240134400) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES LESS THAN (63271756800) ENGINE = SequoiaDB)
@@ -63,7 +63,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` datetime DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (to_seconds(`a`))
 (PARTITION `p0` VALUES LESS THAN (63240177600) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES LESS THAN (63271800000) ENGINE = SequoiaDB)
@@ -93,7 +93,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `p0` VALUES LESS THAN MAXVALUE ENGINE = SequoiaDB)
 drop table t1;
@@ -200,7 +200,7 @@ t1	CREATE TABLE `t1` (
   `b` int(11) NOT NULL,
   `c` int(11) NOT NULL,
   PRIMARY KEY (`a`,`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 SUBPARTITION BY HASH (`a` + `b`)
 (PARTITION `x1` VALUES LESS THAN (1)
@@ -218,7 +218,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) NOT NULL,
   `d` int(11) DEFAULT NULL,
   PRIMARY KEY (`a`,`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 SUBPARTITION BY HASH (`a` + `b`)
 (PARTITION `x1` VALUES LESS THAN (1)
@@ -341,7 +341,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bigint(20) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `p0` VALUES LESS THAN (0) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES LESS THAN (10) ENGINE = SequoiaDB)
@@ -354,7 +354,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bigint(20) unsigned DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (`a`)
 (PARTITION `p0` VALUES LESS THAN (2) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES LESS THAN (10) ENGINE = SequoiaDB)

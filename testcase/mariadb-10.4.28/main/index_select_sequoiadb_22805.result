@@ -20,7 +20,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 EXPLAIN SELECT * FROM t1 WHERE a<'b';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	#	Using where with pushed condition; Using index
@@ -100,7 +100,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 EXPLAIN SELECT * FROM t1 WHERE a<>b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index	NULL	ab	515	NULL	#	Using where with pushed condition; Using index
@@ -118,7 +118,7 @@ r	j
 [Note] SequoiaDB: Query message: condition[{ "a": { "$ne": { "$field": "b" } } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22805.t1]
 EXPLAIN SELECT * FROM t1 WHERE a IN ('a','b');
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	257	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	index	PRIMARY,ab	ab	515	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a IN ('a','b');
 a	b
 a	b
@@ -155,7 +155,7 @@ r	j
 [Note] SequoiaDB: Query message: condition[{ "a": { "$ne": { "$field": "b" } } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22805.t1]
 EXPLAIN SELECT * FROM t1 WHERE a IN ('a','b');
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	257	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	index	PRIMARY,ab	ab	515	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a IN ('a','b');
 a	b
 a	b

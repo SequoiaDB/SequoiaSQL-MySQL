@@ -45,7 +45,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bit(1) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 (a bit(64)) engine=SequoiaDB;
 insert into t1 values 
@@ -373,21 +373,21 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bit(1) DEFAULT NULL,
   `b` bit(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1 engine=SequoiaDB;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bit(1) DEFAULT NULL,
   `b` bit(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1 engine=SequoiaDB;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bit(1) DEFAULT NULL,
   `b` bit(10) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 (a bit(7)) engine=SequoiaDB;
 insert into t1 values (0x60);

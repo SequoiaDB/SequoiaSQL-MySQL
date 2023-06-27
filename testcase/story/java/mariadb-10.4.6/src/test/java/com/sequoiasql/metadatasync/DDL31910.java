@@ -102,7 +102,7 @@ public class DDL31910 extends MysqlTestBase {
         exp2.add( "tb_31910|CREATE TABLE `tb_31910` (\n"
                 + "  `pk` int(11) DEFAULT NULL,\n"
                 + "  `col1` int(11) DEFAULT NULL,\n"
-                + "  `col3` varchar(10) COLLATE utf8mb4_bin DEFAULT NULL,\n"
+                + "  `col3` varchar(10) DEFAULT NULL,\n"
                 + "  `col4` datetime DEFAULT NULL,\n"
                 + "  `col5` int(11) DEFAULT 100\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
@@ -156,7 +156,7 @@ public class DDL31910 extends MysqlTestBase {
         exp4.add( "tb_31910|CREATE TABLE `tb_31910` (\n"
                 + "  `pk` int(11) DEFAULT NULL,\n"
                 + "  `col1` int(11) DEFAULT NULL,\n"
-                + "  `col3` varchar(10) COLLATE utf8mb4_bin DEFAULT NULL,\n"
+                + "  `col3` varchar(10) DEFAULT NULL,\n"
                 + "  `col4` datetime DEFAULT NULL,\n"
                 + "  `col5` int(11) DEFAULT 100\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" );

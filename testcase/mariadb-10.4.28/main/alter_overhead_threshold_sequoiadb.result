@@ -14,7 +14,7 @@ t1	CREATE TABLE `t1` (
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a, b, c, d, e) values(11,11,11,11,11);
 select * from t1 order by id;
 d	id	a	e	b	c
@@ -59,7 +59,7 @@ t1	CREATE TABLE `t1` (
   `f` int(11) DEFAULT NULL,
   `g` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a, b, c, d, e, f, g) values(13,13,13,13,13,13, 13);
 select * from t1 order by id;
 d	id	a	e	b	c	f	g
@@ -93,7 +93,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 set sql_mode = default;
 drop table t1;
 create table t1(id int auto_increment key);
@@ -107,7 +107,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1 order by id;
 id
 1
@@ -139,7 +139,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t2(id int AUTO_INCREMENT KEY);
 create table t1(id int AUTO_INCREMENT KEY);
@@ -153,7 +153,7 @@ t1	CREATE TABLE `t1` (
   `col2` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `col2` (`col2`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(col1, col2) values('string1', 100);
 select * from t1 order by id;
 id	col1	col2
@@ -180,7 +180,7 @@ t1	CREATE TABLE `t1` (
   `col2` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `col2` (`col2`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1,t2;
 create table t1(id int, col1 int AUTO_INCREMENT unique key);
 insert into t1(id) values(1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
@@ -190,7 +190,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `col1` int(11) NOT NULL AUTO_INCREMENT,
   UNIQUE KEY `col1` (`col1`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1 order by id;
 id	col1
 1	1
@@ -211,7 +211,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `col1` int(11) NOT NULL AUTO_INCREMENT,
   UNIQUE KEY `col1` (`col1`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 create table t1 ( id int auto_increment primary key, a tinyint default 1, b smallint default 1, c int default 1, d bigint default 1 );
 insert into t1 values (),(),(),(),(),(),(),(),(),();
@@ -250,7 +250,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT -10,
   `d` bigint(20) DEFAULT -10,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (),(),(),(),();
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1);
 insert into t1 values ();
@@ -295,7 +295,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL,
   `d` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1);
 insert into t1 values ();
 select * from t1 order by id;
@@ -366,7 +366,7 @@ t1	CREATE TABLE `t1` (
   `c` binary(8) DEFAULT '#!*()\0\0\0',
   `d` varbinary(8) DEFAULT '-1',
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (),(),(),(),();
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), ('a', 'a', 'a', 'a');
 insert into t1 values ();
@@ -410,7 +410,7 @@ t1	CREATE TABLE `t1` (
   `c` binary(8) DEFAULT NULL,
   `d` varbinary(8) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), ('a', 'a', 'a', 'a');
 insert into t1 values ();
 select * from t1 order by id;
@@ -481,7 +481,7 @@ t1	CREATE TABLE `t1` (
   `b` double DEFAULT 6e-16,
   `c` decimal(10,0) DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (),(),(),();
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (1.0001, 1.0001, 1.0001);
 Warnings:
@@ -524,7 +524,7 @@ t1	CREATE TABLE `t1` (
   `b` double DEFAULT NULL,
   `c` decimal(10,0) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (),(),(),();
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (1.0001, 1.0001, 1.0001);
 Warnings:
@@ -601,7 +601,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT '9999-12-31 00:00:00',
   `e` timestamp NOT NULL DEFAULT '1999-01-02 03:04:05',
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (),(),(),();
 insert into t1(a,b,c,d,e) values(2000, "2002-03-04",'09:00:00','2003-03-01 00:00:00', "19990102030405"), (2001, "2002-03-05",'10:11:00','2004-04-01 00:00:00', "2004-12-31 23:59:59");
 insert into t1 values ();
@@ -643,7 +643,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT current_timestamp(),
   `e` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ();
 select * from t1 order by id;
 id	a	b	c	d	e
@@ -686,7 +686,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT NULL,
   `e` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ();
 insert into t1(a,b,c,d,e) values(2020, "2020-02-02",'10:00:00','2020-02-10 00:00:00', "19990102030405"), (2021, "2021-1-02",'10:11:00','2020-03-01 00:00:00', "2021-12-31 23:59:59");
 select * from t1 order by id;
@@ -755,7 +755,7 @@ t1	CREATE TABLE `t1` (
   `c` enum('a','c','d') DEFAULT 'a',
   `d` set('a','b','c','d','e') DEFAULT 'a,b,e',
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ();
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
 select * from t1 order by id;
@@ -793,7 +793,7 @@ t1	CREATE TABLE `t1` (
   `c` enum('a','c','d') DEFAULT NULL,
   `d` set('a','b','c','d','e') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ();
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
 select * from t1 order by id;
@@ -848,7 +848,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) NOT NULL,
   `d` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1);
 select * from t1 order by id;
 id	a	b	c	d
@@ -876,7 +876,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL,
   `d` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1), (-101,-101,-101,-101);
 insert into t1 values (),();
 select * from t1 order by id;
@@ -921,7 +921,7 @@ t1	CREATE TABLE `t1` (
   `c` binary(8) NOT NULL,
   `d` varbinary(8) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
 select * from t1 order by id;
 id	a	b	c	d
@@ -948,7 +948,7 @@ t1	CREATE TABLE `t1` (
   `c` binary(8) DEFAULT NULL,
   `d` varbinary(8) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), (NULL,NULL,NULL,NULL), ('a', 'a', 'a', 'a');
 insert into t1 values ();
 select * from t1 order by id;
@@ -991,7 +991,7 @@ t1	CREATE TABLE `t1` (
   `c` text NOT NULL,
   `d` longtext NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
 select * from t1 order by id;
 id	a	b	c	d
@@ -1018,7 +1018,7 @@ t1	CREATE TABLE `t1` (
   `c` text DEFAULT NULL,
   `d` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), (NULL,NULL,NULL,NULL), ('a', 'a', 'a', 'a');
 insert into t1 values ();
 select * from t1 order by id;
@@ -1061,7 +1061,7 @@ t1	CREATE TABLE `t1` (
   `c` blob NOT NULL,
   `d` longblob NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
 select * from t1 order by id;
 id	a	b	c	d
@@ -1088,7 +1088,7 @@ t1	CREATE TABLE `t1` (
   `c` blob DEFAULT NULL,
   `d` longblob DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), (NULL,NULL,NULL,NULL), ('a', 'a', 'a', 'a');
 insert into t1 values ();
 select * from t1 order by id;
@@ -1132,7 +1132,7 @@ t1	CREATE TABLE `t1` (
   `b` double NOT NULL,
   `c` decimal(10,0) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (1.0001, 1.0001, 1.0001);
 Warnings:
 Note	1265	Data truncated for column 'c' at row 1
@@ -1158,7 +1158,7 @@ t1	CREATE TABLE `t1` (
   `b` double DEFAULT NULL,
   `c` decimal(10,0) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (NULL,NULL,NULL), (1.0001, 1.0001, 1.0001);
 Warnings:
 Note	1265	Data truncated for column 'c' at row 1
@@ -1201,7 +1201,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT NULL,
   `e` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d,e) values(2000, "2002-03-04",'09:00:00','2003-03-01 00:00:00', "19990102030405"), (2001, "2002-03-05",'10:11:00','2004-04-01 00:00:00', "2004-12-31 23:59:59");
 alter table t1 modify a year, algorithm=inplace;
 alter table t1 modify b date, algorithm=inplace;
@@ -1224,7 +1224,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT NULL,
   `e` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d,e) values(2020, "2020-02-02",'10:00:00','2020-02-10 00:00:00', "19990102030405"), (NULL,NULL,NULL,NULL,NULL), (2021, "2021-1-02",'10:11:00','2020-03-01 00:00:00', "2021-12-31 23:59:59");
 drop table t1;
 set sql_mode=default;
@@ -1251,7 +1251,7 @@ t1	CREATE TABLE `t1` (
   `c` enum('a','c','d') NOT NULL,
   `d` set('a','b','c','d','e') NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
 select * from t1 order by id;
 id	a	b	c	d
@@ -1276,7 +1276,7 @@ t1	CREATE TABLE `t1` (
   `c` enum('a','c','d') DEFAULT NULL,
   `d` set('a','b','c','d','e') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
 insert into t1 values (),();
 select * from t1 order by id;
@@ -1311,7 +1311,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `a` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`a`)),
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a) values ('-32768'),('2147483647'),('18446744073709551616');
 select * from t1 order by id;
 id	a
@@ -1331,7 +1331,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `a` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`a`)),
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a) values (NULL), ('"scalar string"');
 insert into t1 values ();
 select * from t1 order by id;
@@ -1357,11 +1357,11 @@ t1	CREATE TABLE `t1` (
   `a` bigint(20) NOT NULL,
   `b` float DEFAULT NULL,
   `c` char(16) DEFAULT NULL,
-  `d` text CHARACTER SET gbk DEFAULT NULL,
+  `d` text CHARACTER SET gbk COLLATE gbk_chinese_ci DEFAULT NULL,
   `e` binary(1) DEFAULT NULL COMMENT 'I am binary',
   PRIMARY KEY (`a`),
   UNIQUE KEY `b` (`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci COMMENT='sequoiadb:{ auto_partition: false }'
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -1370,7 +1370,7 @@ t2	CREATE TABLE `t2` (
   `b` float DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `a` (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (1,123.456,'abc','abc','a'), (10,12495.495,'aaa','aaa','1'),(55,539.32,'123','123','c'),(21,10.34,'Boe','Boe','A'),(0,348.39,'bbb','bbb','t'), (16,439.543, '43ls', '43ls', 'r');
 insert into t2 values (1, 1, 123.456), (10, 10, 12495.495), (55, 55, 539.32), (21, 21, 10.34),(0, 0, 348.39), (16, 16, 439.543);
 select * from t1 order by a;
@@ -1397,11 +1397,11 @@ t1	CREATE TABLE `t1` (
   `a` bigint(20) NOT NULL,
   `b` float DEFAULT NULL,
   `c` char(16) DEFAULT NULL,
-  `d` text CHARACTER SET gbk DEFAULT NULL,
+  `d` text CHARACTER SET gbk COLLATE gbk_chinese_ci DEFAULT NULL,
   `e` binary(1) DEFAULT NULL COMMENT 'I am binary',
   PRIMARY KEY (`a`),
   UNIQUE KEY `b` (`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci COMMENT='sequoiadb:{ auto_partition: false }'
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -1411,7 +1411,7 @@ t2	CREATE TABLE `t2` (
   PRIMARY KEY (`id`),
   KEY `a` (`a`),
   KEY `b` (`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (-12,23.3,'43kd','43kd','0'), (-3,543.543,'gfd8','gfd8','1'),(-1,30.32,'kgf9','kgf9','2');
 insert into t2 values (5, 5, 23.3), (2, 2, 543.543), (-19, -19, 30.32);
 select * from t1 order by a;
@@ -1445,7 +1445,7 @@ t1	CREATE TABLE `t1` (
   `b` bigint(20) DEFAULT NULL,
   `c` char(16) DEFAULT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (1, 1, 'a'), (10, 10, '1'), (-1, -1, '2d'), (8, 8, '4c'), (101, 101, 'BaC'), (2, 2, 'gkdel');
 select * from t1 order by a;
 a	b	c
@@ -1464,7 +1464,7 @@ t1	CREATE TABLE `t1` (
   `b` bigint(20) DEFAULT NULL,
   `a` int(11) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ('o', 3, 3), ('p', -8, -8), ('A', 5, 5);
 select * from t1 order by a;
 c	b	a
@@ -1485,7 +1485,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
   `name` char(8) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (1,'a'), (-1,'b'), (10, '12'), (0, 'Ab'), (1001, 'Test'), (103, 'hello');
 alter table t1 force, algorithm = inplace;
 show create table t1;
@@ -1494,7 +1494,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
   `name` char(8) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (4,'1'), (2,'0');
 select * from t1 order by id;
 id	name
@@ -1520,7 +1520,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1 change a a enum('b','c','z'), algorithm = inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 show create table t1;
@@ -1530,7 +1530,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1 change a a enum('1','b','c','z'), algorithm = inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 show create table t1;
@@ -1540,7 +1540,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1 change b b set('1','a','c','k'), algorithm = inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 show create table t1;
@@ -1550,7 +1550,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1 change b b set('0', '1', 'a', 'c', '2', 'k', 'y', 'x'), algorithm = inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 show create table t1;
@@ -1560,7 +1560,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1 change a a enum('b','a','z','x','1','c'), algorithm = inplace;
 alter table t1 change b b set('1', 'a', 'c', '2', 'k', 'y', 'x','m','n','0'), algorithm = inplace;
 show create table t1;
@@ -1570,7 +1570,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z','x','1','c') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x','m','n','0') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b) values ('a', 'x,y'), ('x', '1,a'), ('1', 'c,k'), ('c', 'y,2'), ('1', '1,a,x,m,0'), ('c', 'k,y,x,m,n,0');
 select * from t1 order by id;
 id	a	b
@@ -1595,7 +1595,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` smallint(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (-32768), (32767);
 select * from t1 order by id;
 id
@@ -1616,7 +1616,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` mediumint(9) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (8388607), (-8388608);
 select * from t1 order by id;
 id
@@ -1639,7 +1639,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (-2147483648), (2147483647);
 select * from t1 order by id;
 id
@@ -1664,7 +1664,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (9223372036854775807), (-9223372036854775808);
 select * from t1 order by id;
 id
@@ -1704,7 +1704,7 @@ t1	CREATE TABLE `t1` (
   `s2` double DEFAULT NULL,
   `s3` decimal(5,0) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (1.1000000000000001,1.1000000000000001,1.1000000000000001,1.1000000000000001,1.1000000000000001,1.1000000000000001),(10.48,10.48E+03,10.48,10.48,10.48E+03,10.48E+03);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -1744,7 +1744,7 @@ t1	CREATE TABLE `t1` (
   `b2` bigint(20) DEFAULT NULL,
   `b3` decimal(52,30) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (5830,5830,5830,85039430942,85039430942,85039430942), (-683904,-683904,-683904,-5792293719,-5792293719,-5792293719);
 select * from t1 order by id;
 id	m1	m2	b1	b2	b3
@@ -1773,7 +1773,7 @@ t1	CREATE TABLE `t1` (
   `i1` double DEFAULT NULL,
   `i2` decimal(11,1) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (5830,5830,5830),(85039430,85039430,85039430),(-683904,-683904,-683904),(-57922937,-57922937,-57922937);
 select * from t1 order by id;
 id	i1	i2
@@ -1837,7 +1837,7 @@ t1	CREATE TABLE `t1` (
   `f11` bigint(20) DEFAULT NULL,
   `f12` float(19,0) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (5793842.23, 84209402834.45, 4820840.10,6,6,6,6,6,6,6,6,6,6);
 select * from t1 order by id;
 id	f1	f2	f3	f4	f5	f6	f7	f8	f9	f10	f11	f12
@@ -1894,7 +1894,7 @@ t1	CREATE TABLE `t1` (
   `d11` bigint(20) DEFAULT NULL,
   `d12` double(19,0) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (5793842.23, 84209402834.45, 4820840.10,6,6,6,6,6,6,6,6,6,6);
 select * from t1 order by id;
 id	d1	d2	d3	d4	d5	d6	d7	d8	d9	d10	d11	d12
@@ -1951,7 +1951,7 @@ t1	CREATE TABLE `t1` (
   `d11` bigint(20) DEFAULT NULL,
   `d12` decimal(19,0) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (5793842, 584308008420940283456734.45,6,6,6,6,6,6,6,6,6,6);
 select * from t1 order by id;
 id	d1	d3	d4	d5	d6	d7	d8	d9	d10	d11	d12
@@ -1971,7 +1971,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` bit(16) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (b'1111111111111111'), (b'10101010101010');
 select * from t1 order by id;
 id
@@ -1995,7 +1995,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z','x','1','c') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x','m','n','0') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(a,b) values ('a', 'x,y'), ('x', '1,a'), ('1', 'c,k'), ('c', 'y,2'), ('1', '1,a,x,m,0'), ('c', 'k,y,x,m,n,0');
 select * from t1 order by id;
 id	a	b
@@ -2030,7 +2030,7 @@ t1	CREATE TABLE `t1` (
   `i4` int(10) unsigned DEFAULT NULL,
   `i5` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (b'10101010',254,65535,16777215,4294967295,4294967295), (b'1001',253,65534,16777214,4294967294,4294967294);
 select * from t1 order by id;
 id	i1	i2	i3	i4	i5
@@ -2053,7 +2053,7 @@ t1	CREATE TABLE `t1` (
   `id` enum('a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16','a17','a18','a19','a20','a21','a22','a23','a24','a25','a26','a27','a28','a29','a30','a31','a32','a33','a34','a35','a36','a37','a38','a39','a40','a41','a42','a43','a44','a45','a46','a47','a48','a49','a50','a51','a52','a53','a54','a55','a56','a57','a58','a59','a60','a61','a62','a63','a64','a65','a66','a67','a68','a69','a70','a71','a72','a73','a74','a75','a76','a77','a78','a79','a80','a81','a82','a83','a84','a85','a86','a87','a88','a89','a90','a91','a92','a93','a94','a95','a96','a97','a98','a99','a100','a101','a102','a103','a104','a105','a106','a107','a108','a109','a110','a111','a112','a113','a114','a115','a116','a117','a118','a119','a120','a121','a122','a123','a124','a125','a126','a127','a128','b1','b2','b3','b4','b5','b6','b7','b8','b9','b10','b11','b12','b13','b14','b15','b16','b17','b18','b19','b20','b21','b22','b23','b24','b25','b26','b27','b28','b29','b30','b31','b32','b33','b34','b35','b36','b37','b38','b39','b40','b41','b42','b43','b44','b45','b46','b47','b48','b49','b50','b51','b52','b53','b54','b55','b56','b57','b58','b59','b60','b61','b62','b63','b64','b65','b66','b67','b68','b69','b70','b71','b72','b73','b74','b75','b76','b77','b78','b79','b80','b81','b82','b83','b84','b85','b86','b87','b88','b89','b90','b91','b92','b93','b94','b95','b96','b97','b98','b99','b100','b101','b102','b103','b104','b105','b106','b107','b108','b109','b110','b111','b112','b113','b114','b115','b116','b117','b118','b119','b120','b121','b122','b123','b124','b125','b126','b127','b128') NOT NULL,
   `i1` set('a1','a2','a3','a4','a5','a6','a7','a8') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ('b23', 'a1,a2');
 select * from t1 order by id;
 id	i1
@@ -2077,7 +2077,7 @@ t1	CREATE TABLE `t1` (
   `i1` double unsigned DEFAULT NULL,
   `i2` decimal(6,3) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (1.1000000000000001,1.1000000000000001,1.1000000000000001),(10.48,10.48E+03,10.48);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -2101,7 +2101,7 @@ t1	CREATE TABLE `t1` (
   `i1` double DEFAULT NULL,
   `i2` decimal(6,3) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (-1.1000000000000001,-1.1000000000000001,-1.1000000000000001),(-10.48,-10.48E+03,-10.48);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -2134,7 +2134,7 @@ t1	CREATE TABLE `t1` (
   `i3` int(10) unsigned DEFAULT NULL,
   `i4` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (b'1010101010101010',65534,16777215,4294967295,18446744073709551615), (b'100110011',65533,16777214,4294967294,18446744073709551614);
 select * from t1 order by id;
 id	i1	i2	i3	i4
@@ -2156,7 +2156,7 @@ t1	CREATE TABLE `t1` (
   `id` smallint(5) unsigned NOT NULL,
   `i1` set('a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (110, 'a1,a2');
 select * from t1 order by id;
 id	i1
@@ -2180,7 +2180,7 @@ t1	CREATE TABLE `t1` (
   `i1` double unsigned DEFAULT NULL,
   `i2` decimal(10,3) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (1.1000000000000001,1.1000000000000001,1.1000000000000001),(10.48,10.48E+03,10.48);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -2204,7 +2204,7 @@ t1	CREATE TABLE `t1` (
   `i1` double DEFAULT NULL,
   `i2` decimal(12,3) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (-1.1000000000000001,-1.1000000000000001,-1.1000000000000001),(-10.48,-10.48E+03,-10.48);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -2235,7 +2235,7 @@ t1	CREATE TABLE `t1` (
   `i2` int(10) unsigned DEFAULT NULL,
   `i3` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (b'10101010101010101010101010101010',16777214,4294967295,18446744073709551615), (b'100110011100110011',16777213,4294967294,18446744073709551614);
 select * from t1 order by id;
 id	i1	i2	i3
@@ -2256,7 +2256,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` set('a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16','b1','b2','b3','b4','b5','b6','b7','b8','b9','b10','b11','b12','b13','b14','b15','b16') NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ('a1,b2');
 select * from t1 order by id;
 id
@@ -2281,7 +2281,7 @@ t1	CREATE TABLE `t1` (
   `i1` double unsigned DEFAULT NULL,
   `i2` decimal(16,3) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (2.1000000000000001,1.1000000000000001,1.1000000000000001),(10.48,10.48E+03,10.48);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -2306,7 +2306,7 @@ t1	CREATE TABLE `t1` (
   `i1` double DEFAULT NULL,
   `i2` decimal(16,3) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (3.1000000000000001,-1.1000000000000001,-1.1000000000000001),(30.48,-10.48E+03,-10.48);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -2335,7 +2335,7 @@ t1	CREATE TABLE `t1` (
   `i1` int(10) unsigned DEFAULT NULL,
   `i2` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (b'10101010101010101010101010101010',4294967294,18446744073709551615), (b'100110011100110011',4294967293,18446744073709551613);
 select * from t1 order by id;
 id	i1	i2
@@ -2356,7 +2356,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` set('a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16','b1','b2','b3','b4','b5','b6','b7','b8','b9','b10','b11','b12','b13','b14','b15','b16') NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ('a1,b2,a15,b16');
 select * from t1 order by id;
 id
@@ -2381,7 +2381,7 @@ t1	CREATE TABLE `t1` (
   `i1` double unsigned DEFAULT NULL,
   `i2` decimal(16,3) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (2.1000000000000001,1.1000000000000001,1.1000000000000001),(10.48,10.48E+03,10.48);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -2406,7 +2406,7 @@ t1	CREATE TABLE `t1` (
   `i1` double DEFAULT NULL,
   `i2` decimal(16,3) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (3.1000000000000001,-1.1000000000000001,-1.1000000000000001),(30.48,-10.48E+03,-10.48);
 Warnings:
 Note	1265	Data truncated for column 'i2' at row 1
@@ -2439,7 +2439,7 @@ t1	CREATE TABLE `t1` (
   `i2` bigint(20) unsigned DEFAULT NULL,
   `i3` decimal(30,5) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (b'1010101010101010101010101010101010101010101010101010101010101010',429496729448320.22,429496729448320.22,1844674407370955161584320.8342), (b'100110011100110011100110011100110011',429496729348293342.99,429496729348293342.99,48302446744073709551613.7239);
 select hex(id),i1,i2,i3 from t1 order by id,i1;
 hex(id)	i1	i2	i3
@@ -2497,7 +2497,7 @@ t1	CREATE TABLE `t1` (
   `f12` bigint(20) unsigned DEFAULT NULL,
   `f13` float(20,0) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (48329.3429,b'11111111111111111111111111111111111111111',4832948230840.11,480249208340274203842.23,6,6,6,6,6,6,6,6,6,6);
 select * from t1 order by id;
 id	f1	f2	f3	f4	f5	f6	f7	f8	f9	f10	f11	f12	f13
@@ -2529,7 +2529,7 @@ t1	CREATE TABLE `t1` (
   `f12` bigint(20) unsigned DEFAULT NULL,
   `f13` float(20,0) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (-48329.3429,b'11111111111111111111111111111111111111111',-4832948230840.11,-480249208340274203842.23,7,7,7,7,7,7,7,7,7,7);
 select * from t1 order by id;
 id	f1	f2	f3	f4	f5	f6	f7	f8	f9	f10	f11	f12	f13
@@ -2567,7 +2567,7 @@ t1	CREATE TABLE `t1` (
   `f12` double(19,0) unsigned DEFAULT NULL,
   `f13` double(20,0) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (48329.3429,b'11111111111111111111111111111111111111111',4832948230840.11,6,6,6,6,6,6,6,6,6,6);
 select * from t1 order by id;
 id	f1	f2	f4	f5	f6	f7	f8	f9	f10	f11	f12	f13
@@ -2613,7 +2613,7 @@ t1	CREATE TABLE `t1` (
   `f12` bigint(20) unsigned DEFAULT NULL,
   `f13` double(20,0) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (74293.32,b'11111111111111111111111111111111111111111',480249208340274203842.23,7,7,7,7,7,7,7,7,7,7);
 select * from t1 order by id;
 id	f1	f2	f4	f5	f6	f7	f8	f9	f10	f11	f12	f13
@@ -2664,7 +2664,7 @@ t1	CREATE TABLE `t1` (
   `f12` decimal(19,0) unsigned DEFAULT NULL,
   `f13` decimal(20,0) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (48329.3429,b'11111111111111111111111111111111111111111',4832948230840.11,6,6,6,6,6,6,6,6,6,6);
 Warnings:
 Note	1265	Data truncated for column 'id' at row 1
@@ -2712,7 +2712,7 @@ t1	CREATE TABLE `t1` (
   `f12` bigint(20) unsigned DEFAULT NULL,
   `f13` decimal(20,0) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values (-48329.3429,b'11111111111111111111111111111111111111111',480249208340274203842.23,7,7,7,7,7,7,7,7,7,7);
 Warnings:
 Note	1265	Data truncated for column 'id' at row 1
@@ -2745,7 +2745,7 @@ t1	CREATE TABLE `t1` (
   `c4` mediumtext DEFAULT NULL,
   `c5` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ("123456789","123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3	c4	c5
@@ -2774,7 +2774,7 @@ t1	CREATE TABLE `t1` (
   `c3` mediumtext DEFAULT NULL,
   `c4` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 values ("123456789","123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3	c4
@@ -2803,7 +2803,7 @@ t1	CREATE TABLE `t1` (
   `c3` mediumtext DEFAULT NULL,
   `c4` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(c1,c2,c3,c4) values ("123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3	c4
@@ -2830,7 +2830,7 @@ t1	CREATE TABLE `t1` (
   `c2` mediumtext DEFAULT NULL,
   `c3` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(c1,c2,c3) values ("gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3
@@ -2855,7 +2855,7 @@ t1	CREATE TABLE `t1` (
   `c1` mediumtext DEFAULT NULL,
   `c2` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(c1,c2) values ("gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2
@@ -2878,7 +2878,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `c1` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(c1) values ("gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1
@@ -2909,7 +2909,7 @@ t1	CREATE TABLE `t1` (
   `b5` mediumblob DEFAULT NULL,
   `b6` longblob DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(b1,b2,b3,b4,b5,b6) values ("123456789","123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	b1	b2	b3	b4	b5	b6
@@ -2939,7 +2939,7 @@ t1	CREATE TABLE `t1` (
   `b4` longblob DEFAULT NULL,
   `b5` varbinary(8192) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(b1,b2,b3,b4,b5) values ("123456789","123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	b1	b2	b3	b4	b5
@@ -2968,7 +2968,7 @@ t1	CREATE TABLE `t1` (
   `c3` mediumblob DEFAULT NULL,
   `c4` longblob DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(c1,c2,c3,c4) values ("123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3	c4
@@ -2995,7 +2995,7 @@ t1	CREATE TABLE `t1` (
   `c2` mediumblob DEFAULT NULL,
   `c3` longblob DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(c1,c2,c3) values ("gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3
@@ -3020,7 +3020,7 @@ t1	CREATE TABLE `t1` (
   `c1` mediumblob DEFAULT NULL,
   `c2` longblob DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(c1,c2) values ("gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2
@@ -3043,7 +3043,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `c1` longblob DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(c1) values ("gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1
@@ -3064,7 +3064,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `y1` year(4) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(y1) values (1999),(2008),(2111);
 select * from t1 order by id;
 id	y1
@@ -3087,7 +3087,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `y1` time(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(y1) values ("02:02:02.009900"),("-837:59:59.999");
 select * from t1 order by id;
 id	y1
@@ -3109,7 +3109,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `d1` date DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(d1) values ("2037-12-31"),("2021-01-01");
 select * from t1 order by id;
 id	d1
@@ -3138,7 +3138,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `d1` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=2001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=2001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(d1) values ("2037-12-31 02:02:02.009900"),("2021-01-01 10:11:12.131415");
 select * from t1 order by id;
 id	d1
@@ -3163,7 +3163,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `d1` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(d1) values ("2037-12-31 02:02:02.009900"),("2021-01-01 10:11:12.131415");
 select * from t1 order by id;
 id	d1
@@ -3185,7 +3185,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `j` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`j`)),
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1(j) values ('true'),('false');
 select * from t1 order by id;
 id	j
@@ -3299,7 +3299,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon NOT NULL,
   `geocol1` geometrycollection NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 set @a1 = ST_PointFromText('POINT(1 1)');
 set @a2 = ST_LineFromText('LINESTRING(0 0,10 10,20 25,50 60)');
 set @a3 = ST_PolygonFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))');
@@ -3370,7 +3370,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon NOT NULL,
   `geocol1` geometrycollection NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 alter table t1 modify geom geometry not null,algorithm=inplace;
 ERROR 22004: Invalid use of NULL value
 alter table t1 modify poin point not null,algorithm=inplace;
@@ -3441,7 +3441,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon DEFAULT NULL,
   `geocol1` geometrycollection DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 insert into t1 value(2,null,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
 ERROR 23000: Column 'geom' cannot be null
 insert into t1 value(3,@a1,null,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
@@ -3531,6 +3531,6 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon DEFAULT NULL,
   `geocol1` geometrycollection DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 drop table t1;
 drop database test_alter_overhead_threshlod;
