@@ -1,0 +1,8 @@
+  --reject-nested-func-for-group-min-max 
+SEQUOIASQLMAINSTREAM-1816
+--
+  --server-ha-dml-max-retry-count[=#] 
+SEQUOIASQLMAINSTREAM-1501
+--
+  --server-ha-retry-prepared-stmt 
+SEQUOIASQLMAINSTREAM-1634
