@@ -805,22 +805,31 @@ function start_inst()
       fi
    done
 
-   . "$CONF_INST_PATH/${inst}.conf"
-   local socket_file=`cat $SQLDATA/auto.cnf | grep "^\s*socket" |awk -F'[ =]' '{print $NF }'`
-   local cmd="$BIN_PATH/mysql --no-defaults -uroot -S $socket_file -e \
-              'SELECT * from information_schema.tables AS t LEFT JOIN information_schema.statistics AS s \
-               on t.TABLE_SCHEMA=s.TABLE_SCHEMA and t.TABLE_NAME=s.TABLE_NAME \
-               where t.engine=\"SequoiaDB\";'"
-   exec_cmd_with_print "$cmd" "$CTL_LOG"
-   test $? -ne 0 && { echo "ERROR: Fail to collect SequoiaDB tables statistics, please verify log $CTL_LOG" >&2 && exit 19; }
-   #unblock the specific port on firewall
-   sudo iptables -C INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
-   ret=$?
-   while [ $ret == 0 ]; do
-      sudo iptables -D INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
+   if [ $LOAD_STATS == true ]; then
+      if [ -z $DB_USER ];then
+         DB_USER=root
+      fi
+      if [ -z $PASSWORD ];then
+         echo "Enter database $DB_USER password for loading statistics:"
+      fi
+      . "$CONF_INST_PATH/${inst}.conf"
+      local socket_file=`cat $SQLDATA/auto.cnf | grep "^\s*socket" |awk -F'[ =]' '{print $NF }'`
+      local cmd="$BIN_PATH/mysql --no-defaults -u $DB_USER -p$PASSWORD -S $socket_file -e \
+                 'SELECT * from information_schema.tables AS t LEFT JOIN information_schema.statistics AS s \
+                  on t.TABLE_SCHEMA=s.TABLE_SCHEMA and t.TABLE_NAME=s.TABLE_NAME \
+                  where t.engine=\"SequoiaDB\";'"
+      exec_cmd_with_print "$cmd" "$CTL_LOG"
+      rc=$?
+      #unblock the specific port on firewall
       sudo iptables -C INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
       ret=$?
-   done
+      while [ $ret == 0 ]; do
+         sudo iptables -D INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
+         sudo iptables -C INPUT -p tcp --dport $inst_port -j DROP > /dev/null 2>&1
+         ret=$?
+      done
+      test $rc -ne 0 && { echo "ERROR: Fail to load SequoiaDB tables statistics, please verify log $CTL_LOG" >&2 && exit 19; }
+   fi
 
    get_one_status $inst >> /dev/null
    local ret=$?
@@ -1384,11 +1393,11 @@ function build_help()
                                                      [--sdb-conn-addr=ADDR] [--sdb-user USER] 
                                                      [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] [--sdb-token TOKEN]"
    echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
-   echo "  ${ME} start      <INSTNAME> [--load-stats]            [--print]"
-   echo "  ${ME} startall   [--load-stats]                       [--print]"
-   echo "  ${ME} stop       <INSTNAME> [--force]                 [--print]"
-   echo "  ${ME} stopall    [--force]                            [--print]"
-   echo "  ${ME} restart    <INSTNAME> [--load-stats]            [--print]"
+   echo "  ${ME} start      <INSTNAME> [--load-stats [-u USER] [-w PASSWD]] [--print]"
+   echo "  ${ME} startall   [--load-stats [-u USER] [-w PASSWD]]            [--print]"
+   echo "  ${ME} stop       <INSTNAME> [--force]                            [--print]"
+   echo "  ${ME} stopall    [--force]                                       [--print]"
+   echo "  ${ME} restart    <INSTNAME> [--load-stats [-u USER] [-w PASSWD]] [--print]"
    echo "  ${ME} status     [INSTNAME]"
    echo "  ${ME} join       <INSTANCE> <-g INST_GROUP_NAME> [-k INST_GROUP_KEY] [--force]"
    echo "  ${ME} leave      <INSTANCE> <-g INST_GROUP_NAME> [--force]"
@@ -1414,7 +1423,8 @@ function build_help()
    echo "  -P PORT                                         port number to listen on"
    echo "  -f PIDFILE                                      location of the pid file"
    echo "  -s SOCKETFILE                                   socket file between client and server"
-   echo "  -w PASSWORD                                     a password for root@localhost,default: empty password"
+   echo "  -u USER                                         database user, default: root"
+   echo "  -w PASSWORD                                     database password, default: empty password"
    echo "  -g INST_GROUP_NAME                              instance group name"
    echo "  -k INST_GROUP_KEY                               instance group key"
    echo "  -a MAX-CON                                      the number of simultaneous clients allowed,default:151"
@@ -1466,7 +1476,7 @@ function build_help()
 #Parse command line parameters
 test $# -eq 0 && { build_help && exit 64; }
 
-ARGS=`getopt -o hvD:l:p:P:s:f:e:a:w:g:k: --long help,version,print,baklog,force,load-stats,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-enable-mapping:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log:,optimizer-limit-pushdown-threshold: -n "${ME}" -- "$@"`
+ARGS=`getopt -o hvD:l:p:P:s:f:e:a:u:w:g:k: --long help,version,print,baklog,force,load-stats,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-enable-mapping:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log:,optimizer-limit-pushdown-threshold: -n "${ME}" -- "$@"`
 ret=$?
 test $ret -ne 0 && exit $ret
 
@@ -1533,6 +1543,9 @@ do
                                               ;;
       -e )                                    LOG_ERROR_VERBOSITY=$2
                                               check_num_para "LOG-ERROR-VERBOSITY" "$LOG_ERROR_VERBOSITY"
+                                              shift 2
+                                              ;;
+      -u )                                    DB_USER=$2
                                               shift 2
                                               ;;
       --load-stats )                          LOAD_STATS=true
