@@ -27,6 +27,8 @@ elseif("X${MYSQL}" STREQUAL "X5.7.39")
     add_definitions(-DDBUG_OFF)
 elseif("X${MYSQL}" STREQUAL "X5.7.40")
     add_definitions(-DDBUG_OFF)
+elseif("X${MYSQL}" STREQUAL "X5.7.42")
+    add_definitions(-DDBUG_OFF)
 endif()
 
 #if(${MYSQL} STREQUAL 5.7.34)
