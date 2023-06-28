@@ -62,7 +62,7 @@ explain select * from t2 straight_join t1 on t1.col_int=t2.col_int and t1.col_do
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t2	NULL	ref	i1,i2,i3	i1	14	const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30665`.`t2`.`col_int`) and isnull(`multi_key_bka_sequoiadb_30665`.`t2`.`col_double`) and (`multi_key_bka_sequoiadb_30665`.`t2`.`col_varchar_16` is not null))
 1	SIMPLE	t1	NULL	ref	i1,i2,i3	i1	81	const,const,multi_key_bka_sequoiadb_30665.t2.col_varchar_16	2	100.00	Using index condition; Using join buffer (Batched Key Access)
-[Note] SequoiaDB: Query message: condition[{ "col_int": { "$isnull": 1 }, "col_double": { "$isnull": 1 }, "col_varchar_16": { "$et": "t" } }], selector[{}], order_by[{ "col_int": 1, "col_double": 1, "col_varchar_16": 1 }], hint[{ "": "i1" }], limit[-1], offset[0], table[multi_key_bka_sequoiadb_30665.t1]
+[Note] SequoiaDB: Query message: condition[{ "col_int": { "$isnull": 1 }, "col_double": { "$isnull": 1 }, "col_varchar_16": { "$et": "t" } }], selector[{}], order_by[{}], hint[{ "": "i1" }], limit[-1], offset[0], table[multi_key_bka_sequoiadb_30665.t1]
 set session sequoiadb_enable_null_reject_for_bka_join=on;
 set session skip_ref_null_if_null_reject=off;
 SELECT * FROM t1 INNER JOIN t2 ON t1.col_datetime = t2.col_datetime AND t1.col_double = t2.col_double AND t1.col_datetime = t2.col_datetime AND t1.col_int = t2.col_int WHERE `t2`.`col_varchar_16` IS NULL AND `t1`.`col_varchar_16` IS NULL;
@@ -92,7 +92,7 @@ explain select * from t2 straight_join t1 on t1.col_int=t2.col_int and t1.col_do
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t2	NULL	ref	i1,i2,i3	i1	14	const,const	2	100.00	Using where with pushed condition (isnull(`multi_key_bka_sequoiadb_30665`.`t2`.`col_int`) and isnull(`multi_key_bka_sequoiadb_30665`.`t2`.`col_double`) and (`multi_key_bka_sequoiadb_30665`.`t2`.`col_varchar_16` is not null))
 1	SIMPLE	t1	NULL	ref	i1,i2,i3	i1	81	const,const,multi_key_bka_sequoiadb_30665.t2.col_varchar_16	2	100.00	Using index condition; Using join buffer (Batched Key Access)
-[Note] SequoiaDB: Query message: condition[{ "col_int": { "$isnull": 1 }, "col_double": { "$isnull": 1 }, "col_varchar_16": { "$et": "t" } }], selector[{}], order_by[{ "col_int": 1, "col_double": 1, "col_varchar_16": 1 }], hint[{ "": "i1" }], limit[-1], offset[0], table[multi_key_bka_sequoiadb_30665.t1]
+[Note] SequoiaDB: Query message: condition[{ "col_int": { "$isnull": 1 }, "col_double": { "$isnull": 1 }, "col_varchar_16": { "$et": "t" } }], selector[{}], order_by[{}], hint[{ "": "i1" }], limit[-1], offset[0], table[multi_key_bka_sequoiadb_30665.t1]
 set session sequoiadb_enable_null_reject_for_bka_join=off;
 set session skip_ref_null_if_null_reject=on;
 SELECT * FROM t1 INNER JOIN t2 ON t1.col_datetime = t2.col_datetime AND t1.col_double = t2.col_double AND t1.col_datetime = t2.col_datetime AND t1.col_int = t2.col_int WHERE `t2`.`col_varchar_16` IS NULL AND `t1`.`col_varchar_16` IS NULL;

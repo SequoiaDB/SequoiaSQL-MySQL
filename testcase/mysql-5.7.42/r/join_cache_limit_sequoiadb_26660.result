@@ -22,7 +22,7 @@ Warnings:
 Note	1003	/* select#1 */ select `join_cache_limit_sequoiadb_26660`.`t1`.`col1` AS `col1`,`join_cache_limit_sequoiadb_26660`.`t1`.`col2` AS `col2`,`join_cache_limit_sequoiadb_26660`.`t2`.`col1` AS `col1`,`join_cache_limit_sequoiadb_26660`.`t3`.`col2` AS `col2` from `join_cache_limit_sequoiadb_26660`.`t1` left join (`join_cache_limit_sequoiadb_26660`.`t2` join `join_cache_limit_sequoiadb_26660`.`t3`) on(((`join_cache_limit_sequoiadb_26660`.`t3`.`col1` = `join_cache_limit_sequoiadb_26660`.`t1`.`col1`) and (`join_cache_limit_sequoiadb_26660`.`t2`.`col1` = `join_cache_limit_sequoiadb_26660`.`t1`.`col1`))) where 1 order by `join_cache_limit_sequoiadb_26660`.`t1`.`col1` limit 20,10
 select * from t1 left join (select t2.col1,t3.col2 from t2 inner join t3 on t2.col1 = t3.col1) tmp on t1.col1 = tmp.col1 order by t1.col1 limit 20,10;
 col1	col2	col1	col2
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 17 } }], selector[{ "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26660.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 17 } }], selector[{ "col1": null }], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26660.t2]
 alter table t3 drop index col1;
 explain select * from t1 left join (select t2.col1,t3.col2 from t2 inner join t3 on t2.col1 = t3.col1) tmp on t1.col1 = tmp.col1 order by t1.col1 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -72,7 +72,7 @@ col1	col2	col1	col2
 4	5	4	3
 4	5	4	3
 4	5	4	5
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{ "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26660.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{ "col1": null }], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26660.t2]
 alter table t3 drop index col1;
 explain select * from t1 left join (select t2.col1,t3.col2 from t2 inner join t3 on t2.col1 = t3.col1) tmp on t1.col1 = tmp.col1 order by t1.col1,tmp.col1,tmp.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -133,7 +133,7 @@ Note	1003	/* select#1 */ select `join_cache_limit_sequoiadb_26660`.`t1`.`col1` A
 select * from t1 left join (select t2.col1,t3.col2 from t2 inner join t3 on t2.col1 = t3.col1) tmp on t1.col1 = tmp.col1 order by t1.col1,t1.col2 limit 20,10;
 col1	col2	col1	col2
 9	10	9	10
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{ "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26660.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{ "col1": null }], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26660.t2]
 alter table t3 drop index col1;
 explain select * from t1 left join (select t2.col1,t3.col2 from t2 inner join t3 on t2.col1 = t3.col1) tmp on t1.col1 = tmp.col1 order by t1.col1,t1.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -185,7 +185,7 @@ col1	col2	col1	col2
 2	1	2	1
 2	1	2	1
 2	1	2	1
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{ "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26660.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{ "col1": null }], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26660.t2]
 alter table t3 drop index col1;
 explain select * from t1 left join (select t2.col1,t3.col2 from t2 inner join t3 on t2.col1 = t3.col1) tmp on t1.col1 = tmp.col1 order by t1.col1,t1.col2,tmp.col1,tmp.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
