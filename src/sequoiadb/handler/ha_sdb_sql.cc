@@ -260,6 +260,37 @@ uint sdb_aes_get_size(enum my_aes_opmode AES_OPMODE, uint slen) {
   return my_aes_get_size(slen, AES_OPMODE);
 }
 
+int sdb_time_string_to_second(THD *thd, const char *str, time_t &seconds) {
+  MYSQL_TIME_STATUS status;
+  MYSQL_TIME ltime;
+  int rc = 0;
+  int error_code = 0;
+  struct timeval tm = {0, 0};
+  String time_str(str, strlen(str), &my_charset_bin);
+
+  if (str_to_datetime(&time_str, &ltime, 0, &status) || status.warnings) {
+    /* purecov: begin tested */
+    rc = status.warnings;
+    goto error;
+    /* purecov: end */
+  }
+  if (sdb_datetime_to_timeval(thd, &ltime, &tm, &error_code) || error_code) {
+    /* purecov: begin tested */
+    rc = error_code;
+    goto error;
+    /* purecov: end */
+  }
+  seconds = tm.tv_sec;
+
+done:
+  return rc;
+error:
+  /* purecov: begin tested */
+  seconds = 0;
+  goto done;
+  /* purecov: end */
+}
+
 bool sdb_datetime_to_timeval(THD *thd, const MYSQL_TIME *ltime,
                              struct timeval *tm, int *error_code) {
   return datetime_to_timeval(thd, ltime, tm, error_code);
@@ -1145,6 +1176,36 @@ error:
 
 uint sdb_aes_get_size(enum my_aes_mode mode, uint slen) {
   return my_aes_get_size(mode, slen);
+}
+
+int sdb_time_string_to_second(THD *thd, const char *str, time_t &seconds) {
+  MYSQL_TIME_STATUS status;
+  MYSQL_TIME ltime;
+  int rc = 0;
+  int error_code = 0;
+  struct timeval tm = {0, 0};
+
+  if (str_to_datetime_or_date(str, (uint)strlen(str), &ltime, 0, &status) || status.warnings) {
+    /* purecov: begin tested */
+    rc = status.warnings;
+    goto error;
+    /* purecov: end */
+  }
+  if (sdb_datetime_to_timeval(thd, &ltime, &tm, &error_code) || error_code) {
+    /* purecov: begin tested */
+    rc = error_code;
+    goto error;
+    /* purecov: end */
+  }
+  seconds = tm.tv_sec;
+
+done:
+  return rc;
+error:
+  /* purecov: begin tested */
+  seconds = 0;
+  goto done;
+  /* purecov: end */
 }
 
 bool sdb_datetime_to_timeval(THD *thd, const MYSQL_TIME *ltime,

@@ -7964,7 +7964,7 @@ int ha_sdb::info(uint flag) {
   JOIN *join = NULL;
 
   if (sdb_execute_only_in_mysql(thd)) {
-    if (flag & HA_STATUS_VARIABLE) {
+    if (flag & (HA_STATUS_VARIABLE | HA_STATUS_TIME)) {
       /*
        * make sure share is not empty, see the comments in
        * ha_sdb::ensure_stats()
@@ -8037,7 +8037,7 @@ int ha_sdb::info(uint flag) {
     first_analyze = false;
   }
 
-  if (flag & HA_STATUS_VARIABLE) {
+  if (flag & (HA_STATUS_VARIABLE | HA_STATUS_TIME)) {
     /*
      * make sure share is not empty, see the comments in ha_sdb::ensure_stats()
      */
@@ -8178,12 +8178,6 @@ int ha_sdb::info(uint flag) {
     memcpy(dup_ref, m_dup_oid.getData(), SDB_OID_LEN);
   }
 
-  if (flag & HA_STATUS_TIME) {
-    stats.create_time = 0;
-    stats.check_time = 0;
-    stats.update_time = 0;
-  }
-
 done:
   DBUG_RETURN(rc);
 error:
@@ -8320,6 +8314,11 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
   } else {
     stats.mean_rec_length = 0;
   }
+
+  stats.create_time = share->stat.create_time;
+  stats.update_time = share->stat.update_time;
+  stats.check_time = share->stat.check_time;
+
   DBUG_PRINT(
       "exit",
       ("stats.block_size: %u, stats.data_file_length: %llu, "
@@ -8558,6 +8557,8 @@ int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor,
   stats.total_data_free_space = 0;
   stats.total_records = 0;
   stats.last_flush_total_records = 0;
+  stats.create_time = 0;
+  stats.update_time = 0;
 
   try {
     while (!(rc = cursor.next(obj, false))) {
@@ -8579,6 +8580,8 @@ int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor,
       int total_index_pages = 0;
       longlong total_data_free_space = 0;
       longlong total_records = 0;
+      time_t create_time = 0;
+      time_t update_time = 0;
 
       while (iter.more()) {
         bson::BSONElement ele = iter.next();
@@ -8592,6 +8595,12 @@ int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor,
           total_data_free_space = ele.numberLong();
         } else if (!strcmp(ele.fieldName(), SDB_FIELD_TOTAL_RECORDS)) {
           total_records = ele.numberLong();
+        } else if (!strcmp(ele.fieldName(), SDB_FIELD_CREATE_TIME)) {
+          // ignore return value, if error, create_time will be 0;
+          sdb_time_string_to_second(ha_thd(), ele.valuestrsafe(), create_time);
+        } else if (!strcmp(ele.fieldName(), SDB_FIELD_UPDATE_TIME)) {
+          // ignore return value, if error, update_time will be 0;
+          sdb_time_string_to_second(ha_thd(), ele.valuestrsafe(), update_time);
         }
       }
 
@@ -8611,6 +8620,10 @@ int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor,
 
       stats.total_data_free_space += total_data_free_space;
       stats.total_records += total_records;
+      stats.create_time = create_time;
+      stats.update_time = (ulong)update_time;
+      // SequoiaDB not supported, always 0
+      stats.check_time = 0;
     }
   }
   SDB_EXCEPTION_CATCHER(

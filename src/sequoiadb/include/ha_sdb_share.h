@@ -36,6 +36,9 @@ struct Sdb_statistics {
   int64 volatile udi_counter;
   int64 volatile last_flush_total_records;
   bool is_substituted;
+  time_t create_time;
+  unsigned long update_time;
+  unsigned long check_time;
 
   Sdb_statistics() { init(); }
 
@@ -48,6 +51,9 @@ struct Sdb_statistics {
     udi_counter = 0;
     last_flush_total_records = ~(int64)0;
     is_substituted = false;
+    create_time = 0;
+    update_time = 0;
+    check_time = 0;
   }
 
   void reset() { init(); }
