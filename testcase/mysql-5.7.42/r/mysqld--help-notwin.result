@@ -1174,6 +1174,12 @@ The following options may be given as the first argument:
  password. (Default: "")
  --server-ha-inst-group-name[=name] 
  SQL instance group name. (Default: "")
+ --server-ha-pending-log-check-interval[=#] 
+ Time interval for checking and executing pending log.
+ (Default: 60000)
+ --server-ha-sql-log-check-interval[=#] 
+ Time interval for checking and executing SQL log.
+ (Default: 2000)
  --server-ha-wait-recover-timeout[=#] 
  Timeout waiting for instance recovery. (Default: 30)
  --server-ha-wait-replay-timeout[=#] 
@@ -1751,6 +1757,8 @@ sequoiadb-use-transaction TRUE
 sequoiadb-user 
 server-ha-inst-group-key 
 server-ha-inst-group-name 
+server-ha-pending-log-check-interval 60000
+server-ha-sql-log-check-interval 2000
 server-ha-wait-recover-timeout 30
 server-ha-wait-replay-timeout 30
 server-ha-wait-sync-timeout 0
