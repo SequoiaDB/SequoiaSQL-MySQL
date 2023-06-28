@@ -21,7 +21,7 @@
 
 # The server must support partitioning.
 --source include/have_partition.inc
---source include/sequoiadb_version_gte_5_skip.inc
+--source include/sequoiadb_trans_rr_skip.inc
 
 #------------------------------------------------------------------------------#
 # Engine specific settings and requirements
