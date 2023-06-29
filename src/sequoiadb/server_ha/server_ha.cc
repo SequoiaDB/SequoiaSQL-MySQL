@@ -3682,6 +3682,9 @@ static inline bool need_retry_errno(uint mysql_errno) {
     case ER_CANT_LOCK:
     // fix bug SEQUOIASQLMAINSTREAM-921
     case ER_KEY_NOT_FOUND:
+#ifdef IS_MARIADB
+    case ER_UNKNOWN_SEQUENCES:
+#endif
       need_retry = true;
       break;
     default:
