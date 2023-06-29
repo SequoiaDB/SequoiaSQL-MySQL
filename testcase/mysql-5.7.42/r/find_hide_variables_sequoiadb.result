@@ -1,6 +1,9 @@
   --optimizer-index-sort-prune 
 SEQUOIASQLMAINSTREAM-1054
 --
+  --ref-prefer-more-keypart 
+SEQUOIASQLMAINSTREAM-1876
+--
   --refresh-all-cached-tables-supported 
 SEQUOIASQLMAINSTREAM-1726
 --
