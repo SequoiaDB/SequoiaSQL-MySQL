@@ -128,7 +128,7 @@ ERROR 42S02: Table 'metasync_seq_22934.seq3' doesn't exist
 SHOW CREATE TABLE seq3_new;
 ERROR 42S02: Table 'metasync_seq_22934.seq3_new' doesn't exist
 SELECT nextval(seq2);
-ERROR 42S02: Table 'metasync_seq_22934.seq2' doesn't exist
+ERROR 42S02: Unknown SEQUENCE: 'seq2'
 SELECT * FROM seq3;
 ERROR 42S02: Table 'metasync_seq_22934.seq3' doesn't exist
 connection conn1;
