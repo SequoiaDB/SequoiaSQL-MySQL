@@ -23,7 +23,7 @@ reorganize_partition_range	CREATE TABLE `reorganize_partition_range` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (year(`produced_date`))
 (PARTITION `p0` VALUES LESS THAN (1990) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES LESS THAN (2000) ENGINE = SequoiaDB,
@@ -33,9 +33,11 @@ id	produced_date	name	company
 1	1989-11-11	Alice	OpenAI
 2	1992-11-11	Bob	MicroSoft
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 SELECT * FROM reorganize_partition_range PARTITION (p3) ORDER BY id;
 id	produced_date	name	company
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 ALTER TABLE reorganize_partition_range REORGANIZE PARTITION p3 into (PARTITION p2 VALUES LESS THAN (2010), PARTITION p3 VALUES LESS THAN (2020));
 SHOW CREATE TABLE reorganize_partition_range;
 Table	Create Table
@@ -44,7 +46,7 @@ reorganize_partition_range	CREATE TABLE `reorganize_partition_range` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (year(`produced_date`))
 (PARTITION `p0` VALUES LESS THAN (1990) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES LESS THAN (2000) ENGINE = SequoiaDB,
@@ -55,9 +57,11 @@ id	produced_date	name	company
 1	1989-11-11	Alice	OpenAI
 2	1992-11-11	Bob	MicroSoft
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 SELECT * FROM reorganize_partition_range PARTITION (p2, p3) ORDER BY id;
 id	produced_date	name	company
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 CREATE TABLE reorganize_partition_list (
 id INT NOT NULL,
 produced_date DATE,
@@ -82,7 +86,7 @@ reorganize_partition_list	CREATE TABLE `reorganize_partition_list` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (year(`produced_date`))
 (PARTITION `p0` VALUES IN (1989) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES IN (1992) ENGINE = SequoiaDB,
@@ -92,9 +96,11 @@ id	produced_date	name	company
 1	1989-11-11	Alice	OpenAI
 2	1992-11-11	Bob	MicroSoft
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 SELECT * FROM reorganize_partition_list PARTITION (p3) ORDER BY id;
 id	produced_date	name	company
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 ALTER TABLE reorganize_partition_list REORGANIZE PARTITION p3 into (PARTITION p2 VALUES IN (2001), PARTITION p3 VALUES IN (2011));
 SHOW CREATE TABLE reorganize_partition_list;
 Table	Create Table
@@ -103,7 +109,7 @@ reorganize_partition_list	CREATE TABLE `reorganize_partition_list` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY LIST (year(`produced_date`))
 (PARTITION `p0` VALUES IN (1989) ENGINE = SequoiaDB,
  PARTITION `p1` VALUES IN (1992) ENGINE = SequoiaDB,
@@ -114,9 +120,11 @@ id	produced_date	name	company
 1	1989-11-11	Alice	OpenAI
 2	1992-11-11	Bob	MicroSoft
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 SELECT * FROM reorganize_partition_list PARTITION (p2, p3) ORDER BY id;
 id	produced_date	name	company
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 CREATE TABLE reorganize_partition_range_hash (
 id INT NOT NULL,
 produced_date DATE,
@@ -142,7 +150,7 @@ reorganize_partition_range_hash	CREATE TABLE `reorganize_partition_range_hash` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (year(`produced_date`))
 SUBPARTITION BY HASH (`id`)
 (PARTITION `p0` VALUES LESS THAN (1990) ENGINE = SequoiaDB,
@@ -153,9 +161,11 @@ id	produced_date	name	company
 1	1989-11-11	Alice	OpenAI
 2	1992-11-11	Bob	MicroSoft
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 SELECT * FROM reorganize_partition_range_hash PARTITION (p3) ORDER BY id;
 id	produced_date	name	company
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 ALTER TABLE reorganize_partition_range_hash REORGANIZE PARTITION p3 into (PARTITION p2 VALUES LESS THAN (2010), PARTITION p3 VALUES LESS THAN (2020));
 SHOW CREATE TABLE reorganize_partition_range_hash;
 Table	Create Table
@@ -164,7 +174,7 @@ reorganize_partition_range_hash	CREATE TABLE `reorganize_partition_range_hash` (
   `produced_date` date DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
  PARTITION BY RANGE (year(`produced_date`))
 SUBPARTITION BY HASH (`id`)
 (PARTITION `p0` VALUES LESS THAN (1990) ENGINE = SequoiaDB,
@@ -176,7 +186,9 @@ id	produced_date	name	company
 1	1989-11-11	Alice	OpenAI
 2	1992-11-11	Bob	MicroSoft
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 SELECT * FROM reorganize_partition_range_hash PARTITION (p2, p3) ORDER BY id;
 id	produced_date	name	company
 3	2001-11-11	Carl	OpenAI
+4	2011-11-11	Daniel	Google
 drop table reorganize_partition_range, reorganize_partition_list, reorganize_partition_range_hash;
