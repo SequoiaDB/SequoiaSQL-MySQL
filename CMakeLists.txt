@@ -40,6 +40,7 @@ elseif(MARIADB)
    set(SDB_PROJECT_TYPE "mariadb" CACHE STRING "Project type is MariaDB")
    set(PROJECT_NAME "SequoiaSQL-MariaDB")
    set(SQL_VERSION "${MARIADB}")
+   set(SQL_TYPE "mariadb")
 else()
    set(SDB_PROJECT_TYPE "mysql" CACHE STRING "Project type is MySQL")
    if(NOT MYSQL)
@@ -47,6 +48,7 @@ else()
    endif()
    set(PROJECT_NAME "SequoiaSQL-MySQL")
    set(SQL_VERSION "${MYSQL}")
+   set(SQL_TYPE "mysql")
 endif()
 
 #if(NOT (${CMAKE_VERSION} VERSION_LESS "3.0"))
@@ -59,61 +61,6 @@ SDB_CHECK_SSL()
 SDB_CHECK_CURL()
 SDB_CHECK_ODBC()
 SDB_CHECK_CURSES()
-
-function(prepare_sql_source sql_source_root sql_name)
-   if(NOT EXISTS ${sql_source_root}/CMakeLists.txt)
-      IF(MYSQL_SRC_PACKAGE_DIR OR MARIADB_SRC_PACKAGE_DIR)
-         IF(MYSQL_SRC_PACKAGE_DIR)
-            SET(SRC_PACKAGE_DIR "${MYSQL_SRC_PACKAGE_DIR}")
-         ENDIF()
-         IF(MARIADB_SRC_PACKAGE_DIR)
-            SET(SRC_PACKAGE_DIR "${MARIADB_SRC_PACKAGE_DIR}")
-         ENDIF()
-         IF(NOT EXISTS "${SRC_PACKAGE_DIR}/${sql_name}.tar.gz")
-            MESSAGE(FATAL_ERROR "${sql_name}.tar.gz not exists in ${SRC_PACKAGE_DIR}.")
-         ELSE()
-            execute_process(
-               COMMAND ${CMAKE_COMMAND} -E tar zxvf "${SRC_PACKAGE_DIR}/${sql_name}.tar.gz"
-               WORKING_DIRECTORY "${sql_source_root}"
-               RESULT_VARIABLE tar_result
-            )
-            IF ((MYSQL AND (SQL_VERSION STREQUAL "5.7.40" OR SQL_VERSION STREQUAL "5.7.42"))
-		OR (MARIADB AND SQL_VERSION STREQUAL "10.4.28"))
-               set(MYSQL_SRC_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}-3.4")
-            ELSE()
-               set(MYSQL_SRC_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}-3.4.4")
-            ENDIF()
-            execute_process(
-               COMMAND bash -c "mv -f ${MYSQL_SRC_NAME}/* ./; rm -r ${MYSQL_SRC_NAME}"
-               WORKING_DIRECTORY "${sql_source_root}"
-               RESULT_VARIABLE tar_result
-            )
-         ENDIF()
-      ELSE()
-         file(READ ${sql_source_root}/url.txt SOURCE_URL)
-         message(STATUS "SQL source code not exist. Download it from ${SOURCE_URL}")
-         set(PACKAGE_NAME "${sql_name}.tar.gz")
-         set(DOWNLOAD_TARGET "${sql_source_root}/${PACKAGE_NAME}")
-         file(DOWNLOAD ${SOURCE_URL} ${DOWNLOAD_TARGET})
-         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar zxvf "${DOWNLOAD_TARGET}"
-            WORKING_DIRECTORY "${sql_source_root}"
-            RESULT_VARIABLE tar_result
-         )
-         IF ((MYSQL AND (SQL_VERSION STREQUAL "5.7.40" OR SQL_VERSION STREQUAL "5.7.42"))
-	     OR (MARIADB AND SQL_VERSION STREQUAL "10.4.28"))
-            set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}-3.4")
-         ELSE()
-            set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}-3.4.4")
-         ENDIF()
-         execute_process(
-            COMMAND bash -c "mv ${EXTRACT_NAME}/* ./"
-            WORKING_DIRECTORY "${sql_source_root}"
-            RESULT_VARIABLE tar_result
-         )
-      ENDIF()
-   endif()
-endfunction()
 
 # Generate the version.info file
 gen_version_file()
@@ -147,14 +94,62 @@ else()
    set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 endif()
 
-set(SQL_SOURCE_DIR_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}")
-set(SQL_SOURCE_ROOT "${CMAKE_SOURCE_DIR}/sql-src/${SQL_SOURCE_DIR_NAME}")
+message(STATUS "SequoiaSQL version: ${CONNECTOR}")
+# Set SQL source directory name: v{SQL_VERSION}-${SQL_SOURCE_BRANCH}.
+# For examples: v10.4.6, v10.4.6-3.6, v5.7.39-3.6-cgb
+if(CONNECTOR)
+   set(CONNECTOR_VERSION "${CONNECTOR}")
+endif()
+if(CONNECTOR)
+  set(SQL_SOURCE_BRANCH "v${SQL_VERSION}-${CONNECTOR_VERSION}")
+else()
+  set(SQL_SOURCE_BRANCH "v${SQL_VERSION}")
+endif()
+message(STATUS "SQL source branch: ${SQL_SOURCE_BRANCH}")
 
-if(NOT EXISTS ${SQL_SOURCE_ROOT})
-   message(FATAL_ERROR "Source code path [${SQL_SOURCE_ROOT}] dose not exist")
+# Set SQL source dirname
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+   set(SQL_SOURCE_DIR_NAME "${SQL_SOURCE_BRANCH}-debug")
+else()
+   set(SQL_SOURCE_DIR_NAME "${SQL_SOURCE_BRANCH}-release")
 endif()
 
-prepare_sql_source(${SQL_SOURCE_ROOT} ${SQL_SOURCE_DIR_NAME})
+# Set SQL source root
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+   set(SQL_SOURCE_ROOT "${CMAKE_SOURCE_DIR}/${SQL_SOURCE_BRANCH}-debug")
+else()
+   set(SQL_SOURCE_ROOT "${CMAKE_SOURCE_DIR}/${SQL_SOURCE_BRANCH}-release")
+endif()
+
+# Remove submodule project before add it into SSQL
+execute_process(
+   COMMAND bash -c "git rm ${SQL_SOURCE_DIR_NAME} --force 2>/dev/null"
+   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
+# Prepare SQL source code
+execute_process(
+   COMMAND bash -c "git submodule add --force http://gitlab.sequoiadb.com/sequoiadb/${SQL_TYPE}.git ${SQL_SOURCE_DIR_NAME}"
+   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
+# Fetch branch
+execute_process(
+   COMMAND bash -c "git fetch origin ${SQL_SOURCE_BRANCH}:${SQL_SOURCE_BRANCH}"
+   WORKING_DIRECTORY "${SQL_SOURCE_ROOT}"
+)
+
+# Checkout branch
+execute_process(
+   COMMAND bash -c "git checkout ${SQL_SOURCE_BRANCH}"
+   WORKING_DIRECTORY "${SQL_SOURCE_ROOT}"
+)
+
+# Do not add SQL source code into SSQL project
+execute_process(
+   COMMAND bash -c "git reset HEAD .gitmodules ${SQL_SOURCE_DIR_NAME}"
+   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
 
 if(NOT WITH_SDB_DRIVER)
    message(FATAL_ERROR "SequoiaDB driver path not set")
@@ -211,13 +206,13 @@ execute_process(
 )
 
 # Remove the native mysql testcases, and create a symbol link pointing to ours.
-string(STRIP ${TEST_DIR_TYPE} TEST_DIR_TYPE)
-if(TEST_DIR_TYPE STREQUAL "directory")
-   file(REMOVE_RECURSE ${MYSQL_TEST_DIR})
-   execute_process(
-      COMMAND bash -c "ln -sf ${CMAKE_SOURCE_DIR}/testcase/${SQL_SOURCE_DIR_NAME} ${SQL_SOURCE_ROOT}/mysql-test"
-   )
-endif()
+# string(STRIP ${TEST_DIR_TYPE} TEST_DIR_TYPE)
+# if(TEST_DIR_TYPE STREQUAL "directory")
+#    file(REMOVE_RECURSE ${MYSQL_TEST_DIR})
+#    execute_process(
+#       COMMAND bash -c "ln -sf ${CMAKE_SOURCE_DIR}/testcase/${SQL_TYPE}-${SQL_VERSION} ${SQL_SOURCE_ROOT}/mysql-test"
+#    )
+# endif()
 
 set(updateCmd "find -L ${SQL_SOURCE_ROOT} -type f |
                xargs grep -l CMAKE_SOURCE_DIR 2>/dev/null |
@@ -229,7 +224,7 @@ if(EXISTS ${SDB_PLUGIN_DIR})
    message(STATUS "Directory ${SDB_PLUGIN_DIR} exists. Ready to remove")
    file(REMOVE ${SDB_PLUGIN_DIR})
 else()
-   message(STATUS "Directory ${SDB_PLUGIN_DIR} dose not exist")
+   message(STATUS "Directory ${SDB_PLUGIN_DIR} does not exist")
 endif()
 
 set(SPK_PLUGIN_DIR "${SQL_STORAGE_DIR}/spark")
@@ -237,7 +232,7 @@ if(EXISTS ${SPK_PLUGIN_DIR})
    message(STATUS "Directory ${SPK_PLUGIN_DIR} exists. Ready to remove")
    file(REMOVE ${SPK_PLUGIN_DIR})
 else()
-   message(STATUS "Directory ${SPK_PLUGIN_DIR} dose not exist")
+   message(STATUS "Directory ${SPK_PLUGIN_DIR} does not exist")
 endif()
 
 # Add ld flag on libmysql_api_test.
@@ -315,8 +310,20 @@ else()
    set(BUILT_IN 0)
 endif()
 
-set(TARGET_SOURCE_DIR "${CMAKE_SOURCE_DIR}/sql-src/${target}")
+# Comment 'ADD_SUBDIRECTORY(mysql-test)' in SQL source code
+# Use SequoiqSQL testcase instead
+set(updateCmd "sed -i 's/ADD_SUBDIRECTORY(mysql-test)/# ADD_SUBDIRECTORY(mysql-test)/' ${SQL_SOURCE_ROOT}/CMakeLists.txt 2>/dev/null")
+execute_process(COMMAND bash -c ${updateCmd})
+
+# Modify testcase install information
+set(updateCmd "sed -i 's/CMAKE_SOURCE_DIR/SQL_SOURCE_ROOT/g' ${CMAKE_SOURCE_DIR}/testcase/${SQL_TYPE}-${SQL_VERSION}/CMakeLists.txt 2>/dev/null")
+execute_process(COMMAND bash -c ${updateCmd})
+
+set(TARGET_SOURCE_DIR "${CMAKE_SOURCE_DIR}/${SQL_SOURCE_DIR_NAME}")
 add_subdirectory(${SQL_SOURCE_ROOT} ${CMAKE_BINARY_DIR}/${SQL_SOURCE_DIR_NAME})
+
+# Use SequoiaSQL testcase instead
+add_subdirectory(testcase/${SQL_TYPE}-${SQL_VERSION})
 
 # Generate the configuration file
 execute_process(

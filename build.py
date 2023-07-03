@@ -26,6 +26,16 @@ class OptionsMgr:
         )
 
         build_opt_group.add_argument(
+            '--builddir', metavar = 'buildDir', type=str,
+            help='Path of build directory.',
+        )
+
+        build_opt_group.add_argument(
+            '--connector', metavar = 'connectorVersion', type=str,
+            help='Version number of SequoiaSQL, eg: 3.6-cgb, 3.4.',
+        )
+
+        build_opt_group.add_argument(
             '--mysqlsrcpkgdir', metavar = 'mysqlSrcPackageDir',
             type=str, help='The dir of mysql src package.'
         )
@@ -205,6 +215,11 @@ class OptionsMgr:
                                    .format(self.args.commitsha)
                                   )
 
+        if self.args.connector:
+            cmake_arguments.append('-DCONNECTOR={}'
+                                   .format(self.args.connector)
+                                  )
+
         if self.args.mysqlsrcpkgdir:
             cmake_arguments.append('-DMYSQL_SRC_PACKAGE_DIR={}'
                                    .format(self.args.mysqlsrcpkgdir))
@@ -320,6 +335,10 @@ class ProjectMgr:
                                 .format(' '.join(command), error))
 
     def build(self):
+        # Set build directory if --builddir is set
+        if self.__optMgr.args.builddir:
+            self.__buildDir = os.path.join(self.__prjRoot, self.__optMgr.args.builddir)
+
         try:
             if os.path.exists(self.__buildDir):
                 shutil.rmtree(self.__buildDir)
