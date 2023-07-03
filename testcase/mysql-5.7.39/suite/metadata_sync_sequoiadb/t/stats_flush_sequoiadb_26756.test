@@ -1,6 +1,6 @@
 #Case 26756
 --source include/have_sequoiadb.inc
---source include/skip_release_version.inc
+--source include/sequoiadb_version_release_skip.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
 
 set session sequoiadb_stats_flush_time_threshold = 4;
