@@ -6,6 +6,8 @@ import shutil
 import argparse
 import subprocess
 
+MYSQL_DEFAULT_VERSION = '5.7.42'
+MARIADB_DEFAULT_VERSION = '10.4.28'
 
 class OptionsMgr:
     def __init__(self):
@@ -30,9 +32,9 @@ class OptionsMgr:
 
         build_opt_group.add_argument(
             '-t', '--type', metavar = 'projectType',
-            type=str, default='mysql-5.7.25',
+            type=str, default='mysql-' + MYSQL_DEFAULT_VERSION,
             help='Build the project, including the '
-                 'testcases. Default: mysql-5.7.25')
+                 'testcases. Default: mysql-' + MARIADB_DEFAULT_VERSION)
         build_opt_group.add_argument(
             '-e', '--enterprise',
             default=False,
@@ -140,8 +142,6 @@ class OptionsMgr:
                  'option, all changes at local will be lost!',
             action='store_true'
         )
-        self.__projectType = 'MYSQL'
-        self.__projectVersion = '5.7.25'
 
     def description(self):
         print("Run options:")
@@ -156,15 +156,23 @@ class OptionsMgr:
         self.args = self.__parser.parse_args()            
         # Parse build type
         target = self.args.type.split('-')
-        if len(target) != 2:
-            print("The build target '{}' is invalid".format(self.args.build))
+        if len(target) > 2 or len(target) < 1:
+            print("The build target '{}' is invalid".format(self.args.type))
             return 1
+
         if 'mysql' != target[0].lower() and \
-           'mariadb' != target[0].lower():
-           print("The build target '{}' is invalid".format(self.args.build))
-        elif 'mariadb' == target[0].lower():
+            'mariadb' != target[0].lower():
+            print("The build target '{}' is invalid".format(self.args.type))
+            return 1
+
+        if 'mariadb' == target[0].lower():
             self.__projectType = 'MARIADB'
-        self.__projectVersion = target[1]
+            self.__projectVersion = MARIADB_DEFAULT_VERSION
+        else:
+            self.__projectType = 'MYSQL'
+            self.__projectVersion = MYSQL_DEFAULT_VERSION
+        if len(target) == 2:
+            self.__projectVersion = target[1]
 
         if ((not self.needInstall()) and
            (self.needTest() or self.needPackage() or self.needRunPackage() )):
