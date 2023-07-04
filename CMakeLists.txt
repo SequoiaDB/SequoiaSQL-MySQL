@@ -107,6 +107,9 @@ else()
 endif()
 message(STATUS "SQL source branch: ${SQL_SOURCE_BRANCH}")
 
+# set testpackage name
+set(TEST_PKG_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}")
+
 # Set SQL source dirname
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
    set(SQL_SOURCE_DIR_NAME "${SQL_SOURCE_BRANCH}-debug")
@@ -458,7 +461,7 @@ add_custom_target(testcase
    COMMENT "Run testcases...")
 
 add_custom_target(testpackage
-   COMMAND bash -c "tar zcvf ${CMAKE_BINARY_DIR}/${SQL_SOURCE_DIR_NAME}-test.tar.gz *"
+   COMMAND bash -c "tar zcvf ${CMAKE_BINARY_DIR}/${TEST_PKG_NAME}-test.tar.gz *"
    WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}/mysql-test"
    DEPENDS ${CMAKE_INSTALL_PREFIX}
    COMMENT "Make testcase package..."
