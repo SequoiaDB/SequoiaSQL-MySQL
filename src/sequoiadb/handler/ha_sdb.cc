@@ -747,11 +747,6 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
   st_order *order = NULL;
   st_order *group_list = NULL;
   JOIN *join = sdb_lex_first_select(thd)->join;
-  bson::BSONObjBuilder builder_order(96);
-  bson::BSONObjBuilder builder_id(96);
-  bson::BSONObjBuilder builder_id_field(builder_id.subobjStart("_id"));
-  bson::BSONObjBuilder builder_group_list(96);
-  bson::BSONObjBuilder builder_selector_field(96);
   const bool use_having_condition = sdb_having_condition(thd);
   const bool use_distinct = sdb_use_distinct(thd);
   const bool use_force_index = table->force_index;
@@ -782,6 +777,11 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
   group_list = sdb_get_join_group_list(thd);
 
   try {
+    bson::BSONObjBuilder builder_order(96);
+    bson::BSONObjBuilder builder_id(96);
+    bson::BSONObjBuilder builder_id_field(builder_id.subobjStart("_id"));
+    bson::BSONObjBuilder builder_group_list(96);
+    bson::BSONObjBuilder builder_selector_field(96);
     if (order) {
       while (order) {
         if (Item::FIELD_ITEM != order->item[0]->type()) {
