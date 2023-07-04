@@ -940,7 +940,6 @@ int ha_sdb::build_order_condition(st_order *order) {
   Item *item = NULL;
   Field *field = NULL;
   st_order *order_list = order;
-  bson::BSONObjBuilder builder_order(96);
 
   DBUG_ENTER("ha_sdb::build_order_condition");
 
@@ -949,6 +948,7 @@ int ha_sdb::build_order_condition(st_order *order) {
   }
 
   try {
+    bson::BSONObjBuilder builder_order(96);
     while (order_list) {
       st_order *cur = order;
       item = order_list->item[0]->real_item();
@@ -990,10 +990,6 @@ int ha_sdb::build_group_condition(st_order *group) {
   Field *field = NULL;
   bson::BSONObj tmp_obj;
   st_order *group_list = group;
-  bson::BSONObjBuilder builder_id(96);
-  bson::BSONObjBuilder builder_id_field(builder_id.subobjStart("_id"));
-  bson::BSONObjBuilder builder_group_list(96);
-  bson::BSONObjBuilder builder_selector_field(96);
 
   DBUG_ENTER("ha_sdb::build_group_condition");
 
@@ -1010,6 +1006,10 @@ int ha_sdb::build_group_condition(st_order *group) {
   }
 
   try {
+    bson::BSONObjBuilder builder_id(96);
+    bson::BSONObjBuilder builder_id_field(builder_id.subobjStart("_id"));
+    bson::BSONObjBuilder builder_group_list(96);
+    bson::BSONObjBuilder builder_selector_field(96);
     while (group_list) {
       st_order *cur = group;
       char val[MAX_FIELD_NAME + 1] = {'\0'};
