@@ -11,15 +11,21 @@ In order to take advantages of scalability and performance, SequoiaSQL-MySQL Sto
 ```bash
 git clone https://github.com/SequoiaDB/sequoiasql-mysql.git sequoiasql-mysql
 ```  
-2. Get the source code of [mysql-5.7.25](https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.25.tar.gz). 
-3. Get the [SequoiaDB C++ driver 3.4](http://cdn.sequoiadb.com/images/sequoiadb-3.4/x86_64/driver/C%26CPP-3.4-linux_x86_64.tar.gz).
-4. Compile.
+2. Get the SequoiaDB C++ driver.
+3. Compile.
 ```bash
 cd sequoiasql-mysql
-python3 build.py --sdbdriver </path/to/sequoiadb/cpp/driver> --commitsha <commit SHA> --mysqlsrcpkgdir </path/to/mysql/original/src/archive/package> -t mysql-5.7.25 -i  </path/to/install/mysql/>  --archivetest --dd -j 64
+python3 build.py --sdbdriver </path/to/sequoiadb/cpp/driver> --commitsha <commit SHA> --mysqlsrcpkgdir </path/to/mysql/original/src/archive/package> -t mysql --buildir=<builddir_name> --connector=<connector_branch_name> -i  </path/to/install/mysql/>  --archivetest --dd -j 64
 
-eg:
-python3 build.py --sdbdriver /data/temp/sequoiadb/client --commitsha 7f1105cbb78e415e5d59caf536aed50c4d6b0b67 --mysqlsrcpkgdir /data/temp/ -t mysql-5.7.25 -i  /data/temp/mysql --archivetest --dd -j 64
+# eg:
+# build master branch
+python3 build.py --sdbdriver /data/temp/sequoiadb/client --commitsha 7f1105cbb78e415e5d59caf536aed50c4d6b0b67 --mysqlsrcpkgdir /data/temp/ -t mysql --builddir=mysql_debug_build -i  /data/temp/mysql --archivetest --dd -j 64
+
+# build v3.4 branch
+python3 build.py --sdbdriver /data/temp/sequoiadb/client --commitsha 7f1105cbb78e415e5d59caf536aed50c4d6b0b67 --mysqlsrcpkgdir /data/temp/ -t mysql --builddir=mysql_v34_debug_build --connector="3.4" -i  /data/temp/mysql --archivetest --dd -j 64
+
+# build v3.6 branch
+python3 build.py --sdbdriver /data/temp/sequoiadb/client --commitsha 7f1105cbb78e415e5d59caf536aed50c4d6b0b67 --mysqlsrcpkgdir /data/temp/ -t mysql --builddir=mysql_v36_debug_build --connector="3.6" -i  /data/temp/mysql --archivetest --dd -j 64
 ```
 
 ## Testing the SequoiaSQL-MySQL server.
