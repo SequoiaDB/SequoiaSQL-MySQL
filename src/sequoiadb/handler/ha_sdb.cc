@@ -1678,35 +1678,39 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   }
 
 #ifdef IS_MARIADB
-  if (table->versioned() && TABLE_TYPE_UNDEFINE == share->table_type) {
-    bson::BSONObj obj;
-    bson::BSONObj select;
-    bson::BSONObjBuilder con_builder(96);
-    bson::BSONObjBuilder sel_builder(96);
-    try {
-      sel_builder.append(SDB_FIELD_SHARDING_KEY, "");
-      select = sel_builder.obj();
-    }
-    SDB_EXCEPTION_CATCHER(rc,
-                          "Failed to build bson obj when open table, "
-                          "table:%s.%s, exception:%s",
-                          db_name, table_name, e.what())
+  if (table->versioned()) {
+    if(TABLE_TYPE_UNDEFINE == share->table_type) {
+      bson::BSONObj obj;
+      bson::BSONObj select;
+      bson::BSONObjBuilder con_builder(96);
+      bson::BSONObjBuilder sel_builder(96);
+      try {
+        sel_builder.append(SDB_FIELD_SHARDING_KEY, "");
+        select = sel_builder.obj();
+      }
+      SDB_EXCEPTION_CATCHER(rc,
+                            "Failed to build bson obj when open table, "
+                            "table:%s.%s, exception:%s",
+                            db_name, table_name, e.what())
 
-    rc = connection->snapshot(obj, SDB_SNAP_CATALOG, db_name, table_name,
-                              &tbl_ctx_impl, select);
-    if (get_sdb_code(rc) == SDB_DMS_EOC) {  // cl don't exist.
-      rc = 0;
-      goto done;
-    }
-    if (rc != 0) {
-      SDB_LOG_ERROR("%s", connection->get_err_msg());
-      connection->clear_err_msg();
-      goto error;
-    }
-    if (obj.getField(SDB_FIELD_SHARDING_KEY).type() == bson::Object) {
-      share->table_type = m_sdb_table_type = TABLE_TYPE_PART;
+      rc = connection->snapshot(obj, SDB_SNAP_CATALOG, db_name, table_name,
+                                &tbl_ctx_impl, select);
+      if (get_sdb_code(rc) == SDB_DMS_EOC) {  // cl don't exist.
+        rc = 0;
+        goto done;
+      }
+      if (rc != 0) {
+        SDB_LOG_ERROR("%s", connection->get_err_msg());
+        connection->clear_err_msg();
+        goto error;
+      }
+      if (obj.getField(SDB_FIELD_SHARDING_KEY).type() == bson::Object) {
+        share->table_type = m_sdb_table_type = TABLE_TYPE_PART;
+      } else {
+        share->table_type = m_sdb_table_type = TABLE_TYPE_GENERAL;
+      }
     } else {
-      share->table_type = m_sdb_table_type = TABLE_TYPE_GENERAL;
+      m_sdb_table_type = share->table_type;
     }
   }
 #endif
