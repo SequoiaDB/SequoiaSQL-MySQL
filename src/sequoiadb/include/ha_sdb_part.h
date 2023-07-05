@@ -535,7 +535,7 @@ class ha_sdb_part_wrapper : public ha_partition {
   int end_bulk_insert() { return m_file[0]->ha_end_bulk_insert(); }
 
 #if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
-  int write_row(uchar *buf);
+  int write_row(uchar* buf);
 #elif defined IS_MARIADB
   int write_row(const uchar* buf);
 #endif
@@ -836,7 +836,7 @@ class ha_sdb_part_wrapper : public ha_partition {
 #if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
   bool setup_engine_array(MEM_ROOT* mem_root);
 #elif defined IS_MARIADB
-  bool setup_engine_array(MEM_ROOT* mem_root, handlerton *first_engine);
+  bool setup_engine_array(MEM_ROOT* mem_root, handlerton* first_engine);
 #endif
 
   bool create_handler_file(const char* name);

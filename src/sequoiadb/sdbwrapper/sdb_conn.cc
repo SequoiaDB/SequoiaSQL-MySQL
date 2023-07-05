@@ -1100,7 +1100,6 @@ int Sdb_conn::execute(const char *sql) {
   return rc;
 }
 
-
 int conn_list(sdbclient::sdb *connection, int list_type,
               const bson::BSONObj *condition, const bson::BSONObj *selector,
               const bson::BSONObj *order_by, const bson::BSONObj *hint,

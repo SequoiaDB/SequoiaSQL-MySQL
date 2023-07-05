@@ -532,6 +532,6 @@ void sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **save,
 
 void sdb_dbug_tmp_restore_column_map(MY_BITMAP **bitmap, MY_BITMAP *old);
 
-void sdb_dbug_tmp_restore_column_maps(MY_BITMAP **read_set, MY_BITMAP **write_set,
-                                      MY_BITMAP **old);
+void sdb_dbug_tmp_restore_column_maps(MY_BITMAP **read_set,
+                                      MY_BITMAP **write_set, MY_BITMAP **old);
 #endif

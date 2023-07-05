@@ -365,8 +365,7 @@ class Sdb_conn {
   int get_last_error(bson::BSONObj &errObj);
 
   inline ulong convert_to_sdb_isolation(const ulong tx_isolation,
-                                        const int major,
-                                        const int minor) {
+                                        const int major, const int minor) {
     switch (tx_isolation) {
       case ISO_READ_UNCOMMITTED:
         return SDB_TRANS_ISO_RU;

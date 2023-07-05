@@ -654,7 +654,8 @@ error:
 #if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
 bool ha_sdb_part_wrapper::setup_engine_array(MEM_ROOT *mem_root) {
 #elif defined IS_MARIADB
-bool ha_sdb_part_wrapper::setup_engine_array(MEM_ROOT *mem_root, handlerton *first_engine) {
+bool ha_sdb_part_wrapper::setup_engine_array(MEM_ROOT *mem_root,
+                                             handlerton *first_engine) {
 #endif
   bool rs = false;
   if (create_handlers(mem_root)) {
@@ -785,6 +786,8 @@ int ha_sdb_part_wrapper::copy_partitions(ulonglong *const copied,
     }
   }
   m_file[0]->ha_rnd_end();
+  DBUG_EXECUTE_IF("debug_abort_copy_partitions",
+                  DBUG_RETURN(HA_ERR_UNSUPPORTED););
 
 done:
   DBUG_RETURN(rc);
@@ -1661,7 +1664,7 @@ int ha_sdb_part::get_sharding_key(partition_info *part_info,
             field = part_info->part_field_array[i];
 #else
           Field **part_fields = part_info->part_field_array;
-          while((field = *(part_fields++))) {
+          while ((field = *(part_fields++))) {
 #endif
             builder.append(sdb_field_name(field), 1);
           }

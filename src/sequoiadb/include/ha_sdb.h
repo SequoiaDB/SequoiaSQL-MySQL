@@ -290,7 +290,7 @@ class ha_sdb : public handler {
   */
 #if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
   int write_row(uchar *buf);
-#elif defined  IS_MARIADB
+#elif defined IS_MARIADB
   int write_row(const uchar *buf);
 #endif
 

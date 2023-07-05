@@ -38,7 +38,7 @@ class ha_sdb_seq : public ha_sdb {
 #if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
   int write_row(uchar *buf);
 #elif defined IS_MARIADB
-  int write_row(const uchar* buf);
+  int write_row(const uchar *buf);
 #endif
 
   int update_row(const uchar *old_data, const uchar *new_data);

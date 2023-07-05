@@ -2877,7 +2877,6 @@ int ha_sdb::get_deleted_rows(bson::BSONObj &result, ulonglong *deleted) {
   return rc;
 }
 
-
 #if defined IS_MYSQL || (defined IS_MARIADB && MYSQL_VERSION_ID == 100406)
 int ha_sdb::write_row(uchar *buf) {
 #elif defined IS_MARIADB

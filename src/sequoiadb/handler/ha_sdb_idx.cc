@@ -1173,7 +1173,8 @@ done:
   if (tmp_buffer) {
     free(tmp_buffer);
   }
-  sdb_dbug_tmp_restore_column_maps(&table->read_set, &table->write_set, org_bitmap);
+  sdb_dbug_tmp_restore_column_maps(&table->read_set, &table->write_set,
+                                   org_bitmap);
   table->in_use->count_cuted_fields = org_check_field_status;
   return rc;
 error:
