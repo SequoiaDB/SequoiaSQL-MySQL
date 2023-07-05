@@ -818,6 +818,11 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
     goto error;
   }
 
+  if (thd->is_error()) {
+    rc = sdb_sql_errno(thd);
+    goto error;
+  }
+
 done:
   enable_warning(thd);
   if (rc == SDB_ERR_OK && pushed_cond_set) {
