@@ -375,42 +375,35 @@ int ha_sdb_part::vers_set_hist_part(THD *thd, Vers_part_info *vers_info) {
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
   List_iterator<partition_element> it(m_part_info->partitions);
 
+  if (!m_part_info->vers_require_hist_part(thd)) {
+    goto done;
+  }
+
   rc = check_sdb_in_thd(thd, &conn, true);
   if (0 != rc) {
+    goto error;
+  }
+
+  if (table->pos_in_table_list && table->pos_in_table_list->partition_names) {
+    rc = HA_ERR_PARTITION_LIST;
     goto error;
   }
 
   if (vers_info->limit) {
     sdb_build_clientinfo(ha_thd(), clientinfo_builder);
     hint = clientinfo_builder.obj();
-    while (next != vers_info->hist_part) {
-      next = it++;
-    }
+    vers_info->hist_part = m_part_info->partitions.head();
 
-    Mapping_context_impl scl_mapping;
-    rc = build_scl_name(table_name, next->partition_name, scl_name);
-    if (rc != 0) {
-      goto error;
-    }
-
-    rc = conn->get_cl(db_name, scl_name, cl, false, &scl_mapping);
-    if (rc != 0) {
-      goto error;
-    }
-
-    rc = cl.get_count(records, SDB_EMPTY_BSON, hint);
-    if (rc) {
-      goto error;
-    }
     while ((next = it++) != vers_info->now_part) {
+      DBUG_ASSERT(bitmap_is_set(&m_part_info->read_partitions, next->id));
       longlong next_records = 0;
-      Mapping_context_impl tmp_scl_mapping;
+      Mapping_context_impl scl_mapping;
       rc = build_scl_name(table_name, next->partition_name, scl_name);
       if (rc != 0) {
         goto error;
       }
 
-      rc = conn->get_cl(db_name, scl_name, cl, false, &tmp_scl_mapping);
+      rc = conn->get_cl(db_name, scl_name, cl, false, &scl_mapping);
       if (rc != 0) {
         goto error;
       }
@@ -425,18 +418,16 @@ int ha_sdb_part::vers_set_hist_part(THD *thd, Vers_part_info *vers_info) {
       vers_info->hist_part = next;
       records = next_records;
     }
-    if ((ha_rows)records > vers_info->limit) {
-      if (next == vers_info->now_part) {
-        goto warn;
-      }
+    if ((ha_rows)records >= vers_info->limit && next != vers_info->now_part) {
       vers_info->hist_part = next;
     }
     goto done;
   }
 
   if (vers_info->interval.is_set()) {
-    if (vers_info->hist_part->range_value > thd->query_start())
+    if (vers_info->hist_part->range_value > thd->query_start()) {
       goto done;
+    }
 
     partition_element *next = NULL;
     List_iterator<partition_element> it(m_part_info->partitions);
@@ -450,17 +441,67 @@ int ha_sdb_part::vers_set_hist_part(THD *thd, Vers_part_info *vers_info) {
         goto done;
       }
     }
-    goto warn;
   }
 
 done:
   return rc;
 error:
   goto done;
-warn:
-  my_error(WARN_VERS_PART_FULL, MYF(ME_WARNING | ME_ERROR_LOG), db_name,
-           table_name, vers_info->hist_part->partition_name);
-  goto done;
+}
+
+void ha_sdb_part::vers_check_limit(THD *thd, Vers_part_info *vers_info) {
+  int rc = 0;
+  Sdb_cl cl;
+  longlong records = 0;
+  bson::BSONObj hint;
+  Sdb_conn *conn = NULL;
+  partition_element *next = NULL;
+  Mapping_context_impl scl_mapping;
+  bson::BSONObjBuilder clientinfo_builder;
+  char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
+  DBUG_ENTER("ha_sdb_part::vers_check_limit");
+
+  if (!vers_info->limit ||
+      vers_info->hist_part->id + 1 < vers_info->now_part->id) {
+    goto done;
+  }
+
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto done;
+  }
+
+  sdb_build_clientinfo(thd, clientinfo_builder);
+  hint = clientinfo_builder.obj();
+  rc = build_scl_name(table_name, vers_info->hist_part->partition_name,
+                      scl_name);
+  if (rc != 0) {
+    goto done;
+  }
+
+  rc = conn->get_cl(db_name, scl_name, cl, false, &scl_mapping);
+  if (rc != 0) {
+    goto done;
+  }
+
+  rc = cl.get_count(records, SDB_EMPTY_BSON, hint);
+  if (rc) {
+    goto done;
+  }
+
+  if ((ha_rows)records >= vers_info->limit) {
+    push_warning_printf(thd, Sql_condition::WARN_LEVEL_WARN,
+                        WARN_VERS_PART_FULL, ER_THD(thd, WARN_VERS_PART_FULL),
+                        table->s->db.str, table->s->table_name.str,
+                        vers_info->hist_part->partition_name);
+
+    sql_print_warning(ER_THD(thd, WARN_VERS_PART_FULL), table->s->db.str,
+                      table->s->table_name.str,
+                      vers_info->hist_part->partition_name);
+  }
+
+done:
+  DBUG_VOID_RETURN;
 }
 
 bool ha_sdb_part_wrapper::populate_partition_name_hash() {
@@ -1373,18 +1414,20 @@ int ha_sdb_part_wrapper::external_lock(THD *thd, int lock_type) {
   }
   if (lock_type == F_UNLCK) {
     bitmap_clear_all(used_partitions);
+    if (m_lock_type == F_WRLCK && m_part_info->vers_require_hist_part(thd)) {
+      static_cast<ha_sdb_part *>(m_file[0])->vers_check_limit(
+          thd, m_part_info->vers_info);
+    }
   }
   if (lock_type == F_WRLCK) {
     if (m_part_info->part_expr) {
       m_part_info->part_expr->walk(&Item::register_field_in_read_map, 1, 0);
     }
-    if (m_part_info->part_type == VERSIONING_PARTITION) {
-      // sdb_vers_set_hist_part(thd, m_part_info->vers_info);
-      rc = static_cast<ha_sdb_part *>(m_file[0])->vers_set_hist_part(
-          thd, m_part_info->vers_info);
-      if (rc) {
-        goto error;
-      }
+    rc = static_cast<ha_sdb_part *>(m_file[0])->vers_set_hist_part(
+        thd, m_part_info->vers_info);
+    if (rc) {
+      (void)m_file[0]->ha_external_lock(thd, F_UNLCK);
+      goto error;
     }
   }
 
