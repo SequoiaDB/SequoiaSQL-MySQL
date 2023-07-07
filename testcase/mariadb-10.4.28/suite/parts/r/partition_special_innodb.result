@@ -1,3 +1,6 @@
+DROP DATABASE IF EXISTS partition_special_innodb_test;
+CREATE DATABASE partition_special_innodb_test;
+DROP DATABASE partition_special_innodb_test;
 CREATE DATABASE partition_special_innodb_test;
 use partition_special_innodb_test;
 create table t1 (a date not null, b varchar(50) not null, c varchar(50) not null, d enum('m', 'w'), primary key(a,b,c,d)) engine='SequoiaDB' 

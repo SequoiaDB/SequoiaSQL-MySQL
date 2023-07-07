@@ -1,8 +1,14 @@
 #
 # Check of check constraints
 
+--disable_warnings
+drop database if exists check_constraint_test;
+--enable_warnings
+create database check_constraint_test;
+drop database check_constraint_test;
 create database check_constraint_test;
 use check_constraint_test;
+
 set @save_check_constraint=@@check_constraint_checks;
 
 create table t1 (a int check(a>10), b int check (b > 20), constraint `min` check (a+b > 100), constraint `max` check (a+b <500)) engine=sequoiadb;
@@ -30,7 +36,7 @@ insert into t1 values (101,101),(102,102),(600,600),(103,103);
 select * from t1;
 set check_constraint_checks=@save_check_constraint;
 
-#innodb won't return error
+# innodb will not return error
 #--error ER_CONSTRAINT_FAILED
 #alter table t1 add c int default 0 check (c < 10);
 
@@ -180,5 +186,60 @@ select * from t1 where a is null;
 --error ER_CONSTRAINT_FAILED
 insert t1 (b) values (1);
 drop table t1;
+
+--echo #
+--echo # MDEV-25638 Assertion `!result' failed in convert_const_to_int
+--echo #
+
+--enable_prepare_warnings
+create table t1 (v1 bigint check (v1 not in ('x' , 'x111'))) ;
+select * from t1;
+select v1 from t1;
+select * from t1;
+prepare stmt from "select * from t1";
+execute stmt;
+execute stmt;
+flush tables;
+select * from t1;
+select * from t1;
+deallocate prepare stmt;
+drop table t1;
+--disable_prepare_warnings
+
+--echo #
+--echo # MDEV-26061 MariaDB server crash at Field::set_default
+--echo #
+
+create table t1 (v2 date check (v1 like default (v1)), v1 date default (from_days ('x')));
+insert ignore into t1 values ( 'x' , 'x' ) ;
+drop table t1;
+
+--echo #
+--echo # End of 10.2 tests
+--echo #
+
+--echo #
+--echo # MDEV-26061 MariaDB server crash at Field::set_default
+--echo #
+
+create table t1 (d timestamp check (default (d) is true)) as select 1;
+show create table t1;
+drop table t1;
+
+--echo #
+--echo # End of 10.3 tests
+--echo #
+
+--echo #
+--echo # MDEV-24274 ALTER TABLE with CHECK CONSTRAINTS gives "Out of Memory" error
+--echo #
+create table t1 (id varchar(2), constraint id check (id regexp '[a-z]'));
+alter table t1 force;
+show create table t1;
+drop table t1;
+
+--echo #
+--echo # End of 10.4 tests
+--echo #
 
 drop database check_constraint_test;

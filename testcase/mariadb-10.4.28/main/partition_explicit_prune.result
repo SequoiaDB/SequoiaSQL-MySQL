@@ -1,5 +1,8 @@
-CREATE DATABASE test_partition_explicit_prune;
-USE test_partition_explicit_prune;
+drop database if exists test_partition_explicit_prune;
+create database test_partition_explicit_prune;
+drop database test_partition_explicit_prune;
+create database test_partition_explicit_prune;
+use test_partition_explicit_prune;
 #
 # Bug#13559657: PARTITION SELECTION DOES NOT WORK WITH VIEWS
 #
@@ -336,9 +339,17 @@ test_partition_explicit_prune.t1	analyze	status	Engine-independent statistics co
 test_partition_explicit_prune.t1	analyze	status	OK
 SELECT PARTITION_NAME, SUBPARTITION_NAME, TABLE_ROWS
 FROM INFORMATION_SCHEMA.PARTITIONS
-WHERE TABLE_SCHEMA = 'test'
+WHERE TABLE_SCHEMA = 'test_partition_explicit_prune'
 AND TABLE_NAME = 't1' ORDER BY SUBPARTITION_NAME;
 PARTITION_NAME	SUBPARTITION_NAME	TABLE_ROWS
+pNeg	subp0	2
+pNeg	subp1	2
+p0-9	subp2	1
+p0-9	subp3	1
+p10-99	subp4	1
+p10-99	subp5	1
+p100-99999	subp6	1
+p100-99999	subp7	1
 FLUSH STATUS;
 SELECT * FROM t1 PARTITION (pNonexistent);
 ERROR HY000: Unknown partition 'pNonexistent' in table 't1'
@@ -1887,6 +1898,43 @@ SELECT * FROM t1;
 i
 UNLOCK TABLES;
 DROP TABLE t1, t2;
+#
+# MDEV-18371 Server crashes in ha_innobase::cmp_ref upon UPDATE with PARTITION clause.
+#
+CREATE TABLE t1 (a INT, b INT, KEY (a)) ENGINE=SequoiaDB PARTITION BY KEY(b) PARTITIONS 4;
+INSERT INTO t1 VALUES (3,0),(8,2),(7,8),(3,4),(2,4),(0,7),(4,3),(3,6);
+FLUSH TABLES;
+UPDATE t1 PARTITION (p3,p1) SET a = 2 WHERE a = 3;
+ERROR 0A000: Cannot specify HASH or KEY partitions
+SELECT * FROM t1;
+a	b
+3	0
+3	6
+3	4
+2	4
+4	3
+8	2
+0	7
+7	8
+DROP TABLE t1;
+#
+# MDEV-21134 Crash with partitioned table, PARTITION syntax, and index_merge.
+#
+create table t1 (
+pk int primary key,
+a int,
+b int,
+filler char(32),
+key (a),
+key (b)
+) engine=sequoiadb  partition by range(pk) (
+partition p0 values less than (10),
+partition p1 values less than MAXVALUE
+) ;
+DROP TABLE t1;
+#
+# End of 10.3 tests
+#
 #
 # MDEV-18982: INSERT using explicit patition pruning with column list
 #

@@ -25,6 +25,12 @@
 #------------------------------------------------------------------------------#
 # General not engine specific settings and requirements
 
+--disable_warnings
+DROP DATABASE IF EXISTS partition_special_innodb_test;
+--enable_warnings
+CREATE DATABASE partition_special_innodb_test;
+DROP DATABASE partition_special_innodb_test;
+
 ##### Options, for debugging support #####
 let $debug= 0;
 

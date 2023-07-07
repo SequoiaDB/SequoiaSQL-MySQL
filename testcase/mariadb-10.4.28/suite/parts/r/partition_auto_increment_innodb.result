@@ -1,6 +1,8 @@
-DROP DATABASE IF EXISTS partition_auto_increment_test;
-CREATE DATABASE partition_auto_increment_test;
-use partition_auto_increment_test;
+DROP DATABASE IF EXISTS partition_auto_increment;
+CREATE DATABASE partition_auto_increment;
+DROP DATABASE partition_auto_increment;
+CREATE DATABASE partition_auto_increment;
+USE partition_auto_increment;
 # test without partitioning for reference
 CREATE TABLE t1 (
 c1 INT NOT NULL AUTO_INCREMENT,
@@ -12,18 +14,18 @@ t1	CREATE TABLE `t1` (
   `c1` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`c1`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1
 INSERT INTO t1 VALUES (2);
 INSERT INTO t1 VALUES (4);
 INSERT INTO t1 VALUES (NULL);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1001
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1001
@@ -119,7 +121,7 @@ INSERT INTO t1 VALUES (NULL);
 DELETE FROM t1 WHERE c1 >= 100;
 OPTIMIZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-partition_auto_increment_test.t1	optimize	status	OK
+partition_auto_increment.t1	optimize	status	OK
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -278,18 +280,18 @@ PRIMARY KEY (c1))
 ENGINE='SequoiaDB'
 PARTITION BY HASH (c1)
 PARTITIONS 2;
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1
 INSERT INTO t1 VALUES (2);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1001
 INSERT INTO t1 VALUES (4);
 INSERT INTO t1 VALUES (NULL);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1001
@@ -298,11 +300,11 @@ INSERT INTO t1 VALUES (17);
 INSERT INTO t1 VALUES (19);
 INSERT INTO t1 VALUES (NULL);
 INSERT INTO t1 VALUES (NULL);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1001
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1001
@@ -319,7 +321,7 @@ c1
 20
 21
 INSERT INTO t1 VALUES (NULL);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 AUTO_INCREMENT
 1001
@@ -373,7 +375,7 @@ INSERT INTO t1 VALUES (NULL);
 DELETE FROM t1 WHERE c1 >= 100;
 OPTIMIZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-partition_auto_increment_test.t1	optimize	status	OK
+partition_auto_increment.t1	optimize	status	OK
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -391,29 +393,23 @@ PARTITION BY HASH(c1)
 PARTITIONS 2;
 INSERT INTO t1 (c1) VALUES (2);
 INSERT INTO t1 (c1) VALUES (4);
-connect con1, localhost, root,, partition_auto_increment_test;
+connect con1, localhost, root,,partition_auto_increment;
 connection con1;
-# con1
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (10);
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (19);
 INSERT INTO t1 (c1) VALUES (21);
-# con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (16);
-# con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 disconnect con1;
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
 c1
@@ -431,32 +427,26 @@ c1
 24
 DROP TABLE t1;
 # Test with two threads + start transaction NO PARTITIONING
-connect con1, localhost, root,, partition_auto_increment_test;
+connect con1, localhost, root,,partition_auto_increment;
 connection default;
-# con default
 CREATE TABLE t1 (c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (c1))
 ENGINE = 'SequoiaDB';
 START TRANSACTION;
 INSERT INTO t1 (c1) VALUES (2);
 INSERT INTO t1 (c1) VALUES (4);
 connection con1;
-# con1
 START TRANSACTION;
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (10);
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (19);
 INSERT INTO t1 (c1) VALUES (21);
-# con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (16);
-# con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
@@ -474,21 +464,16 @@ c1
 23
 disconnect con1;
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
 c1
 2
 4
-5
-10
 11
 12
 16
 19
 21
-22
-23
 24
 COMMIT;
 SELECT * FROM t1 ORDER BY c1;
@@ -507,9 +492,8 @@ c1
 24
 DROP TABLE t1;
 # Test with two threads + start transaction
-connect con1, localhost, root,, partition_auto_increment_test;
+connect con1, localhost, root,,partition_auto_increment;
 connection default;
-# con default
 CREATE TABLE t1 (c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (c1))
 ENGINE = 'SequoiaDB'
 PARTITION BY HASH(c1)
@@ -518,20 +502,15 @@ START TRANSACTION;
 INSERT INTO t1 (c1) VALUES (2);
 INSERT INTO t1 (c1) VALUES (4);
 connection con1;
-# con1
 START TRANSACTION;
 INSERT INTO t1 (c1) VALUES (NULL), (10);
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (NULL), (NULL), (19);
 INSERT INTO t1 (c1) VALUES (21);
-# con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (16);
-# con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
@@ -549,21 +528,16 @@ c1
 23
 disconnect con1;
 connection default;
-# con default
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
 c1
 2
 4
-5
-10
 11
 12
 16
 19
 21
-22
-23
 24
 COMMIT;
 SELECT * FROM t1 ORDER BY c1;
@@ -1044,4 +1018,18 @@ c1	c2
 127	40
 DROP TABLE t;
 ##############################################################################
-DROP DATABASE partition_auto_increment_test;
+#
+# MDEV-21027 Assertion `part_share->auto_inc_initialized || !can_use_for_auto_inc_init()'
+# ha_partition::set_auto_increment_if_higher
+#
+CREATE TABLE t1 (a INT AUTO_INCREMENT PRIMARY KEY) ENGINE='SequoiaDB' PARTITION BY HASH (a) PARTITIONS 3;
+REPLACE INTO t1 PARTITION (p0) VALUES (3);
+ERROR 0A000: Cannot specify HASH or KEY partitions
+DROP TABLE t1;
+#
+# MDEV-21310 AUTO_INCREMENT column throws range error on INSERT in  partitioned table |
+# Assertion `part_share->auto_inc_initialized || !can_use_for_auto_inc_init()' failed.
+#
+CREATE TABLE t1 (c INT AUTO_INCREMENT KEY) ENGINE='SequoiaDB' PARTITION BY LIST (c) (PARTITION p1 VALUES IN (1), PARTITION p2 VALUES IN (2));
+ERROR 0A000: Auto-increment field cannot be used for RANGE or LIST partition
+DROP DATABASE partition_auto_increment;

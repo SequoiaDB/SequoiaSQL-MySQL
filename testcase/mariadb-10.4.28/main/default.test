@@ -1,9 +1,14 @@
 #
 # test of already fixed bugs
 #
+
 --disable_warnings
-drop table if exists t1,t2,t3,t4,t5,t6;
-#drop database if exists mysqltest;
+drop database if exists test_default;
+--enable_warnings
+create database test_default;
+drop database test_default;
+create database test_default;
+use test_default;
 
 #
 # Bug 10838
@@ -319,7 +324,6 @@ drop table t1;
 create table t1 (a int);
 --error ER_EXPRESSION_REFERS_TO_UNINIT_FIELD
 create or replace table t1 (a int default b, b int default a);
---replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 show create table t1;
 
@@ -2093,7 +2097,7 @@ drop table t1;
 create table t1 (col1 int default(-(default(col1))));
 
 #
-# MDEV-10354 Assertion `! is_set()' failed in Diagnostics_area::set_ok_status on CREATE TABLE with invalid default
+# MDEV-10354 Assertion "! is_set()" failed in Diagnostics_area::set_ok_status on CREATE TABLE with invalid default
 #
 --error ER_DATA_OUT_OF_RANGE
 create table t1 (col int default (yearweek((exp(710)))));
@@ -2107,5 +2111,87 @@ CREATE OR REPLACE TABLE t1(i int);
 ALTER TABLE t1 ADD b CHAR(255) DEFAULT `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`;
 DROP TABLE t1;
 
+--echo #
+--echo # MDEV-18278 Misleading error message in error log upon failed table creation
+--echo #
+--error ER_EXPRESSION_REFERS_TO_UNINIT_FIELD
+create table t1 (a int as (a));
+show warnings;
 
---echo # end of 10.2 test
+
+--echo #
+--echo # MDEV-26423: MariaDB server crash in Create_tmp_table::finalize
+--echo #
+
+CREATE TABLE t1 (pk varchar(36) DEFAULT uuid());
+INSERT INTO t1 VALUES (),();
+SELECT 1 FROM t1 GROUP BY DEFAULT(pk);
+DROP TABLE t1;
+
+--echo #
+--echo # MDEV-28402: ASAN heap-use-after-free in create_tmp_table,
+--echo # Assertion `l_offset >= 0 && table->s->rec_buff_length - l_offset > 0'
+--echo #
+CREATE TABLE t (a INT, KEY (a));
+INSERT INTO t VALUES (1),(2);
+SELECT DISTINCT DEFAULT(a), CASE a WHEN 0 THEN 1 ELSE 2 END FROM t GROUP BY a WITH ROLLUP;
+DROP TABLE t;
+
+CREATE TABLE t (a INT, KEY (a));
+INSERT INTO t VALUES (1),(2);
+CREATE ALGORITHM=TEMPTABLE VIEW v AS SELECT * FROM t;
+SELECT DISTINCT DEFAULT(a), CASE a WHEN 0 THEN 1 ELSE 2 END FROM v GROUP BY a WITH ROLLUP;
+DROP TABLE t;
+DROP VIEW v;
+--echo #
+--echo # End of 10.2 test
+--echo #
+
+--echo #
+--echo # MDEV-22703 DEFAULT() on a BLOB column can overwrite the default
+--echo # record, which can cause crashes when accessing already released
+--echo # memory.
+--echo #
+
+CREATE TEMPORARY TABLE t1 (h POINT DEFAULT ST_GEOMFROMTEXT('Point(1 1)')) ENGINE=SequoiaDB;
+INSERT INTO t1 () VALUES (),();
+ALTER TABLE t1 FORCE;
+--disable_result_log
+SELECT DEFAULT(h) FROM t1;
+--enable_result_log
+SELECT length(DEFAULT(h)) FROM t1;
+INSERT INTO t1 () VALUES ();
+drop table t1;
+
+--echo #
+--echo # End of 10.3 test
+--echo #
+
+--echo #
+--echo # MDEV-26423: MariaDB server crash in Create_tmp_table::finalize
+--echo #
+CREATE TABLE t1 (pk text DEFAULT length(uuid()));
+INSERT INTO t1 VALUES (),();
+SELECT 1 FROM t1 GROUP BY DEFAULT(pk);
+DROP TABLE t1;
+
+--echo #
+--echo # MDEV-29890 Update with inner join false row count result
+--echo #
+create table t1 (a int not null);
+select column_name, column_default, column_default is not null as 'has_default', is_nullable from information_schema.columns where table_schema='test_default' and table_name='t1';
+create or replace view v1 as select * from t1;
+select column_name, column_default, column_default is not null as 'has_default', is_nullable from information_schema.columns where table_schema='test_default' and table_name='v1';
+create or replace view v1 as select * from t1 group by a;
+select column_name, column_default, column_default is not null as 'has_default', is_nullable from information_schema.columns where table_schema='test_default' and table_name='v1';
+create or replace view v1 as select * from t1 group by a with rollup;
+select column_name, column_default, column_default is not null as 'has_default', is_nullable from information_schema.columns where table_schema='test_default' and table_name='v1';
+drop view v1;
+drop table t1;
+
+--echo #
+--echo # End of 10.4 test
+--echo #
+
+drop database test_default;
+

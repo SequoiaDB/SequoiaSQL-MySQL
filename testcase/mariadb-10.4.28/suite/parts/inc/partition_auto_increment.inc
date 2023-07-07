@@ -8,11 +8,12 @@ set sql_mode="";
 --enable_query_log
 
 -- disable_warnings
-#DROP TABLE IF EXISTS t1;
-DROP DATABASE IF EXISTS partition_auto_increment_test;
-CREATE DATABASE partition_auto_increment_test;
-use partition_auto_increment_test;
+DROP DATABASE IF EXISTS partition_auto_increment;
 -- enable_warnings
+CREATE DATABASE partition_auto_increment;
+DROP DATABASE partition_auto_increment;
+CREATE DATABASE partition_auto_increment;
+USE partition_auto_increment;
 
 -- echo # test without partitioning for reference
 eval CREATE TABLE t1 (
@@ -20,14 +21,14 @@ eval CREATE TABLE t1 (
   PRIMARY KEY (c1))
 ENGINE=$engine;
 SHOW CREATE TABLE t1;
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 INSERT INTO t1 VALUES (2);
 INSERT INTO t1 VALUES (4);
 INSERT INTO t1 VALUES (NULL);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 INSERT INTO t1 VALUES (0);
 -- error 0, ER_DUP_KEY, ER_DUP_ENTRY
@@ -64,7 +65,7 @@ if (!$skip_update)
   UPDATE t1 SET c1 = 51 WHERE c1 = 19;
   FLUSH TABLES;
   UPDATE t1 SET c1 = 40 WHERE c1 = 50;
-  SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='test'
+  SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
   AND TABLE_NAME='t1';
   UPDATE t1 SET c1 = NULL WHERE c1 = 4;
   INSERT INTO t1 VALUES (NULL);
@@ -238,7 +239,7 @@ if (!$skip_update)
   UPDATE t1 SET c1 = 151 WHERE c1 = 19;
   FLUSH TABLES;
   UPDATE t1 SET c1 = 140 WHERE c1 = 150;
-  SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='test'
+  SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
   AND TABLE_NAME='t1';
   UPDATE t1 SET c1 = NULL WHERE c1 = 4;
   INSERT INTO t1 VALUES (NULL);
@@ -294,23 +295,23 @@ eval CREATE TABLE t1 (
 ENGINE=$engine
 PARTITION BY HASH (c1)
 PARTITIONS 2;
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 INSERT INTO t1 VALUES (2);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 INSERT INTO t1 VALUES (4);
 INSERT INTO t1 VALUES (NULL);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 INSERT INTO t1 VALUES (NULL);
 INSERT INTO t1 VALUES (17);
 INSERT INTO t1 VALUES (19);
 INSERT INTO t1 VALUES (NULL);
 INSERT INTO t1 VALUES (NULL);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 -- error 0, ER_DUP_ENTRY, ER_DUP_KEY
 INSERT INTO t1 VALUES (10);
@@ -320,7 +321,7 @@ if ($mysql_errno)
 }
 SELECT * FROM t1 ORDER BY c1;
 INSERT INTO t1 VALUES (NULL);
-SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment_test'
+SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='partition_auto_increment'
 AND TABLE_NAME='t1';
 INSERT INTO t1 VALUES (NULL);
 -- error 0, ER_DUP_ENTRY, ER_DUP_KEY
@@ -365,70 +366,58 @@ eval CREATE TABLE t1 (c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (c1))
   PARTITIONS 2;
 INSERT INTO t1 (c1) VALUES (2);
 INSERT INTO t1 (c1) VALUES (4);
-connect(con1, localhost, root,, partition_auto_increment_test);
+connect(con1, localhost, root,,partition_auto_increment);
 connection con1;
--- echo # con1
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (10);
 connection default;
--- echo # con default
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (19);
 INSERT INTO t1 (c1) VALUES (21);
--- echo # con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 connection default;
--- echo # con default
 -- error 0, ER_DUP_ENTRY, ER_DUP_KEY
 INSERT INTO t1 (c1) VALUES (16);
 if ($mysql_errno)
 {
   echo # ERROR (only OK if Archive) mysql_errno: $mysql_errno;
 }
--- echo # con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 disconnect con1;
 connection default;
--- echo # con default
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
 DROP TABLE t1;
 
 -- echo # Test with two threads + start transaction NO PARTITIONING
-connect(con1, localhost, root,, partition_auto_increment_test);
+connect(con1, localhost, root,,partition_auto_increment);
 connection default;
--- echo # con default
 eval CREATE TABLE t1 (c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (c1))
   ENGINE = $engine;
 START TRANSACTION;
 INSERT INTO t1 (c1) VALUES (2);
 INSERT INTO t1 (c1) VALUES (4);
 connection con1;
--- echo # con1
 START TRANSACTION;
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (10);
 connection default;
--- echo # con default
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (NULL);
 INSERT INTO t1 (c1) VALUES (19);
 INSERT INTO t1 (c1) VALUES (21);
--- echo # con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 connection default;
--- echo # con default
 -- error 0, ER_DUP_KEY
 INSERT INTO t1 (c1) VALUES (16);
 if ($mysql_errno)
 {
   echo # ERROR (only OK if Archive) mysql_errno: $mysql_errno;
 }
--- echo # con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
@@ -436,7 +425,6 @@ COMMIT;
 SELECT * FROM t1 ORDER BY c1;
 disconnect con1;
 connection default;
--- echo # con default
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
 COMMIT;
@@ -444,9 +432,8 @@ SELECT * FROM t1 ORDER BY c1;
 DROP TABLE t1;
 
 -- echo # Test with two threads + start transaction
-connect(con1, localhost, root,, partition_auto_increment_test);
+connect(con1, localhost, root,,partition_auto_increment);
 connection default;
--- echo # con default
 eval CREATE TABLE t1 (c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (c1))
   ENGINE = $engine
   PARTITION BY HASH(c1)
@@ -455,25 +442,20 @@ START TRANSACTION;
 INSERT INTO t1 (c1) VALUES (2);
 INSERT INTO t1 (c1) VALUES (4);
 connection con1;
--- echo # con1
 START TRANSACTION;
 INSERT INTO t1 (c1) VALUES (NULL), (10);
 connection default;
--- echo # con default
 INSERT INTO t1 (c1) VALUES (NULL), (NULL), (19);
 INSERT INTO t1 (c1) VALUES (21);
--- echo # con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 connection default;
--- echo # con default
 -- error 0, ER_DUP_ENTRY, ER_DUP_KEY
 INSERT INTO t1 (c1) VALUES (16);
 if ($mysql_errno)
 {
   echo # ERROR (only OK if Archive) mysql_errno: $mysql_errno;
 }
--- echo # con1
 connection con1;
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
@@ -481,7 +463,6 @@ COMMIT;
 SELECT * FROM t1 ORDER BY c1;
 disconnect con1;
 connection default;
--- echo # con default
 INSERT INTO t1 (c1) VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
 COMMIT;
@@ -883,8 +864,60 @@ SELECT LAST_INSERT_ID();
 SELECT * FROM t1;
 DROP TABLE t1;
 }
-
-
 --echo ##############################################################################
 }
-DROP DATABASE partition_auto_increment_test;
+
+if (!$skip_update)
+{
+--echo #
+--echo # MDEV-19622 Assertion failures in
+--echo # ha_partition::set_auto_increment_if_higher upon UPDATE on Aria table
+--echo #
+eval CREATE OR REPLACE TABLE t1 (pk INT AUTO_INCREMENT, a INT, KEY(pk)) ENGINE=$engine PARTITION BY HASH(a);
+INSERT INTO t1 VALUES (1,1),(2,2);
+UPDATE t1 SET pk = 0;
+DROP TABLE t1;
+
+--echo #
+--echo # MDEV-29636 Assertion `part_share->auto_inc_initialized || !can_use_for_auto_inc_init()'
+--echo # failed in ha_partition::set_auto_increment_if_higher upon REPLACE
+--echo # with partition pruning
+--echo #
+eval CREATE TABLE t1 (a INT AUTO_INCREMENT PRIMARY KEY) ENGINE=$engine
+PARTITION BY RANGE (a) (
+  PARTITION p0 VALUES LESS THAN (10),
+  PARTITION pn VALUES LESS THAN MAXVALUE
+);
+REPLACE INTO t1 PARTITION (p0) SELECT 1;
+DROP TABLE t1;
+}
+
+if (!$skip_delete)
+{
+--echo #
+--echo # MDEV-21027 Assertion `part_share->auto_inc_initialized || !can_use_for_auto_inc_init()'
+--echo # ha_partition::set_auto_increment_if_higher
+--echo #
+eval CREATE TABLE t1 (a INT AUTO_INCREMENT PRIMARY KEY) ENGINE=$engine PARTITION BY HASH (a) PARTITIONS 3;
+# failed: 131: Cannot specify HASH or KEY partitions
+--error 131
+REPLACE INTO t1 PARTITION (p0) VALUES (3);
+DROP TABLE t1;
+}
+
+if (!$skip_truncate)
+{
+--echo #
+--echo # MDEV-21310 AUTO_INCREMENT column throws range error on INSERT in  partitioned table |
+--echo # Assertion `part_share->auto_inc_initialized || !can_use_for_auto_inc_init()' failed.
+--echo #
+# failed: 140: Auto-increment field cannot be used for RANGE or LIST partition
+--error 140
+eval CREATE TABLE t1 (c INT AUTO_INCREMENT KEY) ENGINE=$engine PARTITION BY LIST (c) (PARTITION p1 VALUES IN (1), PARTITION p2 VALUES IN (2));
+#ALTER TABLE t1 TRUNCATE PARTITION p1;
+#INSERT INTO t1 PARTITION (p1) (c) SELECT 1;
+#DROP TABLE t1;
+}
+
+DROP DATABASE partition_auto_increment;
+

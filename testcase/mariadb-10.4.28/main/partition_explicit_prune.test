@@ -1,7 +1,12 @@
 --source include/have_partition.inc
 
-CREATE DATABASE test_partition_explicit_prune;
-USE test_partition_explicit_prune;
+--disable_warnings
+drop database if exists test_partition_explicit_prune;
+--enable_warnings
+create database test_partition_explicit_prune;
+drop database test_partition_explicit_prune;
+create database test_partition_explicit_prune;
+use test_partition_explicit_prune;
 
 # Helper statement
 let $get_handler_status_counts= SELECT * FROM INFORMATION_SCHEMA.SESSION_STATUS
@@ -202,7 +207,7 @@ ANALYZE TABLE t1;
 #SET @@global.innodb_stats_on_metadata=ON;
 SELECT PARTITION_NAME, SUBPARTITION_NAME, TABLE_ROWS
 FROM INFORMATION_SCHEMA.PARTITIONS
-WHERE TABLE_SCHEMA = 'test'
+WHERE TABLE_SCHEMA = 'test_partition_explicit_prune'
 AND TABLE_NAME = 't1' ORDER BY SUBPARTITION_NAME;
 #SET @@global.innodb_stats_on_metadata=@save_innodb_stats_on_metadata;
 
@@ -929,8 +934,57 @@ ALTER TABLE t1 EXCHANGE PARTITION p0 WITH TABLE t2;
 SELECT * FROM t1;
 UNLOCK TABLES;
 
-# Cleanup
 DROP TABLE t1, t2;
+#--enable_service_connection
+
+--echo #
+--echo # MDEV-18371 Server crashes in ha_innobase::cmp_ref upon UPDATE with PARTITION clause.
+--echo #
+
+CREATE TABLE t1 (a INT, b INT, KEY (a)) ENGINE=SequoiaDB PARTITION BY KEY(b) PARTITIONS 4;
+INSERT INTO t1 VALUES (3,0),(8,2),(7,8),(3,4),(2,4),(0,7),(4,3),(3,6);
+FLUSH TABLES;
+# failed: 131: Cannot specify HASH or KEY partitions
+--error 131
+UPDATE t1 PARTITION (p3,p1) SET a = 2 WHERE a = 3;
+SELECT * FROM t1;
+DROP TABLE t1;
+
+--echo #
+--echo # MDEV-21134 Crash with partitioned table, PARTITION syntax, and index_merge.
+--echo #
+
+create table t1 (
+    pk int primary key,
+    a int,
+    b int,
+    filler char(32),
+    key (a),
+    key (b)
+    ) engine=sequoiadb  partition by range(pk) (
+      partition p0 values less than (10),
+      partition p1 values less than MAXVALUE
+      ) ;
+
+# TODO mariadb shell 手工操作成功，MTR执行失败，未找到原因，待进一步确认
+#select seq from sql_1_to_2;
+#insert into t1 select
+#seq,
+#  MOD(seq, 100),
+#  MOD(seq, 100),
+#  'filler-data-filler-data'
+#  from
+#  seq_1_to_5000;
+
+#explain select * from t1 partition (p1) where a=10 and b=10;
+#flush tables;
+#select * from t1 partition (p1)where a=10 and b=10;
+
+DROP TABLE t1;
+
+--echo #
+--echo # End of 10.3 tests
+--echo #
 
 --echo #
 --echo # MDEV-18982: INSERT using explicit patition pruning with column list

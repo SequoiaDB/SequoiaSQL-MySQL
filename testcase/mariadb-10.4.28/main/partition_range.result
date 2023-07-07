@@ -1,4 +1,7 @@
 drop table if exists t1, t2;
+create table t1(a int);
+create table t2 like t1;
+drop table t1, t2;
 create table t1 (a DATETIME)
 partition by range (TO_DAYS(a))
 subpartition by hash(to_seconds(a))
@@ -645,4 +648,75 @@ FLUSH status;
 SELECT a, MAX(b) FROM t2 WHERE a IN (10, 100) GROUP BY a;
 a	MAX(b)
 10	10
+#
+# MDEV-18501 Partition pruning doesn't work for historical queries
+#
+set time_zone= '+00:00';
+create or replace table t1 (d datetime(6))
+partition by range (unix_timestamp(d)) (
+partition p0 values less than (1),
+partition p1 values less than (maxvalue));
+ERROR HY000: Constant, random or timezone-dependent expressions in (sub)partitioning function are not allowed
+# DECIMAL functions are now allowed, partitioning is done by integer part
+create or replace table t1 (d timestamp(6))
+partition by range (unix_timestamp(d)) (
+partition p0 values less than (946684801),
+partition p1 values less than (maxvalue));
+insert into t1 values
+# go to p0
+('2000-01-01 00:00:00'),
+('2000-01-01 00:00:00.000001'),
+# goes to p1
+('2000-01-01 00:00:01');
+select * from t1 partition (p0);
+d
+2000-01-01 00:00:00.000000
+2000-01-01 00:00:00.000001
+select * from t1 partition (p1);
+d
+2000-01-01 00:00:01.000000
 DROP TABLE t1, t2;
+#
+# MDEV-21195 INSERT chooses wrong partition for RANGE partitioning by DECIMAL column
+#
+create or replace table t (
+d decimal(2,1)) partition by range (d)
+(partition p1 values less than (10));
+insert into t values (9.9);
+create or replace table t (
+d decimal(2,1)) partition by range (d)
+(partition p1 values less than (10),
+partition p2 values less than (20));
+insert into t values (9.9);
+select * from t partition (p1);
+d
+9.9
+select * from t partition (p2);
+d
+create or replace table t (
+d decimal(2,1)) partition by range (d)
+(partition p1 values less than (-3));
+insert into t values (-3.3);
+create or replace table t (
+d decimal(2,1)) partition by range (d+1)
+(partition p1 values less than (10),
+partition p2 values less than (20));
+insert into t values (8.9);
+select * from t partition (p1);
+d
+8.9
+select * from t partition (p2);
+d
+set time_zone='+00:00';
+create or replace table t (
+d timestamp(1)) partition by range (unix_timestamp(d))
+(partition p1 values less than (1577836800),
+partition p2 values less than (2000000000));
+insert into t values (from_unixtime(1577836799.9));
+select * from t partition (p1);
+d
+2019-12-31 23:59:59.9
+select * from t partition (p2);
+d
+set time_zone=default;
+drop table t;

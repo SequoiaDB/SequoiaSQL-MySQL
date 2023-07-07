@@ -1,10 +1,24 @@
-CREATE DATABASE test_partition_error;
-USE test_partition_error;
+drop database if exists test_partition_error;
+create database test_partition_error;
+drop database test_partition_error;
+create database test_partition_error;
+use test_partition_error;
 #
 # Bug#60039: crash when exchanging a partition on
 #            nonpartitioned table with a view
 #
 CREATE TABLE t1 (a int);
+CREATE OR REPLACE VIEW v1 AS SELECT * FROM t1;
+ALTER TABLE t1 EXCHANGE PARTITION p0 WITH TABLE v1;
+ERROR HY000: 'test_partition_error.v1' is not of type 'BASE TABLE'
+DROP VIEW v1;
+DROP TABLE t1;
+#
+# MDEV-28599 EXCHANGE PARTITION on view causes ER_CHECK_NO_SUCH_TABLE instead of ER_WRONG_OBJECT
+#
+CREATE TABLE t1 (a int)
+PARTITION BY HASH (a)
+PARTITIONS 2;
 CREATE OR REPLACE VIEW v1 AS SELECT * FROM t1;
 ALTER TABLE t1 EXCHANGE PARTITION p0 WITH TABLE v1;
 ERROR HY000: 'test_partition_error.v1' is not of type 'BASE TABLE'
@@ -1796,8 +1810,12 @@ SUBPARTITION BY HASH (`a`)
  (SUBPARTITION `p2spFirst` COMMENT = 'SubPartition comment in p2spFirst' ENGINE = SequoiaDB,
   SUBPARTITION `p2spSecond` COMMENT = 'SubPartition comment in p2spSecond' ENGINE = SequoiaDB))
 SELECT PARTITION_NAME, SUBPARTITION_NAME, PARTITION_COMMENT FROM INFORMATION_SCHEMA.PARTITIONS
-WHERE TABLE_NAME = 't1' AND TABLE_SCHEMA = 'partition_error';
+WHERE TABLE_NAME = 't1' AND TABLE_SCHEMA = 'test_partition_error';
 PARTITION_NAME	SUBPARTITION_NAME	PARTITION_COMMENT
+p1	p1spFirst	SubPartition comment in p1spFirst
+p1	p1spSecond	SubPartition comment in p1spSecond
+p2	p2spFirst	SubPartition comment in p2spFirst
+p2	p2spSecond	SubPartition comment in p2spSecond
 DROP TABLE t1;
 CREATE TABLE t1 (a INT)
 PARTITION BY LIST (a)
@@ -1822,8 +1840,12 @@ SUBPARTITION BY HASH (`a`)
  (SUBPARTITION `p2spFirst` COMMENT = 'Comment in p2' ENGINE = SequoiaDB,
   SUBPARTITION `p2spSecond` COMMENT = 'SubPartition comment in p2spSecond' ENGINE = SequoiaDB))
 SELECT PARTITION_NAME, SUBPARTITION_NAME, PARTITION_COMMENT FROM INFORMATION_SCHEMA.PARTITIONS
-WHERE TABLE_NAME = 't1' AND TABLE_SCHEMA = 'partition_error';
+WHERE TABLE_NAME = 't1' AND TABLE_SCHEMA = 'test_partition_error';
 PARTITION_NAME	SUBPARTITION_NAME	PARTITION_COMMENT
+p1	p1spFirst	SubPartition comment in p1spFirst
+p1	p1spSecond	
+p2	p2spFirst	Comment in p2
+p2	p2spSecond	SubPartition comment in p2spSecond
 DROP TABLE t1;
 SET STATEMENT sql_mode = 'NO_ENGINE_SUBSTITUTION' FOR
 CREATE TABLE t1
@@ -1855,8 +1877,12 @@ SUBPARTITION BY HASH (`a`)
  (SUBPARTITION `pMaxsp0` COMMENT = 'This is a long comment (2050 ascii characters)   50 pMax partition comment .80-!.................. 100 ................................................................................................ 200....................................................................................................................................................................................................................................................................................................... 500 ............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... 1000 ..............1024-|' ENGINE = SequoiaDB,
   SUBPARTITION `pMaxsp1` COMMENT = 'This is a long comment (2050 ascii characters)   50 pMax partition comment .80-!.................. 100 ................................................................................................ 200....................................................................................................................................................................................................................................................................................................... 500 ............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... 1000 ..............1024-|' ENGINE = SequoiaDB))
 SELECT PARTITION_NAME, SUBPARTITION_NAME, PARTITION_COMMENT FROM INFORMATION_SCHEMA.PARTITIONS
-WHERE TABLE_NAME = 't1' AND TABLE_SCHEMA = 'partition_error';
+WHERE TABLE_NAME = 't1' AND TABLE_SCHEMA = 'test_partition_error';
 PARTITION_NAME	SUBPARTITION_NAME	PARTITION_COMMENT
+pUpTo10	p-10sp0	This is a long comment (2050 ascii characters)   50 pUpTo10 partition ......80-!
+pUpTo10	p-10sp1	This is a long comment (2050 ascii characters)   50 pUpTo10 partition ......80-!
+pMax	pMaxsp0	This is a long comment (2050 ascii characters)   50 pMax partition comment .80-!
+pMax	pMaxsp1	This is a long comment (2050 ascii characters)   50 pMax partition comment .80-!
 DROP TABLE t1;
 CREATE OR REPLACE TABLE t1 (
 pk INT PRIMARY KEY,
