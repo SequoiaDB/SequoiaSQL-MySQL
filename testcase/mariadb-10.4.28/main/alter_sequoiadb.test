@@ -694,11 +694,11 @@ ALTER TABLE t1 ADD(col2 DATE DEFAULT 0), algorithm = inplace;
 --error 1067
 ALTER TABLE t1 ADD(col3 TIMESTAMP DEFAULT 0), algorithm = inplace;
 # InnoDB will return success
-#--error 1292
+--error 1292
 ALTER TABLE t1 ADD(col1 DATETIME NOT NULL), algorithm = inplace;
-#--error 1292
+--error 1292
 ALTER TABLE t1 ADD(col2 DATETIME NOT NULL), algorithm = inplace;
-#--error 1292
+--error 1292
 ALTER TABLE t1 ADD(col3 DATETIME NOT NULL), algorithm = inplace;
 show create table t1;
 select * from t1 order by id;

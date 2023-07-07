@@ -1459,29 +1459,29 @@ ERROR 42000: Invalid default value for 'col2'
 ALTER TABLE t1 ADD(col3 TIMESTAMP DEFAULT 0), algorithm = inplace;
 ERROR 42000: Invalid default value for 'col3'
 ALTER TABLE t1 ADD(col1 DATETIME NOT NULL), algorithm = inplace;
+ERROR 22007: Incorrect datetime value: '0000-00-00 00:00:00' for column `test_alter`.`t1`.`col1` at row 1
 ALTER TABLE t1 ADD(col2 DATETIME NOT NULL), algorithm = inplace;
+ERROR 22007: Incorrect datetime value: '0000-00-00 00:00:00' for column `test_alter`.`t1`.`col2` at row 1
 ALTER TABLE t1 ADD(col3 DATETIME NOT NULL), algorithm = inplace;
+ERROR 22007: Incorrect datetime value: '0000-00-00 00:00:00' for column `test_alter`.`t1`.`col3` at row 1
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `col1` datetime NOT NULL,
-  `col2` datetime NOT NULL,
-  `col3` datetime NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
 select * from t1 order by id;
-id	col1	col2	col3
-1	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-2	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-3	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-4	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-5	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-6	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-7	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-8	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-9	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
-10	0000-00-00 00:00:00	0000-00-00 00:00:00	0000-00-00 00:00:00
+id
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
 drop table t1;
 set sql_mode = default;
 create table t1(id int KEY, col1 int);

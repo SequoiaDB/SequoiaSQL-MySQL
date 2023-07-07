@@ -1594,6 +1594,43 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
           rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
           goto error;
         }
+
+        // No default value was provided for a DATE/DATETIME field, the
+        // current sql_mode doesn't allow the '0000-00-00' value and
+        // the table to be altered isn't empty. Report error here.
+        if (is_temporal_type_with_date(new_field->type()) &&
+            is_strict_mode(sql_mode) && (sql_mode & MODE_NO_ZERO_DATE) &&
+            !new_field->default_value &&
+            !(~new_field->flags & (NO_DEFAULT_VALUE_FLAG | NOT_NULL_FLAG))) {
+          Sdb_cl cl;
+          longlong count = 0;
+          rc = conn->get_cl(db_name, table_name, cl, ha_is_open(),
+                            &tbl_ctx_impl);
+          if (0 != rc) {
+            SDB_LOG_ERROR("Collection[%s.%s] is not available, rc: %d", db_name,
+                          table_name, rc);
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          }
+
+          // Check if table is empty, report error if table is not empty
+          rc = cl.get_count(count);
+          if (0 != rc) {
+            SDB_LOG_ERROR("Failed to get count from collection [%s.%s], rc: %d",
+                          db_name, table_name, rc);
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          }
+
+          if (count) {
+            SDB_LOG_INFO(
+                "Collection [%s.%s] is not empty, default zero value"
+                "is not allowed on 'DATE/DATETIME' column",
+                db_name, table_name, rc);
+            rs = HA_ALTER_ERROR;
+            goto error;
+          }
+        }
 #endif
         // Avoid DEFAULT CURRENT_TIMESTAMP
         if (sdb_is_current_timestamp(new_field)) {
