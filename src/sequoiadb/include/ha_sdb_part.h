@@ -72,7 +72,7 @@ class ha_sdb_part : public ha_sdb
 
   int vers_set_hist_part(THD* thd, Vers_part_info* vers_info);
 
-  void vers_check_limit(THD *thd, Vers_part_info *vers_info);
+  void vers_check_limit(THD* thd, Vers_part_info* vers_info);
 #endif
 
   // ulonglong table_flags() const {

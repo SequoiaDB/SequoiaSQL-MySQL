@@ -3989,6 +3989,10 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
     // Nothing to check for hash partition.
     goto done;
   }
+  if (VERSIONING_PARTITION == m_part_info->part_type) {
+    // Nothing to check for versioning partition.
+    goto done;
+  }
 
   // Can't explicitly specify sub partition.
   if (m_part_info->is_sub_partitioned()) {

@@ -1679,7 +1679,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
 
 #ifdef IS_MARIADB
   if (table->versioned()) {
-    if(TABLE_TYPE_UNDEFINE == share->table_type) {
+    if (TABLE_TYPE_UNDEFINE == share->table_type) {
       bson::BSONObj obj;
       bson::BSONObj select;
       bson::BSONObjBuilder con_builder(96);
