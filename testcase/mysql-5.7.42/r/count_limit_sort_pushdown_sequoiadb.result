@@ -111,8 +111,8 @@ Note	1003	/* select#1 */ select count(1) AS `count(1)` from `count_limit_sort_pu
 select count(1) from t1 where col1>=1;
 count(1)
 9
-[Note] SequoiaDB: optimizer selector object: { "_id": null, "col1": null }, table: count_limit_sort_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb.t1]
 explain  select * from t1 where col1>=1 limit 2,3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -231,7 +231,7 @@ Note	1003	/* select#1 */ select count(1) AS `count(1)` from `count_limit_sort_pu
 select count(1) from t1 where col3>="20221115114210" group by col3 limit 1,1;
 count(1)
 3
-[Note] SequoiaDB: optimizer selector object: { "_id": null, "col3": null }, table: count_limit_sort_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{ "_id": null, "col3": null }], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb.t1]
 explain  select count(1) from t1 where col4>"bcd" group by col3 order by col3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -264,8 +264,8 @@ Note	1003	/* select#1 */ select count(1) AS `count(1)` from `count_limit_sort_pu
 select count(1) from t1 where col2>="def" limit 1;
 count(1)
 6
-[Note] SequoiaDB: optimizer selector object: { "_id": null, "col2": null }, table: count_limit_sort_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gte": "def" } }, table: count_limit_sort_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gte": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb.t1]
 explain  select count(1) from t1 where col2>="bcd" order by col4 desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -275,8 +275,8 @@ Note	1003	/* select#1 */ select count(1) AS `count(1)` from `count_limit_sort_pu
 select count(1) from t1 where col2>="bcd" order by col4 desc;
 count(1)
 6
-[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gte": "bcd" } }, table: count_limit_sort_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gte": "bcd" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb.t1]
 explain  select count(1) from t1 where col3>="20221115114210" order by col4 limit 1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -286,8 +286,8 @@ Note	1003	/* select#1 */ select count(1) AS `count(1)` from `count_limit_sort_pu
 select count(1) from t1 where col3>="20221115114210" order by col4 limit 1;
 count(1)
 4
-[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb.t1]
 explain (select count(1) from t1 where col1>1) union ALL (select count(1) from t2 where col4<"zzz") limit 1,1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -5377,7 +5377,7 @@ col1
 1
 2
 3
-[Note] SequoiaDB: optimizer pushdown autocommit: 1
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col1": -1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb.t1]
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "def" } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb.t1]
 drop database if exists count_limit_sort_pushdown_sequoiadb;

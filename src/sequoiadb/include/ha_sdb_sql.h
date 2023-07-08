@@ -365,11 +365,15 @@ bool sdb_calc_found_rows(JOIN *join);
 
 bool sdb_use_filesort(JOIN *join);
 
+bool sdb_use_filesort_with_rowid(TABLE *table);
+
 bool sdb_use_JT_REF_OR_NULL(JOIN *join, const TABLE *table);
 
 bool sdb_use_window_func(SELECT_LEX *select_lex);
 
 sdb_join_type sdb_get_join_type(JOIN *join);
+
+sdb_join_type sdb_get_join_type(TABLE *table);
 
 void sdb_clear_const_keys(JOIN *join);
 
@@ -562,5 +566,7 @@ bool is_slow_log_on();
 bool is_general_log_on();
 
 my_thread_id sdb_thread_id(THD *thd);
+
+bool sdb_is_tables_optimized_away(JOIN *join);
 
 #endif

@@ -513,7 +513,7 @@ class ha_sdb : public handler {
 
   int external_lock(THD *thd, int lock_type);
 
-  bool pushdown_autocommit();
+  bool pushdown_autocommit(bool direct_op);
 
   int autocommit_statement(bool direct_op = false);
 
@@ -821,6 +821,8 @@ class ha_sdb : public handler {
       ha_sdb_alter_ctx *ctx);
 
   bool is_in_one_query_for_cur_select();
+
+  bool is_join_type_in_one_query(sdb_join_type type);
 
   bool check_if_supported_direct_sort(st_order *sort);
 

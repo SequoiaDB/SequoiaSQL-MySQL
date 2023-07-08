@@ -399,6 +399,17 @@ done:
   return use_filesort;
 }
 
+bool sdb_use_filesort_with_rowid(TABLE *table) {
+  bool rs = false;
+  if (table && table->reginfo.qep_tab) {
+    QEP_TAB *tab = table->reginfo.qep_tab;
+    if (tab && tab->filesort) {
+      rs = tab->filesort->addon_fields ? false : true;
+    }
+  }
+  return rs;
+}
+
 bool sdb_use_JT_REF_OR_NULL(JOIN *join, const TABLE *table) {
   if (!join) {
     return false;
@@ -421,32 +432,9 @@ bool sdb_use_window_func(SELECT_LEX *select_lex) {
   return false;
 }
 
-sdb_join_type sdb_get_join_type(JOIN *join) {
+static sdb_join_type sdb_get_join_type(QEP_TAB *tab) {
   sdb_join_type type = SDB_JOIN_UNKNOWN;
-  QEP_TAB *tab = NULL;
   QUICK_SELECT_I *quick = NULL;
-
-  if (!join) {
-    goto error; /* purecov: inspected */
-  }
-  if (!join->qep_tab) {
-    goto error;
-  }
-
-  DBUG_ASSERT(1 == join->primary_tables);
-  for (uint i = 0; i < join->tables; ++i) {
-    QEP_TAB *qep_tab = join->qep_tab + i;
-    if (INTERNAL_TMP_TABLE == qep_tab->table()->s->tmp_table) {
-      DBUG_ASSERT(FALSE);
-      continue;
-    }
-    tab = qep_tab;
-    break;
-  }
-  if (!tab) {
-    goto error;
-  }
-
   // Use JT_REF_OR_NULL.
   if (JT_REF_OR_NULL == tab->type()) {
     type = SDB_JOIN_REF_OR_NULL;
@@ -486,7 +474,48 @@ sdb_join_type sdb_get_join_type(JOIN *join) {
       }
     }
   }
+done:
+  return type;
+}
 
+sdb_join_type sdb_get_join_type(JOIN *join) {
+  sdb_join_type type = SDB_JOIN_UNKNOWN;
+  QEP_TAB *tab = NULL;
+
+  if (!join) {
+    goto error; /* purecov: inspected */
+  }
+  if (!join->qep_tab) {
+    goto error;
+  }
+
+  DBUG_ASSERT(1 == join->primary_tables);
+  for (uint i = 0; i < join->tables; ++i) {
+    QEP_TAB *qep_tab = join->qep_tab + i;
+    if (INTERNAL_TMP_TABLE == qep_tab->table()->s->tmp_table) {
+      DBUG_ASSERT(FALSE);
+      continue;
+    }
+    tab = qep_tab;
+    break;
+  }
+  if (!tab) {
+    goto error;
+  }
+
+  type = sdb_get_join_type(tab);
+done:
+  return type;
+error:
+  goto done;
+}
+
+sdb_join_type sdb_get_join_type(TABLE *table) {
+  sdb_join_type type = SDB_JOIN_UNKNOWN;
+  if (!table || !table->reginfo.qep_tab) {
+    goto error;
+  }
+  type = sdb_get_join_type(table->reginfo.qep_tab);
 done:
   return type;
 error:
@@ -1008,7 +1037,11 @@ bool sdb_get_mrr_info(TABLE *table, uint *mrr_flags, uint *n_ranges) {
   }
 
   if (n_ranges) {
-    if (qep_tab->join()->is_executed()) {
+    /*
+      UPDATE / DELETE of single table has no join and the optimization phase
+      is short and simple. So that we take it as runtime phase.
+    */
+    if (!qep_tab->join() || qep_tab->join()->is_executed()) {
       /*
         At runtime phase, ranges_in_seq tells us the range number of chosen
         MRR plan. ranges_in_seq is set at ::multi_range_read_init().
@@ -1048,6 +1081,10 @@ bool is_general_log_on() {
 
 my_thread_id sdb_thread_id(THD *thd) {
   return thd->thread_id();
+}
+
+bool sdb_is_tables_optimized_away(JOIN *join) {
+  return (join && !join->join_tab && !join->qep_tab);
 }
 
 #elif defined IS_MARIADB
@@ -1185,7 +1222,8 @@ int sdb_time_string_to_second(THD *thd, const char *str, time_t &seconds) {
   int error_code = 0;
   struct timeval tm = {0, 0};
 
-  if (str_to_datetime_or_date(str, (uint)strlen(str), &ltime, 0, &status) || status.warnings) {
+  if (str_to_datetime_or_date(str, (uint)strlen(str), &ltime, 0, &status) ||
+      status.warnings) {
     /* purecov: begin tested */
     rc = status.warnings;
     goto error;
@@ -1318,6 +1356,17 @@ done:
   return use_filesort;
 }
 
+bool sdb_use_filesort_with_rowid(TABLE *table) {
+  bool rs = false;
+  if (table && table->reginfo.join_tab) {
+    JOIN_TAB *tab = table->reginfo.join_tab;
+    if (tab && tab->filesort) {
+      rs = (tab->filesort->sort_info->addon_field) ? false : true;
+    }
+  }
+  return rs;
+}
+
 bool sdb_use_JT_REF_OR_NULL(JOIN *join, const TABLE *table) {
   JOIN_TAB *tab = NULL;
   bool join_two_phase_optimization = true;
@@ -1342,33 +1391,10 @@ bool sdb_use_window_func(SELECT_LEX *select_lex) {
   return select_lex->have_window_funcs();
 }
 
-sdb_join_type sdb_get_join_type(JOIN *join) {
+static sdb_join_type sdb_get_join_type(JOIN_TAB *tab) {
   sdb_join_type type = SDB_JOIN_UNKNOWN;
   SQL_SELECT *select = NULL;
   QUICK_SELECT_I *quick = NULL;
-  JOIN_TAB *tab = NULL;
-
-  if (!join) {
-    goto error; /* purecov: inspected */
-  }
-  if (!join->join_tab) {
-    goto error;
-  }
-
-  DBUG_ASSERT(1 == join->exec_join_tab_cnt());
-  for (uint i = 0; i < join->total_join_tab_cnt() + 1; ++i) {
-    JOIN_TAB *join_tab = join->join_tab + i;
-    if (INTERNAL_TMP_TABLE == join_tab->table->s->tmp_table) {
-      DBUG_ASSERT(FALSE);
-      continue;
-    }
-    tab = join_tab;
-    break;
-  }
-  if (!tab) {
-    goto error;
-  }
-
   // Use JT_REF_OR_NULL.
   if (JT_REF_OR_NULL == tab->type) {
     type = SDB_JOIN_REF_OR_NULL;
@@ -1412,6 +1438,48 @@ sdb_join_type sdb_get_join_type(JOIN *join) {
     }
   }
 
+done:
+  return type;
+}
+
+sdb_join_type sdb_get_join_type(JOIN *join) {
+  sdb_join_type type = SDB_JOIN_UNKNOWN;
+  JOIN_TAB *tab = NULL;
+
+  if (!join) {
+    goto error; /* purecov: inspected */
+  }
+  if (!join->join_tab) {
+    goto error;
+  }
+
+  DBUG_ASSERT(1 == join->exec_join_tab_cnt());
+  for (uint i = 0; i < join->total_join_tab_cnt() + 1; ++i) {
+    JOIN_TAB *join_tab = join->join_tab + i;
+    if (INTERNAL_TMP_TABLE == join_tab->table->s->tmp_table) {
+      DBUG_ASSERT(FALSE);
+      continue;
+    }
+    tab = join_tab;
+    break;
+  }
+  if (!tab) {
+    goto error;
+  }
+
+  type = sdb_get_join_type(tab);
+done:
+  return type;
+error:
+  goto done;
+}
+
+sdb_join_type sdb_get_join_type(TABLE *table) {
+  sdb_join_type type = SDB_JOIN_UNKNOWN;
+  if (!table || !table->reginfo.join_tab) {
+    goto error;
+  }
+  type = sdb_get_join_type(table->reginfo.join_tab);
 done:
   return type;
 error:
@@ -1965,7 +2033,12 @@ bool sdb_get_mrr_info(TABLE *table, uint *mrr_flags, uint *n_ranges) {
   }
 
   if (n_ranges) {
-    if (JOIN::OPTIMIZATION_DONE == join_tab->join->optimization_state) {
+    /*
+      UPDATE / DELETE of single table has no join and the optimization phase
+      is short and simple. So that we take it as runtime phase.
+    */
+    if (!join_tab->join ||
+        JOIN::OPTIMIZATION_DONE == join_tab->join->optimization_state) {
       /*
         At runtime phase, ranges_in_seq tells us the range number of chosen
         MRR plan. ranges_in_seq is set at ::multi_range_read_init().
@@ -2012,6 +2085,10 @@ bool is_general_log_on() {
 
 my_thread_id sdb_thread_id(THD *thd) {
   return thd->thread_id;
+}
+
+bool sdb_is_tables_optimized_away(JOIN *join) {
+  return (!join->join_tab);
 }
 
 #endif

@@ -194,7 +194,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Warning	1681	'PARTITIONS' is deprecated and will be removed in a future release.
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
-[Note] SequoiaDB: optimizer pushdown autocommit: 1
+[Note] SequoiaDB: Query message: condition[{ "col_int": { "$gt": 1 } }], selector[{}], order_by[{ "col_int": 1 }], hint[{ "": "col_int" }], limit[-1], offset[0], table[explain_direct_sort_29809.t1]
 DROP TABLE t1,t2;
 SET SESSION optimizer_switch = 'optimizer_sort_pushdown=OFF';
 CREATE TABLE t1(
@@ -385,7 +385,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Warning	1681	'PARTITIONS' is deprecated and will be removed in a future release.
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` where (`explain_direct_sort_29809`.`t1`.`col_int` > 1) order by `explain_direct_sort_29809`.`t1`.`col_int`
-[Note] SequoiaDB: optimizer pushdown autocommit: 1
+[Note] SequoiaDB: Query message: condition[{ "col_int": { "$gt": 1 } }], selector[{}], order_by[{ "col_int": 1 }], hint[{}], limit[-1], offset[0], table[explain_direct_sort_29809.t1]
 DROP TABLE t1,t2;
 DROP DATABASE explain_direct_sort_29809;
 SET SESSION optimizer_switch = 'optimizer_sort_pushdown=default';

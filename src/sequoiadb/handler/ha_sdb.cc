@@ -3407,12 +3407,16 @@ error:
 int ha_sdb::write_row(uchar *buf) {
   int rc = 0;
   THD *thd = ha_thd();
+  DBUG_ASSERT(thd != NULL);
   bson::BSONObjBuilder modify_builder;
   bson::BSONObj obj;
   bson::BSONObj tmp_obj;
   ulonglong auto_inc = 0;
   bool auto_inc_explicit_used = false;
   const Discrete_interval *forced = NULL;
+  int command = thd_sql_command(thd);
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  DBUG_ASSERT(thd_sdb != NULL);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
@@ -3455,10 +3459,8 @@ int ha_sdb::write_row(uchar *buf) {
   }
 
 #ifdef IS_MARIADB
-  if (SQLCOM_UPDATE == thd_sql_command(thd) ||
-      SQLCOM_UPDATE_MULTI == thd_sql_command(thd) ||
-      SQLCOM_DELETE == thd_sql_command(thd) ||
-      SQLCOM_DELETE_MULTI == thd_sql_command(thd)) {
+  if (SQLCOM_UPDATE == command || SQLCOM_UPDATE_MULTI == command ||
+      SQLCOM_DELETE == command || SQLCOM_DELETE_MULTI == command) {
     if (table->versioned() && table->s->period.constr_name.str) {
       // scenarios dealing with bistemporal tables.
       if (table->vers_end_field()->is_max()) {
@@ -3492,8 +3494,15 @@ int ha_sdb::write_row(uchar *buf) {
     need to use thd_sdb->records to save the exactly total rows of bulk
     insert.*/
   if (0 == m_bulk_insert_predicted_rows) {
-    Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
     thd_sdb->records++;
+  }
+
+  if ((SQLCOM_INSERT == command || SQLCOM_REPLACE == command) &&
+      thd_sdb->get_auto_commit()) {
+    rc = autocommit_statement();
+    if (rc) {
+      goto error;
+    }
   }
 
   if (m_use_bulk_insert) {
@@ -4307,10 +4316,28 @@ error:
 */
 bool ha_sdb::is_in_one_query_for_cur_select() {
   SELECT_LEX *select_lex = sdb_get_cur_select_by_table(table);
+  JOIN *join = NULL;
+
   if (!select_lex) {
     return false; /* purecov: inspected */
   }
-  sdb_join_type type = sdb_get_join_type(select_lex->join);
+  if (!select_lex->join) {
+    return false; /* purecov: inspected */
+  }
+  join = select_lex->join;
+  if (sdb_is_tables_optimized_away(join)) {
+    // Select tables optimized away. See opt_sum_query().
+    return false;
+  }
+  if (sdb_use_filesort_with_rowid(table)) {
+    // Filesort using <sort_field, rowid> pair. See ::position(), ::rnd_pos()
+    return false;
+  }
+  sdb_join_type type = sdb_get_join_type(join);
+  return is_join_type_in_one_query(type);
+}
+
+bool ha_sdb::is_join_type_in_one_query(sdb_join_type type) {
   switch (type) {
     case SDB_JOIN_UNKNOWN: {
       return true;
@@ -6071,9 +6098,6 @@ done:
              ("optimizer update: %d, rule: %s, condition: %s", optimizer_update,
               rule.toString(false, false).c_str(),
               condition.toString(false, false).c_str()));
-  SDB_LOG_DEBUG("optimizer update: %d, rule: %s, condition: %s, table: %s.%s",
-                optimizer_update, rule.toString(false, false).c_str(),
-                condition.toString(false, false).c_str(), db_name, table_name);
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -6134,9 +6158,6 @@ done:
   DBUG_PRINT("ha_sdb:info",
              ("optimizer delete: %d, condition: %s", optimizer_delete,
               condition.toString(false, false).c_str()));
-  SDB_LOG_DEBUG("optimizer delete: %d, condition: %s, table: %s.%s",
-                optimizer_delete, condition.toString(false, false).c_str(),
-                db_name, table_name);
   DBUG_RETURN(optimizer_delete);
 }
 
@@ -6381,6 +6402,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   bool read_one_record = false;
   bson::BSONObj result;
   THD *thd = ha_thd();
+  DBUG_ASSERT(NULL != thd);
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   DBUG_ASSERT(NULL != thd_sdb);
 
@@ -6397,6 +6419,12 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
         !table->const_table && select_lex && select_lex->join) {
       rc = optimize_count(condition, read_one_record);
       if (SDB_ERR_OK == rc && count_query) {
+        if (thd_sdb->get_auto_commit()) {
+          rc = autocommit_statement(true);
+          if (rc) {
+            goto error;
+          }
+        }
         rc = collection->get_count(total_count, condition, hint);
         if (rc) {
           SDB_LOG_ERROR("Failed to get count on table:%s.%s. rc: %d", db_name,
@@ -6432,31 +6460,42 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   }
 
   if (thd_sql_command(thd) == SQLCOM_DELETE &&
-      (sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_DELETE) &&
-      optimize_delete(condition)) {
+      (sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_DELETE)) {
+    bool optimizer_delete = optimize_delete(condition);
+    if (optimizer_delete && thd_sdb->get_auto_commit()) {
+      rc = autocommit_statement(true);
+      if (rc) {
+        goto error;
+      }
+    }
+    SDB_LOG_DEBUG("optimizer delete: %d, condition: %s, table: %s.%s",
+                  optimizer_delete, condition.toString(false, false).c_str(),
+                  db_name, table_name);
+    if (optimizer_delete) {
 #ifdef IS_MARIADB
-    SELECT_LEX *select_lex = thd->lex->first_select_lex();
-    bool with_select = !select_lex->item_list.is_empty();
-    if (with_select) {
-      delete_with_select = true;
+      SELECT_LEX *select_lex = thd->lex->first_select_lex();
+      bool with_select = !select_lex->item_list.is_empty();
+      if (with_select) {
+        delete_with_select = true;
+        goto done;
+      }
+#endif
+      first_read = false;
+      rc = collection->del(condition, hint, FLG_DELETE_RETURNNUM, &result);
+      if (!rc) {
+        rc = HA_ERR_END_OF_FILE;
+      }
+
+      get_deleted_rows(result, &thd_sdb->deleted);
+      if (thd_sdb->deleted) {
+        stats.records -= thd_sdb->deleted;
+        update_incr_stat(-thd_sdb->deleted);
+      }
+
+      table->status = STATUS_NOT_FOUND;
+      direct_op = true;
       goto done;
     }
-#endif
-    first_read = false;
-    rc = collection->del(condition, hint, FLG_DELETE_RETURNNUM, &result);
-    if (!rc) {
-      rc = HA_ERR_END_OF_FILE;
-    }
-
-    get_deleted_rows(result, &thd_sdb->deleted);
-    if (thd_sdb->deleted) {
-      stats.records -= thd_sdb->deleted;
-      update_incr_stat(-thd_sdb->deleted);
-    }
-
-    table->status = STATUS_NOT_FOUND;
-    direct_op = true;
-    goto done;
   }
 
   if (thd_sql_command(thd) == SQLCOM_UPDATE &&
@@ -6468,7 +6507,18 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       rc = rc < 0 ? HA_ERR_END_OF_FILE : rc;
       goto error;
     }
-    if (optimizer_update && !rule.isEmpty()) {
+    if (optimizer_update && thd_sdb->get_auto_commit()) {
+      rc = autocommit_statement(true);
+      if (rc) {
+        goto error;
+      }
+    }
+    SDB_LOG_DEBUG("optimizer update: %d, rule: %s, condition: %s, table: %s.%s",
+                  optimizer_update, rule.toString(false, false).c_str(),
+                  condition.toString(false, false).c_str(), db_name,
+                  table_name);
+    if (optimizer_update) {
+      DBUG_ASSERT(!rule.isEmpty());
       first_read = false;
       rc = collection->update(rule, condition, hint,
                               UPDATE_KEEP_SHARDINGKEY | UPDATE_RETURNNUM,
@@ -7002,8 +7052,10 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   bool use_multi_down = false;  // Mark whether conditions are batched down
   int flag = 0;
   THD *thd = ha_thd();
+  DBUG_ASSERT(thd != NULL);
   KEY *key_info = table->key_info + active_index;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  const int command = thd_sql_command(thd);
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(thd));
@@ -7080,10 +7132,10 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
-  if ((thd_sql_command(thd) == SQLCOM_UPDATE ||
-       thd_sql_command(thd) == SQLCOM_DELETE) &&
-      thd_sdb->get_auto_commit()) {
-    rc = autocommit_statement(direct_op);
+  if ((SQLCOM_SELECT == command || SQLCOM_UPDATE == command ||
+       SQLCOM_DELETE == command) &&
+      !direct_op && thd_sdb->get_auto_commit()) {
+    rc = autocommit_statement();
     if (rc) {
       goto error;
     }
@@ -7625,7 +7677,9 @@ int ha_sdb::rnd_next(uchar *buf) {
   ha_rows num_to_return = -1;
   bool direct_op = false;
   THD *thd = ha_thd();
+  DBUG_ASSERT(thd != NULL);
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  const int command = thd_sql_command(thd);
 
   try {
     bson::BSONObj rule;
@@ -7765,10 +7819,10 @@ int ha_sdb::rnd_next(uchar *buf) {
           goto error;
         }
 
-        if ((thd_sql_command(thd) == SQLCOM_UPDATE ||
-             thd_sql_command(thd) == SQLCOM_DELETE) &&
-            thd_sdb->get_auto_commit()) {
-          rc = autocommit_statement(direct_op);
+        if ((SQLCOM_SELECT == command || SQLCOM_UPDATE == command ||
+             SQLCOM_DELETE == command) &&
+            !direct_op && thd_sdb->get_auto_commit()) {
+          rc = autocommit_statement();
           if (rc) {
             goto error;
           }
@@ -9216,7 +9270,7 @@ error:
    SQLCOM_LOAD/SQLCOM_INSERT_SELECT/SQLCOM_REPLACE_SELECT/SQLCOM_UPDATE/
    SQLCOM_DELET/SQLCOM_UPDATE_MULTI/SQLCOM_DELETE_MULTI
 */
-bool ha_sdb::pushdown_autocommit() {
+bool ha_sdb::pushdown_autocommit(bool direct_op) {
   int rc = 0;
   int flag = 0;
   bool can_push = false;
@@ -9224,18 +9278,30 @@ bool ha_sdb::pushdown_autocommit() {
 
   sql_command = thd_sql_command(ha_thd());
   if (SQLCOM_INSERT == sql_command || SQLCOM_REPLACE == sql_command) {
-    if (sdb_is_insert_single_value(ha_thd())) {
+    if (sdb_is_insert_single_value(ha_thd()) &&
+        (!m_insert_with_update || m_direct_dup_update)) {
       can_push = true;
     }
-  }
 
-  if (SQLCOM_SELECT == sql_command) {
+  } else if (SQLCOM_SELECT == sql_command) {
     rc = get_query_flag(sql_command, m_lock_type, flag);
     if (rc != 0) {
       can_push = false;
       goto done;
     }
-    if (!(flag & QUERY_FOR_UPDATE)) {
+    // Not SELECT ... FOR UPDATE neither LOCK IN SHARE MODE.
+    if (!(flag & (~(QUERY_WITH_RETURNDATA | QUERY_FORCE_HINT))) &&
+        is_in_one_query_for_cur_select()) {
+      can_push = true;
+    }
+
+  } else if (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command) {
+    if (!direct_op) {
+      can_push = false;
+      goto done;
+    }
+    sdb_join_type type = sdb_get_join_type(table);
+    if (is_join_type_in_one_query(type)) {
       can_push = true;
     }
   }
@@ -9247,6 +9313,7 @@ done:
 int ha_sdb::autocommit_statement(bool direct_op) {
   int rc = 0;
   Sdb_conn *conn = NULL;
+  THD *thd = ha_thd();
 
   rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (0 != rc) {
@@ -9255,8 +9322,15 @@ int ha_sdb::autocommit_statement(bool direct_op) {
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   if (!conn->is_transaction_on()) {
-    if (sdb_is_single_table(ha_thd()) && !table->triggers &&
-        (direct_op || pushdown_autocommit())) {
+    if (sdb_is_single_table(thd) && !table->triggers &&
+        thd->lex && !thd->lex->sphead && thd->lex->is_single_level_stmt() &&
+        pushdown_autocommit(direct_op)) {
+      // Use assert to ensure that 1 SQL corresponds 1 JSON API request.
+      Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+      DBUG_ASSERT(thd_sdb != NULL);
+      DBUG_ASSERT(thd_sdb->last_autocommit_query_id != thd->query_id);
+      thd_sdb->last_autocommit_query_id = thd->query_id;
+
       conn->set_pushed_autocommit();
       SDB_LOG_DEBUG("optimizer pushdown autocommit: %d",
                     conn->get_pushed_autocommit());
@@ -9305,6 +9379,7 @@ done:
 int ha_sdb::start_statement(THD *thd, uint table_count) {
   DBUG_ENTER("ha_sdb::start_statement()");
   int rc = 0;
+  DBUG_ASSERT(thd != NULL);
 
   sdb_add_pfs_clientinfo(thd);
 
@@ -9337,6 +9412,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
     thd_sdb = thd_get_thd_sdb(thd);
+    DBUG_ASSERT(thd_sdb != NULL);
     // in non-transaction mode, do not exec commit or rollback.
     if (!sdb_use_transaction(thd)) {
       thd_sdb->set_auto_commit(false);
@@ -9371,13 +9447,14 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     } else {
       // autocommit
       thd_sdb->set_auto_commit(true);
-      /* In order to pushdown autocommit when do UPDATE/DELETE ops, we do not
-         start the autocommit transaction until to the first query. Because we
-         can only know whether should pushdown autocommit or not until to the
-         first query.*/
+      /* In order to pushdown autocommit when do UPDATE/DELETE/SELECT/INSERT
+         ops, we do not start the autocommit transaction until to the first
+         query. Because we can only know whether should pushdown autocommit or
+         not until to the first query.*/
       if (!conn->is_transaction_on()) {
-        if (thd_sql_command(ha_thd()) == SQLCOM_DELETE ||
-            thd_sql_command(ha_thd()) == SQLCOM_UPDATE) {
+        const int command = thd_sql_command(thd);
+        if (SQLCOM_SELECT == command || SQLCOM_DELETE == command ||
+            SQLCOM_UPDATE == command || SQLCOM_INSERT == command) {
           trans_register_ha(thd, FALSE, ht, NULL);
           goto done;
         }

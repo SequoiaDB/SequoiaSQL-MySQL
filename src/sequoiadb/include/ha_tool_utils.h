@@ -76,8 +76,7 @@ typedef unsigned char uchar;
   "Print instance group user name and instance group key"
 #define HA_TOOL_HELP_DATA_GROUP \
   "The default SequoiaDB replication group for data storage, default: \"\""
-#define HA_TOOL_HELP_DOMAIN \
-  "The domain for 'HA' tables, default: \"\""
+#define HA_TOOL_HELP_DOMAIN "The domain for 'HA' tables, default: \"\""
 
 // struct corresponding to 'HAInstGroupConfig' table
 typedef struct st_inst_group_config {

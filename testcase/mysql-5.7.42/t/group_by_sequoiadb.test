@@ -42,7 +42,8 @@ WHERE
     col_int_key = 5 OR col_int_key IS NULL
 GROUP BY col_int;
 
---source include/query_pushdown_condition_sequoiadb_3.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/   /\"Source\": \"MySQL:.*:[0-9]*:[0-9]*\", //
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
 
 drop database group_by_sequoiadb;
 

@@ -68,6 +68,7 @@ class Thd_sdb {
   query_id_t unexpected_id_err_query_id;
   bool insert_on_duplicate;
   bool replace_into;
+  query_id_t last_autocommit_query_id;
 
   // store stats info for each open table share
   // update stats of m_share after transaction commit

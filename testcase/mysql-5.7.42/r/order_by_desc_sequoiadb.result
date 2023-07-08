@@ -110,7 +110,7 @@ NULL
 NULL
 NULL
 NULL
-[Note] SequoiaDB: optimizer selector object: { "col_date": null, "col_int": null }, table: order_by_desc_sequoiadb.reverse_order_sequoiadb
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$gte": {"$date": "2000-01-14"} } }, { "col_date": { "$lte": {"$date": "2005-01-14"} } } ] }], selector[{ "col_date": null, "col_int": null }], order_by[{ "col_int": -1 }], hint[{ "": "dvi1" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT *  FROM reverse_order_sequoiadb WHERE col_date='2005-02-05' and col_int=-657588224  order by col_date desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -332,7 +332,7 @@ NULL	2000-03-01	NULL
 NULL	NULL	NULL
 NULL	NULL	NULL
 NULL	NULL	NULL
-[Note] SequoiaDB: optimizer selector object: { "col_date": null, "col_varchar_16": null, "col_int": null }, table: order_by_desc_sequoiadb.reverse_order_sequoiadb
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int": { "$gt": 3 } }, { "col_int": { "$gt": 2 } }, { "col_int": { "$gt": 1 } } ] }], selector[{ "col_date": null, "col_varchar_16": null, "col_int": null }], order_by[{ "col_varchar_16": -1, "col_date": -1 }], hint[{ "": "ivd" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 FROM `reverse_order_sequoiadb` WHERE col_int > 8 AND col_int != 8 AND col_date >= '2000-04-07' ORDER BY field1 DESC, field2 DESC, field3 DESC;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra

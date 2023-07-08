@@ -798,6 +798,7 @@ Thd_sdb::Thd_sdb(THD *thd)
   insert_on_duplicate = false;
   cl_copyer = NULL;
   unexpected_id_err_query_id = 0;
+  last_autocommit_query_id = 0;
 
   // check collection version for HA module
   if (ha_is_open()) {

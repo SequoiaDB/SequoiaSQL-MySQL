@@ -57,7 +57,8 @@ insert into index_merge_sequoiadb_29908(id,uuid,customer_code,create_user_uuid,l
 explain select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 0 ;
 --enable_warnings
 select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 0 ;
---source include/query_pushdown_condition_sequoiadb.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/   /\"Source\": \"MySQL:.*:[0-9]*:[0-9]*\", //
+--exec tail -n 1 $MYSQLTEST_VARDIR/log/mysqld.1.err
 
 --disable_warnings
 explain select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 1 ;
