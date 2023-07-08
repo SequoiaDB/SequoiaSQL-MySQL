@@ -1840,4 +1840,46 @@ create table t1;
 ERROR 42000: A table must have at least 1 column
 create table t1 (i int, j int, key(i)) as select 1 as i, 2 as j;
 drop table t1;
+#
+# End of 10.0 tests
+#
+#
+# End of 10.2 tests
+#
+#
+# MDEV-17544 No warning when trying to name a primary key constraint.
+#
+CREATE TABLE t1 ( id1 INT, id2 INT, CONSTRAINT `foo` PRIMARY KEY (id1), CONSTRAINT `bar` UNIQUE KEY(id2));
+Warnings:
+Warning	1280	Name 'foo' ignored for PRIMARY key.
+DROP TABLE t1;
+#
+# MDEV-30342 Wrong "Truncated incorrect DECIMAL value" warning/error
+#
+create table t1(c1 varchar(1));
+insert into t1(c1) values('#');
+select @@sql_mode like '%strict_all_tables%';
+@@sql_mode like '%strict_all_tables%'
+0
+create table t2 as select if(c1 = '#', c1 = 0, c1) as c1 from t1;
+ERROR 22007: Truncated incorrect DECIMAL value: '#'
+drop table t1;
+#
+# End of 10.3 tests
+#
+#
+# MDEV-21017: Assertion `!is_set() || (m_status == DA_OK_BULK &&
+# is_bulk_op())' failed or late ER_PERIOD_FIELD_WRONG_ATTRIBUTES
+# upon attempt to create existing table
+#
+CREATE TABLE t1 (a INT);
+LOCK TABLE t1 WRITE;
+CREATE TABLE IF NOT EXISTS t1 (s DATE GENERATED ALWAYS AS ('2000-01-01') STORED,
+e DATE, PERIOD FOR app(s,e));
+ERROR HY000: Period field `s` cannot be GENERATED ALWAYS AS
+UNLOCK TABLES;
+DROP TABLE t1;
+#
+# End of 10.4 tests
+#
 DROP DATABASE test_create;

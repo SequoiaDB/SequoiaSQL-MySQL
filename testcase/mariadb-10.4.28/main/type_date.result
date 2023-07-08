@@ -708,11 +708,60 @@ DROP TABLE t2;
 DROP VIEW v1;
 DROP TABLE t1;
 #
-# End of 10.1 tests
+# MDEV-19699 Server crashes in Item_null_result::field_type upon SELECT with ROLLUP on constant table
 #
+CREATE TABLE t1 (d DATE) ENGINE=SequoiaDB;
+INSERT INTO t1 VALUES ('1999-11-04');
+SELECT d FROM t1 GROUP BY d WITH ROLLUP HAVING d > '1990-01-01';
+d
+1999-11-04
+DROP TABLE t1;
 #
-# Start of 10.3 tests
+# MDEV-20431 GREATEST(int_col,date_col) returns wrong results in a view
 #
+CREATE TABLE t1 (pk INT NOT NULL, d DATE NOT NULL);
+CREATE VIEW v1 AS SELECT * FROM t1;
+INSERT INTO t1 VALUES (1,'2018-06-22'),(2,'2018-07-11');
+SELECT GREATEST(pk, d) FROM t1;
+GREATEST(pk, d)
+2018-06-22
+2018-07-11
+Warnings:
+Warning	1292	Incorrect datetime value: '1' for column `test_type_date`.`t1`.`pk` at row 1
+Warning	1292	Incorrect datetime value: '2' for column `test_type_date`.`t1`.`pk` at row 2
+SELECT GREATEST(pk, d) FROM v1;
+GREATEST(pk, d)
+2018-06-22
+2018-07-11
+Warnings:
+Warning	1292	Incorrect datetime value: '1' for column `test_type_date`.`t1`.`pk` at row 1
+Warning	1292	Incorrect datetime value: '2' for column `test_type_date`.`t1`.`pk` at row 2
+DROP VIEW v1;
+DROP TABLE t1;
+#
+# MDEV-21619 Server crash or assertion failures in my_datetime_to_str
+#
+CREATE  TABLE t1 (f DATE, KEY(f));
+INSERT INTO t1 VALUES ('2020-01-01'),('2020-01-02');
+EXPLAIN EXTENDED SELECT * FROM t1 WHERE 1995.0000000 BETWEEN f AND '2012-12-12';
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	index	f	f	4	NULL	2	100.00	Using where; Using index
+Warnings:
+Warning	1292	Truncated incorrect datetime value: '1995.0000000'
+Note	1003	select `test_type_date`.`t1`.`f` AS `f` from `test_type_date`.`t1` where '0000-00-00' between `test_type_date`.`t1`.`f` and <cache>('2012-12-12')
+DROP TABLE t1;
+#
+# MDEV-27072 Subquery using the ALL keyword on date columns produces a wrong result
+#
+CREATE TABLE t1 (d DATE);
+INSERT INTO t1 VALUES ('2021-11-17'), ('2021-10-17'),('2022-11-17'), ('2020-10-17');
+SELECT * FROM t1 WHERE d >= ALL (SELECT * FROM t1);
+d
+2022-11-17
+SELECT * FROM t1 WHERE d <= ALL (SELECT * FROM t1);
+d
+2020-10-17
+DROP TABLE t1;
 #
 # End of 10.3 tests
 #
@@ -755,7 +804,81 @@ INSERT INTO t2 VALUES (0);
 INSERT INTO t1 SELECT * FROM t2;
 DROP TABLE t1,t2;
 SET sql_mode=DEFAULT;
+#
+# MDEV-19301 Assertion `!is_valid_datetime() || fraction_remainder(((item->decimals) < (6) ? (item->decimals) : (6))) == 0' failed in Datetime_truncation_not_needed::Datetime_truncation_not_needed
+#
+SELECT NULLIF(CAST(1012.5 AS DATE), 1);
+NULLIF(CAST(1012.5 AS DATE), 1)
+2000-10-12
+Warnings:
+Note	1292	Truncated incorrect date value: '1012.5'
+Warning	1292	Truncated incorrect datetime value: '1'
+Note	1292	Truncated incorrect date value: '1012.5'
+SELECT CAST(1012.5 AS DATE) * 1.0;
+CAST(1012.5 AS DATE) * 1.0
+20001012.0
+Warnings:
+Note	1292	Truncated incorrect date value: '1012.5'
+#
+# MDEV-23351 Rounding functions return wrong data types for DATE input
+#
+CREATE TABLE t1 (a date);
+CREATE TABLE t2 AS SELECT FLOOR(a), CEIL(a),ROUND(a),TRUNCATE(a,0) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `FLOOR(a)` int(8) unsigned DEFAULT NULL,
+  `CEIL(a)` int(8) unsigned DEFAULT NULL,
+  `ROUND(a)` int(8) unsigned DEFAULT NULL,
+  `TRUNCATE(a,0)` int(8) unsigned DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+DROP TABLE t2,t1;
+#
+# MDEV-23388 Assertion `args[0]->decimals == 0' failed in Item_func_round::fix_arg_int
+#
+SELECT ROUND(GREATEST('1', CAST('2020-12-12' AS DATE)));
+ROUND(GREATEST('1', CAST('2020-12-12' AS DATE)))
+20201212
+Warnings:
+Warning	1292	Truncated incorrect datetime value: '1'
+SELECT GREATEST('1', CAST('2020-12-12' AS DATE));
+Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
+def					GREATEST('1', CAST('2020-12-12' AS DATE))	10	10	10	Y	128	0	63
+GREATEST('1', CAST('2020-12-12' AS DATE))
+2020-12-12
+Warnings:
+Warning	1292	Truncated incorrect datetime value: '1'
+CREATE TABLE t1 (c_date DATE NOT NULL, c_int INT NOT NULL);
+CREATE TABLE t2 AS SELECT
+GREATEST(c_date,c_date),
+GREATEST(c_date,c_int),
+GREATEST(c_int,c_date)
+FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `GREATEST(c_date,c_date)` date NOT NULL,
+  `GREATEST(c_date,c_int)` date DEFAULT NULL,
+  `GREATEST(c_int,c_date)` date DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+DROP TABLE t2;
+DROP TABLE t1;
+#
+# MDEV-29890 Update with inner join false row count result
+#
+set sql_mode='NO_ZERO_DATE';
+create table t1 (a1 bigint primary key, a2 date not null, a3 bigint not null);
+create table t2 (b1 bigint primary key);
+insert into t2 (b1) values (1);
+insert into t1 (a1, a2, a3) values (1, current_date, 1),( 2, current_date, 1);
+update t1 inner join t2 on t1.a3 = t2.b1 set t1.a2 = t1.a2 + interval 1 day;
+select row_count();
+row_count()
+2
+set sql_mode='';
+alter table t1 modify a2 date not null default '0000-00-00';
+set sql_mode='NO_ZERO_DATE';
+update t1 inner join t2 on t1.a3 = t2.b1 set t1.a2 = t1.a2 + interval 1 day;
+drop table t1, t2;
+set sql_mode=default;
 DROP DATABASE test_type_date;
-#
-# End of 10.4 tests
-#

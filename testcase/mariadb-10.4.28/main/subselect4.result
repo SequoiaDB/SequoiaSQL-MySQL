@@ -1,5 +1,8 @@
+drop database if exists subselect4_test;
 drop table if exists t0,t1,t2,t3,t4,t5,t6;
 drop view if exists v1, v2;
+create database subselect4_test;
+use subselect4_test;
 set @subselect4_tmp= @@optimizer_switch;
 set optimizer_switch='semijoin=on,firstmatch=on,loosescan=on';
 set optimizer_switch='semijoin_with_cache=on';
@@ -1258,7 +1261,7 @@ FROM t1 AS alias1
 ) IS NOT NULL;
 ERROR 21000: Subquery returns more than 1 row
 DROP TABLE t2;
-ERROR 42S02: Unknown table 'X.t2'
+ERROR 42S02: Unknown table 'subselect4_test.t2'
 DROP TABLE t1;
 #
 # LP BUG#1000649 EXPLAIN shows incorrectly a non-correlated constant IN subquery is correlated
@@ -1580,3 +1583,493 @@ create table t2 as select * from t1;
 # LIMIT+OFFSET prevents the conversion:
 # This will be merged and converted into a semi-join:
 drop table t0, t1, t2;
+#
+# MDEV-17606: Query returns wrong results (while using CHARACTER SET utf8)
+#
+CREATE TABLE t1(l1 varchar(10), i2 int);
+INSERT INTO t1 VALUES ('e',2),('o',6),('x',4);
+CREATE TABLE t2 (v1 varchar(10) CHARACTER SET utf8mb4, KEY v1 (v1(3)));
+INSERT INTO t2 VALUES  ('k'),('rid'),('f'),('x');
+EXPLAIN EXTENDED SELECT * FROM t1 where  ( t1.l1 < ANY (SELECT MAX(t2.v1) FROM t2));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
+2	SUBQUERY	t2	ALL	NULL	NULL	NULL	NULL	4	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t1`.`l1` AS `l1`,`subselect4_test`.`t1`.`i2` AS `i2` from `subselect4_test`.`t1` where <nop>(<in_optimizer>(`subselect4_test`.`t1`.`l1`,<max>(/* select#2 */ select max(`subselect4_test`.`t2`.`v1`) from `subselect4_test`.`t2`) > convert(<cache>(`subselect4_test`.`t1`.`l1`) using utf8mb4)))
+SELECT * FROM t1 where  ( t1.l1 < ANY (SELECT MAX(t2.v1) FROM t2));
+l1	i2
+e	2
+o	6
+DROP TABLE t1, t2;
+#
+# MDEV-9513: Assertion `join->group_list || !join->is_in_subquery()' failed in create_sort_index
+#
+CREATE TABLE t1 (a INT);
+INSERT INTO t1 VALUES (1),(2);
+CREATE TABLE t2 (a INT);
+INSERT INTO t2 VALUES (2),(3);
+SELECT t1.a FROM t1 WHERE t1.a IN ( SELECT A.a FROM t1 A UNION SELECT B.a FROM t2 B ORDER BY 1);
+a
+1
+2
+SELECT t1.a FROM t1 WHERE EXISTS (SELECT A.a FROM t1 A UNION SELECT B.a FROM t2 B ORDER BY 1);
+a
+1
+2
+SELECT t1.a FROM t1 WHERE t1.a IN ( SELECT A.a FROM t1 A UNION ALL SELECT B.a FROM t2 B ORDER BY 1);
+a
+1
+2
+DROP TABLE t1,t2;
+#
+# MDEV-23449: alias do not exist and a query do not report an error
+#
+CREATE TABLE t1(a INT, b INT);
+INSERT INTO t1 VALUES (1,1), (2,2), (3,3), (4,4), (5,5);
+SELECT a, b FROM t1 WHERE a IN (SELECT A.a FROM t1 A GROUP BY s.id);
+ERROR 42S22: Unknown column 's.id' in 'group statement'
+DROP TABLE t1;
+#
+# MDEV-24519: Server crashes in Charset::set_charset upon SELECT
+#
+CREATE TABLE t1 (a VARBINARY(8));
+INSERT INTO t1 VALUES ('foo'),('bar');
+CREATE TABLE t2 (b VARBINARY(8));
+SELECT a FROM t1 WHERE (a, a) IN (SELECT 'qux', 'qux') AND a = (SELECT MIN(b) FROM t2);
+a
+DROP TABLE t1,t2;
+CREATE TABLE t1 (a INT);
+INSERT INTO t1 VALUES (1),(2);
+CREATE TABLE t2 (b VARBINARY(8));
+SELECT a FROM t1 WHERE (a, a) IN (SELECT 1, 2) AND a = (SELECT MIN(b) FROM t2);
+a
+DROP TABLE t1,t2;
+#
+# MDEV-22462: Item_in_subselect::create_single_in_to_exists_cond(JOIN *, Item **, Item **): Assertion `false' failed.
+#
+select 1 from dual where 1 in (select 5 from dual where 1);
+1
+create table t1 (a int);
+insert into t1 values (1),(2),(3);
+update t1 set a = 2 where a in (select a from dual where a = a);
+drop table t1;
+#
+# MDEV-18335: Assertion `!error || error == 137' failed in subselect_rowid_merge_engine::init
+#
+CREATE TABLE t1 (i1 int,v1 varchar(1),KEY (v1,i1));
+INSERT INTO t1 VALUES
+(9,'y'),(4,'q'),(0,null),(0,'p'),(null,'j');
+CREATE TABLE t2 (pk int);
+INSERT INTO t2 VALUES (1),(2);
+CREATE TABLE t3 (v2 varchar(1));
+INSERT INTO t3 VALUES
+('p'),('j'),('y'),('q');
+CREATE TABLE t4 (v2 varchar(1));
+INSERT INTO t4 VALUES
+('a'),('a'),('b'),('b'),('c'),('c'),
+('d'),('d'),('e'),('e'),('f'),('f'),
+('g'),('g'),('h'),('h'),('i'),('i'),
+('j'),('j'),('k'),('k'),('l'),('l'),
+('m'),('m'),('n'),('n'),('o'),('o'),
+('p'),('p'),('q'),('q'),('r'),('r'),
+('s'),('s'),('t'),('t'),('u'),('u'),('v'),('v'),
+('w'),('w'),('x'),('x'), (NULL),(NULL);
+SET @save_join_cache_level=@@join_cache_level;
+SET join_cache_level=0;
+select 1
+from t2 join t1 on
+('i','w') not in (select t1.v1,t4.v2 from t4,t1,t3 where t3.v2 = t1.v1) LIMIT ROWS EXAMINED 500;
+1
+Warnings:
+Warning	1931	Query execution was interrupted. The query examined at least 3020 rows, which exceeds LIMIT ROWS EXAMINED (500). The query result may be incomplete
+SET join_cache_level= @save_join_cache_level;
+DROP TABLE t1,t2,t3,t4;
+#
+# MDEV-21265: IN predicate conversion to IN subquery should be allowed for a broader set of datatype comparison
+#
+CREATE TABLE t1(a VARCHAR(50) collate utf8mb4_bin, b INT);
+INSERT INTO t1 VALUES ('abc',1), ('def', 2), ('ghi', 3), ('jkl', 4), ('mno', 5);
+CREATE TABLE t2(a VARCHAR(50) collate utf8mb4_bin, b INT);
+INSERT INTO t2 VALUES ('abc',1), ('def', 2), ('ghi', 3), ('jkl', 4), ('mno', 5);
+set @save_in_predicate_conversion_threshold= @@in_predicate_conversion_threshold;
+set in_predicate_conversion_threshold=2;
+set names 'utf8mb4';
+#
+# IN predicate to IN subquery is not allowed as materialization is not allowed
+# The character set on the inner side is not equal to or a proper subset of the outer side
+#
+EXPLAIN
+SELECT * FROM t1 WHERE (t1.a,t1.b) IN (('abx',1),('def',2), ('abc', 3));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	5	Using where
+set names 'utf8';
+#
+# IN predicate to IN subquery is performed as materialization is llowed
+# The character set on the inner side is a proper subset of the outer side
+#
+EXPLAIN
+SELECT * FROM t2 WHERE (t2.a,t2.b) IN (('abx',1),('def',2), ('abc', 3));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t2	ALL	NULL	NULL	NULL	NULL	5	Using where
+set names default;
+set @@in_predicate_conversion_threshold= @save_in_predicate_conversion_threshold;
+DROP TABLE t1,t2;
+#
+# MDEV-24925: Server crashes in Item_subselect::init_expr_cache_tracker
+#
+CREATE TABLE t1 (id INT PRIMARY KEY);
+INSERT INTO t1 VALUES (1),(2);
+SELECT
+1 IN (
+SELECT
+(SELECT COUNT(id)
+FROM t1
+WHERE t1_outer.id <> id
+) AS f
+FROM
+t1 AS t1_outer
+GROUP BY f
+);
+1 IN (
+SELECT
+(SELECT COUNT(id)
+FROM t1
+WHERE t1_outer.id <> id
+) AS f
+FROM
+t1 AS t1_outer
+GROUP BY f
+)
+1
+SELECT
+1 IN (
+SELECT
+(SELECT COUNT(id)
+FROM t1
+WHERE t1_outer.id <> id
+) AS f
+FROM
+t1 AS t1_outer
+GROUP BY 1
+);
+1 IN (
+SELECT
+(SELECT COUNT(id)
+FROM t1
+WHERE t1_outer.id <> id
+) AS f
+FROM
+t1 AS t1_outer
+GROUP BY 1
+)
+1
+DROP TABLE t1;
+#
+#  MDEV-24898: Server crashes in st_select_lex::next_select / Item_subselect::is_expensive
+#  (Testcase)
+#
+CREATE TABLE t1 (a INT);
+INSERT INTO t1 VALUES (1),(2);
+CREATE TABLE t2 (b INT);
+INSERT INTO t2 VALUES (3),(4);
+SELECT 1 IN (SELECT (SELECT a FROM t1) AS x FROM t2 GROUP BY x);
+ERROR 21000: Subquery returns more than 1 row
+drop table t1,t2;
+#
+# MDEV-25629: Crash in get_sort_by_table() in subquery with order by having outer ref
+#
+CREATE TABLE t1 (i1 int);
+insert into t1 values (1),(2);
+SELECT 1
+FROM (t1 JOIN t1 AS ref_t1 ON
+(t1.i1 > (SELECT ref_t1.i1 AS c0 FROM t1 b ORDER BY -c0)));
+ERROR 21000: Subquery returns more than 1 row
+DROP TABLE t1;
+#
+# MDEV-22377: Subquery in an UPDATE query uses full scan instead of range
+#
+CREATE TABLE t1 (
+key1 varchar(30) NOT NULL,
+col1 int(11) NOT NULL,
+filler char(100)
+);
+insert into t1 select seq, seq, seq from seq_1_to_100;
+CREATE TABLE t10 (
+key1 varchar(30) NOT NULL,
+col1 int,
+filler char(100),
+PRIMARY KEY (key1)
+);
+insert into t10 select seq, seq, seq from seq_1_to_1000;
+CREATE TABLE t11 (
+key1 varchar(30) NOT NULL,
+filler char(100),
+PRIMARY KEY (key1)
+);
+insert into t11 select seq, seq from seq_1_to_1000;
+set @tmp_os=@@optimizer_switch;
+set optimizer_switch='semijoin=off,materialization=off';
+# Must use range access (not full scan) for table tms:
+explain select * from t1 hist
+WHERE
+key1 IN ('1','2','3','4','5','6','7','8','9','10') AND
+hist.col1 NOT IN (SELECT tn.col1
+FROM t10 tn JOIN t11 tms ON tms.key1 = tn.key1
+WHERE tn.key1 IN ('1','2','3','4','5','6','7','8','9','10')
+);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	hist	ALL	NULL	NULL	NULL	NULL	100	Using where with pushed condition
+2	DEPENDENT SUBQUERY	tms	range	PRIMARY	PRIMARY	32	NULL	10	Using where with pushed condition; Using index
+2	DEPENDENT SUBQUERY	tn	eq_ref	PRIMARY	PRIMARY	32	subselect4_test.tms.key1	1	Using where
+set optimizer_switch=@tmp_os;
+drop table t1, t10, t11;
+#
+# MDEV-28268: Server crashes in Expression_cache_tracker::fetch_current_stats
+#
+CREATE TABLE t1 (a INT, b INT);
+INSERT INTO t1 VALUES (1,2),(3,4);
+ANALYZE FORMAT=JSON
+SELECT DISTINCT
+(SELECT MIN(a) FROM t1 WHERE b <= ANY (SELECT a FROM t1)) AS f
+FROM t1;
+ANALYZE
+{
+  "query_block": {
+    "select_id": 1,
+    "r_loops": 1,
+    "r_total_time_ms": "REPLACED",
+    "duplicate_removal": {
+      "temporary_table": {
+        "table": {
+          "table_name": "t1",
+          "access_type": "ALL",
+          "r_loops": 1,
+          "rows": 2,
+          "r_rows": 2,
+          "r_total_time_ms": "REPLACED",
+          "filtered": 100,
+          "r_filtered": 100
+        },
+        "subqueries": [
+          {
+            "expression_cache": {
+              "state": "disabled",
+              "r_loops": 0,
+              "query_block": {
+                "select_id": 2,
+                "r_loops": 1,
+                "r_total_time_ms": "REPLACED",
+                "table": {
+                  "table_name": "t1",
+                  "access_type": "ALL",
+                  "r_loops": 1,
+                  "rows": 2,
+                  "r_rows": 2,
+                  "r_total_time_ms": "REPLACED",
+                  "filtered": 100,
+                  "r_filtered": 50,
+                  "attached_condition": "<nop>(<in_optimizer>(t1.b,(subquery#3) >= 4))"
+                },
+                "subqueries": [
+                  {
+                    "query_block": {
+                      "select_id": 3,
+                      "r_loops": 1,
+                      "r_total_time_ms": "REPLACED",
+                      "table": {
+                        "table_name": "t1",
+                        "access_type": "ALL",
+                        "r_loops": 1,
+                        "rows": 2,
+                        "r_rows": 2,
+                        "r_total_time_ms": "REPLACED",
+                        "filtered": 100,
+                        "r_filtered": 100
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+DROP TABLE t1;
+# End of 10.2 tests
+#
+# MDEV-29139: Redundannt subquery in GROUP BY clause of ANY/ALL subquery
+#
+create table t1 (a int);
+insert into t1 values (3), (1), (2);
+create table t2 (b int not null);
+insert into t2 values (4), (2);
+create table t3 (c int);
+insert into t3 values (7), (1);
+explain extended select a from t1
+where a >= any (select b from t2 group by (select c from t3 where c = 1));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
+2	SUBQUERY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t1`.`a` AS `a` from `subselect4_test`.`t1` where <nop>(<in_optimizer>(`subselect4_test`.`t1`.`a`,(/* select#2 */ select min(`subselect4_test`.`t2`.`b`) from `subselect4_test`.`t2`) <= <cache>(`subselect4_test`.`t1`.`a`)))
+select a from t1
+where a >= any (select b from t2 group by (select c from t3 where c = 1));
+a
+3
+2
+prepare stmt from "select a from t1
+where a >= any (select b from t2 group by (select c from t3 where c = 1))";
+execute stmt;
+a
+3
+2
+execute stmt;
+a
+3
+2
+deallocate prepare stmt;
+explain extended select a from t1
+where a <= all (select b from t2 group by (select c from t3 where c = 1));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
+2	SUBQUERY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t1`.`a` AS `a` from `subselect4_test`.`t1` where <not>(<in_optimizer>(`subselect4_test`.`t1`.`a`,(/* select#2 */ select min(`subselect4_test`.`t2`.`b`) from `subselect4_test`.`t2`) < <cache>(`subselect4_test`.`t1`.`a`)))
+select a from t1
+where a <= all (select b from t2 group by (select c from t3 where c = 1));
+a
+1
+2
+explain extended select a from t1
+where a >= any (select b from t2 group by 1 + (select c from t3 where c = 1));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
+2	SUBQUERY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t1`.`a` AS `a` from `subselect4_test`.`t1` where <nop>(<in_optimizer>(`subselect4_test`.`t1`.`a`,(/* select#2 */ select min(`subselect4_test`.`t2`.`b`) from `subselect4_test`.`t2`) <= <cache>(`subselect4_test`.`t1`.`a`)))
+select a from t1
+where a >= any (select b from t2 group by 1 + (select c from t3 where c = 1));
+a
+3
+2
+drop table t1,t2,t3;
+#
+# MDEV-29139: Redundant IN/ALL/ANY predicand in GROUP BY clause of
+#             IN/ALL/ANY/EXISTS subquery
+#
+create table t1 (a int);
+create table t2 (b int);
+create table t3 (c int);
+create table t4 (d int);
+insert into t1 values (3), (1);
+insert into t2 values (3), (2);
+insert into t3 values (4), (2);
+insert into t4 values (1), (7);
+explain extended select b from t2
+where exists (select c from t3
+group by (select a from t1 where a = 1) in (select d from t4));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	
+2	SUBQUERY	t3	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t2`.`b` AS `b` from `subselect4_test`.`t2` where 1
+select b from t2
+where exists (select c from t3
+group by (select a from t1 where a = 1) in (select d from t4));
+b
+3
+2
+prepare stmt from "select b from t2
+where exists (select c from t3
+group by (select a from t1 where a = 1) in (select d from t4))";
+execute stmt;
+b
+3
+2
+execute stmt;
+b
+3
+2
+deallocate prepare stmt;
+explain extended select b from t2
+where exists (select c from t3
+group by (select a from t1 where a = 1) >=
+any (select d from t4));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	
+2	SUBQUERY	t3	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t2`.`b` AS `b` from `subselect4_test`.`t2` where 1
+select b from t2
+where exists (select c from t3
+group by (select a from t1 where a = 1) >=
+any (select d from t4));
+b
+3
+2
+explain extended select b from t2
+where exists (select c from t3
+group by (select a from t1 where a = 1) <
+all (select d from t4));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	
+2	SUBQUERY	t3	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t2`.`b` AS `b` from `subselect4_test`.`t2` where 1
+select b from t2
+where exists (select c from t3
+group by (select a from t1 where a = 1) <
+all (select d from t4));
+b
+3
+2
+explain extended select b from t2
+where b in (select c from t3
+group by (select a from t1 where a = 1) in (select d from t4));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	
+1	PRIMARY	<subquery2>	eq_ref	distinct_key	distinct_key	4	func	1	100.00	
+2	MATERIALIZED	t3	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	select `subselect4_test`.`t2`.`b` AS `b` from `subselect4_test`.`t2` semi join (`subselect4_test`.`t3`) where 1
+select b from t2
+where b in (select c from t3
+group by (select a from t1 where a = 1) in (select d from t4));
+b
+2
+explain extended select b from t2
+where b >= any (select c from t3
+group by (select a from t1 where a = 1) in
+(select d from t4));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
+2	SUBQUERY	t3	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t2`.`b` AS `b` from `subselect4_test`.`t2` where <nop>(<in_optimizer>(`subselect4_test`.`t2`.`b`,(/* select#2 */ select min(`subselect4_test`.`t3`.`c`) from `subselect4_test`.`t3`) <= <cache>(`subselect4_test`.`t2`.`b`)))
+select b from t2
+where b >= any (select c from t3
+group by (select a from t1 where a = 1) in
+(select d from t4));
+b
+3
+2
+explain extended select b from t2
+where b <= all (select c from t3
+group by (select a from t1 where a = 1) in
+(select d from t4));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	t2	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
+2	SUBQUERY	t3	ALL	NULL	NULL	NULL	NULL	2	100.00	
+Warnings:
+Note	1003	/* select#1 */ select `subselect4_test`.`t2`.`b` AS `b` from `subselect4_test`.`t2` where <not>(<in_optimizer>(`subselect4_test`.`t2`.`b`,<min>(/* select#2 */ select `subselect4_test`.`t3`.`c` from `subselect4_test`.`t3`) < <cache>(`subselect4_test`.`t2`.`b`)))
+select b from t2
+where b <= all (select c from t3
+group by (select a from t1 where a = 1) in
+(select d from t4));
+b
+2
+drop table t1,t2,t3,t4;
+drop database subselect4_test;

@@ -1138,6 +1138,80 @@ f
 1988-08-26 12:12:12.000
 DROP TABLE t1;
 SET sql_mode=DEFAULT;
+#
+# MDEV-20417 Assertion `(m_ptr == __null) == item->null_value' failed in VDec::VDec(Item*)
+#
+CREATE TABLE t1 (a TIMESTAMP(4), b TIMESTAMP DEFAULT 0) ENGINE=SequoiaDB;
+INSERT IGNORE INTO t1 VALUES ('2001-01-01','2002-01-01'),('2003-01-01','2004-01-01');
+SELECT * FROM t1 WHERE DEFAULT(b) - a;
+a	b
+Warnings:
+Warning	1916	Got overflow when converting '-20010101000000' to UNSIGNED INT. Value truncated
+Warning	1916	Got overflow when converting '-20030101000000' to UNSIGNED INT. Value truncated
+SELECT LEFT('', DEFAULT(b)-a) FROM t1;
+LEFT('', DEFAULT(b)-a)
+
+
+Warnings:
+Warning	1916	Got overflow when converting '-20010101000000' to UNSIGNED INT. Value truncated
+Warning	1916	Got overflow when converting '-20030101000000' to UNSIGNED INT. Value truncated
+DROP TABLE t1;
+CREATE  TABLE t1 (a TIMESTAMP(4), b TIMESTAMP DEFAULT 0) ENGINE=SequoiaDB;
+INSERT IGNORE INTO t1 (a) VALUES ('2001-01-01'),('2003-01-01');
+SELECT * FROM t1 WHERE (SELECT MIN(b) FROM t1) - a;
+a	b
+Warnings:
+Warning	1916	Got overflow when converting '-20010101000000' to UNSIGNED INT. Value truncated
+Warning	1916	Got overflow when converting '-20030101000000' to UNSIGNED INT. Value truncated
+SELECT (SELECT MIN(b) FROM t1) - a FROM t1;
+(SELECT MIN(b) FROM t1) - a
+-20010101000000.0000
+-20030101000000.0000
+DROP TABLE t1;
+#
+# MDEV-22734 Assertion `mon > 0 && mon < 13' failed in sec_since_epoch
+#
+SET time_zone="-02:00";
+CREATE TABLE t1(c TIMESTAMP KEY);
+SELECT * FROM t1 WHERE c='2010-00-01 00:00:00';
+c
+Warnings:
+Warning	1292	Incorrect datetime value: '2010-00-01 00:00:00'
+DROP TABLE t1;
+#
+# MDEV-22854 Garbage returned with SELECT CASE..DEFAULT(timestamp_field_with_now_as_default)
+#
+SET timestamp=UNIX_TIMESTAMP('2001-01-01 10:20:30.456789');
+CREATE TABLE t1 (a TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP);
+INSERT INTO t1 VALUES ('2019-02-23 11:31:04'),('2023-02-09 00:00:00');
+SELECT CASE WHEN a THEN DEFAULT(a) END FROM t1;
+CASE WHEN a THEN DEFAULT(a) END
+2001-01-01 10:20:30.456
+2001-01-01 10:20:30.456
+DROP TABLE t1;
+SET timestamp=DEFAULT;
+#
+# MDEV-27653 long uniques don't work with unicode collations
+#
+CREATE TABLE t1 (a timestamp, UNIQUE KEY(a) USING HASH);
+SET time_zone='+00:00';
+INSERT INTO t1 VALUES ('2001-01-01 10:20:30');
+SET time_zone='+01:00';
+INSERT INTO t1 SELECT MAX(a) FROM t1;
+ERROR 23000: Duplicate entry '{ "a": {"$timestamp": "2001-01-01-18.20.30.000000"} }' for key 'a'
+SELECT * FROM t1;
+a
+2001-01-01 11:20:30
+DROP TABLE t1;
+CREATE TABLE t1 (a timestamp, UNIQUE KEY(a) USING HASH);
+SET time_zone='+00:00';
+INSERT INTO t1 VALUES ('2001-01-01 10:20:30');
+SET time_zone='+01:00';
+CHECK TABLE t1;
+Table	Op	Msg_type	Msg_text
+test_type_timestamp.t1	check	status	OK
+DROP TABLE t1;
+SET time_zone=DEFAULT;
 DROP DATABASE test_type_timestamp;
 #
 # End of 10.4 tests

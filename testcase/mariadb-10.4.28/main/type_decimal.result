@@ -878,6 +878,90 @@ t1	CREATE TABLE `t1` (
 DROP TABLE t1;
 DROP TABLE t1dec102;
 #
+# MDEV-24790 CAST('0e1111111111' AS DECIMAL(38,0)) returns a wrong result
+#
+SELECT CAST('0e111111111' AS DECIMAL(38,0)) AS a;
+a
+0
+SELECT CAST('0e1111111111' AS DECIMAL(38,0)) AS a;
+a
+0
+SELECT CAST('.00000000000000000000000000000000000001e111111111111111111111' AS DECIMAL(38,0)) AS a;
+a
+99999999999999999999999999999999999999
+Warnings:
+Warning	1916	Got overflow when converting '' to DECIMAL. Value truncated
+Warning	1292	Truncated incorrect DECIMAL value: '.00000000000000000000000000000000000001e111111111111111111111'
+Warning	1264	Out of range value for column 'a' at row 1
+CREATE TABLE t1 (str VARCHAR(128), comment VARCHAR(128));
+INSERT INTO t1 VALUES
+('0e111111111111111111111', 'Zero mantissa and a huge positive exponent'),
+('1e111111111111111111111', 'Non-zero mantissa, huge positive exponent'),
+('0e-111111111111111111111', 'Zero mantissa and a huge negative exponent'),
+('1e-111111111111111111111', 'Non-zero mantissa and a huge negative exponent');
+BEGIN NOT ATOMIC
+DECLARE done INT DEFAULT FALSE;
+DECLARE vstr, vcomment VARCHAR(128);
+DECLARE cur1 CURSOR FOR SELECT str, comment FROM t1 ORDER BY str;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+OPEN cur1;
+read_loop:
+LOOP
+FETCH cur1 INTO vstr, vcomment;
+IF done THEN
+LEAVE read_loop;
+END IF;
+SELECT vstr AS `--------`, vcomment AS `--------`;
+SELECT CAST(str AS DECIMAL(38,0)) FROM t1 WHERE str=vstr;
+SHOW WARNINGS;
+SELECT CAST(CONCAT(str,'garbage') AS DECIMAL(38,0)) FROM t1 WHERE str=vstr;
+SHOW WARNINGS;
+END LOOP;
+END;
+$$
+--------	--------
+0e-111111111111111111111	Zero mantissa and a huge negative exponent
+CAST(str AS DECIMAL(38,0))
+0
+Level	Code	Message
+CAST(CONCAT(str,'garbage') AS DECIMAL(38,0))
+0
+Level	Code	Message
+Warning	1292	Truncated incorrect DECIMAL value: '0e-111111111111111111111garbage'
+--------	--------
+0e111111111111111111111	Zero mantissa and a huge positive exponent
+CAST(str AS DECIMAL(38,0))
+0
+Level	Code	Message
+CAST(CONCAT(str,'garbage') AS DECIMAL(38,0))
+0
+Level	Code	Message
+Warning	1292	Truncated incorrect DECIMAL value: '0e111111111111111111111garbage'
+--------	--------
+1e-111111111111111111111	Non-zero mantissa and a huge negative exponent
+CAST(str AS DECIMAL(38,0))
+0
+Level	Code	Message
+CAST(CONCAT(str,'garbage') AS DECIMAL(38,0))
+0
+Level	Code	Message
+Warning	1292	Truncated incorrect DECIMAL value: '1e-111111111111111111111garbage'
+--------	--------
+1e111111111111111111111	Non-zero mantissa, huge positive exponent
+CAST(str AS DECIMAL(38,0))
+99999999999999999999999999999999999999
+Level	Code	Message
+Warning	1916	Got overflow when converting '' to DECIMAL. Value truncated
+Warning	1292	Truncated incorrect DECIMAL value: '1e111111111111111111111'
+Warning	1264	Out of range value for column 'CAST(str AS DECIMAL(38,0))' at row 1
+CAST(CONCAT(str,'garbage') AS DECIMAL(38,0))
+99999999999999999999999999999999999999
+Level	Code	Message
+Warning	1916	Got overflow when converting '' to DECIMAL. Value truncated
+Warning	1292	Truncated incorrect DECIMAL value: '1e111111111111111111111garbage'
+Warning	1264	Out of range value for column 'CAST(CONCAT(str,'garbage') AS DECIMAL(38,0))' at row 1
+DROP TABLE t1;
+#
 # End of 10.2 tests
 #
 #

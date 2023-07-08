@@ -307,6 +307,40 @@ CREATE OR REPLACE TABLE t1 (
 key key1 (next_not_cached_value)
 ) sequence=1;
 ERROR HY000: Sequence 'test_sequence_create.t1' table structure is invalid (Sequence tables cannot have any keys)
+CREATE TABLE t1 (
+`next_not_cached_value` bigint(21) NOT NULL,
+`minimum_value` bigint(21) NOT NULL,
+`maximum_value` bigint(21) NOT NULL,
+`start_value` bigint(21) NOT NULL,
+`increment` bigint(21) NOT NULL,
+`cache_size` bigint(21) unsigned NOT NULL,
+`cycle_option` tinyint(1) unsigned NOT NULL,
+`cycle_count` bigint(21) NOT NULL,
+CHECK (start_value < minimum_value)
+) sequence=1;
+ERROR HY000: Sequence 'test_sequence_create.t1' table structure is invalid (Sequence tables cannot have any constraints)
+CREATE TABLE t1 (
+`next_not_cached_value` bigint(21) NOT NULL,
+`minimum_value` bigint(21) NOT NULL,
+`maximum_value` bigint(21) NOT NULL,
+`start_value` bigint(21) NOT NULL CHECK (start_value < minimum_value),
+`increment` bigint(21) NOT NULL,
+`cache_size` bigint(21) unsigned NOT NULL,
+`cycle_option` tinyint(1) unsigned NOT NULL,
+`cycle_count` bigint(21) NOT NULL
+) sequence=1;
+ERROR HY000: Sequence 'test_sequence_create.t1' table structure is invalid (start_value)
+CREATE TABLE t1 (
+`next_not_cached_value` bigint(21) NOT NULL,
+`minimum_value` bigint(21) NOT NULL,
+`maximum_value` bigint(21) NOT NULL,
+`start_value` bigint(21) NOT NULL,
+`increment` bigint(21) NOT NULL,
+`cache_size` bigint(21) unsigned NOT NULL,
+`cycle_option` tinyint(1) unsigned NOT NULL,
+`cycle_count` bigint(21) generated always as (1) virtual
+) sequence=1;
+ERROR HY000: Sequence 'test_sequence_create.t1' table structure is invalid (cycle_count)
 drop sequence if exists t1;
 Warnings:
 Note	4091	Unknown SEQUENCE: 'test_sequence_create.t1'
@@ -570,4 +604,33 @@ CREATE SEQUENCE seq1 ENGINE=SequoiaDB ROW_FORMAT=REDUNDANT;
 DROP SEQUENCE seq1;
 CREATE TEMPORARY SEQUENCE seq1 ENGINE=SequoiaDB ROW_FORMAT=REDUNDANT;
 DROP TEMPORARY SEQUENCE seq1;
+#
+# Beginning of 10.4 Test
+#
+# MDEV-13005: Fixing bugs in SEQUENCE, part 3
+#
+# Task 1:
+SET @x = PREVIOUS VALUE FOR x;
+ERROR 42S02: Unknown SEQUENCE: 'x'
+# Task 2:
+CREATE SEQUENCE x START WITH 1 INCREMENT BY 123456789012345678;
+ERROR HY000: Sequence 'test_sequence_create.x' has out of range value for options
+# Task 3:
+CREATE SEQUENCE seq1 START WITH 1 cache -1;
+ERROR HY000: Sequence 'test_sequence_create.seq1' has out of range value for options
+# Task 4:
+CREATE TEMPORARY TABLE s1 (s1 INT);
+DROP TEMPORARY SEQUENCE s1;
+ERROR 42S02: 'test_sequence_create.s1' is not a SEQUENCE
+DROP TEMPORARY TABLE s1;
+# Task 5:
+CREATE TEMPORARY TABLE s1 (s1 INT);
+CREATE TEMPORARY SEQUENCE s1 (s1 INT);
+ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '(s1 INT)' at line 1
+DROP TEMPORARY TABLE s1;
+# Task 6:
+CREATE SEQUENCE seq1 START WITH 2;
+CREATE TRIGGER s1 BEFORE UPDATE ON seq1 FOR EACH ROW SET @a= 5;
+ERROR HY000: Trigger's 'seq1' is view, temporary table or sequence
+DROP SEQUENCE seq1;
 DROP DATABASE test_sequence_create;

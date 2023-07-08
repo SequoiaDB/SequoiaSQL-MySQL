@@ -122,6 +122,7 @@ create table t1 (i int, index `` (i));
 # We don't allow creation of non-temporary tables under LOCK TABLES
 # as following meta-data locking protocol in this case can lead to
 # deadlock.
+--disable_service_connection
 create table t1 (i int);
 lock tables t1 read;
 --error ER_TABLE_NOT_LOCKED
@@ -131,6 +132,7 @@ create temporary table t2 (j int);
 drop temporary table t2;
 unlock tables;
 drop table t1;
+--enable_service_connection
 
 #
 # Test of CREATE ... SELECT with indexes
@@ -302,7 +304,7 @@ drop table if exists t2,t1;
 #
 # Test for CREATE TABLE .. LIKE ..
 #
-
+--disable_view_protocol
 create table t1(id int not null, name char(20));
 insert into t1 values(10,'mysql'),(20,'monty- the creator');
 create table t2(id int not null);
@@ -346,6 +348,7 @@ drop table t1, t2, t3;
 drop table t3;
 #drop database mysqltest;
 drop database mysqltest_create;
+--enable_view_protocol
 
 #
 # CREATE TABLE LIKE under LOCK TABLES
@@ -353,6 +356,7 @@ drop database mysqltest_create;
 # Similarly to ordinary CREATE TABLE we don't allow creation of
 # non-temporary tables under LOCK TABLES. Also we require source
 # table to be locked.
+--disable_service_connection
 create table t1 (i int);
 create table t2 (j int);
 lock tables t1 read;
@@ -366,6 +370,7 @@ drop temporary table t3;
 create temporary table t3 like t2;
 unlock tables;
 drop tables t1, t2;
+--enable_service_connection
 
 #
 # Test default table type
@@ -475,6 +480,7 @@ drop table t1, t2, t3;
 # Bug #1209
 #
 
+--disable_service_connection
 #create database mysqltest;
 #use mysqltest;
 #select database();
@@ -502,6 +508,7 @@ connection default;
 disconnect user1;
 drop user mysqltest_create_1;
 use test_create;
+--enable_service_connection
 
 #
 # Test for Bug 856 'Naming a key "Primary" causes trouble'
@@ -563,6 +570,7 @@ drop table t1,t2;
 # This tests two additional possible errors and a hang if 
 # an improper fix is present.
 #
+--disable_service_connection
 create table t1 (a int);
 --error ER_TABLE_EXISTS_ERROR
 create table t1 select * from t1;
@@ -571,6 +579,7 @@ create table t2 union = (t1) select * from t1;
 flush tables with read lock;
 unlock tables;
 drop table t1;
+--enable_service_connection
 
 #
 # Bug#10413: Invalid column name is not rejected
@@ -827,12 +836,14 @@ create table t1 select coalesce('a' collate latin1_swedish_ci,'b' collate latin1
 # instert data into it, even though a temporary table exists with the same
 # name.
 
+--disable_view_protocol
 create temporary table t1 (j int);
 create table if not exists t1 select 1;
 select * from t1;
 drop temporary table t1;
 select * from t1;
 drop table t1;
+--enable_view_protocol
 
 #
 # CREATE TABLE ... SELECT and LOCK TABLES
@@ -842,7 +853,7 @@ drop table t1;
 # the server doesn't crash, hang and produces sensible errors.
 # Includes test for bug #20662 "Infinite loop in CREATE TABLE
 # IF NOT EXISTS ... SELECT with locked tables".
-
+--disable_service_connection
 create table t1 (i int);
 insert into t1 values (1), (2);
 lock tables t1 read;
@@ -887,6 +898,7 @@ create temporary table if not exists t2 select * from t1;
 select * from t2;
 unlock tables;
 drop table t1, t2;
+--enable_service_connection
 
 
 #
@@ -1359,7 +1371,7 @@ DROP VIEW t2;
 --echo # Bug #49193 CREATE TABLE reacts differently depending 
 --echo #            on whether data is selected or not
 --echo #
-
+--disable_view_protocol
 CREATE TEMPORARY TABLE t2 (ID INT);
 INSERT INTO t2 VALUES (1),(2),(3);
 
@@ -1395,7 +1407,7 @@ SELECT * FROM t1;
 DROP TABLE t1;
  
 DROP TEMPORARY TABLE t2;
-
+--enable_view_protocol
 
 --echo # 
 --echo # Bug #22909 "Using CREATE ... LIKE is possible to create field
@@ -1476,7 +1488,7 @@ drop table t1;
 --echo # 
 --echo # 2. A temporary table.
 --echo #
-
+--disable_view_protocol
 create temporary table if not exists t1 (a int) select 1 as a;
 select * from t1;
 --error ER_TABLE_EXISTS_ERROR
@@ -1629,6 +1641,7 @@ select * from t1;
 drop table t1;
 --error ER_NO_SUCH_TABLE
 create table if not exists t1 (a int) select * from t1;
+--enable_view_protocol
 
 --echo #
 --echo # 7. Test of non-matching columns, REPLACE and IGNORE.
@@ -1670,7 +1683,7 @@ drop table t1;
 --echo #
 --echo # Checking that CREATE IF NOT EXISTS is not blocked by running SELECT
 --echo #
-
+--disable_service_connection
 create table t1 (a int, b int) engine=SequoiaDB;
 create table t2 (a int, b int) engine=SequoiaDB;
 insert into t1 values (1,1);
@@ -1694,6 +1707,7 @@ connection default;
 select * from t1;
 unlock tables;
 drop table t1,t2;
+--enable_service_connection
 
 --echo #
 --echo # MDEV-6179: dynamic columns functions/cast()/convert() doesn't
@@ -1921,5 +1935,62 @@ create table t1;
 #create table t1 (i int, j int, key(i), key(i)) as select 1 as i, 2 as j;
 create table t1 (i int, j int, key(i)) as select 1 as i, 2 as j;
 drop table t1;
+
+--echo #
+--echo # End of 10.0 tests
+--echo #
+
+#--echo #
+#--echo # MDEV-18428 Memory: If transactional=0 is specified in CREATE TABLE, it is not possible to ALTER TABLE
+#--echo #
+#--error ER_ILLEGAL_HA_CREATE_OPTION
+#create table t1 (c int(10) unsigned) engine=sequoiadb transactional=0;
+
+--echo #
+--echo # End of 10.2 tests
+--echo #
+
+--echo #
+--echo # MDEV-17544 No warning when trying to name a primary key constraint.
+--echo #
+CREATE TABLE t1 ( id1 INT, id2 INT, CONSTRAINT `foo` PRIMARY KEY (id1), CONSTRAINT `bar` UNIQUE KEY(id2));
+DROP TABLE t1;
+
+--echo #
+--echo # MDEV-30342 Wrong "Truncated incorrect DECIMAL value" warning/error
+--echo #
+
+create table t1(c1 varchar(1));
+insert into t1(c1) values('#');
+
+select @@sql_mode like '%strict_all_tables%';
+--error ER_TRUNCATED_WRONG_VALUE
+create table t2 as select if(c1 = '#', c1 = 0, c1) as c1 from t1;
+
+drop table t1;
+
+--echo #
+--echo # End of 10.3 tests
+--echo #
+
+--echo #
+--echo # MDEV-21017: Assertion `!is_set() || (m_status == DA_OK_BULK &&
+--echo # is_bulk_op())' failed or late ER_PERIOD_FIELD_WRONG_ATTRIBUTES
+--echo # upon attempt to create existing table
+--echo #
+CREATE TABLE t1 (a INT);
+LOCK TABLE t1 WRITE;
+
+--error ER_PERIOD_FIELD_WRONG_ATTRIBUTES
+CREATE TABLE IF NOT EXISTS t1 (s DATE GENERATED ALWAYS AS ('2000-01-01') STORED,
+e DATE, PERIOD FOR app(s,e));
+
+UNLOCK TABLES;
+DROP TABLE t1;
+
+--echo #
+--echo # End of 10.4 tests
+--echo #
+
 
 DROP DATABASE test_create;

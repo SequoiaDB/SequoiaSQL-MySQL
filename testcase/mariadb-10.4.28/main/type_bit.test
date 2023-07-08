@@ -239,7 +239,9 @@ drop table t1, t2;
 create table t1 (a bit(7));
 insert into t1 values (0x60);
 --enable_metadata
+--disable_view_protocol
 select * from t1;
+--enable_view_protocol
 --disable_metadata
 drop table t1;
 
@@ -461,7 +463,9 @@ SELECT  * FROM t2;
 SHOW CREATE TABLE t2;
 DROP TABLE t2;
 --enable_metadata
+--disable_view_protocol
 SELECT COALESCE(val, 1) FROM t1;
+--enable_view_protocol
 --disable_metadata
 DROP TABLE t1;
 
@@ -512,7 +516,39 @@ DROP TABLE IF EXISTS t1;
 #EXPLAIN SELECT * FROM t1 WHERE a<=>200;
 #DROP TABLE t1;
 
-DROP DATABASE test_type_bit;
+
+--echo #
+--echo # MDEV-23323 Rounding functions return a wrong data type for a BIT, ENUM, SET argument
+--echo #
+
+--vertical_results
+DELIMITER $$;
+BEGIN NOT ATOMIC
+  FOR i IN 1..64
+  DO
+    SELECT '-----', CONCAT('BIT(',i,')') AS Type;
+    EXECUTE IMMEDIATE REPLACE('CREATE TABLE t1 (a BIT(64))','64', i);
+    INSERT IGNORE INTO t1 VALUES (0xFFFFFFFFFFFFFFFF);
+     CREATE TABLE t2 AS SELECT
+       a,
+       FLOOR(a) AS cf,
+       CEILING(a) AS cc,
+       ROUND(a) AS cr,
+       TRUNCATE(a,0) AS ct
+     FROM t1;
+    SHOW CREATE TABLE t2;
+    SELECT CAST(a AS UNSIGNED) AS a, cf, cc, cr, ct FROM t2;
+    DROP TABLE t2;
+    DROP TABLE t1;
+  END FOR;
+END;
+$$
+DELIMITER ;$$
+--horizontal_results
+
+
 --echo #
 --echo # End of 10.4 tests
 --echo #
+
+DROP DATABASE test_type_bit;

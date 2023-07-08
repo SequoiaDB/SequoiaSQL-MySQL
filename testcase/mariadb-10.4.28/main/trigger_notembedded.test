@@ -3,6 +3,7 @@
 # server.
 
 -- source include/not_embedded.inc
+#--source include/default_charset.inc
 
 ###########################################################################
 #

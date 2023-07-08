@@ -550,4 +550,7 @@ SELECT * FROM t3;
 ERROR HY000: Table 't3' was not locked with LOCK TABLES
 UNLOCK TABLES;
 DROP TABLE t3;
+#
+# End of 10.3 tests
+#
 DROP DATABASE test_create_or_replace;

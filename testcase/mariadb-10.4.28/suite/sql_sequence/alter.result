@@ -133,4 +133,15 @@ create sequence t1;
 alter sequence t1;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1
 drop sequence t1;
+CREATE SEQUENCE t1 engine=SequoiaDB;
+ALTER IGNORE TABLE t1 ADD CHECK (start_value < minimum_value);
+ERROR HY000: Sequence 'test_sequence_alter.t1' table structure is invalid (Sequence tables cannot have any constraints)
+DROP SEQUENCE t1;
+CREATE SEQUENCE s;
+ALTER TABLE s ORDER BY cache_size;
+ERROR HY000: Sequence 'test_sequence_alter.s' table structure is invalid (ORDER BY)
+SELECT NEXTVAL(s);
+NEXTVAL(s)
+1
+DROP SEQUENCE s;
 DROP DATABASE test_sequence_alter;

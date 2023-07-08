@@ -2,6 +2,7 @@
 
 #--source include/have_innodb.inc
 -- source include/have_geometry.inc
+--source include/have_sequence.inc
 
 SET default_storage_engine=SequoiaDB;
 
@@ -1456,5 +1457,18 @@ DROP DATABASE gis_ogs_2;
 # --error ER_GIS_INVALID_DATA
 --error ER_ILLEGAL_PARAMETER_DATA_TYPE_FOR_OPERATION
 SELECT ST_Union('', ''), md5(1);
+
+#--echo #
+#--echo # MDEV-25758 InnoDB spatial indexes miss large geometry
+#--echo #	fields after MDEV-25459
+#--echo #
+#
+#USE test_inno_gis_sequoiadb;
+#
+#CREATE TABLE t1(l LINESTRING NOT NULL, SPATIAL INDEX(l))ENGINE=SequoiaDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=1;
+#SELECT GROUP_CONCAT(CONCAT(seq, ' ', seq) SEPARATOR ',') INTO @g FROM seq_0_to_190;
+#INSERT INTO t1 SET l=ST_GeomFromText(CONCAT('LINESTRING(',@g,',0 0)'));
+#SELECT COUNT(*) FROM t1 WHERE MBRIntersects(GeomFromText('Polygon((0 0,0 10,10 10,10 0,0 0))'), l);
+#DROP TABLE t1;
 
 DROP DATABASE test_inno_gis_sequoiadb;
