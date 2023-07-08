@@ -397,8 +397,12 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
   DBUG_ENTER("Sdb_func_item::get_item_val()");
   int rc = SDB_ERR_OK;
   THD *thd = current_thd;
+  bool abort_on_warning = false;
+#ifdef IS_MARIADB
+  abort_on_warning = thd->abort_on_warning;
+#endif
   // When type casting is needed, some mysql functions may raise warning.
-  if (sdb_item_can_ignore_warning(item_val)) {
+  if (sdb_item_can_ignore_warning(item_val) && !abort_on_warning) {
     disable_warning(thd);
   }
 
