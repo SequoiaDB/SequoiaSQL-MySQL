@@ -1,3 +1,6 @@
+#--source include/default_optimizer_switch.inc
+#--source include/default_charset.inc
+
 CREATE DATABASE test_index_intersect;
 USE test_index_intersect;
 

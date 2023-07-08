@@ -3,6 +3,9 @@
 #
 
 --disable_warnings
+DROP DATABASE IF EXISTS test_keywords;
+CREATE DATABASE test_keywords;
+USE test_keywords;
 drop table if exists t1;
 --enable_warnings
 
@@ -259,3 +262,117 @@ DROP TABLE raise;
 
 CREATE TABLE reuse (reuse int);
 DROP TABLE reuse;
+
+--echo #
+--echo # MDEV-17363 Compressed columns cannot be restored from dump
+--echo # COMPRESSED is not valid as an SP label any more
+--echo # but is still valid as an SP variable name.
+--echo #
+
+DELIMITER $$;
+--error ER_PARSE_ERROR
+BEGIN NOT ATOMIC
+compressed:
+  BEGIN
+    SELECT 1 AS a;
+  END;
+END
+$$
+DELIMITER ;$$
+
+DELIMITER $$;
+BEGIN NOT ATOMIC
+`compressed`:
+  BEGIN
+    SELECT 1 AS a;
+  END;
+END
+$$
+DELIMITER ;$$
+
+DELIMITER $$;
+BEGIN NOT ATOMIC
+  DECLARE compressed INT DEFAULT 1;
+  SELECT compressed;
+END
+$$
+DELIMITER ;$$
+
+
+--echo #
+--echo # Testing various keywords in various contexts
+--echo #
+
+DELIMITER $$;
+CREATE PROCEDURE p1(query TEXT, var TEXT)
+BEGIN
+  DECLARE errmsg TEXT DEFAULT '';
+  DECLARE CONTINUE HANDLER
+    FOR SQLEXCEPTION
+  BEGIN
+    GET DIAGNOSTICS CONDITION 1 errmsg = MESSAGE_TEXT;
+    SET errmsg= REPLACE(errmsg, 'You have an error in your SQL ', '..');
+    SET errmsg= REPLACE(errmsg, '; check the manual that corresponds to your MariaDB server version for the right syntax to use', '..');
+  END;
+  SET query=REPLACE(query, '$(VAR)', var);
+  EXECUTE IMMEDIATE query;
+  SELECT CONCAT(query, '; -- ', LEFT(COALESCE(errmsg,''),40)) AS `--------`;
+END;
+$$
+CREATE PROCEDURE p2(query TEXT)
+BEGIN
+  FOR row IN (SELECT word FROM t1 ORDER BY category, word)
+  DO
+    CALL p1(query, row.word);
+  END FOR;
+END;
+$$
+DELIMITER ;$$
+
+CREATE TABLE t1 (word TEXT, category TEXT);
+
+INSERT INTO t1 VALUES ('non_keyword', '00 Simple identifier');
+
+INSERT INTO t1 VALUES ('lpad', '01 Built-in native function');
+INSERT INTO t1 VALUES ('rpad', '01 Built-in native function');
+
+INSERT INTO t1 VALUES ('adddate',     '02 function_call_nonkeyword');
+INSERT INTO t1 VALUES ('substr',      '02 function_call_nonkeyword');
+INSERT INTO t1 VALUES ('substring',   '02 function_call_nonkeyword');
+INSERT INTO t1 VALUES ('trim_oracle', '02 function_call_nonkeyword');
+
+INSERT INTO t1 VALUES ('ascii',         '03 function_call_conflict');
+INSERT INTO t1 VALUES ('replace',       '03 function_call_conflict');
+INSERT INTO t1 VALUES ('weight_string', '03 function_call_conflict');
+
+INSERT INTO t1 VALUES ('char', '04 function_call_keyword');
+INSERT INTO t1 VALUES ('trim', '04 function_call_keyword');
+INSERT INTO t1 VALUES ('year', '04 function_call_keyword');
+
+INSERT INTO t1 VALUES ('create', '05 Reserved keyword');
+
+CALL p2('SELECT @@$(VAR)');
+CALL p2('SELECT @@global.$(VAR)');
+CALL p2('SELECT @@global.$(VAR)()');
+
+CALL p2('SELECT $(VAR)()');
+CALL p2('SELECT test_keywords.$(VAR)()');
+
+CALL p2('SELECT $(VAR) FROM t1');
+CALL p2('SELECT t1.$(VAR) FROM t1');
+
+CALL p2('DROP TABLE $(VAR)');
+CALL p2('DROP TABLE test_keywords.$(VAR)');
+
+CALL p2('CREATE FUNCTION $(VAR)() RETURNS OOPS');
+CALL p2('CREATE FUNCTION test_keywords.$(VAR)() RETURNS OOPS');
+
+CALL p2('DROP FUNCTION $(VAR)');
+CALL p2('DROP FUNCTION test_keywords.$(VAR)');
+
+DROP TABLE t1;
+
+DROP PROCEDURE p1;
+DROP PROCEDURE p2;
+
+DROP DATABASE test_keywords;

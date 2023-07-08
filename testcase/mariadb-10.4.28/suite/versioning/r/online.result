@@ -104,6 +104,7 @@ update t set b=11;
 select count(*) from t for system_time all;
 count(*)
 2
+drop table t;
 # Start of 10.4 tests
 #
 # MDEV-17697 Broken versioning info after instant drop column

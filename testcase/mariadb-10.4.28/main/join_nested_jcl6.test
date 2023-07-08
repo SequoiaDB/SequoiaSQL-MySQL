@@ -19,8 +19,8 @@ DROP DATABASE IF EXISTS test_join_nested_jcl6;
 --enable_warnings
 
 CREATE DATABASE test_join_nested_jcl6;
-USE test_join_nested_jcl6;
 --source join_nested.test
+USE test_join_nested_jcl6;
 
 #
 #

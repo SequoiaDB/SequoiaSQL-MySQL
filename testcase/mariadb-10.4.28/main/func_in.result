@@ -1,3 +1,6 @@
+DROP DATABASE IF EXISTS test_func_in;
+CREATE DATABASE test_func_in;
+USE test_func_in;
 drop table if exists t1, t2;
 select 1 in (1,2,3);
 1 in (1,2,3)
@@ -724,3 +727,4 @@ Warning	1292	Truncated incorrect DECIMAL value: '0x'
 #
 # End of 10.4 tests
 #
+DROP DATABASE test_func_in;

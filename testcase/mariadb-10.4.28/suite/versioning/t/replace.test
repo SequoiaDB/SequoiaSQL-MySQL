@@ -1,3 +1,16 @@
+#--source suite/versioning/key_type.inc
+#if ($MTR_COMBINATION_SEC)
+#{
+#  --skip pk or unique only
+#}
+--disable_warnings
+drop database if exists test_versioning_replace;
+--enable_warnings
+create database test_versioning_replace;
+drop database test_versioning_replace;
+create database test_versioning_replace;
+use test_versioning_replace;
+
 --source suite/versioning/common.inc
 #--source suite/versioning/engines.inc
 
@@ -22,7 +35,7 @@ eval create table t (
   x int,
   row_start $sys_datatype_expl as row start invisible,
   row_end $sys_datatype_expl as row end invisible,
-  period for system_time (row_start, row_end)
+  period for system_time(row_start, row_end)
 ) with system versioning;
 
 insert t values (1, 2);
@@ -37,6 +50,7 @@ insert into t1 values (1,1);
 create or replace table t2 (c int);
 create or replace view v as select t1.* from t1 join t2;
 replace into v (a, b) select a, b from t1;
+drop view v;
 drop table t1;
 
 --replace_result $sys_datatype_expl SYS_DATATYPE
@@ -56,7 +70,25 @@ UPDATE IGNORE t1 SET f = 1;
 REPLACE t1 SELECT * FROM t1;
 DROP TABLE t1;
 
+--echo # MDEV-22540 ER_DUP_ENTRY upon REPLACE or Assertion failed
+set timestamp=1589245268.41934;
+create table t1 (a int primary key) with system versioning;
+insert into t1 values (1),(2);
+
+--connect (con1,localhost,root,,test_versioning_replace)
+set timestamp=1589245268.52093;
+replace into t1 values (1),(2);
+
+--connection default
+replace into t1 values (1),(2);
+
+--connection con1
+--error ER_DUP_ENTRY
+replace into t1 values (1),(2);
+
+drop table t1;
 
 #drop database test;
 #create database test;
 --source suite/versioning/common_finish.inc
+drop database test_versioning_replace;

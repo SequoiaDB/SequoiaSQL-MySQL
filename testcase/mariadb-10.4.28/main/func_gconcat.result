@@ -1229,6 +1229,18 @@ Name_exp_1
 DROP VIEW v1;
 DROP TABLE t1;
 #
+# MDEV-4677 GROUP_CONCAT not showing any output with group_concat_max_len >= 4Gb
+#
+set group_concat_max_len=1024*1024*1024*4;
+Warnings:
+Warning	1292	Truncated incorrect group_concat_max_len value: '4294967296'
+create table t1 (i int, j int);
+insert into t1 values (1,1),(1,2);
+select i, group_concat(j) from t1 group by i;
+i	group_concat(j)
+1	1,2
+drop table t1;
+#
 # End of 10.2 tests
 #
 #
@@ -1319,6 +1331,15 @@ grp	group_concat(c order by c desc limit 2)
 1	c,b
 2	c,b
 3	E,E
+#
+# Empty results for group concat as offset is greater than the rows
+# for a group
+#
+select grp,group_concat(distinct c limit 10,1 ) from t1 group by grp;
+grp	group_concat(distinct c limit 10,1 )
+1	
+2	
+3	
 drop table t1;
 create table t2 (a int, b varchar(10));
 insert into t2 values(1,'a'),(1,'b'),(NULL,'c'),(2,'x'),(2,'y');

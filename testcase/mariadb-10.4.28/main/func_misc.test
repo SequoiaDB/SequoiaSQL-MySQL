@@ -2,6 +2,7 @@
 # Testing of misc functions
 #
 
+#--source include/default_optimizer_switch.inc
 CREATE DATABASE test_func_misc;
 USE test_func_misc;
 
@@ -156,7 +157,10 @@ select benchmark(100, (select avg(func_26093_a(a)) from table_26093));
 select @invoked;
 
 set @invoked := 0;
+#enable after fix MDEV-27871
+--disable_view_protocol
 select benchmark(100, (select avg(func_26093_b(a, rand())) from table_26093));
+--enable_view_protocol
 # Returns 1000, due to rand() preventing caching.
 select @invoked;
 
@@ -265,10 +269,12 @@ set @@session.time_zone=@save_tz;
 #
 # Bug#42014: Crash, name_const with collate
 #
+--disable_view_protocol
 CREATE TABLE t1 (a DATE);
 SELECT * FROM t1 WHERE a = NAME_CONST('reportDate',
   _binary'2009-01-09' COLLATE 'binary');
 DROP TABLE t1;
+--enable_view_protocol
 
 #
 # Bug#35515: Aliases of variables in binary log are ignored with NAME_CONST
@@ -629,6 +635,8 @@ DROP TABLE t1;
 --echo # GET_LOCK, RELEASE_LOCK, IS_USED_LOCK functions test
 --echo #
 
+--disable_service_connection
+
 --echo # IS_USED_LOCK, IS_FREE_LOCK: the  lock is not acquired
 --echo # Note: IS_USED_LOCK returns NULL if the lock is unused
 select is_used_lock('test');
@@ -790,6 +798,7 @@ select is_free_lock(repeat('a', 193));
 --error ER_TOO_LONG_IDENT
 select release_lock(repeat('a', 193));
 
+--enable_service_connection
 
 --echo
 --echo # --
@@ -940,8 +949,11 @@ SELECT INET6_NTOA(INET6_ATON('1:2:3:4:5::7:8'));
 SELECT INET6_NTOA(INET6_ATON('1:2:3:4:5:6::8'));
 SELECT INET6_NTOA(INET6_ATON('1:2:3:4:5:6:7::'));
 SELECT INET6_NTOA(INET6_ATON('0000:0000::0000:0001'));
+#enable after fix MDEV-27871
+--disable_view_protocol
 SELECT INET6_NTOA(INET6_ATON('1234:5678:9abc:def0:4321:8765:cba9:0fed'));
 SELECT INET6_NTOA(INET6_ATON('0000:0000:0000:0000:0000:0000:0000:0001'));
+--enable_view_protocol
 SELECT INET6_NTOA(INET6_ATON('::C0A8:0102'));
 SELECT INET6_NTOA(INET6_ATON('::c0a8:0102'));
 SELECT INET6_NTOA(INET6_ATON('::192.168.1.2'));
@@ -1113,12 +1125,14 @@ select release_lock('test');
 --echo #
 --echo # MDEV-13685 Can not replay binary log due to Illegal mix of collations (latin1_swedish_ci,IMPLICIT) and (utf8mb4_general_ci,COERCIBLE) for operation 'concat'
 --echo #
+--disable_service_connection
 SET NAMES utf8;
 SELECT COERCIBILITY(NAME_CONST('name','test'));
 SELECT COERCIBILITY(NAME_CONST('name',TIME'00:00:00'));
 SELECT COERCIBILITY(NAME_CONST('name',15));
 SELECT CONCAT(NAME_CONST('name',15),'오');
 SET NAMES latin1;
+--enable_service_connection
 
 --echo #
 --echo # MDEV-14116 INET6_NTOA output is set as null to varchar(39) variable
@@ -1143,6 +1157,21 @@ DROP PROCEDURE p1;
 PREPARE stmt FROM "SELECT 'x' ORDER BY NAME_CONST( 'f', 'foo' )";
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+--echo #
+--echo # MDEV-19680: Assertion `!table || (!table->read_set || bitmap_is_set(table->read_set, field_index) ||
+--echo #             (!(ptr >= table->record[0] && ptr < table->record[0] + table->s->reclength)))'
+--echo #             or alike failed upon SELECT with mix of functions from simple view
+--echo #
+
+CREATE TABLE t1 (a INT) ENGINE=SequoiaDB;
+INSERT INTO t1 VALUES (1),(2);
+CREATE VIEW v1 AS SELECT * FROM t1;
+
+SELECT ISNULL( BENCHMARK(1, MIN(a))) FROM v1;
+
+DROP VIEW v1;
+DROP TABLE t1;
 
 
 --echo #
@@ -1197,6 +1226,12 @@ SELECT * FROM v1 WHERE numgtfmt =  NAME_CONST('wnumgtfmt',_utf8'QEDITIONS' COLLA
 DROP VIEW v1;
 DROP TABLE t1;
 
+--echo #
+--echo # MDEV-20517 Assertion `!is_expensive()' failed in Item::value_depends_on_sql_mode_const_item
+--echo #
+
+SELECT ( 1 LIKE GET_LOCK( 'foo', 0 ) ) - 2;
+SELECT RELEASE_LOCK('foo');
 
 --echo #
 --echo # End of 10.2 tests
@@ -1212,9 +1247,11 @@ DROP TABLE t1;
 
 --enable_metadata
 --disable_ps_protocol
+--disable_view_protocol
 
 SELECT INET_ATON("255.255.255.255.255.255.255.255");
 
+--enable_view_protocol
 --enable_ps_protocol
 --disable_metadata
 
@@ -1224,7 +1261,9 @@ SELECT INET_ATON("255.255.255.255.255.255.255.255");
 
 --enable_metadata
 --disable_ps_protocol
+--disable_view_protocol
 SELECT 18446744073709551615 AS c1, name_const('a',18446744073709551615) AS c2;
+--enable_view_protocol
 --enable_ps_protocol
 --disable_metadata
 

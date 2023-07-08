@@ -12,19 +12,29 @@ select json_value('{"key1":123}', '$.key2');
 select json_value('{"key1":123}', '$.key1');
 select json_value('{"key1":[1,2,3]}', '$.key1');
 select json_value('{"key1": [1,2,3], "key1":123}', '$.key1');
+
+#enable after fix MDEV-27871
+--disable_view_protocol
 select JSON_VALUE('{ "x": [0,1], "y": "[0,1]", "z": "Mon\\\"t\\\"y" }','$.z');
+--enable_view_protocol
 
 select json_query('{"key1":{"a":1, "b":[1,2]}}', '$.key2');
 select json_query('{"key1":{"a":1, "b":[1,2]}}', '$.key1');
 select json_query('{"key1": 1}', '$.key1');
 select json_query('{"key1":123, "key1": [1,2,3]}', '$.key1');
+#enable after fix MDEV-27871
+--disable_view_protocol
 select json_query('{"key1":123, "key1": [1,2,3]}', concat('$', repeat('.k', 1000)));
+--enable_view_protocol
 
 select json_array();
 select json_array(1);
+#enable after fix MDEV-28649
+--disable_view_protocol
 select json_array(1, "text", false, null);
 
 select json_array_append('["a", "b"]', '$', FALSE);
+--enable_view_protocol
 select json_array_append('{"k1":1, "k2":["a", "b"]}', '$.k2', 2);
 select json_array_append('["a", ["b", "c"], "d"]', '$[0]', 2);
 
@@ -32,9 +42,15 @@ select json_array_insert('["a", {"b": [1, 2]}, [3, 4]]', '$[1]', 'x');
 select json_array_insert('["a", {"b": [1, 2]}, [3, 4]]', '$[2]', 'x');
 select json_array_insert('["a", {"b": [1, 2]}, [3, 4]]', '$[3]', 'x');
 select json_array_insert('["a", {"b": [1, 2]}, [3, 4]]', '$[4]', 'x');
+#enable after fix MDEV-27871
+--disable_view_protocol
 select json_array_insert('["a", {"b": [1, 2]}, [3, 4]]', '$[1].b[0]', 'x');
+--enable_view_protocol
 select json_array_insert('true', '$', 1);
+#enable after fix MDEV-27871
+--disable_view_protocol
 select json_array_insert('["a", {"b": [1, 2]}, [3, 4]]', '$[2][1]', 'y');
+--enable_view_protocol
 
 select json_contains('{"k1":123, "k2":345}', '123', '$.k1');
 select json_contains('"you"', '"you"');
@@ -59,7 +75,10 @@ select json_contains('{"a":1}', '{}');
 select json_contains('[1, {"a":1}]', '{}');
 select json_contains('[1, {"a":1}]', '{"a":1}');
 select json_contains('[{"abc":"def", "def":"abc"}]', '["foo","bar"]');
+#enable after fix MDEV-27871
+--disable_view_protocol
 select json_contains('[{"abc":"def", "def":"abc"}, "bar"]', '["bar", {}]');
+--disable_view_protocol
 select json_contains('[{"a":"b"},{"c":"d"}]','{"c":"d"}');
 
 select json_contains_path('{"key1":1, "key2":[2,3]}', "oNE", "$.key2[1]");
@@ -268,6 +287,9 @@ SELECT JSON_search( '{"x": "\\""}', "one", '\\"');
 #
 # MDEV-11833 JSON functions don't seem to respect max_allowed_packet.
 #
+set @save_max_allowed_packet=@@max_allowed_packet;
+set @save_net_buffer_length=@@net_buffer_length;
+
 set @@global.net_buffer_length=1024;
 set @@global.max_allowed_packet=2048;
 #--connect (newconn, localhost, root,,)
@@ -279,8 +301,8 @@ select json_array(repeat('a',1024),repeat('a',1024));
 select json_object("a", repeat('a',1024),"b", repeat('a',1024));
 --connection default
 
-set @@global.max_allowed_packet = default;
-set @@global.net_buffer_length = default;
+set @@global.max_allowed_packet = @save_max_allowed_packet;
+set @@global.net_buffer_length = @save_net_buffer_length;
 --disconnect newconn
 
 
@@ -529,6 +551,7 @@ DROP TABLE merge_t;
 
 SELECT JSON_MERGE_PATCH('{"a":"b"}', NULL, '{"c":"d"}');
 SELECT JSON_MERGE_PATCH(NULL, '[1,2,3]');
+SELECT JSON_MERGE_PATCH(NULL, 'a');
 SELECT JSON_MERGE_PATCH('{"a":"b"}', NULL, '[1,2,3]', '{"c":null,"d":"e"}');
 
 --error ER_WRONG_PARAMCOUNT_TO_NATIVE_FCT
@@ -537,6 +560,40 @@ SELECT JSON_MERGE_PATCH();
 SELECT JSON_MERGE_PATCH('{}');
 SELECT JSON_MERGE_PATCH('{', '[1,2,3]');
 SELECT JSON_MERGE_PATCH('{"a":"b"}', '[1,');
+
+--echo #
+--echo # MDEV-22976 CAST(JSON_EXTRACT() AS DECIMAL) does not handle boolean values
+--echo #
+
+SELECT
+  CAST(JSON_EXTRACT('{"x":true}', '$.x') AS DOUBLE) AS cf,
+  CAST(JSON_EXTRACT('{"x":true}', '$.x') AS DECIMAL) AS cd;
+
+SELECT
+  CAST(JSON_EXTRACT('{"x":false}', '$.x') AS DOUBLE) AS cf,
+  CAST(JSON_EXTRACT('{"x":false}', '$.x') AS DECIMAL) AS cd;
+
+
+--echo #
+--echo # MDEV-24585 Assertion `je->s.cs == nice_js->charset()' failed in json_nice.
+--echo #
+
+SELECT JSON_REPLACE( JSON_DETAILED('["x"]'), '$.a', 'xx' );
+
+--echo #
+--echo # MDEV-18284 JSON casting using JSON_COMPACT doesn't always work
+--echo #            with values from subqueries
+--echo #
+
+CREATE TABLE json_test(a JSON, b JSON);
+INSERT INTO json_test VALUES ("[1,2,3]", '{"a":"foo"}');
+SELECT * FROM json_test;
+
+SELECT json_object("a", json_compact(a), "b", b)
+  FROM (SELECT * FROM json_test) AS json_test_values;
+SELECT json_object("a", json_compact(a), "b", json_compact(b))
+  FROM (SELECT * FROM json_test) AS json_test_values;
+DROP TABLE json_test;
 
 --echo #
 --echo # End of 10.2 tests
@@ -561,6 +618,56 @@ SELECT
 
 --enable_ps_protocol
 --disable_metadata
+
+--echo #
+--echo # MDEV-19670 json escaped unicode parse error
+--echo #
+
+SELECT json_valid('{"value":"\\ud83d\\ude0a"}');
+SELECT json_valid('{"test": "\\ud83d\\ude0b"}');
+
+--echo #
+--echo # MDEV-19670 json escaped unicode parse error
+--echo #
+
+SELECT JSON_VALID('{"admin\\"": null}'), '{"admin\\"": null}'
+    UNION
+    SELECT JSON_VALID('{"\\"admin": null}'), '{"\\"admin": null}'
+      UNION
+      SELECT JSON_VALID('{"\\"": null}'), '{"\\"": null}';
+
+--echo #
+--echo # MDEV-29188: Crash in JSON_EXTRACT
+--echo #
+
+CREATE TABLE t1 (j JSON);
+
+INSERT INTO t1 VALUES
+  ('{"ID": "4", "Name": "Betty", "Age": 19}'),
+  ('[10, 20, [30, 40]]');
+
+SELECT * FROM t1 WHERE JSON_EXTRACT(j, '$.Age')=19;
+
+drop table t1;
+
+--echo #
+--echo # MDEV-27151: JSON_VALUE() does not parse NULL properties properly
+--echo #
+--echo #
+--echo # It is correct for JSON_EXTRACT() to give null instead of "NULL" because
+--echo # it returns the json literal that is put inside json.
+--echo # Hence it should return null as in 'null' string and not SQL NULL.
+--echo # JSON_VALUE() returns the "VALUE" so it is correct for it to return SQl NULL
+--echo #
+
+SELECT NULL;
+SELECT JSON_VALUE('{"nulltest": null}', '$.nulltest');
+SELECT 1 + NULL;
+SELECT 1 + JSON_VALUE('{"nulltest": null}', '$.nulltest');
+
+
+SELECT NULL;
+SELECT JSON_EXTRACT('{"a":null, "b":10, "c":"null"}', '$.a');
 
 --echo #
 --echo # End of 10.3 tests
@@ -611,6 +718,107 @@ SELECT * FROM t1 WHERE CASE WHEN JSON_OBJECT('x', (SELECT MAX(a=2) FROM t1))='{"
 
 
 DROP TABLE t1;
+
+--echo #
+--echo # MDEV-19160 JSON_DETAILED output unnecessarily verbose
+--echo #
+
+create table t200 (a text);
+
+insert into t200 values
+('{
+  "steps": [
+    {
+      "join_optimization": {
+        "select_id": 1,
+        "steps": [
+          {
+            "rows_estimation": [
+              {
+                "table": "t1",
+                "range_analysis": {
+                  "table_scan": {
+                    "rows": 1000,
+                    "cost": 2e308
+                  },
+                  "potential_range_indexes": [
+                    {
+                      "index": "a_b",
+                      "usable": true,
+                      "key_parts": ["a", "b"]
+                    }
+                  ],
+                  "best_covering_index_scan": {
+                    "index": "a_b",
+                    "cost": 52.195,
+                    "chosen": true
+                  },
+                  "setup_range_conditions": [],
+                  "group_index_range": {
+                    "chosen": false,
+                    "cause": "no group by or distinct"
+                  },
+                  "analyzing_range_alternatives": {
+                    "range_scan_alternatives": [
+                      {
+                        "index": "a_b",
+                        "ranges": ["2 <= a <= 2 AND 4 <= b <= 4", "123"],
+                        "rowid_ordered": true,
+                        "using_mrr": false,
+                        "index_only": true,
+                        "rows": 1,
+                        "cost": 1.1752,
+                        "chosen": true
+                      }
+                    ],
+                    "analyzing_roworder_intersect": {
+                      "cause": "too few roworder scans"
+                    },
+                    "analyzing_index_merge_union": [],
+                    "test_one_line_array":["123"]
+                  },
+                  "chosen_range_access_summary": {
+                    "range_access_plan": {
+                      "type": "range_scan",
+                      "index": "a_b",
+                      "rows": 1,
+                      "ranges": ["2 <= a <= 2 AND 4 <= b <= 4"]
+                    },
+                    "rows_for_plan": 1,
+                    "cost_for_plan": 1.1752,
+                    "chosen": true
+                  }
+                }
+              },
+              {
+                "selectivity_for_indexes": [
+                  {
+                    "index_name": "a_b",
+                    "selectivity_from_index": 0.001
+                  }
+                ],
+                "selectivity_for_columns": [],
+                "cond_selectivity": 0.001
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "join_execution": {
+        "select_id": 1,
+        "steps": []
+      }
+    }
+  ]
+}');
+
+
+select JSON_DETAILED(JSON_EXTRACT(a, '$**.analyzing_range_alternatives')) from t200;
+select JSON_PRETTY(JSON_EXTRACT(a, '$**.analyzing_range_alternatives')) from t200;
+select JSON_LOOSE(JSON_EXTRACT(a, '$**.analyzing_range_alternatives')) from t200;
+drop table t200;
 
 DROP DATABASE test_func_json;
 --echo #

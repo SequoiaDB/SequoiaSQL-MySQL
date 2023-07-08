@@ -406,7 +406,9 @@ drop table t1;
 create table t1 (f1 int unsigned, f2 varchar(255));
 insert into t1 values (1,repeat('a',255)),(2,repeat('b',255));
 --enable_metadata
+--disable_view_protocol
 select f2,group_concat(f1) from t1 group by f2;
+--enable_view_protocol
 --disable_metadata
 drop table t1;
 
@@ -494,7 +496,9 @@ set names latin1;
 create table t1 (f1 int unsigned, f2 varchar(255));
 insert into t1 values (1,repeat('a',255)),(2,repeat('b',255));
 --enable_metadata
+--disable_view_protocol
 select f2,group_concat(f1) from t1 group by f2;
+--enable_view_protocol
 --disable_metadata
 drop table t1;
 
@@ -934,13 +938,25 @@ SELECT * FROM (SELECT a,GROUP_CONCAT(a ORDER BY a) FROM t1 GROUP BY a WITH ROLLU
 SELECT * FROM v1;
 DROP VIEW v1;
 
+#enable after fix MDEV-27871
+--disable_view_protocol
 SELECT (SELECT GROUP_CONCAT(a ORDER BY a) FROM t1 GROUP BY a WITH ROLLUP HAVING GROUP_CONCAT(a ORDER BY a)='10,20,30');
+--enable_view_protocol
 CREATE VIEW v1 AS
 SELECT (SELECT GROUP_CONCAT(a ORDER BY a) FROM t1 GROUP BY a WITH ROLLUP HAVING GROUP_CONCAT(a ORDER BY a)='10,20,30');
 SELECT * FROM v1;
 DROP VIEW v1;
 
 DROP TABLE t1;
+
+--echo #
+--echo # MDEV-4677 GROUP_CONCAT not showing any output with group_concat_max_len >= 4Gb
+--echo #
+set group_concat_max_len=1024*1024*1024*4;
+create table t1 (i int, j int);
+insert into t1 values (1,1),(1,2);
+select i, group_concat(j) from t1 group by i;
+drop table t1;
 
 --echo #
 --echo # End of 10.2 tests
@@ -988,6 +1004,13 @@ select grp,group_concat(c order by c) from t1 group by grp;
 select grp,group_concat(c order by c limit 2) from t1 group by grp;
 select grp,group_concat(c order by c desc) from t1 group by grp;
 select grp,group_concat(c order by c desc limit 2) from t1 group by grp;
+
+--echo #
+--echo # Empty results for group concat as offset is greater than the rows
+--echo # for a group
+--echo #
+
+select grp,group_concat(distinct c limit 10,1 ) from t1 group by grp;
 
 drop table t1;
 

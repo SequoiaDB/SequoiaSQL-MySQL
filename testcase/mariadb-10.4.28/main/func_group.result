@@ -1858,7 +1858,38 @@ count(*)+sleep(0)
 2
 drop table t1;
 #
-# Start of 10.3 tests
+# MDEV-25112: MIN/MAX optimization for query containing BETWEEN in WHERE
+#
+create table t1 (a int) engine=SequoiaDB;
+insert into t1 values (267), (273),  (287), (303), (308);
+select max(a) from t1 where a < 303 and (a between 267 AND 287);
+max(a)
+287
+explain select max(a) from t1 where a < 303 and (a between 267 AND 287);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	5	Using where with pushed condition
+select min(a) from t1 where a > 267 and (a between 273 AND 303);
+min(a)
+273
+explain select min(a) from t1 where a > 267 and (a between 273 AND 303);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	5	Using where with pushed condition
+create index idx on t1(a);
+select max(a) from t1 where a < 303 and (a between 267 AND 287);
+max(a)
+287
+explain select max(a) from t1 where a < 303 and (a between 267 AND 287);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
+select min(a) from t1 where a > 267 and (a between 273 AND 303);
+min(a)
+273
+explain select min(a) from t1 where a > 267 and (a between 273 AND 303);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
+drop table t1;
+#
+# End of 10.2 tests
 #
 #
 # MDEV-9408 CREATE TABLE SELECT MAX(int_column) creates different columns for table vs view
@@ -1890,4 +1921,60 @@ t2	CREATE TABLE `t2` (
 DROP TABLE t2;
 DROP VIEW v1;
 DROP TABLE t1;
+#
+# MDEV-23809: Server crash in JOIN_CACHE::free or ...
+#
+CREATE TABLE t1 (a INT);
+INSERT INTO t1 VALUES (1),(2);
+SELECT DISTINCT CASE CONVERT(EXPORT_SET(0, COLLATION(BENCHMARK(1, BIT_OR(0))),0),TIME) WHEN a THEN 1 END AS f FROM t1;
+f
+NULL
+Warnings:
+Warning	1292	Truncated incorrect time value: '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'
+DROP TABLE t1;
+CREATE TABLE t1 (a VARCHAR(8) NULL, b BIGINT);
+INSERT INTO t1 (a,b) VALUES (NULL,NULL),('foo',NULL);
+SELECT DISTINCT STRCMP((b > COLLATION(STDDEV_SAMP(15750))), a) AS f FROM t1;
+f
+NULL
+DROP TABLE t1;
+CREATE TABLE t1 (a BIGINT) AS SELECT 1 AS v3 UNION SELECT FALSE ;
+SELECT DISTINCT a IN ( COLLATION (AVG ('x'))) FROM t1 ;
+a IN ( COLLATION (AVG ('x')))
+NULL
+Warnings:
+Warning	1292	Truncated incorrect DOUBLE value: 'x'
+Warning	1292	Truncated incorrect DOUBLE value: 'x'
+DROP TABLE t1;
+#
+#  MDEV-29678 Valgrind/MSAN uninitialised value errors upon PS with ALTER under ONLY_FULL_GROUP_BY
+#
+SET STATEMENT sql_mode=ONLY_FULL_GROUP_BY FOR EXECUTE IMMEDIATE 'ALTER TABLE mysql.time_zone_transition ORDER BY Time_zone_id, Transition_time';
+#
+# MDEV-19071 Wrong results when using STDDEV_SAMP() and view
+#
+create table t1(i int);
+insert into t1 values  (1),(2),(3),(4),(5);
+create view v1 as select stddev_samp(i),stddev_pop(i),stddev(i),std(i) from t1;
+show create view v1;
+View	Create View	character_set_client	collation_connection
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select stddev_samp(`t1`.`i`) AS `stddev_samp(i)`,std(`t1`.`i`) AS `stddev_pop(i)`,std(`t1`.`i`) AS `stddev(i)`,std(`t1`.`i`) AS `std(i)` from `t1`	latin1	latin1_swedish_ci
+select * from v1;
+stddev_samp(i)	stddev_pop(i)	stddev(i)	std(i)
+1.5811	1.4142	1.4142	1.4142
+drop view v1;
+drop table t1;
+#
+# MDEV-29988: Major performance regression with 10.6.11
+#
+create table t1 (a varchar(10) charset utf8mb4, b int, c int);
+insert t1 values (1,2,3),(4,5,6),(1,7,8);
+select concat(a,":",group_concat(b)) from t1 group by a;
+concat(a,":",group_concat(b))
+1:2,7
+4:5
+drop table t1;
+#
+# End of 10.3 tests
+#
 DROP DATABASE test_func_group;

@@ -1,3 +1,8 @@
+drop database if exists test_custom_aggregate_functions;
+create database test_custom_aggregate_functions;
+drop database test_custom_aggregate_functions;
+create database test_custom_aggregate_functions;
+use test_custom_aggregate_functions;
 create table t2 (sal int(10));
 create aggregate function f1(x INT) returns int
 begin
@@ -15,9 +20,9 @@ select f1(sal) from t1 where id>= 1;
 f1(sal)
 0
 Warnings:
-Note	4094	At line 5 in X.f1
-Note	4094	At line 5 in X.f1
-Note	4094	At line 5 in X.f1
+Note	4094	At line 5 in test_custom_aggregate_functions.f1
+Note	4094	At line 5 in test_custom_aggregate_functions.f1
+Note	4094	At line 5 in test_custom_aggregate_functions.f1
 select * from t2;
 sal
 5000
@@ -119,7 +124,7 @@ FETCH GROUP NEXT ROW;
 set mini = mini + x;
 END LOOP;
 end|
-ERROR 42000: No RETURN found in FUNCTION X.f1
+ERROR 42000: No RETURN found in FUNCTION test_custom_aggregate_functions.f1
 create aggregate function f1(x int) returns int
 begin
 declare mini int default 0;
@@ -550,7 +555,7 @@ end|
 create aggregate function f5(x INT) returns varchar(1000)
 begin
 declare z int default 0;
-DECLARE cur1 CURSOR FOR SELECT sal FROM test.t2;
+DECLARE cur1 CURSOR FOR SELECT sal FROM t2;
 declare continue handler for not found return 0;
 loop
 fetch group next row;
@@ -802,9 +807,9 @@ select f5() from t2;
 f5()
 192000
 Warnings:
-Note	4094	At line 6 in X.f5
-Note	4094	At line 6 in X.f5
-Note	4094	At line 6 in X.f5
+Note	4094	At line 6 in test_custom_aggregate_functions.f5
+Note	4094	At line 6 in test_custom_aggregate_functions.f5
+Note	4094	At line 6 in test_custom_aggregate_functions.f5
 create aggregate function f6(x INT) returns INT
 begin
 declare z int default 0;
@@ -820,8 +825,8 @@ select f6(sal) from t2;
 f6(sal)
 128000
 Warnings:
-Note	4094	At line 6 in X.f6
-Note	4094	At line 6 in X.f6
+Note	4094	At line 6 in test_custom_aggregate_functions.f6
+Note	4094	At line 6 in test_custom_aggregate_functions.f6
 select id, f1(sal) from t1 where id>= 1 group by id;
 id	f1(sal)
 1	7000
@@ -915,19 +920,19 @@ select f7(sal) from t1;
 f7(sal)
 64000
 Warnings:
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
-Note	4094	At line 10 in X.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
+Note	4094	At line 10 in test_custom_aggregate_functions.f7
 drop table t1;
 drop table t2;
 drop table t3;
@@ -1156,6 +1161,41 @@ NULL	8
 drop function agg_sum;
 drop table t1;
 #
+# User defined aggregate functions not working correctly when the schema is changed
+#
+CREATE SCHEMA IF NOT EXISTS common_schema;
+CREATE SCHEMA IF NOT EXISTS another_schema;
+DROP FUNCTION IF EXISTS common_schema.add_ints |
+Warnings:
+Note	1305	FUNCTION common_schema.add_ints does not exist
+CREATE FUNCTION common_schema.add_ints(int_1 INT, int_2 INT) RETURNS INT NO SQL
+BEGIN
+RETURN int_1 + int_2;
+END |
+DROP FUNCTION IF EXISTS common_schema.sum_ints |
+Warnings:
+Note	1305	FUNCTION common_schema.sum_ints does not exist
+CREATE AGGREGATE FUNCTION common_schema.sum_ints(int_val INT) RETURNS INT
+BEGIN
+DECLARE result INT DEFAULT 0;
+DECLARE CONTINUE HANDLER FOR NOT FOUND RETURN result;
+LOOP FETCH GROUP NEXT ROW;
+SET result = common_schema.add_ints(result, int_val);
+END LOOP;
+END |
+use common_schema;
+SELECT common_schema.sum_ints(seq) FROM (SELECT 1 seq UNION ALL SELECT 2) t;
+common_schema.sum_ints(seq)
+3
+USE another_schema;
+SELECT common_schema.sum_ints(seq) FROM (SELECT 1 seq UNION ALL SELECT 2) t;
+common_schema.sum_ints(seq)
+3
+drop database common_schema;
+drop database another_schema;
+USE test_custom_aggregate_functions;
+# End of 10.3 tests
+#
 # MDEV-18813 PROCEDURE and anonymous blocks silently ignore FETCH GROUP NEXT ROW
 #
 CREATE PROCEDURE p1()
@@ -1188,3 +1228,5 @@ STARTS CURRENT_TIMESTAMP + INTERVAL 1 MONTH
 ENDS CURRENT_TIMESTAMP + INTERVAL 1 MONTH + INTERVAL 1 WEEK
 DO FETCH GROUP NEXT ROW;
 ERROR HY000: Aggregate specific instruction (FETCH GROUP NEXT ROW) used in a wrong context
+# End of 10.4 tests
+drop database test_custom_aggregate_functions;

@@ -2,8 +2,12 @@
 # ORDER BY handling (e.g. filesort) tests that require SequoiaDB
 #
 -- source include/have_sequoiadb.inc
+-- source include/have_sequence.inc
 
 --disable_warnings
+DROP DATABASE IF EXISTS test_order_by_innodb;
+CREATE DATABASE test_order_by_innodb;
+USE test_order_by_innodb;
 drop table if exists t0,t1,t2,t3;
 --enable_warnings
 
@@ -63,13 +67,42 @@ from t0 A, t0 B, t0 C, t0 D;
 drop table t0, t1;
 
 --echo #
+--echo # MDEV-18094: Query with order by limit picking index scan over filesort
+--echo #
+
+create table t0 (a int);
+INSERT INTO t0 VALUES (0),(0),(0),(0),(2),(0),(0),(1),(1),(0);
+
+CREATE TABLE t1 (
+a int(11),
+b int(11),
+c int(11),
+KEY a_c (a,c),
+KEY a_b (a,b)
+) ENGINE=SequoiaDB;
+insert into t1 select A.a , B.a, C.a from t0 A, t0 B, t0 C;
+
+--echo # should use ref access
+explain select a,b,c from t1 where a=1 and c=2 order by b;
+
+#--echo # both should use range access
+#explain select a,b,c from t1 where a=1 and c=2 order by b limit 1000;
+#explain select a,b,c from t1 where a=1 and c=2 order by b limit 2000;
+drop table t1,t0;
+
+--echo # Start of 10.2 tests
+
+--echo #
 --echo # MDEV-14071: wrong results with orderby_uses_equalities=on
 --echo # (duplicate of MDEV-13994)
 --echo #
 
-CREATE TABLE t1 (i int, j int, z int,PRIMARY KEY (i,j), KEY (z)) ENGINE=SequoiaDB;
-CREATE TABLE t2 (i int, j int, PRIMARY KEY (i,j)) ENGINE=SequoiaDB;
-CREATE TABLE t3 (j int, n varchar(5), PRIMARY KEY (j)) ENGINE=SequoiaDB;
+CREATE TABLE t1 (i int, j int, z int,PRIMARY KEY (i,j), KEY (z)) ENGINE=SequoiaDB
+STATS_PERSISTENT=0;
+CREATE TABLE t2 (i int, j int, PRIMARY KEY (i,j)) ENGINE=SequoiaDB
+STATS_PERSISTENT=0;
+CREATE TABLE t3 (j int, n varchar(5), PRIMARY KEY (j)) ENGINE=SequoiaDB
+STATS_PERSISTENT=0;
 
 INSERT INTO t1 VALUES
   (127,0,1),(188,0,1),(206,0,1),(218,0,1),(292,0,1),(338,0,1),(375,0,1),
@@ -108,3 +141,80 @@ eval $q2;
 set optimizer_switch= @save_optimizer_switch;
 
 DROP TABLE t1,t2,t3;
+
+--echo #
+--echo # MDEV-25858: Query results are incorrect when indexes are added
+--echo #
+
+CREATE TABLE t1 (id int NOT NULL PRIMARY KEY) engine=sequoiadb
+STATS_PERSISTENT=0;
+insert into t1 values (1),(2),(3);
+
+CREATE TABLE t2 (
+  id int NOT NULL PRIMARY KEY,
+  id2 int NOT NULL,
+  d1 datetime,
+  d2 timestamp NOT NULL,
+  KEY id2 (id2)
+) engine=sequoiadb;
+
+insert into t2 values
+  (1,2,'2019-03-05 00:00:00','2019-03-06 00:00:00'),
+  (2,3,'2019-03-05 00:00:00','2019-03-06 00:00:00'),
+  (3,3,'2019-03-06 00:00:00','2019-03-05 00:00:00');
+
+select
+  t1.id,t2.id
+from
+  t1 left join
+  t2 on t2.id2 = t1.id and
+        t2.id = (select dd.id
+                 from t2 dd
+                 where
+                    dd.id2 = t1.id and
+                    d1 > '2019-02-06 00:00:00'
+                 order by
+                   dd.d1 desc, dd.d2 desc, dd.id desc limit 1
+                );
+
+create index for_latest_sort on t2 (d1 desc, d2 desc, id desc);
+
+select
+  t1.id,t2.id
+from
+  t1 left join
+  t2 on t2.id2 = t1.id and
+        t2.id = (select dd.id
+                 from t2 dd
+                 where
+                    dd.id2 = t1.id and
+                    d1 > '2019-02-06 00:00:00'
+                 order by
+                   dd.d1 desc, dd.d2 desc, dd.id desc limit 1
+                );
+
+--echo #
+--echo # MDEV-27270: Wrong query plan with Range Checked for Each Record and ORDER BY ... LIMIT
+--echo #
+
+--echo # This must NOT have "Range checked for each record" without any
+--echo #   provisions to produce rows in the required ordering:
+--replace_column 9 #
+explain
+select
+  t1.id,t2.id
+from
+  t1 left join
+  t2 on t2.id2 = t1.id and
+        t2.id = (select dd.id
+                 from t2 dd
+                 where
+                    dd.id2 = t1.id and
+                    d1 > '2019-02-06 00:00:00'
+                 order by
+                   dd.d1, dd.d2, dd.id limit 1
+                );
+drop table t1,t2;
+
+--echo # End of 10.2 tests
+DROP DATABASE test_order_by_innodb;

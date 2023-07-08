@@ -734,3 +734,126 @@ sum(col1)
 33632261
 drop table t1,t2,t3;
 set optimizer_switch=@tmp_optimizer_switch;
+#
+# MDEV-22728: SIGFPE in Unique::get_cost_calc_buff_size from prepare_search_best_index_intersect
+# on optimized builds
+#
+SET @save_sort_buffer_size=@@sort_buffer_size;
+SET sort_buffer_size=2048;
+CREATE TABLE t1 (
+a VARCHAR(1024) CHARACTER SET UTF8 PRIMARY KEY,
+b INT,
+c INT,
+INDEX (b)
+) ENGINE=SequoiaDB CHARSET utf8 ROW_FORMAT= DYNAMIC;
+insert into t1 values(100, 100, 100);
+insert into t1 values(99, 99, 99);
+insert into t1 values(98, 98, 98);
+insert into t1 values(97, 97, 97);
+insert into t1 values(96, 96, 96);
+insert into t1 values(95, 95, 95);
+insert into t1 values(94, 94, 94);
+insert into t1 values(93, 93, 93);
+insert into t1 values(92, 92, 92);
+insert into t1 values(91, 91, 91);
+insert into t1 values(90, 90, 90);
+insert into t1 values(89, 89, 89);
+insert into t1 values(88, 88, 88);
+insert into t1 values(87, 87, 87);
+insert into t1 values(86, 86, 86);
+insert into t1 values(85, 85, 85);
+insert into t1 values(84, 84, 84);
+insert into t1 values(83, 83, 83);
+insert into t1 values(82, 82, 82);
+insert into t1 values(81, 81, 81);
+insert into t1 values(80, 80, 80);
+insert into t1 values(79, 79, 79);
+insert into t1 values(78, 78, 78);
+insert into t1 values(77, 77, 77);
+insert into t1 values(76, 76, 76);
+insert into t1 values(75, 75, 75);
+insert into t1 values(74, 74, 74);
+insert into t1 values(73, 73, 73);
+insert into t1 values(72, 72, 72);
+insert into t1 values(71, 71, 71);
+insert into t1 values(70, 70, 70);
+insert into t1 values(69, 69, 69);
+insert into t1 values(68, 68, 68);
+insert into t1 values(67, 67, 67);
+insert into t1 values(66, 66, 66);
+insert into t1 values(65, 65, 65);
+insert into t1 values(64, 64, 64);
+insert into t1 values(63, 63, 63);
+insert into t1 values(62, 62, 62);
+insert into t1 values(61, 61, 61);
+insert into t1 values(60, 60, 60);
+insert into t1 values(59, 59, 59);
+insert into t1 values(58, 58, 58);
+insert into t1 values(57, 57, 57);
+insert into t1 values(56, 56, 56);
+insert into t1 values(55, 55, 55);
+insert into t1 values(54, 54, 54);
+insert into t1 values(53, 53, 53);
+insert into t1 values(52, 52, 52);
+insert into t1 values(51, 51, 51);
+insert into t1 values(50, 50, 50);
+insert into t1 values(49, 49, 49);
+insert into t1 values(48, 48, 48);
+insert into t1 values(47, 47, 47);
+insert into t1 values(46, 46, 46);
+insert into t1 values(45, 45, 45);
+insert into t1 values(44, 44, 44);
+insert into t1 values(43, 43, 43);
+insert into t1 values(42, 42, 42);
+insert into t1 values(41, 41, 41);
+insert into t1 values(40, 40, 40);
+insert into t1 values(39, 39, 39);
+insert into t1 values(38, 38, 38);
+insert into t1 values(37, 37, 37);
+insert into t1 values(36, 36, 36);
+insert into t1 values(35, 35, 35);
+insert into t1 values(34, 34, 34);
+insert into t1 values(33, 33, 33);
+insert into t1 values(32, 32, 32);
+insert into t1 values(31, 31, 31);
+insert into t1 values(30, 30, 30);
+insert into t1 values(29, 29, 29);
+insert into t1 values(28, 28, 28);
+insert into t1 values(27, 27, 27);
+insert into t1 values(26, 26, 26);
+insert into t1 values(25, 25, 25);
+insert into t1 values(24, 24, 24);
+insert into t1 values(23, 23, 23);
+insert into t1 values(22, 22, 22);
+insert into t1 values(21, 21, 21);
+insert into t1 values(20, 20, 20);
+insert into t1 values(19, 19, 19);
+insert into t1 values(18, 18, 18);
+insert into t1 values(17, 17, 17);
+insert into t1 values(16, 16, 16);
+insert into t1 values(15, 15, 15);
+insert into t1 values(14, 14, 14);
+insert into t1 values(13, 13, 13);
+insert into t1 values(12, 12, 12);
+insert into t1 values(11, 11, 11);
+insert into t1 values(10, 10, 10);
+insert into t1 values(9, 9, 9);
+insert into t1 values(8, 8, 8);
+insert into t1 values(7, 7, 7);
+insert into t1 values(6, 6, 6);
+insert into t1 values(5, 5, 5);
+insert into t1 values(4, 4, 4);
+insert into t1 values(3, 3, 3);
+insert into t1 values(2, 2, 2);
+insert into t1 values(1, 1, 1);
+EXPLAIN SELECT * FROM t1 WHERE a='1' OR b < 5;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	index_merge	PRIMARY,b	PRIMARY,b	3074,5	NULL	26	Using sdb_sort_union(PRIMARY,b); Using where with pushed condition
+SELECT * FROM t1 WHERE a='1' OR b < 5;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+4	4	4
+DROP TABLE t1;
+SET sort_buffer_size= @save_sort_buffer_size;

@@ -1472,6 +1472,19 @@ x
 x
 DEALLOCATE PREPARE stmt;
 #
+# MDEV-19680: Assertion `!table || (!table->read_set || bitmap_is_set(table->read_set, field_index) ||
+#             (!(ptr >= table->record[0] && ptr < table->record[0] + table->s->reclength)))'
+#             or alike failed upon SELECT with mix of functions from simple view
+#
+CREATE TABLE t1 (a INT) ENGINE=SequoiaDB;
+INSERT INTO t1 VALUES (1),(2);
+CREATE VIEW v1 AS SELECT * FROM t1;
+SELECT ISNULL( BENCHMARK(1, MIN(a))) FROM v1;
+ISNULL( BENCHMARK(1, MIN(a)))
+0
+DROP VIEW v1;
+DROP TABLE t1;
+#
 # Start of 10.2 tests
 #
 #
@@ -1537,6 +1550,15 @@ SELECT * FROM v1 WHERE numgtfmt =  NAME_CONST('wnumgtfmt',_utf8'QEDITIONS' COLLA
 numgtfmt
 DROP VIEW v1;
 DROP TABLE t1;
+#
+# MDEV-20517 Assertion `!is_expensive()' failed in Item::value_depends_on_sql_mode_const_item
+#
+SELECT ( 1 LIKE GET_LOCK( 'foo', 0 ) ) - 2;
+( 1 LIKE GET_LOCK( 'foo', 0 ) ) - 2
+-1
+SELECT RELEASE_LOCK('foo');
+RELEASE_LOCK('foo')
+1
 #
 # End of 10.2 tests
 #

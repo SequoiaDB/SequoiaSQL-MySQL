@@ -9,7 +9,11 @@ Variable_name	Value
 join_cache_level	6
 set @optimizer_switch_for_join_outer_test=@@optimizer_switch;
 set @join_cache_level_for_join_outer_test=@@join_cache_level;
+DROP DATABASE IF EXISTS test_join_outer;
+CREATE DATABASE test_join_outer;
+USE test_join_outer;
 drop table if exists t0,t1,t2,t3,t4,t5;
+drop view if exists v0,v1,v2,v3;
 SET @save_optimizer_switch=@@optimizer_switch;
 SET optimizer_switch=ifnull(@optimizer_switch_for_join_outer_test,'outer_join_with_cache=off');
 set join_cache_level=@join_cache_level_for_join_outer_test;
@@ -2048,6 +2052,40 @@ WHERE tb1.pk = 40
 ORDER BY tb1.i1;
 v2
 DROP TABLE t1,t2;
+#
+# MDEV-19790 : IS NOT TRUE / IS NOT FALSE predicates over
+#              inner tables of outer joins
+#
+create table t1 (a int);
+create table t2 (b int);
+insert into t1 values (3), (7), (1);
+insert into t2 values (7), (4), (3);
+select * from t1 left join t2 on a=b;
+a	b
+7	7
+3	3
+1	NULL
+select * from t1 left join t2 on a=b where (b > 3) is not true;
+a	b
+3	3
+1	NULL
+explain extended select * from t1 left join t2 on a=b where (b > 3) is not true;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	3	100.00	
+1	SIMPLE	t2	hash_ALL	NULL	#hash#$hj	5	test_join_outer.t1.a	3	100.00	Using where; Using join buffer (flat, BNLH join)
+Warnings:
+Note	1003	select `test_join_outer`.`t1`.`a` AS `a`,`test_join_outer`.`t2`.`b` AS `b` from `test_join_outer`.`t1` left join `test_join_outer`.`t2` on(`test_join_outer`.`t2`.`b` = `test_join_outer`.`t1`.`a` and `test_join_outer`.`t1`.`a` is not null) where `test_join_outer`.`t2`.`b` > 3 is not true
+select * from t1 left join t2 on a=b where (b > 3) is not false;
+a	b
+7	7
+1	NULL
+explain extended select * from t1 left join t2 on a=b where (b > 3) is not false;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	3	100.00	
+1	SIMPLE	t2	hash_ALL	NULL	#hash#$hj	5	test_join_outer.t1.a	3	100.00	Using where; Using join buffer (flat, BNLH join)
+Warnings:
+Note	1003	select `test_join_outer`.`t1`.`a` AS `a`,`test_join_outer`.`t2`.`b` AS `b` from `test_join_outer`.`t1` left join `test_join_outer`.`t2` on(`test_join_outer`.`t2`.`b` = `test_join_outer`.`t1`.`a` and `test_join_outer`.`t1`.`a` is not null) where `test_join_outer`.`t2`.`b` > 3 is not false
+drop table t1,t2;
 # end of 5.5 tests
 #
 # MDEV-19258: chained right joins all converted to inner joins
@@ -2161,6 +2199,77 @@ id	timestamp	modifiedBy	id	REV	REVTYPE	profile_id	id	REV	person_id	id	REV
 DROP TABLE t1,t2,t3,t4;
 # end of 10.1 tests
 #
+# MDEV-25362: name resolution for subqueries in ON expressions
+#
+create table t1 (a int, b int);
+create table t2 (c int, d int);
+create table t3 (e int, f int);
+create table t4 (g int, h int);
+explain
+select *
+from
+t1 left join
+(t2
+join
+t3 on
+(t3.f=t1.a)
+) on (t2.c=t1.a );
+ERROR 42S22: Unknown column 't1.a' in 'on clause'
+explain
+select *
+from
+t1 left join
+(t2
+join
+t3 on
+(t3.f=(select max(g) from t4 where t4.h=t1.a))
+) on (t2.c=t1.a );
+ERROR 42S22: Unknown column 't1.a' in 'where clause'
+drop table t1,t2,t3,t4;
+create table t1 (a int);
+insert into t1 values (1),(2);
+create table t2 (b int);
+insert into t2 values (1),(2);
+create table t3 (c int);
+insert into t3 values (1),(2);
+select * from ( select * from t1 left join t2
+on b in (select x from t3 as sq1)
+) as sq2;
+ERROR 42S22: Unknown column 'x' in 'field list'
+drop table t1,t2,t3;
+# end of 10.2 tests
+#
+# MDEV-22866: Crash in join optimizer with constant outer join nest
+#
+CREATE TABLE t1 (a INT) ENGINE=SequoiaDB;
+INSERT INTO t1 VALUES (1),(2);
+CREATE TABLE t2 (b INT) ENGINE=SequoiaDB;
+INSERT INTO t2 VALUES (3),(4);
+CREATE TABLE t3 (c INT, KEY(c)) ENGINE=SequoiaDB;
+CREATE TABLE t4 (d INT, KEY(d)) ENGINE=SequoiaDB;
+INSERT INTO t4 VALUES (5),(6);
+CREATE TABLE t5 (e INT) ENGINE=SequoiaDB;
+INSERT INTO t5 VALUES (7),(8);
+CREATE TABLE t6 (f INT) ENGINE=SequoiaDB;
+INSERT INTO t6 VALUES (9),(10);
+SELECT *
+FROM
+t1
+LEFT JOIN (
+t2 LEFT JOIN (
+t3 JOIN
+t4 ON t3.c = t4.d and t3.c >2 and t3.c<0
+) ON t2.b >= t4.d
+) ON t1.a <= t2.b
+LEFT JOIN t5 ON t2.b = t5.e
+LEFT JOIN t6 ON t3.c = t6.f;
+a	b	c	d	e	f
+1	3	NULL	NULL	NULL	NULL
+2	3	NULL	NULL	NULL	NULL
+1	4	NULL	NULL	NULL	NULL
+2	4	NULL	NULL	NULL	NULL
+drop table t1,t2,t3,t4,t5,t6;
+#
 # MDEV-17518: Range optimization doesn't use ON expressions from nested outer joins
 #
 create table t1(a int);
@@ -2202,7 +2311,93 @@ WHERE t3.pk IN (2);
 1
 drop view v4;
 drop table t1,t2,t3,t4;
+#
+# MDEV-28602 Wrong result with outer join, merged derived table and view
+#
+create table t1 (
+Election int(10) unsigned NOT NULL
+);
+insert into t1 (Election) values (1);
+create table t2 (
+VoteID int(10),
+ElectionID int(10),
+UserID int(10)
+);
+insert into t2 (ElectionID, UserID) values (2,  30), (3, 30);
+create view v1 as select * from t1
+left join ( select 'Y' AS Voted, ElectionID from t2 ) AS T 
+on T.ElectionID = t1.Election
+limit 9;
+select * from v1;
+Election	Voted	ElectionID
+1	NULL	NULL
+drop table t1, t2;
+drop view v1;
+#
+# and another contrived example showing a bit of heirarchy
+#
+create table t10 (a int);
+create table t20 (b int);
+insert into t10 values (1),(2);
+insert into t20 values (1),(3);
+create view v10 as select *, 'U' as u from t10 left join (select 'Y' as y, t20.b from t20) dt1 on t10.a= dt1.b limit 3;
+create table t30 (c int);
+insert into t30 values (1),(3);
+create view v20 as select * from t30 left join (select 'X' as x, v10.u, v10.y, v10.b from v10) dt2 on t30.c=dt2.b limit 6;
+select * from v20 limit 9;
+c	x	u	y	b
+1	X	U	Y	1
+3	NULL	NULL	NULL	NULL
+drop view v10, v20;
+drop table t10, t20, t30;
+#
+# More complex testcase
+#
+create table t2 (b int);
+insert into t2 values (3),(7),(1);
+create table t3 (c int);
+insert into t3 values (3),(1);
+create table t1 (a int);
+insert into t1 values (1),(2),(7),(1);
+select * from
+(
+select * from
+(select 'Z' as z, t1.a from t1) dt1
+left join 
+(select 'Y' as y, t2.b from t2) dt2
+left join
+(select 'X' as x, t3.c from t3) dt3
+on dt2.b=dt3.c
+on dt1.a=dt2.b
+limit 9
+) dt;
+z	a	y	b	x	c
+Z	1	Y	1	X	1
+Z	1	Y	1	X	1
+Z	7	Y	7	NULL	NULL
+Z	2	NULL	NULL	NULL	NULL
+create view v3(x,c) as select * from (select 'X' as x, t3.c from t3) dt3;
+create view v2(y,b) as select * from (select 'Y' as y, t2.b from t2) dt2;
+create view v0(y,b,x,c) as select * from v2 left join v3 on v2.b=v3.c;
+create view v1 as  select 'Z' as z, t1.a, v0.*  from t1 left join v0 on t1.a=v0.b limit 9;
+select * from v1;
+z	a	y	b	x	c
+Z	1	Y	1	X	1
+Z	1	Y	1	X	1
+Z	7	Y	7	NULL	NULL
+Z	2	NULL	NULL	NULL	NULL
+set statement join_cache_level=0 for
+select * from v1;
+z	a	y	b	x	c
+Z	1	Y	1	X	1
+Z	2	NULL	NULL	NULL	NULL
+Z	7	Y	7	NULL	NULL
+Z	1	Y	1	X	1
+drop view v0, v1, v2, v3;
+drop table t1, t2, t3;
+# end of 10.3 tests
 SET optimizer_switch=@save_optimizer_switch;
+DROP DATABASE test_join_outer;
 set join_cache_level=default;
 show variables like 'join_cache_level';
 Variable_name	Value

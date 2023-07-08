@@ -1,3 +1,14 @@
+## Check tests after fix MDEV-28475
+#-- source include/no_view_protocol.inc
+
+--disable_warnings
+drop database if exists test_custom_aggregate_functions;
+create database test_custom_aggregate_functions;
+drop database test_custom_aggregate_functions;
+create database test_custom_aggregate_functions;
+use test_custom_aggregate_functions;
+--enable_warnings
+
 create table t2 (sal int(10));
 delimiter |;
 
@@ -16,7 +27,6 @@ create table t1 (sal int(10),id int(10));
 INSERT INTO t1 (sal,id) VALUES (5000,1);
 INSERT INTO t1 (sal,id) VALUES (2000,1);
 INSERT INTO t1 (sal,id) VALUES (1000,1);
---replace_regex /test_parallel_[0-9]/X/
 select f1(sal) from t1 where id>= 1;
 select * from t2;
 drop table t2;
@@ -102,7 +112,6 @@ delimiter |;
 
 
 #WITHOUT RETURN STATEMENT IN AGGREGATE FUNCTIONS
---replace_regex /test_parallel_[0-9]/X/
 --error 1320
 create aggregate function f1(x int) returns int
 begin
@@ -434,7 +443,7 @@ end|
 create aggregate function f5(x INT) returns varchar(1000)
 begin
    declare z int default 0;
-   DECLARE cur1 CURSOR FOR SELECT sal FROM test.t2;
+   DECLARE cur1 CURSOR FOR SELECT sal FROM t2;
    declare continue handler for not found return 0;
    loop
        fetch group next row;
@@ -690,7 +699,6 @@ begin
 end|
 
 delimiter ;|
---replace_regex /test_parallel_[0-9]/X/
 select f5() from t2;
 delimiter |;
 
@@ -708,7 +716,6 @@ begin
 end|
 
 delimiter ;|
---replace_regex /test_parallel_[0-9]/X/
 select f6(sal) from t2;
 
 # GROUP BY AND ORDER BY
@@ -765,7 +772,6 @@ begin
 end|
 
 delimiter ;|
---replace_regex /test_parallel_[0-9]/X/
 select f7(sal) from t1;
 
 drop table t1;
@@ -973,6 +979,42 @@ select i, sum(i) from t1 group by i with rollup;
 drop function agg_sum;
 drop table t1;
 
+--echo #
+--echo # User defined aggregate functions not working correctly when the schema is changed
+--echo #
+
+CREATE SCHEMA IF NOT EXISTS common_schema;
+CREATE SCHEMA IF NOT EXISTS another_schema;
+DELIMITER |;
+DROP FUNCTION IF EXISTS common_schema.add_ints |
+CREATE FUNCTION common_schema.add_ints(int_1 INT, int_2 INT) RETURNS INT NO SQL
+BEGIN
+    RETURN int_1 + int_2;
+END |
+DROP FUNCTION IF EXISTS common_schema.sum_ints |
+CREATE AGGREGATE FUNCTION common_schema.sum_ints(int_val INT) RETURNS INT
+BEGIN
+    DECLARE result INT DEFAULT 0;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND RETURN result;
+    LOOP FETCH GROUP NEXT ROW;
+        SET result = common_schema.add_ints(result, int_val);
+    END LOOP;
+END |
+
+DELIMITER ;|
+
+use common_schema;
+SELECT common_schema.sum_ints(seq) FROM (SELECT 1 seq UNION ALL SELECT 2) t;
+
+USE another_schema;
+SELECT common_schema.sum_ints(seq) FROM (SELECT 1 seq UNION ALL SELECT 2) t;
+
+drop database common_schema;
+drop database another_schema;
+
+USE test_custom_aggregate_functions;
+
+--echo # End of 10.3 tests
 
 --echo #
 --echo # MDEV-18813 PROCEDURE and anonymous blocks silently ignore FETCH GROUP NEXT ROW
@@ -1023,3 +1065,7 @@ CREATE EVENT ev1
   STARTS CURRENT_TIMESTAMP + INTERVAL 1 MONTH
   ENDS CURRENT_TIMESTAMP + INTERVAL 1 MONTH + INTERVAL 1 WEEK
 DO FETCH GROUP NEXT ROW;
+
+--echo # End of 10.4 tests
+
+drop database test_custom_aggregate_functions;

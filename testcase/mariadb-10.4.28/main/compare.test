@@ -1,8 +1,10 @@
 #
 # Bug when using comparions of strings and integers.
 #
-
 --disable_warnings
+DROP DATABASE IF EXISTS test_compare;
+CREATE DATABASE test_compare;
+USE test_compare;
 drop table if exists t1;
 --enable_warnings
 
@@ -95,3 +97,19 @@ DROP TABLE t1;
 CREATE TABLE t1(a INT ZEROFILL);
 SELECT 1 FROM t1 WHERE t1.a IN (1, t1.a) AND t1.a=2;
 DROP TABLE t1;
+
+#
+# Check what happens when comparing to long string
+#
+
+CREATE TABLE t1 (a char(2), index (a));
+insert into t1 values ("aa"),("bb");
+select * from t1 where a="aa";
+select * from t1 where a="aaa";
+select * from t1 where a="aa ";
+select * from t1 where a>="aaa";
+explain select * from t1 where a="aaa";
+explain select * from t1 where a="aa ";
+drop table t1;
+
+DROP DATABASE test_compare;

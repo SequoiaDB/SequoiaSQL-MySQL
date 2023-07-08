@@ -92,4 +92,22 @@ select left(concat(a,version()),1) from t1;
 left(concat(a,version()),1)
 a
 drop table t1;
+#
+# Start of 10.2 tests
+#
+
+MDEV-27544 database() function under UNION ALL truncates results to 34 characters
+
+
+SET NAMES utf8;
+create database betäubungsmittelverschreibungsverordnung;
+use betäubungsmittelverschreibungsverordnung;
+select database() as "database" union all select database();
+database
+betäubungsmittelverschreibungsverordnung
+betäubungsmittelverschreibungsverordnung
+drop database betäubungsmittelverschreibungsverordnung;
+#
+# End of 10.2 tests
+#
 DROP DATABASE test_func_system;
