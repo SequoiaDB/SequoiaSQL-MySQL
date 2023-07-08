@@ -604,7 +604,7 @@ insert into t1 values (1),(2),(3),(4);
 delete from t1;
 delete from t1;
 #SEQUOIASQLMAINSTREAM-1935
-#check table t1;
+check table t1;
 
 # cleanup
 drop table t1;

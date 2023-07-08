@@ -611,6 +611,9 @@ partition by system_time limit 3
 insert into t1 values (1),(2),(3),(4);
 delete from t1;
 delete from t1;
+check table t1;
+Table	Op	Msg_type	Msg_text
+test_versioning_partition.t1	check	status	OK
 drop table t1;
 #
 # MDEV-21233 Assertion `m_extra_cache' failed in ha_partition::late_extra_cache
