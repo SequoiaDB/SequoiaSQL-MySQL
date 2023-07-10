@@ -1,4 +1,5 @@
 #Testcase: seqDB-29908
+--source include/sequoiadb_trans_rr_skip.inc
 --source include/have_sequoiadb.inc
 
 set session sequoiadb_debug_log=on;
