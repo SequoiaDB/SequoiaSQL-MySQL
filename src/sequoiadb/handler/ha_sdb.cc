@@ -2582,7 +2582,9 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   bool has_autoinc = (table->next_number_field != NULL);
   if (rows == 1 || m_insert_with_update || (using_binlog_row && has_autoinc)
 #ifdef IS_MARIADB
-      || (SQLCOM_REPLACE == thd_sql_command(ha_thd()) && table->versioned())
+      || ((SQLCOM_REPLACE == thd_sql_command(ha_thd()) ||
+           SQLCOM_REPLACE_SELECT == thd_sql_command(ha_thd())) &&
+          table->versioned())
 #endif
   ) {
     m_use_bulk_insert = false;
@@ -2687,7 +2689,9 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
       Remove flag HA_EXTRA_IGNORE_DUP_KEY and HA_EXTRA_WRITE_CAN_REPLACE when
       'REPLACE INTO ...' for system-versioned tables
     */
-    if (SQLCOM_REPLACE == sql_command && using_vers_sys) {
+    if ((SQLCOM_REPLACE == sql_command ||
+         SQLCOM_REPLACE_SELECT == sql_command) &&
+        using_vers_sys) {
       m_write_can_replace = m_ignore_dup_key = false;
       replace_into_for_vers_sys = true;
     }
@@ -2771,9 +2775,18 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
         thd_sdb->duplicated += duplicated_num.numberLong();
       }
     }
-    update_last_insert_id();
-    stats.records += row_count;
-    update_incr_stat(row_count);
+    if ((table->next_number_field &&
+         table->next_number_field->val_int() != 0) ||
+        (table->auto_increment_field_not_null &&
+         thd->variables.sql_mode & MODE_NO_AUTO_VALUE_ON_ZERO)) {
+      // do nothing
+    } else {
+      update_last_insert_id();
+    }
+    if (rc == 0 && !m_write_can_replace) {
+      stats.records += row_count;
+      update_incr_stat(row_count);
+    }
   }
 
   SDB_EXCEPTION_CATCHER(rc, "Failed to insert row table:%s.%s, exception:%s",
