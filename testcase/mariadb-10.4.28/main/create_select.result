@@ -7,19 +7,19 @@ INSERT INTO t1 VALUES (1),(2),(1);
 CREATE TABLE t2 ( PRIMARY KEY (a) ) ENGINE=SequoiaDB SELECT a FROM t1;
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select * from t2;
-ERROR 42S02: Table 'test_parallel_1.t2' doesn't exist
+ERROR 42S02: Table 'X.t2' doesn't exist
 CREATE TEMPORARY TABLE t2 ( PRIMARY KEY (a) ) ENGINE=SequoiaDB SELECT a FROM t1;
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select * from t2;
-ERROR 42S02: Table 'test_parallel_1.t2' doesn't exist
+ERROR 42S02: Table 'X.t2' doesn't exist
 CREATE TABLE t2 ( PRIMARY KEY (a) ) ENGINE=SequoiaDB SELECT a FROM t1;
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select * from t2;
-ERROR 42S02: Table 'test_parallel_1.t2' doesn't exist
+ERROR 42S02: Table 'X.t2' doesn't exist
 CREATE TEMPORARY TABLE t2 ( PRIMARY KEY (a) ) ENGINE=SequoiaDB SELECT a FROM t1;
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select * from t2;
-ERROR 42S02: Table 'test_parallel_1.t2' doesn't exist
+ERROR 42S02: Table 'X.t2' doesn't exist
 drop table t1;
 #
 # End of 4.1 tests

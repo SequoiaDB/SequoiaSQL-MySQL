@@ -18,18 +18,22 @@ CREATE TABLE t1 ( a int );
 INSERT INTO t1 VALUES (1),(2),(1);
 --error ER_DUP_ENTRY
 CREATE TABLE t2 ( PRIMARY KEY (a) ) ENGINE=SequoiaDB SELECT a FROM t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 select * from t2;
 --error ER_DUP_ENTRY
 CREATE TEMPORARY TABLE t2 ( PRIMARY KEY (a) ) ENGINE=SequoiaDB SELECT a FROM t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 select * from t2;
 --error ER_DUP_ENTRY
 CREATE TABLE t2 ( PRIMARY KEY (a) ) ENGINE=SequoiaDB SELECT a FROM t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 select * from t2;
 --error ER_DUP_ENTRY
 CREATE TEMPORARY TABLE t2 ( PRIMARY KEY (a) ) ENGINE=SequoiaDB SELECT a FROM t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 select * from t2;
 drop table t1;

@@ -412,18 +412,24 @@ insert into t1 values ('foo'),('bar');
 create table t2 (b date);
 
 create procedure pr() insert into t2 select * from t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_TRUNCATED_WRONG_VALUE
 call pr;
 prepare stmt from 'insert into t2 select * from t1';
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_TRUNCATED_WRONG_VALUE
 execute stmt;
 alter table t1 add system versioning;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_TRUNCATED_WRONG_VALUE
 call pr;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_TRUNCATED_WRONG_VALUE
 call pr;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_TRUNCATED_WRONG_VALUE
 execute stmt;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_TRUNCATED_WRONG_VALUE
 execute stmt;
 drop prepare stmt;

@@ -502,19 +502,19 @@ insert into t1 values ('foo'),('bar');
 create table t2 (b date);
 create procedure pr() insert into t2 select * from t1;
 call pr;
-ERROR 22007: Incorrect date value: 'foo' for column `test_parallel_1`.`t2`.`b` at row 1
+ERROR 22007: Incorrect date value: 'foo' for column `X`.`t2`.`b` at row 1
 prepare stmt from 'insert into t2 select * from t1';
 execute stmt;
-ERROR 22007: Incorrect date value: 'foo' for column `test_parallel_1`.`t2`.`b` at row 1
+ERROR 22007: Incorrect date value: 'foo' for column `X`.`t2`.`b` at row 1
 alter table t1 add system versioning;
 call pr;
-ERROR 22007: Incorrect date value: 'foo' for column `test_parallel_1`.`t2`.`b` at row 1
+ERROR 22007: Incorrect date value: 'foo' for column `X`.`t2`.`b` at row 1
 call pr;
-ERROR 22007: Incorrect date value: 'foo' for column `test_parallel_1`.`t2`.`b` at row 1
+ERROR 22007: Incorrect date value: 'foo' for column `X`.`t2`.`b` at row 1
 execute stmt;
-ERROR 22007: Incorrect date value: 'foo' for column `test_parallel_1`.`t2`.`b` at row 1
+ERROR 22007: Incorrect date value: 'foo' for column `X`.`t2`.`b` at row 1
 execute stmt;
-ERROR 22007: Incorrect date value: 'foo' for column `test_parallel_1`.`t2`.`b` at row 1
+ERROR 22007: Incorrect date value: 'foo' for column `X`.`t2`.`b` at row 1
 drop prepare stmt;
 drop procedure pr;
 drop table t1, t2;

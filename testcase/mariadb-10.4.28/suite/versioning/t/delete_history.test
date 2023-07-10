@@ -67,6 +67,7 @@ partition by system_time limit 1 (
     partition pn current);
 insert into t values (1);
 update t set a= 2;
+--replace_regex /test_parallel_[0-9]/X/
 update t set a= 3;
 --echo # You see warning above ^
 delete history from t;

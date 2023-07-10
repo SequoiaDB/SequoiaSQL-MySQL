@@ -3255,6 +3255,13 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 2	SUBQUERY	t11	ALL	NULL	NULL	NULL	NULL	0	
 3	UNION	t12	ALL	NULL	NULL	NULL	NULL	0	
 NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	NULL	
+explain select * from t1 where not exists
+((select t11.i from t1 t11) union (select t12.i from t1 t12));
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	PRIMARY	t1	ALL	NULL	NULL	NULL	NULL	0	
+2	SUBQUERY	t11	ALL	NULL	NULL	NULL	NULL	0	
+3	UNION	t12	ALL	NULL	NULL	NULL	NULL	0	
+NULL	UNION RESULT	<union2,3>	ALL	NULL	NULL	NULL	NULL	NULL	
 DROP TABLE t1;
 CREATE TABLE t1 (a VARCHAR(250), b INT auto_increment, PRIMARY KEY (b));
 insert into t1 (a) values (FLOOR(rand() * 100));
@@ -6409,7 +6416,53 @@ WHERE (t2.i, t2.pk) NOT IN ( SELECT t3.i, t3.i FROM t t3, t t4 ) AND t1.c = 'foo
 pk	i	c	pk	i	c
 1	10	foo	1	10	foo
 DROP TABLE t;
+#
+# MDEV-25002: Outer reference in ON clause of subselect
+#
+create table t1 (
+pk int primary key,
+a int
+) engine=sequoiadb;
+insert into t1 values (1,1), (2,2);
+create table t2 (
+pk int primary key,
+b int
+) engine=sequoiadb;
+insert into t2 values (1,1), (2,3);
+create table t3 (a int);
+insert into t3 values (1),(2);
+select a,
+(select count(*) from t1, t2
+where t2.pk=t3.a and t1.pk=1) as sq
+from t3;
+a	sq
+1	1
+2	1
+select a,
+(select count(*) from t1 join t2 on t2.pk=t3.a
+where t1.pk=1) as sq
+from t3;
+a	sq
+1	1
+2	1
+select a from t3
+where a in (select t2.b from t1,t2 where t2.pk=t3.a and t1.pk=1);
+a
+1
+select a from t3
+where a in (select t2.b from t1 join t2 on t2.pk=t3.a where t1.pk=1);
+a
+1
+drop table t1,t2,t3;
 # End of 10.2 tests
+#
+# MDEV-29926: ASAN heap-use-after-free in Explain_query::~Explain_query
+#
+CREATE TABLE t (a VARCHAR(1)) CHARACTER SET utf8mb3;
+EXECUTE IMMEDIATE "SELECT COUNT(*) FROM t WHERE a < (SELECT 'x')";
+COUNT(*)
+0
+DROP TABLE t;
 #
 # Start of 10.4 tests
 #

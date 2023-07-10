@@ -112,6 +112,7 @@ proc
 procs_priv
 proxies_priv
 reserved
+reserved
 roles_mapping
 rwlock_instances
 s1
