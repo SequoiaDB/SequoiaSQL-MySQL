@@ -1099,13 +1099,15 @@ replace t1 select * from t1;
 replace t1 select * from t1;
 replace t1 select * from t1;
 replace t1 select * from t1;
+Warnings:
+Warning	4114	Versioned table `test_versioning_partition`.`t1`: partition `p1` is full, add more HISTORY partitions
 # You see warning above ^
 select count(*) from t1 partition (p0);
 count(*)
-0
+100
 select count(*) from t1 partition (p1);
 count(*)
-0
+100
 drop table t1;
 #
 # MDEV-28552 Assertion `inited==RND' failed in handler::ha_rnd_end
