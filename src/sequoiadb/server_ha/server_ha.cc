@@ -5207,11 +5207,11 @@ done:
   }
   DBUG_RETURN(rc);
 error:
-  if (sql_info->sdb_conn && '\0' == sql_info->err_message[0]) {
+  if (sql_info && sql_info->sdb_conn && '\0' == sql_info->err_message[0]) {
     ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
   }
 
-  if (!sql_info->has_handle_error) {
+  if (sql_info && !sql_info->has_handle_error) {
     handle_error(rc, sql_info);
   }
   goto done;
