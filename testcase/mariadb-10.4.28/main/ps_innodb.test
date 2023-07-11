@@ -71,17 +71,17 @@ CREATE TABLE t1 (id date, count int) engine=sequoiadb;
 insert into t1 values ("2019-06-11",1),("2019-06-12",2);
 select * from t1 where id = '1bad';
 # SEQUOIASQLMAINSTREAM-1938
-#--error ER_TRUNCATED_WRONG_VALUE
+--error ER_TRUNCATED_WRONG_VALUE
 update t1 set count = count + 1 where id = '1bad';
 
 prepare stmt from "update t1 set count = count + 1 where id = '1bad'";
-#--error ER_TRUNCATED_WRONG_VALUE
+--error ER_TRUNCATED_WRONG_VALUE
 execute stmt;
 deallocate prepare stmt;
 
 prepare stmt from 'update t1 set count = count + 1 where id = ?';
 set @a = '1bad';
-#--error ER_TRUNCATED_WRONG_VALUE
+--error ER_TRUNCATED_WRONG_VALUE
 execute stmt using @a;
 deallocate prepare stmt;
 drop table t1;

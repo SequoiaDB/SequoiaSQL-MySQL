@@ -62,12 +62,15 @@ id	count
 Warnings:
 Warning	1292	Truncated incorrect datetime value: '1bad'
 update t1 set count = count + 1 where id = '1bad';
+ERROR 22007: Truncated incorrect datetime value: '1bad'
 prepare stmt from "update t1 set count = count + 1 where id = '1bad'";
 execute stmt;
+ERROR 22007: Truncated incorrect datetime value: '1bad'
 deallocate prepare stmt;
 prepare stmt from 'update t1 set count = count + 1 where id = ?';
 set @a = '1bad';
 execute stmt using @a;
+ERROR 22007: Truncated incorrect datetime value: '1bad'
 deallocate prepare stmt;
 drop table t1;
 set sql_mode=@save_sql_mode;
