@@ -78,7 +78,7 @@ public class MetaDataMapping26301 extends MysqlTestBase {
         String mappingCSName = "";
         while ( cursor1.hasNext() ) {
             String currentCSName = ( String ) cursor1.getNext().get( "Name" );
-            if ( currentCSName.contains( instanceGroupName.toUpperCase() ) ) {
+            if ( currentCSName.contains( "SQL_NAME_MAPPING_"+instanceGroupName.toUpperCase() ) ) {
                 mappingCSName = currentCSName;
                 break;
             }
