@@ -1535,6 +1535,9 @@ SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59') ORDER BY d;
 d	tm
 2006-01-01	-24:00:00
 2019-01-01	-48:00:00
+Warnings:
+Warning	1292	Truncated incorrect DECIMAL value: '837:59:59'
+Warning	1292	Truncated incorrect DECIMAL value: '837:59:59'
 SELECT t,tm FROM t1 WHERE TIME_TO_SEC(tm) > 100000;
 t	tm
 2001-01-01 00:00:00	100:55:50
@@ -1721,6 +1724,10 @@ SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59') ORDER BY d;
 d	tm
 2006-01-01	-24:00:00
 2019-01-01	-48:00:00
+Warnings:
+Warning	1292	Truncated incorrect DECIMAL value: '837:59:59'
+Warning	1292	Truncated incorrect DECIMAL value: '837:59:59'
+Warning	1292	Truncated incorrect DECIMAL value: '837:59:59'
 SELECT t,tm FROM t1 WHERE TIME_TO_SEC(tm) > 100000;
 t	tm
 2001-01-01 00:00:00	100:55:50
