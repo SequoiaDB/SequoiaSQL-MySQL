@@ -184,6 +184,8 @@ id	a	b	c
 22	-1	a	-1
 23	-1	a	-1
 24	-1	a	-1
+Warning	1292	Truncated incorrect DECIMAL value: '1a'
+Warnings:
 select * from t1 where a>'a';
 id	a	b	c
 1	1	a	1
@@ -474,6 +476,7 @@ id	a	b	c
 22	-1	a	-1
 23	-1	a	-1
 24	-1	a	-1
+Warning	1292	Truncated incorrect DECIMAL value: '1a'
 Warning	1292	Truncated incorrect DOUBLE value: '1a'
 Warnings:
 select * from t1 where a>'a';

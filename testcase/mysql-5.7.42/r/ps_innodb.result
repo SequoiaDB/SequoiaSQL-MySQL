@@ -40,6 +40,7 @@ deallocate prepare stmt;
 prepare stmt from 'update t1 set count = count + 1 where id = ?';
 set @a = '1bad';
 execute stmt using @a;
+ERROR 22007: Truncated incorrect DOUBLE value: '1bad'
 deallocate prepare stmt;
 drop table t1;
 CREATE TABLE t1 (id decimal(10,5), count int) engine=sequoiadb;
@@ -51,21 +52,28 @@ id	count
 select * from t1 where id = '1bad';
 id	count
 1.00000	1
+Warnings:
+Warning	1292	Truncated incorrect DECIMAL value: '1bad'
 update t1 set count = count + 1 where id = '1bad';
+ERROR 22007: Truncated incorrect DECIMAL value: '1bad'
 select * from t1 order by id;
 id	count
 0.00000	2
-1.00000	2
+1.00000	1
 delete from t1 where id = '1bad';
+ERROR 22007: Truncated incorrect DECIMAL value: '1bad'
 select * from t1 order by id;
 id	count
 0.00000	2
+1.00000	1
 prepare stmt from "update t1 set count = count + 1 where id = '1bad'";
 execute stmt;
+ERROR 22007: Truncated incorrect DECIMAL value: '1bad'
 deallocate prepare stmt;
 prepare stmt from 'update t1 set count = count + 1 where id = ?';
 set @a = '1bad';
 execute stmt using @a;
+ERROR 22007: Truncated incorrect DECIMAL value: '1bad'
 deallocate prepare stmt;
 drop table t1;
 CREATE TABLE t1 (id double, count int) engine=sequoiadb;
@@ -99,6 +107,7 @@ deallocate prepare stmt;
 prepare stmt from 'update t1 set count = count + 1 where id = ?';
 set @a = '1bad';
 execute stmt using @a;
+ERROR 22007: Truncated incorrect DOUBLE value: '1bad'
 deallocate prepare stmt;
 drop table t1;
 CREATE TABLE t1 (id date, count int) engine=sequoiadb;
