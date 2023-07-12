@@ -837,6 +837,45 @@ partition_name	table_rows
 p0	34
 p1	33
 pn	33
+select * from t1 partition(p0);
+pk
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+select * from t1 partition(p1);
+pk
+replace into t1 values (1),(2),(3);
+select partition_name, table_rows
+from information_schema.partitions
+where table_name = 't1';
+partition_name	table_rows
+p0	35
+p1	34
+pn	34
+select * from t1 partition(p0);
+pk
+1
+1
+2
+2
+3
+3
+4
+5
+6
+7
+8
+9
+10
+select * from t1 partition(p1);
+pk
 drop table t1;
 #
 # MDEV-28271 Assertion on TRUNCATE PARTITION for PARTITION BY SYSTEM_TIME

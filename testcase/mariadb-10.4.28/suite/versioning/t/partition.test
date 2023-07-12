@@ -871,6 +871,14 @@ replace into t1 select seq from seq_1_to_10;
 select partition_name, table_rows
 from information_schema.partitions
 where table_name = 't1';
+select * from t1 partition(p0);
+select * from t1 partition(p1);
+replace into t1 values (1),(2),(3);
+select partition_name, table_rows
+from information_schema.partitions
+where table_name = 't1';
+select * from t1 partition(p0);
+select * from t1 partition(p1);
  # Cleanup
 drop table t1;
 
