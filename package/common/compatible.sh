@@ -130,7 +130,10 @@ newVsn=$2
 
 #SEQUOIASQLMAINSTREAM-1941
 is_arm=`uname -m | grep "aarch64"`
-if [[ $is_arm != "" && $oldVsn =~ \ * ]]; then oldVsn="3.4.9"; fi
+if [[ $is_arm != "" && $# == 1 ]]; then
+   newVsn=$oldVsn
+   oldVsn="3.4.9"
+fi
 
 checkVsnPara $oldVsn
 checkVsnPara $newVsn
