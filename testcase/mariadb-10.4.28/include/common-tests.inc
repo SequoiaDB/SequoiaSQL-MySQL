@@ -6,11 +6,12 @@
 #
 
 --disable_warnings
-drop table if exists t1,t2;
+drop database if exists test_ssl;
 --enable_warnings
-create table t1(a int);
-create table t2 like t1;
-drop table t1, t2;
+create database test_ssl;
+drop database test_ssl;
+create database test_ssl;
+use test_ssl;
 
 #
 # Simple select test
@@ -22,7 +23,7 @@ CREATE TABLE t1 (
 );
 
 INSERT INTO t1 VALUES (9410,9412);
-  
+
 select period from t1;
 select * from t1;
 select t1.* from t1;
@@ -1249,6 +1250,7 @@ INSERT INTO t2 VALUES (1191,068504,00,'bonfire','corresponds','positively','');
 INSERT INTO t2 VALUES (1192,068305,00,'Colombo','hardware','colicky','');
 INSERT INTO t2 VALUES (1193,000000,00,'nondecreasing','implant','thrillingly','');
 --enable_query_log
+select count(*) from t2;
 
 #
 # Search with a key
@@ -1386,6 +1388,7 @@ INSERT INTO t3 (period,name,companynr,price,price2) VALUES (1008,"tucked",311,23
 INSERT INTO t3 (period,name,companynr,price,price2) VALUES (1009,"gems",447,2374834,9872392);
 INSERT INTO t3 (period,name,companynr,price,price2) VALUES (1010,"clinker",512,786542,76234234);
 --enable_query_log
+select count(*) from t3;
 
 create temporary table tmp engine = sequoiadb select * from t3;
 
@@ -1399,15 +1402,17 @@ insert into t3 select * from tmp;
 insert into tmp select * from t3;
 insert into t3 select * from tmp;
 insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
+#insert into t3 select * from tmp;
 #insert into tmp select * from t3;
 #insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+select count(*) from tmp;
+select count(*) from t3;
 
 alter table t3 add t2nr int not null auto_increment primary key first;
 
@@ -1482,6 +1487,7 @@ explain select fld3,period from t2,t3 where t2.fld1 = 011401 and t3.t2nr=t2.fld1
 # Search with a constant table and several rows from another table
 #
 
+--sorted_result
 select fld3,period from t2,t1 where companynr*10 = 37*10;
 
 #
@@ -1489,6 +1495,7 @@ select fld3,period from t2,t1 where companynr*10 = 37*10;
 # t3 will be the main table.
 #
 
+--sorted_result
 select fld3,period,price,price2 from t2,t3 where t2.fld1=t3.t2nr and period >= 1001 and period <= 1002 and t2.companynr = 37 order by fld3,period, price;
 
 #
@@ -1497,6 +1504,7 @@ select fld3,period,price,price2 from t2,t3 where t2.fld1=t3.t2nr and period >= 1
 # t2nr will be checked.
 #
 
+--sorted_result
 select t2.fld1,fld3,period,price,price2 from t2,t3 where t2.fld1>= 18201 and t2.fld1 <= 18811 and t2.fld1=t3.t2nr and period = 1001 and t2.companynr = 37;
 
 #
@@ -1612,16 +1620,20 @@ SET @@join_cache_level=@local_join_cache_level;
 # each record
 #
 
+--sorted_result
 select t2.fld1,t2.companynr,fld3,period from t3,t2 where t2.fld1 = 38208 and t2.fld1=t3.t2nr and period = 1008 or t2.fld1 = 38008 and t2.fld1 =t3.t2nr and period = 1008;
 
+--sorted_result
 select t2.fld1,t2.companynr,fld3,period from t3,t2 where (t2.fld1 = 38208 or t2.fld1 = 38008) and t2.fld1=t3.t2nr and period>=1008 and period<=1009;
 
+--sorted_result
 select t2.fld1,t2.companynr,fld3,period from t3,t2 where (t3.t2nr = 38208 or t3.t2nr = 38008) and t2.fld1=t3.t2nr and period>=1008 and period<=1009;
 
 #
 # Test of many parenthesis levels
 #
 
+--sorted_result
 select period from t1 where (((period > 0) or period < 10000 or (period = 1900)) and (period=1900 and period <= 1901) or (period=1903 and (period=1903)) and period>=1902) or ((period=1904 or period=1905) or (period=1906 or period>1907)) or (period=1908 and period = 1909);
 select period from t1 where ((period > 0 and period < 1) or (((period > 0 and period < 100) and (period > 10)) or (period > 10)) or (period > 0 and (period > 5 or period > 6)));
 
@@ -1695,6 +1707,7 @@ select companynr,sum(price)/count(price) as avg from t3 group by companynr havin
 
 select companynr,count(*) from t2 group by companynr order by 2 desc;
 select companynr,count(*) from t2 where companynr > 40 group by companynr order by 2 desc;
+--sorted_result
 select t2.fld4,t2.fld1,count(price),sum(price),min(price),max(price),avg(price) from t3,t2 where t3.companynr = 37 and t2.fld1 = t3.t2nr group by fld1,t2.fld4;
 
 #
@@ -1705,7 +1718,9 @@ select t2.fld4,t2.fld1,count(price),sum(price),min(price),max(price),avg(price) 
 #	    send rows
 #
 
+--sorted_result
 select t3.companynr,fld3,sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 512 group by companynr,fld3;
+--sorted_result
 select t2.companynr,count(*),min(fld3),max(fld3),sum(price),avg(price) from t2,t3 where t3.companynr >= 30 and t3.companynr <= 58 and t3.t2nr = t2.fld1 and 1+1=2 group by t2.companynr;
 
 #
@@ -1716,6 +1731,7 @@ select t2.companynr,count(*),min(fld3),max(fld3),sum(price),avg(price) from t2,t
 #	    send rows
 #
 
+--sorted_result
 select t3.companynr+0,t3.t2nr,fld3,sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 37 group by 1,t3.t2nr,fld3,fld3,fld3,fld3,fld3 order by fld1;
 
 #
@@ -1865,3 +1881,5 @@ INSERT INTO t1 VALUES (3359362,406,3359362,'Mustermann Musterfrau',7001,'2000-05
 SELECT ELT(FIELD(kundentyp,'PP','PPA','PG','PGA','FK','FKA','FP','FPA','K','KA','V','VA',''), 'Privat (Private Nutzung)','Privat (Private Nutzung) Sitz im Ausland','Privat (geschaeftliche Nutzung)','Privat (geschaeftliche Nutzung) Sitz im Ausland','Firma (Kapitalgesellschaft)','Firma (Kapitalgesellschaft) Sitz im Ausland','Firma (Personengesellschaft)','Firma (Personengesellschaft) Sitz im Ausland','oeff. rechtl. Koerperschaft','oeff. rechtl. Koerperschaft Sitz im Ausland','Eingetragener Verein','Eingetragener Verein Sitz im Ausland','Typ unbekannt') AS Kundentyp ,kategorie FROM t1 WHERE hdl_nr < 2000000 AND kategorie IN ('Prepaid','Mobilfunk') AND st_klasse = 'Workflow' GROUP BY kundentyp ORDER BY kategorie;
 --enable_ps_protocol
 drop table t1;
+
+drop database test_ssl;
