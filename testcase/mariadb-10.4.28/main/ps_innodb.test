@@ -23,6 +23,7 @@ select * from t1 where id = '1bad';
 update t1 set count = count + 1 where id = '1bad';
 select * from t1 order by id;
 # SEQUOIASQLMAINSTREAM-1950
+--error ER_TRUNCATED_WRONG_VALUE
 delete from t1 where id = '1bad';
 select * from t1 order by id;
 
@@ -46,6 +47,7 @@ select * from t1 where id = '1bad';
 --error ER_TRUNCATED_WRONG_VALUE
 update t1 set count = count + 1 where id = '1bad';
 select * from t1 order by id;
+--error ER_TRUNCATED_WRONG_VALUE
 delete from t1 where id = '1bad';
 select * from t1 order by id;
 

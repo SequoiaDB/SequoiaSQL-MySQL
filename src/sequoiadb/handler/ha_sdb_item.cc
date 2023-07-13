@@ -495,6 +495,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
             String str(buff, sizeof(buff), item_val->charset_for_protocol());
             String conv_str;
             String *p_str = NULL;
+            enum_field_types fld_type = field->type();
             p_str = item_val->val_str(&str);
             if (NULL == p_str) {
               rc = SDB_ERR_INVALID_ARG;
@@ -507,6 +508,26 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
                 goto error;
               }
               p_str = &conv_str;
+            }
+
+            // Check if string can be casted to integer or decimal, only works
+            // for MariaDB. Because 'abort_on_warning' only works for MariaDB.
+            if (abort_on_warning) {
+              if ((MYSQL_TYPE_TINY == fld_type ||
+                   MYSQL_TYPE_SHORT == fld_type ||
+                   MYSQL_TYPE_INT24 == fld_type ||
+                   MYSQL_TYPE_LONG == fld_type ||
+                   MYSQL_TYPE_LONGLONG == fld_type)) {
+                item_val->val_int();
+              } else if (MYSQL_TYPE_DECIMAL == fld_type ||
+                         MYSQL_TYPE_NEWDECIMAL == fld_type) {
+                my_decimal dec_buf;
+                item_val->val_decimal(&dec_buf);
+              }
+              if (thd->is_error()) {
+                rc = sdb_sql_errno(thd);
+                goto error;
+              }
             }
 
             rc = decimal.fromString(p_str->ptr());
