@@ -1,9 +1,8 @@
 package com.sequoiasql.metadatasync.serial;
 
-import com.sequoiadb.base.CollectionSpace;
-import com.sequoiadb.base.DBCollection;
-import com.sequoiadb.base.Sequoiadb;
-import com.sequoiasql.testcommon.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.BasicBSONObject;
 import org.testng.Assert;
 import org.testng.SkipException;
@@ -11,8 +10,14 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.sequoiadb.base.CollectionSpace;
+import com.sequoiadb.base.DBCollection;
+import com.sequoiadb.base.Sequoiadb;
+import com.sequoiasql.testcommon.CommLib;
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.JdbcInterfaceFactory;
+import com.sequoiasql.testcommon.JdbcWarpperType;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
  * @Description seqDB-28322::回收站已满，drop与sdb主子表同名的映射表
@@ -122,10 +127,9 @@ public class DDL28322_28325 extends MysqlTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
-            DDLUtils.restoreRecycleBinConf( sdb );
+            CommLib.restoreRecycleBinConf( sdb );
             jdbc.dropDatabase( dbName );
         } finally {
-            DDLUtils.restoreRecycleBinConf( sdb );
             sdb.close();
             jdbc.close();
         }

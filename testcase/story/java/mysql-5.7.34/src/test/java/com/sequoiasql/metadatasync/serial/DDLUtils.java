@@ -1,17 +1,18 @@
 package com.sequoiasql.metadatasync.serial;
 
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
+
+import org.bson.BasicBSONObject;
+import org.testng.Assert;
+
 import com.sequoiadb.base.DBCollection;
 import com.sequoiadb.base.DBCursor;
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.testcommon.JdbcInterface;
 import com.sequoiasql.testcommon.MysqlTestBase;
-import org.bson.BasicBSONObject;
-import org.testng.Assert;
-
-import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeoutException;
 
 public class DDLUtils extends MysqlTestBase {
     public static void checkJdbcUpdateResult( JdbcInterface jdbc,
@@ -104,11 +105,6 @@ public class DDLUtils extends MysqlTestBase {
 
         // 验证回收站是否已被填满，预期有三条记录
         Assert.assertEquals( sdb.getRecycleBin().getCount( null ), 3 );
-    }
-
-    public static void restoreRecycleBinConf( Sequoiadb sdb ) {
-        sdb.getRecycleBin().alter( new BasicBSONObject( "AutoDrop", true ) );
-        sdb.getRecycleBin().alter( new BasicBSONObject( "MaxItemNum", 100 ) );
     }
 
     public static void checkRecycleBin( Sequoiadb sdb ) {

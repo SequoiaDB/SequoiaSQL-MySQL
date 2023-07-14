@@ -1,7 +1,8 @@
 package com.sequoiasql.metadatasync.serial;
 
-import com.sequoiadb.base.Sequoiadb;
-import com.sequoiasql.testcommon.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.BasicBSONObject;
 import org.testng.Assert;
 import org.testng.SkipException;
@@ -9,8 +10,12 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.sequoiadb.base.Sequoiadb;
+import com.sequoiasql.testcommon.CommLib;
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.JdbcInterfaceFactory;
+import com.sequoiasql.testcommon.JdbcWarpperType;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
  * @Description seqDB-28319::回收站已满，drop分区表的分区 seqDB-28320::回收站未满，drop分区表的分区
@@ -144,11 +149,10 @@ public class DDL28319_28320 extends MysqlTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
-            DDLUtils.restoreRecycleBinConf( sdb );
+            CommLib.restoreRecycleBinConf( sdb );
             jdbc.dropDatabase( dbName1 );
             jdbc.dropDatabase( dbName2 );
         } finally {
-            DDLUtils.restoreRecycleBinConf( sdb );
             sdb.close();
             jdbc.close();
         }

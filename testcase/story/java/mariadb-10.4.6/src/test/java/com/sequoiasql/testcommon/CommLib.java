@@ -818,4 +818,10 @@ public class CommLib {
         snapshot.close();
         return coordUrls;
     }
+
+    public static void restoreRecycleBinConf( Sequoiadb sdb ) {
+        // MaxItemNum默认值为100，执行用例前环境准备时修改为50，测试框架默认50
+        sdb.getRecycleBin().alter( new BasicBSONObject( "AutoDrop", true )
+                .append( "MaxItemNum", 50 ).append( "MaxVersionNum", 2 ) );
+    }
 }

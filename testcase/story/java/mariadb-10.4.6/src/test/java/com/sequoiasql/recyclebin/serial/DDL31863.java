@@ -1,20 +1,25 @@
 package com.sequoiasql.recyclebin.serial;
 
-import com.sequoiadb.base.DBCursor;
-import com.sequoiadb.base.Sequoiadb;
-import com.sequoiasql.metadatasync.serial.DDLUtils;
-import com.sequoiasql.testcommon.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.BasicBSONObject;
-import org.bson.types.MaxKey;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import com.sequoiadb.base.Sequoiadb;
+import com.sequoiasql.metadatasync.serial.DDLUtils;
+import com.sequoiasql.testcommon.CommLib;
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.JdbcInterfaceFactory;
+import com.sequoiasql.testcommon.JdbcWarpperType;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
  * @Description seqDB-31863:分区表 drop partition
@@ -266,11 +271,7 @@ public class DDL31863 extends MysqlTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
-            sdb.getRecycleBin().dropAll( null );
-            BasicBSONObject recycleOptions = new BasicBSONObject( "MaxItemNum",
-                    100 ).append( "MaxVersionNum", 6 ).append( "AutoDrop",
-                            true );
-            sdb.getRecycleBin().alter( recycleOptions );
+            CommLib.restoreRecycleBinConf( sdb );
             jdbc1.dropDatabase( dbNameBase );
         } finally {
             sdb.close();
