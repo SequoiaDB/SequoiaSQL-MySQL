@@ -167,7 +167,8 @@ public class Select28186 extends MysqlTestBase {
             try {
                 jdbc.query( sqlStr );
             } catch ( SQLException e ) {
-                saveResult( e.getErrorCode(), e );
+                if ( 1317 != e.getErrorCode() )
+                    throw e;
             }
         }
     }
@@ -212,7 +213,7 @@ public class Select28186 extends MysqlTestBase {
                     Thread.sleep( 10 );
                 }
             } catch ( SQLException e ) {
-                saveResult( e.getErrorCode(), e );
+                throw e;
             }
         }
     }
