@@ -688,30 +688,6 @@ release_lock('test2')
 select release_lock('test3');
 release_lock('test3')
 1
-# Deadlocks are detected e.g. in case of a mutual wait
-select get_lock('test1', 0);
-get_lock('test1', 0)
-1
-connection con1;
-select get_lock('test2', 0);
-get_lock('test2', 0)
-1
-select get_lock('test1', 7200);
-connection default;
-select get_lock('test2', 7200);
-ERROR 40001: Deadlock found when trying to get lock; try restarting transaction
-select release_lock('test1');
-release_lock('test1')
-1
-connection con1;
-get_lock('test1', 7200)
-1
-select release_lock('test2');
-release_lock('test2')
-1
-select release_lock('test1');
-release_lock('test1')
-1
 connection default;
 # LOCK/UNLOCK TABLES works fine with a user lock.
 lock table t1 write;

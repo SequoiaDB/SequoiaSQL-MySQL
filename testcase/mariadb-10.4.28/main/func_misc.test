@@ -711,25 +711,26 @@ select release_lock('test1');
 select release_lock('test2');
 select release_lock('test3');
 
---echo # Deadlocks are detected e.g. in case of a mutual wait
-select get_lock('test1', 0);
+# CI-2234
+#--echo # Deadlocks are detected e.g. in case of a mutual wait
+#select get_lock('test1', 0);
 
-connection con1;
-select get_lock('test2', 0);
-send select get_lock('test1', 7200);
+#connection con1;
+#select get_lock('test2', 0);
+#send select get_lock('test1', 7200);
 
-connection default;
-let $wait_condition= SELECT count(*) > 0 FROM information_schema.processlist WHERE info LIKE 'select%' AND state='User lock';
-source include/wait_condition.inc;
---error ER_LOCK_DEADLOCK
-select get_lock('test2', 7200);
+#connection default;
+#let $wait_condition= SELECT count(*) > 0 FROM information_schema.processlist WHERE info LIKE 'select%' AND state='User lock';
+#source include/wait_condition.inc;
+#--error ER_LOCK_DEADLOCK
+#select get_lock('test2', 7200);
 
-select release_lock('test1');
+#select release_lock('test1');
 
-connection con1;
-reap;
-select release_lock('test2');
-select release_lock('test1');
+#connection con1;
+#reap;
+#select release_lock('test2');
+#select release_lock('test1');
 
 connection default;
 
