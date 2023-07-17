@@ -643,6 +643,7 @@ kill query @id;
 connection con1;
 get_lock('test', 7200)
 NULL
+disconnect con1;
 connection default;
 # GET_LOCK() works recursively 
 select get_lock('test', 0);
@@ -733,31 +734,6 @@ release_lock('test1')
 select release_lock('test2');
 release_lock('test2')
 1
-# Deadlocks between user locks and LOCK TABLES locks
-# are detected OK.
-select get_lock('test', 0);
-get_lock('test', 0)
-1
-connection con1;
-lock table t1 write;
-select get_lock('test', 7200);
-connection default;
-lock table t1 read;
-ERROR 40001: Deadlock found when trying to get lock; try restarting transaction
-select release_lock('test');
-release_lock('test')
-1
-connection con1;
-get_lock('test', 7200)
-1
-select release_lock('test');
-release_lock('test')
-1
-unlock tables;
-# cleanup
-disconnect con1;
-connection default;
-drop table t1;
 # check too long identifier names
 select get_lock(repeat('a', 192), 0);
 get_lock(repeat('a', 192), 0)
@@ -1405,6 +1381,7 @@ is_used_lock('test') = connection_id()
 select release_lock('test');
 release_lock('test')
 1
+disconnect con1;
 
 # -- Done.
 

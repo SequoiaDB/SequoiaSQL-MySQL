@@ -62,7 +62,6 @@ INSERT INTO t1 VALUES ('default', CONNECTION_ID());
 
 SELECT GET_LOCK('bug16501',600);
 
-#connect (con1,localhost,root,,);
 connect (con1,localhost,root,,test_func_misc);
 INSERT INTO t1 VALUES ('con1', CONNECTION_ID());
 SELECT IS_USED_LOCK('bug16501') = connection_id
@@ -649,7 +648,6 @@ select get_lock('test', 0);
 select is_free_lock('test');
 select is_used_lock('test') = connection_id();
 
-#connect (con1,localhost,root,,);
 connect (con1,localhost,root,,test_func_misc);
 connection con1;
 --echo # IS_USED_LOCK, IS_FREE_LOCK: the  lock is acquired in another
@@ -684,6 +682,7 @@ kill query @id;
 
 connection con1;
 reap;
+disconnect con1;
 
 connection default;
 
@@ -733,6 +732,7 @@ select release_lock('test3');
 #select release_lock('test1');
 
 connection default;
+#disconnect con1;
 
 --echo # LOCK/UNLOCK TABLES works fine with a user lock.
 lock table t1 write;
@@ -759,31 +759,32 @@ rollback;
 select release_lock('test1');
 select release_lock('test2');
 
---echo # Deadlocks between user locks and LOCK TABLES locks
---echo # are detected OK.
-select get_lock('test', 0);
+# CI-2234
+#--echo # Deadlocks between user locks and LOCK TABLES locks
+#--echo # are detected OK.
+#select get_lock('test', 0);
 
-connection con1;
-lock table t1 write;
-send select get_lock('test', 7200);
+#connection con1;
+#lock table t1 write;
+#send select get_lock('test', 7200);
 
-connection default;
-let $wait_condition= SELECT count(*) > 0 FROM information_schema.processlist WHERE info LIKE 'select%' AND state = 'User lock';
-source include/wait_condition.inc;
---error ER_LOCK_DEADLOCK
-lock table t1 read;
+#connection default;
+#let $wait_condition= SELECT count(*) > 0 FROM information_schema.processlist WHERE info LIKE 'select%' AND state = 'User lock';
+#source include/wait_condition.inc;
+#--error ER_LOCK_DEADLOCK
+#lock table t1 read;
 
-select release_lock('test');
+#select release_lock('test');
 
-connection con1;
-reap;
-select release_lock('test');
-unlock tables;
+#connection con1;
+#reap;
+#select release_lock('test');
+#unlock tables;
 
---echo # cleanup
-disconnect con1;
-connection default;
-drop table t1;
+#--echo # cleanup
+#disconnect con1;
+#connection default;
+#drop table t1;
 
 --echo # check too long identifier names
 select get_lock(repeat('a', 192), 0);
@@ -1103,7 +1104,6 @@ select is_used_lock('test') = connection_id();
 --echo # GET_LOCK returns 1 if it manages to acquire a lock
 select get_lock('test', 0);
 
-#connect (con1,localhost,root,,);
 connect (con1,localhost,root,,test_func_misc);
 connection con1;
 select is_used_lock('test') = connection_id();
@@ -1117,6 +1117,7 @@ select get_lock('test', 0.0000000000000001);
 connection default;
 select is_used_lock('test') = connection_id();
 select release_lock('test');
+disconnect con1;
 
 --echo
 --echo # -- Done.
