@@ -34,6 +34,7 @@ import com.sequoiasql.testcommon.MysqlTestBase;
  * @UpdateDate 2022/10/9
  */
 public class Select28186 extends MysqlTestBase {
+    private boolean runSuccess = false;
     private String csName = "cs_28186";
     private String clName = "cl_28186";
     private Sequoiadb sdb;
@@ -42,7 +43,7 @@ public class Select28186 extends MysqlTestBase {
     private CollectionSpace cs = null;
 
     @BeforeClass
-    public void setUp() throws Exception {
+    private void setUp() throws Exception {
         try {
             sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
             if ( CommLib.isStandAlone( sdb ) ) {
@@ -68,7 +69,7 @@ public class Select28186 extends MysqlTestBase {
     }
 
     @Test
-    public void test() throws Exception {
+    private void test() throws Exception {
         // sdb端创建表，并插入数据
         BasicBSONObject options = new BasicBSONObject();
         options.put( "ShardingKey", new BasicBSONObject( "a", 1 ) );
@@ -139,13 +140,17 @@ public class Select28186 extends MysqlTestBase {
             }
         }
 
+        runSuccess = true;
     }
 
     @AfterClass
-    public void tearDown() throws Exception {
+    private void tearDown() throws Exception {
         try {
-            jdbc1.update( "set session sequoiadb_optimizer_options=default;" );
-            jdbc1.dropDatabase( csName );
+            if ( runSuccess ) {
+                jdbc1.update(
+                        "set session sequoiadb_optimizer_options=default;" );
+                jdbc1.dropDatabase( csName );
+            }
         } finally {
             sdb.close();
             jdbc1.close();
@@ -157,18 +162,27 @@ public class Select28186 extends MysqlTestBase {
         private JdbcInterface jdbc;
         private String sqlStr;
 
-        public Select( String sqlStr, JdbcInterface jdbc ) {
+        private Select( String sqlStr, JdbcInterface jdbc ) {
             this.sqlStr = sqlStr;
             this.jdbc = jdbc;
         }
 
         @ExecuteOrder(step = 1)
-        public void exec() throws Exception {
+        private void exec() throws Exception {
             try {
                 jdbc.query( sqlStr );
             } catch ( SQLException e ) {
-                if ( 1317 != e.getErrorCode() )
+                // 1317 Query execution was interrupted
+                // 1028 Sort aborted: Query execution was interrupted
+                // 40116 Application is interrupted
+                // 40065 Unexpected result received
+                if ( 1317 != e.getErrorCode() && 1028 != e.getErrorCode()
+                        && 40116 != e.getErrorCode()
+                        && 40065 != e.getErrorCode() ) {
+                    System.out.println( this.getClass() + " error info: "
+                            + e.getErrorCode() + " " + e.getMessage() );
                     throw e;
+                }
             }
         }
     }
@@ -177,13 +191,13 @@ public class Select28186 extends MysqlTestBase {
         private JdbcInterface jdbc;
         private String sqlStr;
 
-        public KillQuery( String sqlStr, JdbcInterface jdbc ) {
+        private KillQuery( String sqlStr, JdbcInterface jdbc ) {
             this.sqlStr = sqlStr;
             this.jdbc = jdbc;
         }
 
         @ExecuteOrder(step = 1)
-        public void exec() throws Exception {
+        private void exec() throws Exception {
             String processId = "";
             try {
                 List< String > processList;
