@@ -121,6 +121,62 @@ error:
 }
 #endif
 
+/*
+  The following bitmap code addresses compatibility issues between MySQL and
+  MariaDB, where MySQL is implemented as a reference to mariadb.
+  After analysis, it is found that MySQL does not store complete MY_BITMAP,
+  which may lead to unknown problems.
+*/
+static MY_BITMAP *sdb_tmp_use_all_columns(TABLE *table, MY_BITMAP **bitmap) {
+  MY_BITMAP *old= *bitmap;
+  *bitmap= &table->s->all_set;
+  return old;
+}
+
+MY_BITMAP *sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **bitmap) {
+#ifndef NDEBUG
+  if (!table || !bitmap)
+    return 0;
+  return sdb_tmp_use_all_columns(table, bitmap);
+#else
+  return 0;
+#endif
+}
+
+void sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **save,
+                                      MY_BITMAP **read_set, MY_BITMAP **write_set) {
+#ifndef NDEBUG
+  if (!table || !save || !read_set || !write_set)
+    return;
+  save[0] = *read_set;
+  save[1] = *write_set;
+  (void) sdb_tmp_use_all_columns(table, read_set);
+  (void) sdb_tmp_use_all_columns(table, write_set);
+#endif
+}
+
+static void sdb_tmp_restore_column_map(MY_BITMAP **bitmap, MY_BITMAP *old) {
+  *bitmap = old;
+}
+
+void sdb_dbug_tmp_restore_column_map(MY_BITMAP **bitmap, MY_BITMAP *old) {
+#ifndef NDEBUG
+  if (!bitmap)
+    return;
+  sdb_tmp_restore_column_map(bitmap, old);
+#endif
+}
+
+void sdb_dbug_tmp_restore_column_maps(MY_BITMAP **read_set, MY_BITMAP **write_set,
+                                      MY_BITMAP **old) {
+#ifndef NDEBUG
+  if (!read_set || !write_set || !old)
+    return;
+  sdb_tmp_restore_column_map(read_set, old[0]);
+  sdb_tmp_restore_column_map(write_set, old[1]);
+#endif
+}
+
 #if defined IS_MYSQL
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,

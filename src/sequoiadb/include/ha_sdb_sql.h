@@ -569,4 +569,13 @@ my_thread_id sdb_thread_id(THD *thd);
 
 bool sdb_is_tables_optimized_away(JOIN *join);
 
+MY_BITMAP *sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **bitmap);
+
+void sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **save,
+                                  MY_BITMAP **read_set, MY_BITMAP **write_set);
+
+void sdb_dbug_tmp_restore_column_map(MY_BITMAP **bitmap, MY_BITMAP *old);
+
+void sdb_dbug_tmp_restore_column_maps(MY_BITMAP **read_set, MY_BITMAP **write_set,
+                                      MY_BITMAP **old);
 #endif

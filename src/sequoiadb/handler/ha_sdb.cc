@@ -2200,7 +2200,7 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
   bson::BSONObjBuilder obj_builder;
   bson::BSONObjBuilder null_obj_builder;
 
-  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
+  MY_BITMAP *org_bitmap = sdb_dbug_tmp_use_all_columns(table, &table->read_set);
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
   }
@@ -2259,7 +2259,7 @@ done:
   if (buf != table->record[0]) {
     repoint_field_to_record(table, buf, table->record[0]);
   }
-  dbug_tmp_restore_column_map(table->read_set, org_bitmap);
+  sdb_dbug_tmp_restore_column_map(&table->read_set, org_bitmap);
   return rc;
 error:
   goto done;
@@ -2712,7 +2712,7 @@ my_bool ha_sdb::get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
   my_bool rc = true;
   // force cast to adapt sql layer unreasonable interface.
   uchar *row = const_cast<uchar *>(rec_row);
-  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
+  MY_BITMAP *org_bitmap = sdb_dbug_tmp_use_all_columns(table, &table->read_set);
   if (row != table->record[0]) {
     repoint_field_to_record(table, table->record[0], row);
   }
@@ -2742,7 +2742,7 @@ done:
   if (row != table->record[0]) {
     repoint_field_to_record(table, row, table->record[0]);
   }
-  dbug_tmp_restore_column_map(table->read_set, org_bitmap);
+  sdb_dbug_tmp_restore_column_map(&table->read_set, org_bitmap);
   return rc;
 }
 
@@ -2827,7 +2827,7 @@ int ha_sdb::get_update_obj(const uchar *old_data, const uchar *new_data,
   uint row_offset = (uint)(old_data - new_data);
   bson::BSONObjBuilder obj_builder;
   bson::BSONObjBuilder null_obj_builder;
-  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
+  MY_BITMAP *org_bitmap = sdb_dbug_tmp_use_all_columns(table, &table->read_set);
 
   try {
     rc = pre_get_update_obj(old_data, new_data, obj_builder);
@@ -2872,7 +2872,7 @@ done:
     repoint_field_to_record(table, const_cast<uchar *>(new_data),
                             table->record[0]);
   }
-  dbug_tmp_restore_column_map(table->read_set, org_bitmap);
+  sdb_dbug_tmp_restore_column_map(&table->read_set, org_bitmap);
   return rc;
 error:
   goto done;
@@ -4375,8 +4375,8 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
         builder.subobjStart(sdb_field_name(key_part->field)));
     bson::BSONArrayBuilder array(in_builder.subarrayStart("$in"));
     bson::BSONObjBuilder value_builder(128);
-    my_bitmap_map *old_read_map =
-        dbug_tmp_use_all_columns(table, table->read_set);
+    MY_BITMAP *old_read_map =
+        sdb_dbug_tmp_use_all_columns(table, &table->read_set);
     bitmap_set_bit(table->read_set, key_part->field->field_index);
 
     int mrr_range_no = 0;
@@ -4448,7 +4448,7 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
       array.append(ele);
       value_builder.reset();
     }
-    dbug_tmp_restore_column_map(table->read_set, old_read_map);
+    sdb_dbug_tmp_restore_column_map(&table->read_set, old_read_map);
     array.done();
     in_builder.done();
     condition = builder.obj();
@@ -5640,10 +5640,10 @@ error:
 int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
                             bson::BSONObjBuilder &builder) {
   int rc = 0;
-  my_bitmap_map *old_write_map =
-      dbug_tmp_use_all_columns(table, table->write_set);
-  my_bitmap_map *old_read_map =
-      dbug_tmp_use_all_columns(table, table->read_set);
+  MY_BITMAP *old_write_map =
+      sdb_dbug_tmp_use_all_columns(table, &table->write_set);
+  MY_BITMAP *old_read_map =
+      sdb_dbug_tmp_use_all_columns(table, &table->read_set);
   bitmap_set_bit(table->write_set, rfield->field_index);
   bitmap_set_bit(table->read_set, rfield->field_index);
 
@@ -5675,8 +5675,8 @@ int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
   }
 
 done:
-  dbug_tmp_restore_column_map(table->write_set, old_write_map);
-  dbug_tmp_restore_column_map(table->read_set, old_read_map);
+  sdb_dbug_tmp_restore_column_map(&table->write_set, old_write_map);
+  sdb_dbug_tmp_restore_column_map(&table->read_set, old_read_map);
   return rc;
 error:
   goto done;
@@ -5692,10 +5692,10 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
   my_decimal min_decimal;
   my_decimal max_decimal;
   THD *thd = rfield->table->in_use;
-  my_bitmap_map *old_write_map =
-      dbug_tmp_use_all_columns(table, table->write_set);
-  my_bitmap_map *old_read_map =
-      dbug_tmp_use_all_columns(table, table->read_set);
+  MY_BITMAP *old_write_map =
+      sdb_dbug_tmp_use_all_columns(table, &table->write_set);
+  MY_BITMAP *old_read_map =
+      sdb_dbug_tmp_use_all_columns(table, &table->read_set);
 
   is_real = (MYSQL_TYPE_FLOAT == rfield->type() ||
              MYSQL_TYPE_DOUBLE == rfield->type());
@@ -5791,8 +5791,8 @@ retry:
   }
 
 done:
-  dbug_tmp_restore_column_map(table->write_set, old_write_map);
-  dbug_tmp_restore_column_map(table->read_set, old_read_map);
+  sdb_dbug_tmp_restore_column_map(&table->write_set, old_write_map);
+  sdb_dbug_tmp_restore_column_map(&table->read_set, old_read_map);
   return rc;
 error:
   goto done;
@@ -7350,9 +7350,9 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
 
   // Avoid asserts in ::store() for columns that are not going to be updated,
   // but don't modify the read_set when select.
-  my_bitmap_map *org_bitmap = NULL;
+  MY_BITMAP *org_bitmap = NULL;
   if (!is_select || table->write_set != table->read_set) {
-    org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
+    org_bitmap = sdb_dbug_tmp_use_all_columns(table, &table->write_set);
   }
 
   try {
@@ -7452,7 +7452,7 @@ done:
     repoint_field_to_record(table, buf, table->record[0]);
   }
   if (!is_select || table->write_set != table->read_set) {
-    dbug_tmp_restore_column_map(table->write_set, org_bitmap);
+    sdb_dbug_tmp_restore_column_map(&table->write_set, org_bitmap);
   }
   thd->count_cuted_fields = old_check_fields;
   thd->variables.sql_mode = old_sql_mode;
