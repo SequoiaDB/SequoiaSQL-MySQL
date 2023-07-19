@@ -1,16 +1,19 @@
 package com.sequoiasql.crud;
 
-import com.sequoiadb.threadexecutor.ResultStore;
-import com.sequoiadb.threadexecutor.ThreadExecutor;
-import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import com.sequoiadb.base.Sequoiadb;
-import com.sequoiasql.testcommon.*;
-
+import com.sequoiadb.threadexecutor.ResultStore;
+import com.sequoiadb.threadexecutor.ThreadExecutor;
+import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
+import com.sequoiasql.testcommon.CommLib;
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.JdbcInterfaceFactory;
+import com.sequoiasql.testcommon.JdbcWarpperType;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
  * @Descreption seqDB-31315:并发执行index_merge查询
@@ -87,7 +90,7 @@ public class Select31315 extends MysqlTestBase {
                 + tbName
                 + " PARTITION (p2 , p3 ) WHERE col_int_key = 7 AND col_varchar_16_key = 'h';";
 
-        ThreadExecutor threadExecutor = new ThreadExecutor();
+        ThreadExecutor threadExecutor = new ThreadExecutor( 180000 );
         for ( int i = 0; i < 4; i++ ) {
             Select select1 = new Select( query1 );
             Select select2 = new Select( query2 );
