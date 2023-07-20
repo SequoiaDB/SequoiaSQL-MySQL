@@ -27,7 +27,7 @@ import com.sequoiasql.testcommon.MysqlTestBase;
  */
 
 @Test
-public class ddlAbnormal28195_28202 extends MysqlTestBase {
+public class DDLAbnormal28195_28202 extends MysqlTestBase {
     private String dbName = "db_28195_28202";
     private String test_db1 = "test_db1_28195_28202";
     private String test_u1_Existed = "test_u1_Existed_28195_28202";

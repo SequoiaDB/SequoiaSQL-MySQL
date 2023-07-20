@@ -18,7 +18,7 @@ import java.util.ArrayList;
  * @Author chenzejia
  * @CreateDate 2023/06/21
  */
-public class prepareAndExecuteStmt32263 extends MysqlTestBase {
+public class PrepareStmt32263 extends MysqlTestBase {
     private JdbcInterface jdbc1;
     private JdbcInterface jdbc2;
     private String dbName = "db_32263";

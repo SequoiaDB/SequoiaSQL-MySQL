@@ -26,7 +26,7 @@ import com.sequoiasql.testcommon.*;
  * @LastEditors   : Lin Yingting
  */
 
-public class insertAndUpdate26472 extends MysqlTestBase {
+public class InsertAndUpdate26472 extends MysqlTestBase {
     private String dbName = "db_26472";
     private String tbName = "tb_26472";
     private Sequoiadb sdb = null;
