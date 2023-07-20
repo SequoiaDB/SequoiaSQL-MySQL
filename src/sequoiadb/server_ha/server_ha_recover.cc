@@ -74,6 +74,10 @@ static THD *create_ha_thd() {
     thd->set_command(COM_DAEMON);
     thd->system_thread = SYSTEM_THREAD_BACKGROUND;
     thd->security_context()->set_host_or_ip_ptr(C_STRING_WITH_LEN(""));
+    NET *net = (NET *)thd->get_net();
+    if (NULL != net) {
+      net->reading_or_writing = 0;
+    }
 #else
     my_thread_init();
     thd = new THD(next_thread_id());
