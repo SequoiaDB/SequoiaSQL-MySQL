@@ -4781,9 +4781,6 @@ int ha_sdb::build_selector(bson::BSONObj &selector) {
     if ((index_cover) ||
         ((double)select_num * 100 / table_share->fields) <= (double)threshold) {
       selector = selector_builder.obj();
-      SDB_LOG_DEBUG("optimizer selector object: %s, table: %s.%s",
-                    selector.toString(false, false).c_str(), db_name,
-                    table_name);
     } else {
       selector = SDB_EMPTY_BSON;
     }
