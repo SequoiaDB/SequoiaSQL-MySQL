@@ -19,22 +19,24 @@ import com.sequoiasql.testcommon.MysqlTestBase;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 
 /**
- * @Description seqDB-28196:create对象带if not exists时异常，查看pending log
+ * @Description seqDB-28200:rename对象时异常，查看pending log
  * @Author Lin Yingting
- * @Date 2022.10.25
+ * @Date 2022.10.26
  * @UpdateAuthor Lin Yingting
- * @UpdateDate 2022.10.25
+ * @UpdateDate 2022.10.26
  */
 
 @Test
-public class ddlAbnormal28196 extends MysqlTestBase {
-    private String dbName = "db_28196";
-    private String test_db1 = "test_db1_28196";
-    private String test_u1_Existed = "test_u1_Existed_28196";
-    private String test_u1 = "test_u1_28196";
-    private String test_u2 = "test_u2_28196";
-    private String test_u3 = "test_u3_28196";
-    private String test_u4 = "test_u4_28196";
+public class DDLAbnormal28200 extends MysqlTestBase {
+    private String dbName = "db_28200";
+    private String test_u1_notExist = "test_u1_notExist_28200";
+    private String test_u1 = "test_u1_28200";
+    private String test_u2 = "test_u2_28200";
+    private String test_u3 = "test_u3_28200";
+    private String test_u1_notExist_new = "test_u1_notExist_new_28200";
+    private String test_u1_new = "test_u1_new_28200";
+    private String test_u2_new = "test_u2_new_28200";
+    private String test_u3_new = "test_u3_new_28200";
     private Sequoiadb sdb;
     private JdbcInterface jdbc;
 
@@ -57,9 +59,9 @@ public class ddlAbnormal28196 extends MysqlTestBase {
                 sdb.dropCollectionSpace( dbName );
             }
             jdbc.dropDatabase( dbName );
-            jdbc.dropDatabase( test_db1 );
             jdbc.update( "drop user if exists " + test_u1 + "," + test_u2 + ","
-                    + test_u3 + "," + test_u4 + "," + test_u1_Existed + ";" );
+                    + test_u3 + "," + test_u1_new + "," + test_u2_new + ","
+                    + test_u3_new + ";" );
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
@@ -73,78 +75,45 @@ public class ddlAbnormal28196 extends MysqlTestBase {
     public void test() throws Exception {
         jdbc.createDatabase( dbName );
         jdbc.update( "use " + dbName + ";" );
-        jdbc.update( "create table test_tb2_1(a int,b int);" );
-        jdbc.update( "create table test_v1_1(a int);" );
-        jdbc.update( "insert into test_v1_1 values(1),(2),(3);" );
-        jdbc.update( "create table test_v2_1(a int);" );
-        jdbc.update( "create table test_idx1_1(a int);" );
-        jdbc.update( "create table test_idx2_1(a int);" );
-        jdbc.update( "create table test_event1_1(a int);" );
-        jdbc.update( "create table test_trig1_1(a int);" );
-        jdbc.update( "create user " + test_u1_Existed + ";" );
+        jdbc.update( "create table test_tb1(a int);" );
+        jdbc.update( "create table test_tb2(a int);" );
+        jdbc.update( "create table test_tb3(a int);" );
+        jdbc.update( "create user " + test_u1 + "," + test_u2 + "," + test_u3
+                + ";" );
 
         // 设置debug，模拟ddl异常场景
         jdbc.update( "set debug=\"d,fail_while_writing_sql_log\";" );
 
         // ddl操作异常
-        // 创建单个对象
+        // rename单个对象
         try {
-            jdbc.update( "create database if not exists " + test_db1 + ";" );
+            jdbc.update( "rename table test_tb1 to test_tb1_new;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
             jdbc.update(
-                    "create table if not exists test_tb1(a int,b varchar(20),index(a));" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
-        try {
-            jdbc.update(
-                    "create table if not exists test_tb2 as select * from test_tb2_1;" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
-        try {
-            jdbc.update(
-                    "create table if not exists test_tb3(a int primary key auto_increment);" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
-        try {
-            jdbc.update( "create user if not exists " + test_u1
-                    + " identified by 'password';" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
-        try {
-            jdbc.update(
-                    "create user if not exists " + test_u2 + " require ssl;" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
-        try {
-            jdbc.update( "create event if not exists test_even1"
-                    + " on schedule" + " every 6 hour"
-                    + " comment 'a sample comment.'" + " do update " + dbName
-                    + ".test_even1_1 set a = a + 1;" );
+                    "rename user " + test_u1 + " to " + test_u1_new + ";" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
 
-        // 创建多个对象
+        // rename多个对象
         try {
-            jdbc.update( "create user if not exists " + test_u3 + ","
-                    + test_u1_Existed + "," + test_u4 + ";" );
+            jdbc.update( "rename table test_tb2 to test_tb2_new, "
+                    + "test_tb_notExist to test_tb_notExist_new, test_tb3 to test_tb3_new;" );
         } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
+            if ( e.getErrorCode() != 1146 )
+                throw e;
+        }
+        try {
+            jdbc.update( "rename user " + test_u2 + " to " + test_u2_new + ","
+                    + test_u1_notExist + " to " + test_u1_notExist_new + ","
+                    + test_u3 + " to " + test_u3_new + ";" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1396 )
                 throw e;
         }
 
@@ -177,17 +146,14 @@ public class ddlAbnormal28196 extends MysqlTestBase {
 
         jdbc.update( "set debug=\"\";" );
         List< String > users = jdbc.query( "select user from mysql.user;" );
-        if ( !users.contains( test_u1 ) ) {
-            throw new Exception( "create user " + test_u1 + " failed" );
+        if ( !users.contains( test_u1_new ) ) {
+            throw new Exception( "rename user " + test_u1 + " failed" );
         }
-        if ( !users.contains( test_u2 ) ) {
-            throw new Exception( "create user " + test_u2 + " failed" );
+        if ( !users.contains( test_u2_new ) ) {
+            throw new Exception( "rename user " + test_u2 + " failed" );
         }
-        if ( !users.contains( test_u3 ) ) {
-            throw new Exception( "create user " + test_u3 + " failed" );
-        }
-        if ( !users.contains( test_u4 ) ) {
-            throw new Exception( "create user " + test_u4 + " failed" );
+        if ( !users.contains( test_u3_new ) ) {
+            throw new Exception( "rename user " + test_u2 + " failed" );
         }
     }
 
@@ -195,9 +161,8 @@ public class ddlAbnormal28196 extends MysqlTestBase {
     public void tearDown() throws Exception {
         try {
             jdbc.dropDatabase( dbName );
-            jdbc.dropDatabase( test_db1 );
-            jdbc.update( "drop user " + test_u1_Existed + "," + test_u1 + ","
-                    + test_u2 + "," + test_u3 + "," + test_u4 + ";" );
+            jdbc.update( "drop user " + test_u1_new + "," + test_u2_new + ","
+                    + test_u3_new + ";" );
         } finally {
             sdb.close();
             jdbc.close();

@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * @Author chenzejia
  * @CreateDate 2023/6/7
  */
-public class selectInformationSchemaTables31996 extends MysqlTestBase {
+public class SelectInformationSchemaTables31996 extends MysqlTestBase {
 
     private String dbName = "db_31996";
     private String tbName = "tb_31996";

@@ -19,24 +19,24 @@ import com.sequoiasql.testcommon.MysqlTestBase;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 
 /**
- * @Description seqDB-28198:drop对象时异常，查看pending log
+ * @Description seqDB-28199:drop对象带if exists时异常，查看pending log
  * @Author Lin Yingting
- * @Date 2022.10.25
+ * @Date 2022.10.26
  * @UpdateAuthor Lin Yingting
- * @UpdateDate 2022.10.25
+ * @UpdateDate 2022.10.26
  */
 
 @Test
-public class ddlAbnormal28198 extends MysqlTestBase {
-    private String dbName = "db_28198";
-    private String test_db1 = "test_db1_28198";
-    private String test_u1_notExist = "test_u1_notExist_28198";
-    private String test_u1 = "test_u1_28198";
-    private String test_u2 = "test_u2_28198";
-    private String test_u3 = "test_u3_28198";
-    private String test_u4 = "test_u4_28198";
-    private String test_u5 = "test_u5_28198";
-    private String test_serv1 = "test_serv1_28198";
+public class DDLAbnormal28199 extends MysqlTestBase {
+    private String dbName = "db_28199";
+    private String test_db1 = "test_db1_28199";
+    private String test_u1_notExist = "test_u1_notExist_28199";
+    private String test_u1 = "test_u1_28199";
+    private String test_u2 = "test_u2_28199";
+    private String test_u3 = "test_u3_28199";
+    private String test_u4 = "test_u4_28199";
+    private String test_u5 = "test_u5_28199";
+    private String test_serv1 = "test_serv1_28199";
     private Sequoiadb sdb;
     private JdbcInterface jdbc;
 
@@ -120,61 +120,49 @@ public class ddlAbnormal28198 extends MysqlTestBase {
         // ddl操作异常
         // 删除单个对象
         try {
-            jdbc.update( "drop database " + test_db1 + ";" );
+            jdbc.update( "drop database if exists " + test_db1 + ";" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop table test_tb1;" );
+            jdbc.update( "drop table if exists test_tb1;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop view test_v1;" );
+            jdbc.update( "drop user if exists " + test_u1 + ";" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop user " + test_u1 + ";" );
+            jdbc.update( "drop procedure if exists test_proc1;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop index test_idx1 on test_idx1_1;" );
+            jdbc.update( "drop function if exists test_func1;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop procedure test_proc1;" );
+            jdbc.update( "drop event if exists test_even1;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop function test_func1;" );
+            jdbc.update( "drop trigger if exists test_trig1;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop event test_even1;" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
-        try {
-            jdbc.update( "drop trigger test_trig1;" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
-        try {
-            jdbc.update( "drop server " + test_serv1 + ";" );
+            jdbc.update( "drop server if exists " + test_serv1 + ";" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
@@ -182,40 +170,30 @@ public class ddlAbnormal28198 extends MysqlTestBase {
 
         // 删除多个对象
         try {
-            jdbc.update( "drop user " + test_u2 + "," + test_u3 + ";" );
+            jdbc.update(
+                    "drop user if exists " + test_u2 + "," + test_u3 + ";" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop user " + test_u4 + "," + test_u1_notExist + ","
-                    + test_u5 + ";" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1396 )
-                throw e;
-        }
-        try {
-            jdbc.update( "drop view test_v2,test_v3;" );
+            jdbc.update( "drop user if exists " + test_u4 + ","
+                    + test_u1_notExist + "," + test_u5 + ";" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop view test_v4,test_v1_notExist,test_v5;" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1051 )
-                throw e;
-        }
-        try {
-            jdbc.update( "drop table test_tb2,test_tb3;" );
+            jdbc.update( "drop table if exists test_tb2,test_tb3;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
         try {
-            jdbc.update( "drop table test_tb4,test_tb1_notExist,test_tb5;" );
+            jdbc.update(
+                    "drop table if exists test_tb4,test_tb1_notExist,test_tb5;" );
         } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1051 )
+            if ( e.getErrorCode() != 1105 )
                 throw e;
         }
 

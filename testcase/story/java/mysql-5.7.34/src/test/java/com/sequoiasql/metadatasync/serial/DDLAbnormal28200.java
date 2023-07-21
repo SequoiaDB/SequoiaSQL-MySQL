@@ -27,7 +27,7 @@ import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
  */
 
 @Test
-public class ddlAbnormal28200 extends MysqlTestBase {
+public class DDLAbnormal28200 extends MysqlTestBase {
     private String dbName = "db_28200";
     private String test_u1_notExist = "test_u1_notExist_28200";
     private String test_u1 = "test_u1_28200";

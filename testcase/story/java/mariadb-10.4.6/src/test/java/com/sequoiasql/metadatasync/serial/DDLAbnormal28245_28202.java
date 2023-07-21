@@ -19,7 +19,7 @@ import com.sequoiasql.testcommon.MysqlTestBase;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 
 /**
- * @Description seqDB-28195:create对象时异常，查看pending log
+ * @Description seqDB-28245:create对象时异常，查看pending log
  *              seqDB-28202:权限操作时异常，查看pending log
  * @Author Lin Yingting
  * @Date 2022.10.24
@@ -28,20 +28,24 @@ import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
  */
 
 @Test
-public class ddlAbnormal28195_28202 extends MysqlTestBase {
-    private String dbName = "db_28195_28202";
-    private String test_db1 = "test_db1_28195_28202";
-    private String test_u1_Existed = "test_u1_Existed_28195_28202";
-    private String test_u2_Existed = "test_u2_Existed_28195_28202";
-    private String test_u1 = "test_u1_28195_28202";
-    private String test_u2 = "test_u2_28195_28202";
-    private String test_u3 = "test_u3_28195_28202";
-    private String test_u4 = "test_u4_28195_28202";
-    private String test_u5 = "test_u5_28195_28202";
-    private String test_u6 = "test_u6_28195_28202";
-    private String test_u7 = "test_u7_28195_28202";
-    private String test_serv1 = "test_serv1_28195_28202";
-    private String test_logf1 = "test_logf1_28195_28202";
+public class DDLAbnormal28245_28202 extends MysqlTestBase {
+    private String dbName = "db_28245_28202";
+    private String test_db1 = "test_db1_28245_28202";
+    private String test_u1_Existed = "test_u1_Existed_28245_28202";
+    private String test_u2_Existed = "test_u2_Existed_28245_28202";
+    private String test_u1 = "test_u1_28245_28202";
+    private String test_u2 = "test_u2_28245_28202";
+    private String test_u3 = "test_u3_28245_28202";
+    private String test_u4 = "test_u4_28245_28202";
+    private String test_u5 = "test_u5_28245_28202";
+    private String test_u6 = "test_u6_28245_28202";
+    private String test_u7 = "test_u7_28245_28202";
+    private String test_r1_Existed = "test_r1_Existed_28245_28202";
+    private String test_r1 = "test_r1_28245_28202";
+    private String test_r2 = "test_r2_28245_28202";
+    private String test_r3 = "test_r3_28245_28202";
+    private String test_serv1 = "test_serv1_28245_28202";
+    private String test_logf1 = "test_logf1_28245_28202";
     private Sequoiadb sdb;
     private JdbcInterface jdbc;
 
@@ -69,6 +73,8 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
                     + test_u2_Existed + "," + test_u1 + "," + test_u2 + ","
                     + test_u3 + "," + test_u4 + "," + test_u5 + "," + test_u6
                     + "," + test_u7 + ";" );
+            jdbc.update( "drop role if exists " + test_r1_Existed + ","
+                    + test_r1 + "," + test_r2 + "," + test_r3 + ";" );
             jdbc.update( "drop server if exists " + test_serv1 + ";" );
         } catch ( Exception e ) {
             if ( sdb != null )
@@ -94,6 +100,7 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
         jdbc.update( "create table test_trig1_1(a int);" );
         jdbc.update( "create user " + test_u1_Existed + "," + test_u2_Existed
                 + ";" );
+        jdbc.update( "create role " + test_r1_Existed + ";" );
         jdbc.update( "create user " + test_u4 + " identified by 'password';" );
         jdbc.update( "create user " + test_u5 + " require ssl;" );
 
@@ -169,6 +176,12 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
                 throw e;
         }
         try {
+            jdbc.update( "create role " + test_r1 + ";" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
             jdbc.update( "create index test_idx1 on test_idx1_1(a);" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
@@ -177,6 +190,20 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
         try {
             jdbc.update(
                     "create unique index test_idx2 on test_idx2_1(a) algorithm = copy;" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
+            jdbc.update(
+                    "create sequence test_suq1 start with 100 increment by 10;" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
+            jdbc.update(
+                    "create sequence test_suq2 start with -100 increment by 10 minvalue=-100 maxvalue=10000;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
@@ -230,13 +257,12 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
-        try {
-            jdbc.update( "create logfile group " + test_logf1 + " add undofile "
-                    + "'undo.dat' initial_size = 10M;" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1478 )
-                throw e;
-        }
+        // SEQUOIASQLMAINSTREAM-1505
+        /*
+         * try { jdbc.update("create logfile group " + test_logf1 +
+         * " add undofile " + "'undo.dat' initial_size = 10M;"); } catch
+         * (SQLException e) { if (e.getErrorCode() != 1105) throw e; }
+         */
         try {
             jdbc.update( "grant all privileges on *.* to " + test_u3
                     + " identified by 'u_pwd';" );
@@ -268,6 +294,13 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
         try {
             jdbc.update( "create user " + test_u6 + "," + test_u2_Existed + ","
                     + test_u7 + ";" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1396 )
+                throw e;
+        }
+        try {
+            jdbc.update( "create role " + test_r2 + "," + test_r1_Existed + ","
+                    + test_r3 + ";" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1396 )
                 throw e;
@@ -323,6 +356,15 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
         if ( !users.contains( test_u7 ) ) {
             throw new Exception( "create user " + test_u7 + " failed" );
         }
+        if ( !users.contains( test_r1 ) ) {
+            throw new Exception( "create role " + test_r1 + " failed" );
+        }
+        if ( !users.contains( test_r2 ) ) {
+            throw new Exception( "create role " + test_r2 + " failed" );
+        }
+        if ( !users.contains( test_r3 ) ) {
+            throw new Exception( "create role " + test_r3 + " failed" );
+        }
     }
 
     @AfterClass
@@ -334,6 +376,8 @@ public class ddlAbnormal28195_28202 extends MysqlTestBase {
                     + "," + test_u1 + "," + test_u2 + "," + test_u3 + ","
                     + test_u4 + "," + test_u5 + "," + test_u6 + "," + test_u7
                     + ";" );
+            jdbc.update( "drop role " + test_r1_Existed + "," + test_r1 + ","
+                    + test_r2 + "," + test_r3 + ";" );
             jdbc.update( "drop server " + test_serv1 + ";" );
         } finally {
             sdb.close();

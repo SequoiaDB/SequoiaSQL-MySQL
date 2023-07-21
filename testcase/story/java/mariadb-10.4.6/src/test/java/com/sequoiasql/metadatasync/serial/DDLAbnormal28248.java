@@ -19,7 +19,7 @@ import com.sequoiasql.testcommon.MysqlTestBase;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 
 /**
- * @Description seqDB-28199:drop对象带if exists时异常，查看pending log
+ * @Description seqDB-28248:drop对象带if exists时异常，查看pending log
  * @Author Lin Yingting
  * @Date 2022.10.26
  * @UpdateAuthor Lin Yingting
@@ -27,16 +27,22 @@ import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
  */
 
 @Test
-public class ddlAbnormal28199 extends MysqlTestBase {
-    private String dbName = "db_28199";
-    private String test_db1 = "test_db1_28199";
-    private String test_u1_notExist = "test_u1_notExist_28199";
-    private String test_u1 = "test_u1_28199";
-    private String test_u2 = "test_u2_28199";
-    private String test_u3 = "test_u3_28199";
-    private String test_u4 = "test_u4_28199";
-    private String test_u5 = "test_u5_28199";
-    private String test_serv1 = "test_serv1_28199";
+public class DDLAbnormal28248 extends MysqlTestBase {
+    private String dbName = "db_28248";
+    private String test_db1 = "test_db1_28248";
+    private String test_u1_notExist = "test_u1_notExist_28248";
+    private String test_u1 = "test_u1_28248";
+    private String test_u2 = "test_u2_28248";
+    private String test_u3 = "test_u3_28248";
+    private String test_u4 = "test_u4_28248";
+    private String test_u5 = "test_u5_28248";
+    private String test_r1_notExist = "test_r1_notExist_28248";
+    private String test_r1 = "test_r1_28248";
+    private String test_r2 = "test_r2_28248";
+    private String test_r3 = "test_r3_28248";
+    private String test_r4 = "test_r4_28248";
+    private String test_r5 = "test_r5_28248";
+    private String test_serv1 = "test_serv1_28248";
     private Sequoiadb sdb;
     private JdbcInterface jdbc;
 
@@ -62,6 +68,8 @@ public class ddlAbnormal28199 extends MysqlTestBase {
             jdbc.dropDatabase( test_db1 );
             jdbc.update( "drop user if exists " + test_u1 + "," + test_u2 + ","
                     + test_u3 + "," + test_u4 + "," + test_u5 + ";" );
+            jdbc.update( "drop role if exists " + test_r1 + "," + test_r2 + ","
+                    + test_r3 + "," + test_r4 + "," + test_r5 + ";" );
             jdbc.update( "drop server if exists " + test_serv1 + ";" );
         } catch ( Exception e ) {
             if ( sdb != null )
@@ -94,6 +102,13 @@ public class ddlAbnormal28199 extends MysqlTestBase {
         jdbc.update( "create view test_v5 as select * from test_v5_tb;" );
         jdbc.update( "create user " + test_u1 + "," + test_u2 + "," + test_u3
                 + "," + test_u4 + "," + test_u5 + ";" );
+        jdbc.update( "create role " + test_r1 + "," + test_r2 + "," + test_r3
+                + "," + test_r4 + "," + test_r5 + ";" );
+        jdbc.update( "create sequence test_suq1;" );
+        jdbc.update( "create sequence test_suq2;" );
+        jdbc.update( "create sequence test_suq3;" );
+        jdbc.update( "create sequence test_suq4;" );
+        jdbc.update( "create sequence test_suq5;" );
         jdbc.update( "create table test_idx1_1(a int, index test_idx1(a));" );
         jdbc.update( "create procedure test_proc1(in num int)" + " begin"
                 + " select num;" + " set num=2;" + " select num;" + " end" );
@@ -132,7 +147,19 @@ public class ddlAbnormal28199 extends MysqlTestBase {
                 throw e;
         }
         try {
+            jdbc.update( "drop view if exists test_v1;" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
             jdbc.update( "drop user if exists " + test_u1 + ";" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
+            jdbc.update( "drop role if exists " + test_r1 + ";" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
@@ -184,6 +211,33 @@ public class ddlAbnormal28199 extends MysqlTestBase {
                 throw e;
         }
         try {
+            jdbc.update(
+                    "drop role if exists " + test_r2 + "," + test_r3 + ";" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
+            jdbc.update( "drop role if exists " + test_r4 + ","
+                    + test_r1_notExist + "," + test_r5 + ";" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
+            jdbc.update( "drop view if exists test_v2,test_v3;" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
+            jdbc.update(
+                    "drop view if exists test_v4,test_v1_notExist,test_v5;" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
             jdbc.update( "drop table if exists test_tb2,test_tb3;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
@@ -192,6 +246,19 @@ public class ddlAbnormal28199 extends MysqlTestBase {
         try {
             jdbc.update(
                     "drop table if exists test_tb4,test_tb1_notExist,test_tb5;" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
+            jdbc.update( "drop sequence if exists test_suq2,test_suq3;" );
+        } catch ( SQLException e ) {
+            if ( e.getErrorCode() != 1105 )
+                throw e;
+        }
+        try {
+            jdbc.update(
+                    "drop sequence if exists test_suq4,test_suq1_notExist,test_suq5;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
@@ -241,11 +308,27 @@ public class ddlAbnormal28199 extends MysqlTestBase {
         if ( users.contains( test_u5 ) ) {
             throw new Exception( "drop user " + test_u5 + " failed" );
         }
+        if ( users.contains( test_r1 ) ) {
+            throw new Exception( "drop role " + test_r1 + " failed" );
+        }
+        if ( users.contains( test_r2 ) ) {
+            throw new Exception( "drop role " + test_r2 + " failed" );
+        }
+        if ( users.contains( test_r3 ) ) {
+            throw new Exception( "drop role " + test_r3 + " failed" );
+        }
+        if ( users.contains( test_r4 ) ) {
+            throw new Exception( "drop role " + test_r4 + " failed" );
+        }
+        if ( users.contains( test_r5 ) ) {
+            throw new Exception( "drop role " + test_r5 + " failed" );
+        }
     }
 
     @AfterClass
     public void tearDown() throws Exception {
         try {
+            jdbc.update( "set debug=\"\";" );
             jdbc.dropDatabase( dbName );
             jdbc.dropDatabase( test_db1 );
         } finally {

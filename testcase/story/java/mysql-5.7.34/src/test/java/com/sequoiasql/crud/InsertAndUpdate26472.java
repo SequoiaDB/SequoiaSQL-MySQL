@@ -1,9 +1,11 @@
 package com.sequoiasql.crud;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.sql.SQLException;
 
+import com.sequoiadb.base.DBCollection;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -17,16 +19,16 @@ import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.testcommon.*;
 
 /*
- * @Description   : seqDB-26470:并发插入相同记录，记录冲突，更新规则相同
+ * @Description   :  seqDB-26472：并发插入不同记录，记录冲突，按更新规则更新后的唯一键相同
  * @Author        : Lin Yingting
  * @CreateTime    : 2022.05.19
  * @LastEditTime  : 2022.05.19
  * @LastEditors   : Lin Yingting
  */
 
-public class insertAndUpdate26470 extends MysqlTestBase {
-    private String dbName = "db_26470";
-    private String tbName = "tb_26470";
+public class InsertAndUpdate26472 extends MysqlTestBase {
+    private String dbName = "db_26472";
+    private String tbName = "tb_26472";
     private Sequoiadb sdb = null;
     private JdbcInterface jdbc;
 
@@ -53,71 +55,49 @@ public class insertAndUpdate26470 extends MysqlTestBase {
     @Test
     public void test() throws Exception {
         // 创建普通表，创建唯一索引，插入记录
-        jdbc.update(
-                "create table " + dbName + "." + tbName + "( a int, b int );" );
+        jdbc.update( "create table " + dbName + "." + tbName + "( a int );" );
         jdbc.update( "create unique index idx_a on " + dbName + "." + tbName
                 + " ( a ) ;" );
         jdbc.update(
-                "insert into " + dbName + "." + tbName + " values (1,1);" );
+                "insert into " + dbName + "." + tbName + " values (1), (2);" );
 
-        // 并发插入相同记录，记录冲突，更新规则相同，更新的字段为索引字段
+        // 并发插入不同记录，记录冲突，按更新规则更新后的唯一键相同
         String sqlStr1 = "insert into " + dbName + "." + tbName
-                + " values (1,1) on duplicate key update a=a+1;";
+                + " values (1) on duplicate key update a=a+2;";
         String sqlStr2 = "insert into " + dbName + "." + tbName
-                + " values (1,1) on duplicate key update a=a+1;";
-        ThreadExecutor es1 = new ThreadExecutor();
+                + " values (2) on duplicate key update a=a+1;";
+        ThreadExecutor es = new ThreadExecutor();
         Insert insert1 = new Insert( sqlStr1 );
         Insert insert2 = new Insert( sqlStr2 );
-        es1.addWorker( insert1 );
-        es1.addWorker( insert2 );
-        es1.run();
+        es.addWorker( insert1 );
+        es.addWorker( insert2 );
+        es.run();
 
         // 检查表及数据
-        List< String > act1 = jdbc.query(
-                "select * from " + dbName + "." + tbName + " order by a;" );
-        List< String > exp1 = new ArrayList<>();
-        exp1.add( "1|1" );
-        exp1.add( "2|1" );
+        List< String > act = jdbc
+                .query( "select * from " + dbName + "." + tbName + ";" );
+        List< String > exp = new ArrayList<>();
         if ( insert1.getRetCode() == 0 ) {
+            if ( insert2.getRetCode() == 1062 ) {
+                exp = Arrays.asList( "2", "3" );
+                Assert.assertEquals( act, exp );
+            } else {
+                Assert.fail(
+                        "The insert2 thread failed not as expected, error code is "
+                                + insert2.getRetCode() );
+            }
+        } else if ( insert1.getRetCode() == 1062 ) {
             if ( insert2.getRetCode() == 0 ) {
-                Assert.assertEquals( act1, exp1 );
+                exp = Arrays.asList( "1", "3" );
+                Assert.assertEquals( act, exp );
             } else {
                 Assert.fail( "The insert2 thread failed, error code is "
                         + insert2.getRetCode() );
             }
         } else {
-            Assert.fail( "The insert1 thread failed, error code is "
-                    + insert1.getRetCode() );
-        }
-
-        // 并发插入相同记录，记录冲突，更新规则相同，更新的字段为普通字段
-        String sqlStr3 = "insert into " + dbName + "." + tbName
-                + " values (1,1) on duplicate key update b=b+1;";
-        String sqlStr4 = "insert into " + dbName + "." + tbName
-                + " values (1,1) on duplicate key update b=b+1;";
-        ThreadExecutor es2 = new ThreadExecutor( 180000 );
-        Insert insert3 = new Insert( sqlStr3 );
-        Insert insert4 = new Insert( sqlStr4 );
-        es2.addWorker( insert3 );
-        es2.addWorker( insert4 );
-        es2.run();
-
-        // 检查表及数据
-        List< String > act2 = jdbc.query(
-                "select * from " + dbName + "." + tbName + " order by a;" );
-        List< String > exp2 = new ArrayList<>();
-        exp2.add( "1|3" );
-        exp2.add( "2|1" );
-        if ( insert3.getRetCode() == 0 ) {
-            if ( insert4.getRetCode() == 0 ) {
-                Assert.assertEquals( act2, exp2 );
-            } else {
-                Assert.fail( "The insert4 thread failed, error code is "
-                        + insert4.getRetCode() );
-            }
-        } else {
-            Assert.fail( "The insert3 thread failed, error code is "
-                    + insert3.getRetCode() );
+            Assert.fail(
+                    "The insert1 thread failed not as expected, error code is "
+                            + insert1.getRetCode() );
         }
     }
 

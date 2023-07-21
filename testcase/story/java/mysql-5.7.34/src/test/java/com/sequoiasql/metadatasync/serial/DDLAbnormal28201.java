@@ -19,7 +19,7 @@ import com.sequoiasql.testcommon.MysqlTestBase;
 import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
 
 /**
- * @Description seqDB-28249:alter对象时异常，查看pending log
+ * @Description seqDB-28201:alter对象时异常，查看pending log
  * @Author Lin Yingting
  * @Date 2022.10.26
  * @UpdateAuthor Lin Yingting
@@ -27,12 +27,12 @@ import com.sequoiasql.metadatamapping.MetaDataMappingUtils;
  */
 
 @Test
-public class ddlAbnormal28249 extends MysqlTestBase {
-    private String dbName = "db_28249";
-    private String test_db1 = "test_db1_28249";
-    private String test_u1 = "test_u1_28249";
-    private String test_u2 = "test_u2_28249";
-    private String test_serv1 = "test_serv1_28249";
+public class DDLAbnormal28201 extends MysqlTestBase {
+    private String dbName = "db_28201";
+    private String test_db1 = "test_db1_28201";
+    private String test_u1 = "test_u1_28201";
+    private String test_u2 = "test_u2_28201";
+    private String test_serv1 = "test_serv1_28201";
     private Sequoiadb sdb;
     private JdbcInterface jdbc;
 
@@ -90,7 +90,6 @@ public class ddlAbnormal28249 extends MysqlTestBase {
         jdbc.update( "create table test_v2_tb1(a int);" );
         jdbc.update( "create view test_v1 as select * from test_v1_tb1;" );
         jdbc.update( "create user " + test_u1 + "," + test_u2 + ";" );
-        jdbc.update( "create sequence test_seq1;" );
         jdbc.update( "create procedure test_proc1(in num int)" + " begin"
                 + " select num;" + " set num=2;" + " select num;" + " end" );
         jdbc.update( "create function test_func1() returns int" + " begin "
@@ -282,15 +281,6 @@ public class ddlAbnormal28249 extends MysqlTestBase {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
-        // SEQUOIASQLMAINSTREAM-1505
-        /*
-         * try { jdbc.
-         * update("alter table test_tb29 add column begintime timestamp(6) " +
-         * "generated always as row start,add column endtime timestamp(6)" +
-         * " generated always as row end,add period for system_time" +
-         * "(begintime, endtime),add system versioning;"); } catch (SQLException
-         * e) { if (e.getErrorCode() != 1105) throw e; }
-         */
 
         try {
             jdbc.update( "alter database " + test_db1 + " character set utf8mb4"
@@ -305,21 +295,13 @@ public class ddlAbnormal28249 extends MysqlTestBase {
             if ( e.getErrorCode() != 1105 )
                 throw e;
         }
-        try {
-            jdbc.update( "alter user " + test_u1 + " identified by 'pw2';" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
+        // SEQUOIASQLMAINSTREAM-1544
+        /*
+         * try { jdbc.update("alter user " + test_u1 + " identified by 'pw2';");
+         * } catch (SQLException e) { if (e.getErrorCode() != 1105) throw e; }
+         */
         try {
             jdbc.update( "alter user " + test_u2 + " require ssl;" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 1105 )
-                throw e;
-        }
-        try {
-            jdbc.update(
-                    "alter sequence test_seq1 minvalue 10 start 10 restart 10;" );
         } catch ( SQLException e ) {
             if ( e.getErrorCode() != 1105 )
                 throw e;
@@ -392,10 +374,11 @@ public class ddlAbnormal28249 extends MysqlTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
+            jdbc.update( "set debug=\"\";" );
             jdbc.dropDatabase( dbName );
             jdbc.dropDatabase( test_db1 );
             jdbc.update( "drop user " + test_u1 + "," + test_u2 + ";" );
-            jdbc.update( "drop server " + test_serv1 + ";" );
+            jdbc.update( "drop server if exists " + test_serv1 + ";" );
         } finally {
             sdb.close();
             jdbc.close();
