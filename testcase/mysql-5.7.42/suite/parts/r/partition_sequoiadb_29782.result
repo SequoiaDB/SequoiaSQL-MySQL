@@ -30,7 +30,11 @@ Warnings:
 Note	1003	/* select#1 */ select `partition_sequoiadb_29782`.`t1`.`col_int_key` AS `field1` from `partition_sequoiadb_29782`.`t1` where (`partition_sequoiadb_29782`.`t1`.`col_int_key` between 1 and 3) group by `field1` having ((`field1` = 3) or isnull(`field1`)) limit 2,9
 SELECT DISTINCT  `col_int_key` AS field1 FROM `t1`  WHERE col_int_key BETWEEN 1 AND 3  GROUP BY field1 HAVING field1 = 3 OR field1 IS NULL LIMIT 9 OFFSET 2;
 field1
-[Note] SequoiaDB: optimizer selector object: { "_id": null, "col_int_key": null }, table: partition_sequoiadb_29782.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int_key": { "$gte": 1 } }, { "col_int_key": { "$lte": 3 } } ] }], selector[{ "_id": null, "col_int_key": null }], order_by[{ "col_int_key": -1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29782.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int_key": { "$gte": 1 } }, { "col_int_key": { "$lte": 3 } } ] }], selector[{ "_id": null, "col_int_key": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29782.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_int_key": { "$gte": 1 } }, { "col_int_key": { "$lte": 3 } } ] }, { "$and": [ { "col_int_key": { "$gt": 1 } }, { "col_int_key": { "$lte": 3 } } ] } ] }], selector[{ "_id": null, "col_int_key": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29782.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_int_key": { "$gte": 1 } }, { "col_int_key": { "$lte": 3 } } ] }, { "$and": [ { "col_int_key": { "$gt": 2 } }, { "col_int_key": { "$lte": 3 } } ] } ] }], selector[{ "_id": null, "col_int_key": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29782.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_int_key": { "$gte": 1 } }, { "col_int_key": { "$lte": 3 } } ] }, { "$and": [ { "col_int_key": { "$gt": 3 } }, { "col_int_key": { "$lte": 3 } } ] } ] }], selector[{ "_id": null, "col_int_key": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29782.t1]
 EXPLAIN SELECT SQL_BIG_RESULT `pk` AS field1 FROM `t1` PARTITION (p2 , p3 ) WHERE col_int_key = 7 OR col_varchar_16_key = 'l' ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -49,4 +53,3 @@ field1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "pk": { "$gte": 100 } }, {} ] }, { "$or": [ { "col_int_key": { "$et": 7 } }, { "col_varchar_16_key": { "$et": "l" } } ] } ] }], selector[{}], order_by[{ "pk": 1 }], hint[{}], limit[-1], offset[0], table[partition_sequoiadb_29782.t1]
 DROP DATABASE partition_sequoiadb_29782;
-SET SESSION sequoiadb_debug_log=default;

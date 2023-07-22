@@ -34,7 +34,8 @@ NULL
 NULL
 NULL
 NULL
-[Note] SequoiaDB: optimizer selector object: { "_id": null, "col_int_key": null, "col_int": null }, table: partition_sequoiadb_29784.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 9 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 [Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -279,4 +280,3 @@ field1
 22
 [Note] SequoiaDB: Count message: condition[{ "col_int": { "$isnull": 0 }, "$and": [ { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] }, { "col_int_key": { "$in": [ 7, 9 ] } } ] }],hint[{ "": "col_int_key" }] table[partition_sequoiadb_29784.t1]
 DROP DATABASE partition_sequoiadb_29784;
-SET SESSION sequoiadb_debug_log=default;

@@ -8171,7 +8171,7 @@ SELECT id,field3 FROM t1 WHERE id = 1 OR field3 = 2;
 id	field3
 1	1
 2	2
-[Note] SequoiaDB: optimizer selector object: { "_id": null, "id": null, "field3": null }, table: query_pushdown_test_sequoiadb.t1
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{ "_id": null, "id": null, "field3": null }], order_by[{ "id": 1 }], hint[{ "": "id" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 [Note] SequoiaDB: Query message: condition[{ "field3": { "$et": 2 } }], selector[{ "_id": null, "id": null, "field3": null }], order_by[{ "field3": 1 }], hint[{ "": "field3" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 set session sequoiadb_optimizer_options = "direct_count,direct_delete,direct_update,direct_limit";
 EXPLAIN SELECT field4 FROM t1 ORDER BY field4;
@@ -8194,7 +8194,7 @@ set session sequoiadb_optimizer_options = default;
 SELECT field4 FROM t1 GROUP BY field4;
 field4
 100
-[Note] SequoiaDB: optimizer selector object: { "_id": null, "field4": null }, table: query_pushdown_test_sequoiadb.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "field4": { "$first": "$field4" }, "_id": { "field4": "$field4" } } }], sort[{ "$sort": { "field4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 SELECT distinct field4 FROM t1;
 field4

@@ -9,6 +9,8 @@ drop database if exists sort_sequoiadb;
 --enable_warnings
 
 create database sort_sequoiadb;
+drop database sort_sequoiadb;
+create database sort_sequoiadb;
 use sort_sequoiadb;
 
 CREATE TABLE `t1` (
@@ -31,7 +33,7 @@ UNLOCK TABLES;
 # case 29395
 EXPLAIN SELECT ALL col_int FROM t1 WHERE col_int_key < 5 ORDER BY col_int;
 SELECT ALL col_int FROM t1 WHERE col_int_key < 5 ORDER BY col_int;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 
 # case 29390
 EXPLAIN SELECT ALL SQL_BUFFER_RESULT col_int FROM t1 WHERE col_int_key = 5 OR col_int_key IS NULL ORDER BY col_int;
@@ -42,7 +44,7 @@ SELECT ALL SQL_BUFFER_RESULT col_int FROM t1 WHERE col_int_key = 5 OR col_int_ke
 EXPLAIN SELECT DISTINCT col_int_key FROM t1 WHERE col_int_key = 1 OR col_int_key = 7 OR col_int_key IS NULL;
 --sorted_result
 SELECT DISTINCT col_int_key FROM t1 WHERE col_int_key = 1 OR col_int_key = 7 OR col_int_key IS NULL;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_8.inc
 
 drop database sort_sequoiadb;
 set global sequoiadb_auto_partition=off;

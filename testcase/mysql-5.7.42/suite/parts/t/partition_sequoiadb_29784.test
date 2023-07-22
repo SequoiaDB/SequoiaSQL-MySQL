@@ -33,11 +33,86 @@ INSERT /*! IGNORE */ INTO t1 VALUES  (NULL, 'will', NULL, 'q', 'z', 'o', 51) ,  
 INSERT /*! IGNORE */ INTO t1 VALUES  (9, 'they', 4, 'x', 'q', 'f', 101) ,  (-1284505600, 'd', 5767168, 'h', 'can', 'r', 102) ,  (1, 'u', 4, 'i', 'n', 'to', 103) ,  (8, 'k', 4, 'r', 'x', 'd', 104) ,  (4, 'u', NULL, 'u', 'w', 'l', 105) ,  (9, 'b', -429522944, 'a', NULL, 'a', 106) ,  (7, 'it', 3, 'd', 'z', 'y', 107) ,  (9, 't', 3, 'or', 'n', NULL, 108) ,  (5, 'been', 9, 'd', 'o', NULL, 109) ,  (9, 'q', 1, 'w', 'q', 'g', 110) ,  (4, 's', 0, NULL, NULL, NULL, 111) ,  (4, NULL, NULL, 'n', 'tell', 'm', 112) ,  (1455292416, 'v', -1987248128, 'i', 'u', 'he', 113) ,  (0, 'your', 2024996864, NULL, NULL, 'k', 114) ,  (1044905984, 'w', 0, 'l', 'x', 'm', 115) ,  (5, 'ok', 359530496, 'y', 'e', 'o', 116) ,  (1526530048, 'k', 1, 'p', NULL, 'x', 117) ,  (1, 'u', 7, 'm', 'now', 'on', 118) ,  (-905707520, 'I', 0, 'be', 'g', 'what', 119) ,  (8, 'd', -154402816, 'time', 'p', 'would', 120) ,  (9, NULL, 3, 'my', NULL, 'h', 121) ,  (NULL, 'o', 2, 'about', 'i', 'q', 122) ,  (5, 'h', 2121400320, 'd', 's', 'y', 123) ,  (3, 'i', 6, 'I\'m', 'say', 'you', 124) ,  (NULL, 'e', 6, 'why', 'mean', NULL, 125) ,  (303104000, 'when', 1, 'a', 'k', 'x', 126) ,  (9, 'f', 4, 'm', NULL, 'u', 127) ,  (2, 'really', 0, 'c', 'j', 'c', 128) ,  (9, 'go', 0, 'o', NULL, 'z', 129) ,  (6, 'not', NULL, 'c', 'j', 'b', 130) ,  (1520697344, NULL, NULL, 'x', NULL, 'my', 131) ,  (0, 'd', 1, 'q', 'u', NULL, 132) ,  (NULL, 'm', 4, 'y', NULL, NULL, 133) ,  (5, 'q', 0, 'k', 'o', NULL, 134) ,  (2129854464, NULL, NULL, 'i', NULL, 'who', 135) ,  (NULL, 't', 7, 'l', 'd', 'w', 136) ,  (NULL, 's', 8, 'm', 'b', 'y', 137) ,  (-609157120, 'a', 896008192, 'e', 'go', 'i', 138) ,  (1, NULL, 7, 'm', NULL, 'x', 139) ,  (1178730496, 'g', 0, 'a', 'p', 'k', 140) ,  (1843003392, NULL, 1156120576, 'n', NULL, 'g', 141) ,  (6, 'd', 0, 'x', 't', NULL, 142) ,  (3, 'c', NULL, 'h', NULL, 'g', 143) ,  (8, 'a', 230686720, 'to', 'u', 'come', 144) ,  (NULL, 'e', 8, NULL, 'c', 'why', 145) ,  (NULL, 'a', 9, 's', 'p', 'r', 146) ,  (NULL, 'x', 8, 'this', NULL, 'x', 147) ,  (3, 's', 4, 'a', 'z', 'e', 148) ,  (NULL, 'something', 9, NULL, 'q', 'something', 149) ,  (3, 'l', 5, 'what', NULL, 'or', 150) ;
 INSERT /*! IGNORE */ INTO t1 VALUES  (0, 'x', -1667563520, 'x', NULL, NULL, 151) ,  (3, 'b', 3, 'l', NULL, NULL, 152) ,  (NULL, NULL, -908328960, 'v', 'g', 'c', 153) ,  (NULL, 'v', 5, 'q', NULL, 'w', 154) ,  (7, 'q', NULL, 'r', 's', 'can\'t', 155) ,  (-983236608, 'u', 2, 'think', 'o', 'o', 156) ,  (0, 'p', 7, NULL, NULL, 'e', 157) ,  (-926154752, 'h', 1, 't', 'know', 'p', 158) ,  (6, 'q', 1, 'a', NULL, 'k', 159) ,  (-1988755456, 'j', -1333198848, 'd', NULL, 'b', 160) ,  (2, 'o', 9, 'v', 'did', NULL, 161) ,  (0, NULL, 1, 'h', 'a', 'm', 162) ,  (-1039925248, 'w', -613154816, 'k', 'c', 'd', 163) ,  (9, NULL, NULL, NULL, NULL, 'w', 164) ,  (3, 'x', NULL, 's', 'b', 'e', 165) ,  (4, 'good', -24576000, 'g', 'c', 'b', 166) ,  (3, 'that\'s', 6, 'r', NULL, 'y', 167) ,  (0, NULL, 3, 'd', NULL, 'r', 168) ,  (0, 'r', 1, 'hey', NULL, NULL, 169) ,  (1, 'i', NULL, 'p', 'something', 'n', 170) ,  (NULL, 'i', NULL, 'y', 'your', 'l', 171) ,  (9, 'x', 9, NULL, 'one', 'a', 172) ,  (4, 'been', NULL, 'you\'re', NULL, 'w', 173) ,  (-131858432, 'y', NULL, 't', 'x', NULL, 174) ,  (904134656, NULL, 3, 'x', NULL, 'h', 175) ,  (-150470656, 'f', 3, NULL, 'w', 'g', 176) ,  (1, NULL, -697434112, 'r', 'r', 'one', 177) ,  (5, 'been', 0, 'u', 'when', NULL, 178) ,  (NULL, 'say', -1810497536, 'm', 'can', 'x', 179) ,  (2, NULL, -1358888960, NULL, 'z', NULL, 180) ,  (NULL, NULL, NULL, NULL, 's', 'e', 181) ,  (6, 'o', 9, 'k', 'f', NULL, 182) ,  (1800536064, 'you', 3, 'f', 'a', 'w', 183) ,  (7, 'f', 0, NULL, 'k', 'w', 184) ,  (8, 'come', 2, 'f', 'tell', 'n', 185) ,  (9, 'y', -1177288704, 'm', 'y', 'h', 186) ,  (4, NULL, -1078001664, 'hey', 'j', 'd', 187) ,  (0, 'c', 8, 'x', 'you', 'm', 188) ,  (8, NULL, NULL, 'something', 'b', 'u', 189) ,  (NULL, 'k', 6, NULL, 'h', 'l', 190) ,  (6, 'w', -1067319296, 'don\'t', 'g', 'right', 191) ,  (1985740800, 'a', 2059927552, 'l', NULL, 'with', 192) ,  (9, 'o', -276758528, 'x', 'm', 'b', 193) ,  (-2060517376, 'e', 6, 'will', 'didn\'t', 'd', 194) ,  (3, 'e', 1526530048, 'v', 'a', 'k', 195) ,  (6, NULL, NULL, NULL, 'b', 'r', 196) ,  (2, 'o', 0, 's', NULL, 'but', 197) ,  (NULL, NULL, -1361444864, NULL, 'to', 'would', 198) ,  (0, 'i', NULL, NULL, NULL, 'i', 199) ,  (0, NULL, 9, 'h', 'the', 'good', 200) ;
 
---source suite/parts/inc/partition_sequoiadb_29784.inc
+EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7 OFFSET 0;
+SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7 OFFSET 0;
+--source include/query_pushdown_condition_sequoiadb_3.inc
+
+# jira problem
+EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7;
+SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+# other hints
+EXPLAIN SELECT SQL_SMALL_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+SELECT SQL_SMALL_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT SQL_BIG_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+SELECT SQL_BIG_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT HIGH_PRIORITY `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+SELECT HIGH_PRIORITY `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT SQL_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+SELECT SQL_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT SQL_NO_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+SELECT SQL_NO_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+# other tmp table
+EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 ORDER BY field1 LIMIT 7;
+SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 ORDER BY field1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 + 1 ORDER BY field1 LIMIT 7;
+SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 + 1 ORDER BY field1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 ORDER BY field1 + 1 LIMIT 7;
+SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 ORDER BY field1 + 1 LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT * FROM (SELECT * FROM t1 ORDER BY col_int LIMIT 10000) AS dt order by pk,col_int limit 7;
+SELECT * FROM (SELECT * FROM t1 ORDER BY col_int LIMIT 10000) AS dt order by pk,col_int limit 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT * FROM (SELECT * FROM t1 ORDER BY col_int + 1 LIMIT 7) AS dt;
+--sorted_result
+SELECT * FROM (SELECT * FROM t1 ORDER BY col_int + 1 LIMIT 7) AS dt;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
+--disable_result_log
+SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
+--enable_result_log
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int + 1) AS dt LIMIT 7;
+SELECT * FROM (SELECT * FROM t1 GROUP BY col_int + 1) AS dt LIMIT 7;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+# SQL_BUFFER_RESULT and other direct optimization
+EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 GROUP BY field1;
+SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 GROUP BY field1;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 ORDER BY field1;
+SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 ORDER BY field1;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 GROUP BY field1 ORDER BY field1;
+SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 GROUP BY field1 ORDER BY field1;
+--source include/query_pushdown_condition_sequoiadb.inc
+
+EXPLAIN SELECT SQL_BUFFER_RESULT COUNT(`col_int`) AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7;
+SELECT SQL_BUFFER_RESULT COUNT(`col_int`) AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 DROP DATABASE partition_sequoiadb_29784;
-
-SET SESSION sequoiadb_debug_log=default;
 
 --source include/uninstall_sequoiadb.inc
 
