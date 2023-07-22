@@ -11,10 +11,9 @@
 drop database if exists count_limit_sort_pushdown_sequoiadb_2;
 --enable_warnings
 create database count_limit_sort_pushdown_sequoiadb_2;
+drop database count_limit_sort_pushdown_sequoiadb_2;
+create database count_limit_sort_pushdown_sequoiadb_2;
 use count_limit_sort_pushdown_sequoiadb_2;
---disable_warnings
-drop table if exists t1,t2,t3,t4,t5,insert_table1,insert_table2,insert_table3,insert_table4,insert_table5,insert_table6,insert_table7,t1_partition,t2_partition,t3_partition;
---enable_warnings
 
 create table t1(
   col1 int,
@@ -183,7 +182,7 @@ set session optimizer_index_sort_prune=on;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(1) from t1 where col1>=1;
 insert into insert_table1 select count(1) from t1 where col1>=1;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -258,7 +257,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(1) from t1 where col1>1 group by col1 desc;
 insert into insert_table1 select count(1) from t1 where col1>1 group by col1 desc;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -266,7 +265,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(1) from t1 where col3>="20221115114210" group by col3 limit 1,1;
 insert into insert_table1 select count(1) from t1 where col3>="20221115114210" group by col3 limit 1,1;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -292,7 +291,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(1) from t1 where col2>="def" limit 1;
 insert into insert_table1 select count(1) from t1 where col2>="def" limit 1;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -318,7 +317,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1(select count(1) from t1 where col1>1) union ALL (select count(1) from t2 where col4<"zzz") limit 1,1;
 insert into insert_table1(select count(1) from t1 where col1>1) union ALL (select count(1) from t2 where col4<"zzz") limit 1,1;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -416,7 +415,7 @@ truncate table insert_table7;
 explain insert into t5 (select * from t1 where col1>=1 limit 1) UNION ALL (select * from t2 where col2>"defg" order by col2 desc) UNION ALL (select * from t1 where col2>"defg" order by col2 desc limit 1) UNION ALL (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col2 desc limit 1;
 --sorted_result
 insert into t5 (select * from t1 where col1>=1 limit 1) UNION ALL (select * from t2 where col2>"defg" order by col2 desc) UNION ALL (select * from t1 where col2>"defg" order by col2 desc limit 1) UNION ALL (select * from t2 where col1>=1 group by col2 order by col2 desc limit 2,1) order by col2 desc limit 1;
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -427,7 +426,7 @@ truncate table t5;
 explain insert into insert_table7(select col4 from t1_partition where col1>=1 limit 1) UNION ALL (select col4 from t2_partition where col4>"defg" order by col4 desc) UNION ALL (select col4 from t1_partition where col4>"defg" order by col4 desc limit 1) UNION ALL (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 1) order by col4 desc limit 1;
 --sorted_result
 insert into insert_table7(select col4 from t1_partition where col1>=1 limit 1) UNION ALL (select col4 from t2_partition where col4>"defg" order by col4 desc) UNION ALL (select col4 from t1_partition where col4>"defg" order by col4 desc limit 1) UNION ALL (select col4 from t2_partition where col1>=1 group by col4 order by col4 desc limit 1) order by col4 desc limit 1;
- --source include/query_pushdown_condition_sequoiadb_6.inc
+ --source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table7;
 truncate table insert_table7;
@@ -478,7 +477,7 @@ truncate table insert_table1;
 explain  insert into insert_table1(select count(*) from t1 where col1>=1 limit 0,4) union ALL (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
 --sorted_result
 insert into insert_table1(select count(*) from t1 where col1>=1 limit 0,4) union ALL (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -505,7 +504,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1(select count(1) from t1 where col1>1) UNION (select count(1) from t2 where col4<"zzz") limit 1,1;
 insert into insert_table1(select count(1) from t1 where col1>1) UNION (select count(1) from t2 where col4<"zzz") limit 1,1;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -613,7 +612,7 @@ truncate table t5;
 explain  insert into insert_table7(select col4 from t1_partition where col1>=1 limit 1) UNION (select col4 from t2_partition where col4>"def" order by col4 ) UNION (select col4 from t1_partition where col4>="def" order by col4  limit 1) UNION (select col4 from t2_partition where col1>=1 group by col4 order by col4  limit 1) order by col4  limit 1;
 --sorted_result
 insert into insert_table7(select col4 from t1_partition where col1>=1 limit 1) UNION (select col4 from t2_partition where col4>"def" order by col4 ) UNION (select col4 from t1_partition where col4>="def" order by col4  limit 1) UNION (select col4 from t2_partition where col1>=1 group by col4 order by col4  limit 1) order by col4  limit 1;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table7;
 truncate table insert_table7;
@@ -664,7 +663,7 @@ truncate table insert_table1;
 explain  insert into insert_table1(select count(*) from t1 where col1>=1 limit 0,4) UNION (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
 --sorted_result
 insert into insert_table1(select count(*) from t1 where col1>=1 limit 0,4) UNION (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -691,7 +690,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) UNION (select count(1) from t1 where col4<"zzz") limit 0,3;
 insert into insert_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) UNION (select count(1) from t1 where col4<"zzz") limit 0,3;
---source include/query_pushdown_condition_sequoiadb_7.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -699,7 +698,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) UNION (select count(1) from t1,t2  where t1.col4 >='def' and t2.col4<"zzz") UNION (select count(1) from t1 where col4<"zzz") limit 0,3;
 insert into insert_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) UNION (select count(1) from t1,t2  where t1.col4 >='def' and t2.col4<"zzz") UNION (select count(1) from t1 where col4<"zzz") limit 0,3;
---source include/query_pushdown_condition_sequoiadb_11.inc
+--source include/query_pushdown_condition_sequoiadb_6.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -707,7 +706,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1,4) UNION (select * from t1 where col3>="20221115114210" group by col3 order by col3  limit 0,2) limit 0,3;
 insert into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1,4) UNION (select * from t1 where col3>="20221115114210" group by col3 order by col3  limit 0,2) limit 0,3;
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -715,7 +714,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1,4) UNION (select t2.*  from t1,t2  where t1.col4 >='def' and t2.col4<"zzz" group by col3 order by col3  limit 0,2) UNION (select * from t1 where col3>="20221115114210" group by col3 order by col3  limit 0,2) limit 0,3;
 insert into t5(select t1.* from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1,4) UNION (select t2.*  from t1,t2  where t1.col4 >='def' and t2.col4<"zzz" group by col3 order by col3  limit 0,2) UNION (select * from t1 where col3>="20221115114210" group by col3 order by col3  limit 0,2) limit 0,3;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -724,7 +723,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(col1) from t1 where col1>=1) from t2 where col3>"20221115114210";
 insert into insert_table3 select count(*),(select count(col1) from t1 where col1>=1) from t2 where col3>"20221115114210";
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -732,7 +731,7 @@ truncate table insert_table3;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where col3>"20221115114210"  limit 1,3;
 insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where col3>"20221115114210"  limit 1,3;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -808,8 +807,7 @@ truncate table insert_table4;
 --replace_column 10 #  11 #
 explain insert into insert_table5 select count(*),(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6;
 insert into insert_table5 select count(*),(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6;
- 
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from insert_table5;
 truncate table insert_table5;
@@ -855,7 +853,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(col2) from t1 where col3>="20221215114210" group by col4) from t2 where t2.col1 <6 group by col1;
 insert into insert_table3 select count(*),(select count(col2) from t1 where col3>="20221215114210" group by col4) from t2 where t2.col1 <6 group by col1;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -863,7 +861,7 @@ truncate table insert_table3;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(col2) from t1 where col3<"20221215114210" group by col4 limit 2,1) from t2 where t2.col1 <6 group by col1 limit 3;
 insert into insert_table3 select count(*),(select count(col2) from t1 where col3<"20221215114210" group by col4 limit 2,1) from t2 where t2.col1 <6 group by col1 limit 3;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -891,7 +889,7 @@ truncate table insert_table3;
 explain  insert into insert_table3 select count(*),(select count(col1) from t1 where col1>=1 limit 1,3) from t2 where col3>"20221115114210" limit 3;
 --sorted_result
 insert into insert_table3 select count(*),(select count(col1) from t1 where col1>=1 limit 1,3) from t2 where col3>"20221115114210" limit 3;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -919,7 +917,7 @@ truncate table insert_table3;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(*) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
 insert into insert_table1 select count(*) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -927,8 +925,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1)  limit 3;
 insert into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1)  limit 3;
- 
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -1019,7 +1016,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select col1 from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 order by col1 limit 1;
 insert into insert_table1 select col1 from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 order by col1 limit 1;
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -1027,7 +1024,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col1 <(select count(col1) from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
 insert into t5 select * from t2 where t2.col1 <(select count(col1) from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -1035,7 +1032,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
 insert into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -1043,7 +1040,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1=1 order by col3 desc)  group by col1 limit 3;
 insert into t5 select * from t2 where t2.col1 <(select col1 from t1 where col1=1 order by col3 desc)  group by col1 limit 3;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -1051,7 +1048,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(*) from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"  order by col1 desc); 
 insert into insert_table1 select count(*) from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"  order by col1 desc); 
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -1059,7 +1056,6 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc)  limit 3;
 insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc)  limit 3;
- 
 --source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from t5;
@@ -1068,7 +1064,6 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) order by col3 desc limit 3;
 insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) order by col3 desc limit 3;
- 
 --source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from t5;
@@ -1077,7 +1072,6 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"  order by col1 desc) order by col3 desc;
 insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"  order by col1 desc) order by col3 desc;
- 
 --source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from t5;
@@ -1086,16 +1080,15 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col1 desc)  order by col3 desc limit 3;
 insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col1 desc)  order by col3 desc limit 3;
- 
 --source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from t5;
 truncate table t5;
- 
+
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col2 limit 0,1) order by col3 desc;
 insert into t5 select * from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col2 limit 0,1) order by col3 desc;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -1105,7 +1098,7 @@ truncate table t5;
 explain  insert into insert_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4,col1 limit 0,1) order by col4 desc;
 --sorted_result
 insert into insert_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4,col1 limit 0,1) order by col4 desc;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
  --sorted_result
 select * from insert_table7;
 truncate table insert_table7;
@@ -1114,8 +1107,7 @@ truncate table insert_table7;
 --replace_column 10 #  11 #
 explain insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col4 desc) order by col3 desc;
 insert into t5 select * from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" order by col4 desc) order by col3 desc;
- 
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from t5;
 truncate table t5;
@@ -1123,7 +1115,7 @@ truncate table t5;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(*) from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4 desc) group by col3 desc; 
 insert into insert_table1 select count(*) from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4 desc) group by col3 desc; 
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -1131,7 +1123,6 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(*) from t2 where  t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 limit 0,1)group by col3 desc limit 3; 
 insert into insert_table1 select count(*) from t2 where  t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 limit 0,1)group by col3 desc limit 3; 
- 
 --source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table1;
@@ -1148,7 +1139,6 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(*) from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
 insert into insert_table1 select count(*) from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
- 
 --source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table1;
@@ -1186,7 +1176,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(*) from t2 where col1>4 group by col1 having col1> (select count(1) from t1 where col4>"def") ;
 insert into insert_table1 select count(*) from t2 where col1>4 group by col1 having col1> (select count(1) from t1 where col4>"def") ;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -1365,7 +1355,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(col1) from t1 where col1>=1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table3 select count(*),(select count(col1) from t1 where col1>=1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_7.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -1373,17 +1363,15 @@ truncate table insert_table3;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_8.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
  
-
- 
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=7 group by col1)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 desc having col4 < "zzz" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table2 select *,(select col1 from t1 where col1>=7 group by col1)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 desc having col4 < "zzz" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_6.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1391,7 +1379,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table2 select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1399,7 +1387,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=1 group by col1 limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table2 select *,(select col1 from t1 where col1>=1 group by col1 limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1407,7 +1395,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=7 group by col1 order by col3 desc)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table2 select *,(select col1 from t1 where col1>=7 group by col1 order by col3 desc)  from t2 where t2.col2 in(select col4 from t1 where col3>"20221115114210" group by col4 having col4 < "zzz"   order by col1 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_6.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1423,8 +1411,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   order by col3 desc;
 insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   order by col3 desc;
- 
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1432,8 +1419,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1 )   order by col3 desc;
 insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2<"abcdef" order by col4 desc limit 1 )   order by col3 desc;
- 
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1441,7 +1427,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2="abcdef" order by col4 desc )   order by col3 desc;
 insert into insert_table2 select *,(select col1 from t1 where col1>=1 limit 2,1) from t2 where t2.col2 in(select col4 from t1 where col3<"20221115114210" order by col4 desc)  group by col2 having col2< (select col4 from t1 where col2="abcdef" order by col4 desc )   order by col3 desc;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1449,7 +1435,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table2 select *,(select col1 from t1 where col2>="bcd" order by col1 limit 0,1) from t2 where t2.col4 in(select col2 from t1 where col2>"def" group by col1 desc having col1 < 10) group by col4 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table2 select *,(select col1 from t1 where col2>="bcd" order by col1 limit 0,1) from t2 where t2.col4 in(select col2 from t1 where col2>"def" group by col1 desc having col1 < 10) group by col4 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_6.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1457,7 +1443,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3;
 insert into insert_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3; 
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from insert_table4;
 truncate table insert_table4;
@@ -1467,7 +1453,7 @@ truncate table insert_table4;
 explain  insert into insert_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
 --sorted_result
 insert into insert_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from insert_table5;
 truncate table insert_table5;
@@ -1476,7 +1462,7 @@ truncate table insert_table5;
 --replace_column 10 #  11 #
 explain  insert into insert_table2 select *,(select col1 from t1 where col1>=7 order by col1 desc)  from t2 where t2.col2 in(select col2 from t1 where col3>"20221115114210" order by col2 desc) group by col2 having col2> (select col2 from t1 where col2>"abcdef" group by col2 order by col2 desc limit 1 )   limit 1;
  insert into insert_table2 select *,(select col1 from t1 where col1>=7 order by col1 desc)  from t2 where t2.col2 in(select col2 from t1 where col3>"20221115114210" order by col2 desc) group by col2 having col2> (select col2 from t1 where col2>"abcdef" group by col2 order by col2 desc limit 1 )   limit 1;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table2;
 truncate table insert_table2;
@@ -1484,7 +1470,7 @@ truncate table insert_table2;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(col1)  from t1 where col1>=7 group by col1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table3 select count(*),(select count(col1)  from t1 where col1>=7 group by col1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" group by col4 desc) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -1492,7 +1478,7 @@ truncate table insert_table3;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(col1)  from t1 where col1>=1 group by col1 limit 2,1)  from t2 where  t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table3 select count(*),(select count(col1)  from t1 where col1>=1 group by col1 limit 2,1)  from t2 where  t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_6.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -1508,7 +1494,7 @@ truncate table insert_table3;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(col1)  from t1 where col1>=1 group by col1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 insert into insert_table3 select count(*),(select count(col1)  from t1 where col1>=1 group by col1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -1516,27 +1502,24 @@ truncate table insert_table3;
 # seqDB-29621
 --replace_column 10 #  11 #
 explain  insert into insert_table3 select count(1) as col1,(select count(col1)  from t1 where col1>=1 limit 6) as col2  from t2 where t2.col1 < (select count(col1)  from t1 where col1>=5 limit 0,1) group by col1 having col1< (select count(col4)  from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 );
---sorted_result
 insert into insert_table3 select count(1) as col1,(select count(col1)  from t1 where col1>=1 limit 6) as col2  from t2 where t2.col1 < (select count(col1)  from t1 where col1>=5 limit 0,1) group by col1 having col1< (select count(col4)  from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 );
---source include/query_pushdown_condition_sequoiadb_8.inc
+--source include/query_pushdown_condition_sequoiadb_6.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
 
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col1 desc)  from t2 where t2.col1 in (select count(col1) from t1 where col3>"20221115114210" order by col1 desc) group by t2.col1 having t2.col1> (select count(col1) from t1 where col2>"abcdef" group by col1 order by col1 desc limit 1 )   limit 3;
---sorted_result
 insert into insert_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col1 desc)  from t2 where t2.col1 in (select count(col1) from t1 where col3>"20221115114210" order by col1 desc) group by t2.col1 having t2.col1> (select count(col1) from t1 where col2>"abcdef" group by col1 order by col1 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_7.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
 
 --replace_column 10 #  11 #
 explain  insert into insert_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 order by col4 limit 0,1) group by col1 having col1< (select count(col4) from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---sorted_result
 insert into insert_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 order by col4 limit 0,1) group by t2.col1 having t2.col1< (select count(col4) from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_6.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -1545,7 +1528,7 @@ truncate table insert_table3;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
 insert into insert_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
---source include/query_pushdown_condition_sequoiadb_9.inc
+--source include/query_pushdown_condition_sequoiadb_6.inc
 --sorted_result
 select * from insert_table3;
 truncate table insert_table3;
@@ -1553,18 +1536,17 @@ truncate table insert_table3;
 --replace_column 10 #  11 #
 explain insert into insert_table4 select *, (select t1.col4 from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
 insert into insert_table4 select *, (select t1.col4 from t1, t2 where t1.col1>=2 and t2.col1 <=6 group by t1.col3 order by t1.col3  limit 1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 group by col4 order by col1 limit 0,1) group by col3 order by col2 desc limit 3;
---source include/query_pushdown_condition_sequoiadb_5.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table4;
 truncate table insert_table4;
- 
 
 
 # seqDB-29623
 --replace_column 10 #  11 #
 explain insert into insert_table1 select * from (select count(*) from t1 where col3>="20221115114310") dt;
 insert into insert_table1 select * from (select count(*) from t1 where col3>="20221115114310") dt;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -1696,9 +1678,8 @@ truncate table insert_table1;
 # seqDB-29625
 --replace_column 10 #  11 #
 explain  insert into insert_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" limit 8) dt limit 1;
---sorted_result
 insert into insert_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" limit 8) dt limit 1;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -2008,7 +1989,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select * from (select count(*) from v7) dt;
 insert into insert_table1 select * from (select count(*) from v7) dt;
---source include/query_pushdown_condition_sequoiadb_7.inc
+--source include/query_pushdown_condition_sequoiadb_4.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -2016,7 +1997,7 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table1 select count(*) from t1,t2, (select count(*) from v7) dt;
 insert into insert_table1 select count(*) from t1,t2, (select count(*) from v7) dt;
---source include/query_pushdown_condition_sequoiadb_11.inc
+--source include/query_pushdown_condition_sequoiadb_6.inc
 --sorted_result
 select * from insert_table1;
 truncate table insert_table1;
@@ -2024,14 +2005,14 @@ truncate table insert_table1;
 --replace_column 10 #  11 #
 explain insert into insert_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(*) from v7 ) ;
 insert into insert_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(*) from v7 ) ;
---source include/query_pushdown_condition_sequoiadb_14.inc
+--source include/query_pushdown_condition_sequoiadb_8.inc
 select * from insert_table3;
 truncate table insert_table3;
 
 --replace_column 10 #  11 #
 explain insert into t5 select * from (select * from v8 where col2>"defg" group by col1 order by col1 limit 7) dt where col3>="20221115112010" group by col2 order by col3 limit 6;
 insert into t5 select * from (select * from v8 where col2>"defg" group by col1 order by col1 limit 7) dt where col3>="20221115112010" group by col2 order by col3 limit 6;
---source include/query_pushdown_condition_sequoiadb_4.inc
+--source include/query_pushdown_condition_sequoiadb_3.inc
 --sorted_result
 select * from t5;
 truncate table t5;

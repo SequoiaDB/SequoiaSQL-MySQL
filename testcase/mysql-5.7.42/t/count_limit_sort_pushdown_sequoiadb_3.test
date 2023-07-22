@@ -183,7 +183,7 @@ set session optimizer_index_sort_prune=on;
 --replace_column 10 #  11 #
 explain replace into replace_table1 select count(1) from t1 where col1>=1;
 replace into replace_table1 select count(1) from t1 where col1>=1;
---source include/query_pushdown_condition_sequoiadb_3.inc
+--source include/query_pushdown_condition_sequoiadb_2.inc
 --sorted_result
 select * from replace_table1;
 truncate table replace_table1;

@@ -400,7 +400,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
 Warnings:
 Note	1003	/* select#1 */ select min(`explain_direct_sort_27684`.`t1`.`idx_col1`) AS `min(idx_col1)`,max(`explain_direct_sort_27684`.`t1`.`idx_col2`) AS `max(idx_col2)` from `explain_direct_sort_27684`.`t1`
-[Note] SequoiaDB: optimizer selector object: { "_id": null, "idx_col2": null }, table: explain_direct_sort_27684.t1
+[Note] SequoiaDB: Query message: condition[{ "idx_col1": { "$isnull": 0 } }], selector[{ "_id": null, "idx_col1": null }], order_by[{ "idx_col1": 1 }], hint[{ "": "idx1" }], limit[-1], offset[0], table[explain_direct_sort_27684.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null, "idx_col2": null }], order_by[{ "idx_col2": -1 }], hint[{ "": "idx2" }], limit[-1], offset[0], table[explain_direct_sort_27684.t1]
 explain select max(idx_col2) from t1 group by idx_col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra

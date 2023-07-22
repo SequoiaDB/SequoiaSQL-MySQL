@@ -1,7 +1,7 @@
 # SEQUOIASQLMAINSTREAM-1604
 EXPLAIN SELECT DISTINCT  `col_int_key` AS field1 FROM `t1`  WHERE col_int_key BETWEEN 1 AND 3  GROUP BY field1 HAVING field1 = 3 OR field1 IS NULL LIMIT 9 OFFSET 2;
 SELECT DISTINCT  `col_int_key` AS field1 FROM `t1`  WHERE col_int_key BETWEEN 1 AND 3  GROUP BY field1 HAVING field1 = 3 OR field1 IS NULL LIMIT 9 OFFSET 2;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_pushdown_condition_sequoiadb_5.inc
 
 # SEQUOIASQLMAINSTREAM-1605
 SET SESSION optimizer_index_sort_prune=ON;
