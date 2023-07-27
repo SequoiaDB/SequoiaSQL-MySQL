@@ -3644,8 +3644,6 @@ static inline bool need_retry_errno(uint mysql_errno) {
     case ER_WRONG_VALUE_COUNT_ON_ROW:
     case WARN_DATA_TRUNCATED:
     case ER_BAD_FIELD_ERROR:
-    case ER_DUP_KEY:
-    case ER_DUP_ENTRY:
     case ER_SP_DOES_NOT_EXIST:
     case ER_EVENT_DOES_NOT_EXIST:
     case ER_TRG_DOES_NOT_EXIST:
@@ -3675,7 +3673,6 @@ static inline bool need_retry_errno(uint mysql_errno) {
     case ER_PARTITION_CLAUSE_ON_NONPARTITIONED:
     case ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET:
     case ER_NON_UPDATABLE_TABLE:
-    case ER_DUP_ENTRY_WITH_KEY_NAME:
       // if name mapping does not exist, it may be dropped by
       // another instance, mysql server will report 'ER_CANT_LOCK'
       // so the current statement need to be executed again
