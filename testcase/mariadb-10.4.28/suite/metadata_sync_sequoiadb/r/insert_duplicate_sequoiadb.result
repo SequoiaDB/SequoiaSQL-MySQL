@@ -10,7 +10,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
-  `b` varchar(32) COLLATE utf8mb4_bin DEFAULT NULL,
+  `b` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 insert into t1 values(2,"2");
@@ -18,42 +18,42 @@ select * from t1;
 a	b
 2	2
 begin;
-insert into t1 values(1,"1"),(2,"2"),(3,"3");
+insert into t1 values(1,"1"),(2,"2");
 ERROR 23000: Duplicate entry '{ "a": 2 }' for key 'PRIMARY'
 [Note] Testcase: Operation log begin
-select * from t1;
+select * from t1 order by a;
 a	b
-2	2
 1	1
+2	2
 rollback;
 select * from t1;
 a	b
 2	2
 begin;
-insert into t1 values(1,"1"),(2,"2"),(3,"3");
+insert into t1 values(1,"1"),(2,"2");
 ERROR 23000: Duplicate entry '{ "a": 2 }' for key 'PRIMARY'
 [Note] Testcase: Operation log begin
-select * from t1;
+select * from t1 order by a;
 a	b
-2	2
 1	1
+2	2
 begin;
-select * from t1;
+select * from t1 order by a;
 a	b
-2	2
 1	1
+2	2
 commit;
-select * from t1;
+select * from t1 order by a;
 a	b
-2	2
 1	1
+2	2
 drop table t1;
 create table t1(a int ,b varchar(32),primary key(a)) COMMENT='sequoiadb: {table_options: {AutoSplit: false}}';
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
-  `b` varchar(32) COLLATE utf8mb4_bin DEFAULT NULL,
+  `b` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='sequoiadb: {table_options: {AutoSplit: false}}'
 insert into t1 values(2,"2");
@@ -61,35 +61,35 @@ select * from t1;
 a	b
 2	2
 begin;
-insert into t1 values(1,"1"),(2,"2"),(3,"3");
+insert into t1 values(1,"1"),(2,"2");
 ERROR 23000: Duplicate entry '{ "a": 2 }' for key 'PRIMARY'
 [Note] Testcase: Operation log begin
-select * from t1;
+select * from t1 order by a;
 a	b
-2	2
 1	1
+2	2
 rollback;
 select * from t1;
 a	b
 2	2
 begin;
-insert into t1 values(1,"1"),(2,"2"),(3,"3");
+insert into t1 values(1,"1"),(2,"2");
 ERROR 23000: Duplicate entry '{ "a": 2 }' for key 'PRIMARY'
 [Note] Testcase: Operation log begin
-select * from t1;
+select * from t1 order by a;
 a	b
-2	2
 1	1
+2	2
 begin;
-select * from t1;
+select * from t1 order by a;
 a	b
-2	2
 1	1
+2	2
 commit;
-select * from t1;
+select * from t1 order by a;
 a	b
-2	2
 1	1
+2	2
 drop table t1;
 create table t1(a int ,b varchar(32),primary key(b),unique key(a));
 insert into t1 values(2,"2");
