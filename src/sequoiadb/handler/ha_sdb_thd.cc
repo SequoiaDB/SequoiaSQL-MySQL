@@ -864,7 +864,8 @@ int check_sdb_in_thd(THD *thd, Sdb_conn **conn, bool validate_conn,
      an interruptOperation message using the connection of B. This is the only
      operation allowd for A, as sending any other messages is not permitted due
      to the fact that driver of sdb is not thread-safe. */
-  if (!killing && thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated()) {
+  if (validate_conn && !killing && thd_sdb->valid_conn() &&
+      thd_sdb->conn_is_authenticated()) {
     rc = sdb_fix_conn_attrs_by_thd(thd_sdb->get_conn());
     if (0 != rc) {
       goto error;
