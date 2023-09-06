@@ -382,6 +382,7 @@ class Sdb_conn {
         return SDB_TRANS_ISO_RS;
         break;
       case ISO_REPEATABLE_READ:
+      case ISO_SERIALIZABLE:  // not supported current now.
         // only if 5.0 <= major.minor < 5.6 then RR is supported, else map sdb
         // RC to mysql RR.
         if (5 == major && minor < 6) {
@@ -390,7 +391,6 @@ class Sdb_conn {
           return SDB_TRANS_ISO_RC;
         }
         break;
-      case ISO_SERIALIZABLE:  // not supported current now.
       default:
         // never come to here.
         DBUG_ASSERT(0);
