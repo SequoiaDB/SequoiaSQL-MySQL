@@ -56,6 +56,13 @@ enum enum_sequence_field {
 };
 #endif
 
+#define SDB_OBJ_TO_SECURE_STR(obj) sdb_encode_base64_string(obj).c_str()
+
+#define SDB_STR_TO_SECURE_STR(data) sdb_encode_base64_string(data).c_str()
+
+std::string sdb_encode_base64_string(const bson::BSONObj &obj_string);
+std::string sdb_encode_base64_string(const char *data);
+
 int sdb_parse_fullname(char *cs_name, char *cl_name, const char *fullname);
 
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,

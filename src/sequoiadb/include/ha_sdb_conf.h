@@ -124,6 +124,7 @@ bool sdb_build_sort_cond_on_runtime(THD *thd);
 bool sdb_support_cond_const_bool(THD *thd);
 bool sdb_enable_null_reject_for_bka_join(THD *thd);
 bool sdb_bka_using_index_sort(THD *thd);
+bool sdb_use_secure_log(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;

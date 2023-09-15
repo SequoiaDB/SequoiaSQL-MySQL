@@ -24,6 +24,18 @@
 #include "ha_sdb_def.h"
 #include <my_rnd.h>
 
+#define SDB_SECURE_HEAD "SDBSECURE"
+#define SDB_SECURE_BEGIN_SYMBOL '('
+#define SDB_SECURE_END_SYMBOL ')'
+#define SDB_SECURE_END_SYMBOL_STR ")"
+#define SDB_SECURE_ENCRYPT_ALGORITHM SDB_SECURE_SDB_BASE64
+#define SDB_SECURE_ENCRYPT_VERSION SDB_SECURE_SDB_BASE64_V0
+#define SDB_SECURE_COMPRESS_ALGORITHM '0'  // reserve
+#define SDB_SECURE_COMPRESS_VERSION '0'    // reserve
+
+#define SDB_SECURE_SDB_BASE64 '0'
+#define SDB_SECURE_SDB_BASE64_V0 '0'
+
 bool sdb_version_cached = false;
 
 int sdb_parse_fullname(char *cs_name, char *cl_name, const char *fullname) {
@@ -1685,4 +1697,80 @@ SELECT_LEX *sdb_get_cur_select_by_table(TABLE *table) {
 
 bool sdb_is_recyclebin_full_error(int rc) {
   return SDB_RECYCLE_FULL == get_sdb_code(rc);
+}
+
+static const unsigned char sdb_base64_alphabet[64] = {
+    'I', 'K', 'J', 'N', 'H', 'G', 'O', 'P', 'C', 'Q', 'R', 'Z', 'S',
+    'T', 'B', 'U', 'V', 'D', 'W', 'X', 'E', 'L', 'A', 'Y', 'F', 'M',
+    'i', 'k', 'j', 'n', 'h', 'g', 'o', 'p', 'c', 'q', 'r', 'z', 's',
+    't', 'b', 'u', 'v', 'd', 'w', 'x', 'e', 'l', 'a', 'y', 'f', 'm',
+    '/', '4', '+', '5', '9', '3', '1', '6', '8', '2', '0', '7'};
+
+void sdb_encode_base64(std::stringstream &ss, const char *data, int size) {
+  for (int i = 0; i < size; i += 3) {
+    int left = size - i;
+    const unsigned char *start = (const unsigned char *)data + i;
+
+    // byte 0
+    ss << (sdb_base64_alphabet[(start[0] >> 2 & 0x3f)]);
+
+    // byte 1
+    unsigned char temp = (start[0] << 4);
+    if (left == 1) {
+      ss << (sdb_base64_alphabet[temp & 0x3f]);
+      break;
+    }
+
+    temp |= ((start[1] >> 4) & 0xF);
+    ss << (sdb_base64_alphabet[temp & 0x3f]);
+
+    // byte 2
+    temp = (start[1] & 0xF) << 2;
+    if (left == 2) {
+      ss << (sdb_base64_alphabet[temp & 0x3f]);
+      break;
+    }
+    temp |= ((start[2] >> 6) & 0x3);
+    ss << (sdb_base64_alphabet[temp & 0x3f]);
+
+    // byte 3
+    ss << (sdb_base64_alphabet[start[2] & 0x3f]);
+  }
+
+  int mod = size % 3;
+  if (mod == 1) {
+    ss << "==";
+  } else if (mod == 2) {
+    ss << "=";
+  }
+}
+
+std::string sdb_encode_base64_string(const bson::BSONObj &obj) {
+  return sdb_encode_base64_string(obj.toString(0, 0, 0).c_str());
+}
+
+std::string sdb_encode_base64_string(const char *data) {
+  THD *thd = current_thd;
+
+  if (!sdb_use_secure_log(thd)) {
+    return data;
+  }
+
+  std::stringstream str;
+  try {
+    str << (SDB_SECURE_HEAD);
+    str << (SDB_SECURE_ENCRYPT_ALGORITHM);
+    str << (SDB_SECURE_ENCRYPT_VERSION);
+    str << (SDB_SECURE_COMPRESS_ALGORITHM);
+    str << (SDB_SECURE_COMPRESS_VERSION);
+    str << (SDB_SECURE_BEGIN_SYMBOL);
+
+    sdb_encode_base64(str, data, strlen(data));
+    str << (SDB_SECURE_END_SYMBOL_STR);
+
+  } catch (std::exception &e) {
+    SDB_LOG_ERROR("Failed to build string object, exception:%s", e.what());
+  }
+
+  return str.str();
 }

@@ -3890,13 +3890,14 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
   } else if (sql_info->dml_retry_flag) {
     const char *query = thd->in_sub_stmt ? "sub-query" : sdb_thd_query(thd);
     SDB_LOG_DEBUG("HA: DML retry flag is set, retry current statement");
-    SDB_LOG_DEBUG("HA: Retry DML query: %s, thread: %p", query, thd);
+    SDB_LOG_DEBUG("HA: Retry DML query: %s, thread: %p",
+                  SDB_STR_TO_SECURE_STR(query), thd);
   } else if (NULL != sroutine_to_open) {
     const char *query = thd->in_sub_stmt ? "sub-query" : sdb_thd_query(thd);
     SDB_LOG_DEBUG(
         "HA: Current query '%s' contains routines, "
         "wait objects updated to latest state first",
-        query);
+        SDB_STR_TO_SECURE_STR(query));
   }
 
   rc = update_sql_stmt_info(sql_info, event.general_thread_id);

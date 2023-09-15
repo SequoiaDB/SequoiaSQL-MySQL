@@ -6096,8 +6096,7 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
 done:
   DBUG_PRINT("ha_sdb:info",
              ("optimizer update: %d, rule: %s, condition: %s", optimizer_update,
-              rule.toString(false, false).c_str(),
-              condition.toString(false, false).c_str()));
+              SDB_OBJ_TO_SECURE_STR(rule), SDB_OBJ_TO_SECURE_STR(condition)));
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -6157,7 +6156,7 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
 done:
   DBUG_PRINT("ha_sdb:info",
              ("optimizer delete: %d, condition: %s", optimizer_delete,
-              condition.toString(false, false).c_str()));
+              SDB_OBJ_TO_SECURE_STR(condition)));
   DBUG_RETURN(optimizer_delete);
 }
 
@@ -6278,8 +6277,8 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
           count_cond_blder.appendElements(condition);
           condition = count_cond_blder.obj();
           SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
-                        count_query, condition.toString(false, false).c_str(),
-                        db_name, table_name);
+                        count_query, SDB_OBJ_TO_SECURE_STR(condition), db_name,
+                        table_name);
         }
       }
     }
@@ -6514,9 +6513,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       }
     }
     SDB_LOG_DEBUG("optimizer update: %d, rule: %s, condition: %s, table: %s.%s",
-                  optimizer_update, rule.toString(false, false).c_str(),
-                  condition.toString(false, false).c_str(), db_name,
-                  table_name);
+                  optimizer_update, SDB_OBJ_TO_SECURE_STR(rule),
+                  SDB_OBJ_TO_SECURE_STR(condition), db_name, table_name);
     if (optimizer_update) {
       DBUG_ASSERT(!rule.isEmpty());
       first_read = false;
@@ -6750,8 +6748,9 @@ int ha_sdb::build_index_position(const KEY *key_info,
         SDB_LOG_DEBUG(
             "start_index_cond[%s], last key value[%s], "
             "hint position[%d], table[%s.%s]",
-            start_cond.toString().c_str(), last_key_value.toString().c_str(),
-            idx_hint_position, db_name, table_name);
+            SDB_OBJ_TO_SECURE_STR(start_cond),
+            SDB_OBJ_TO_SECURE_STR(last_key_value), idx_hint_position, db_name,
+            table_name);
       }
     }
   }
@@ -7217,11 +7216,9 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
           "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
           "limit[%d+%d], "
           "offset[0], table[%s.%s]",
-          condition.toString(false, false).c_str(),
-          selector.toString(false, false).c_str(),
-          order_by.toString(false, false).c_str(),
-          hint.toString(false, false).c_str(), org_num_to_return,
-          org_num_to_skip, db_name, table_name);
+          SDB_OBJ_TO_SECURE_STR(condition), SDB_OBJ_TO_SECURE_STR(selector),
+          SDB_OBJ_TO_SECURE_STR(order_by), SDB_OBJ_TO_SECURE_STR(hint),
+          org_num_to_return, org_num_to_skip, db_name, table_name);
     } else {
       if (!count_query && num_to_return != 0) {
         SDB_LOG_DEBUG(
@@ -7229,17 +7226,15 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
             "hint[%s], "
             "limit[%d], "
             "offset[%d], table[%s.%s]",
-            condition.toString(false, false).c_str(),
-            selector.toString(false, false).c_str(),
-            order_by.toString(false, false).c_str(),
-            hint.toString(false, false).c_str(), num_to_return, num_to_skip,
-            db_name, table_name);
+            SDB_OBJ_TO_SECURE_STR(condition), SDB_OBJ_TO_SECURE_STR(selector),
+            SDB_OBJ_TO_SECURE_STR(order_by), SDB_OBJ_TO_SECURE_STR(hint),
+            num_to_return, num_to_skip, db_name, table_name);
       } else {
         SDB_LOG_DEBUG(
             "Count message: condition[%s],hint[%s] "
             "table[%s.%s]",
-            condition.toString(false, false).c_str(),
-            hint.toString(false, false).c_str(), db_name, table_name);
+            SDB_OBJ_TO_SECURE_STR(condition), SDB_OBJ_TO_SECURE_STR(hint),
+            db_name, table_name);
       }
     }
   }
@@ -7714,8 +7709,8 @@ int ha_sdb::rnd_next(uchar *buf) {
         THD_STAGE_INFO(thd, stage_exec_sql_in_sdb);
         try {
           rc = conn->execute(hj_sql);
-          SDB_LOG_DEBUG("SQL pushed down to sdb:%s, rc:%d, table:%s.%s", hj_sql,
-                        rc, db_name, table_name);
+          SDB_LOG_DEBUG("SQL pushed down to sdb:%s, rc:%d, table:%s.%s",
+                        SDB_STR_TO_SECURE_STR(hj_sql), rc, db_name, table_name);
           if (rc != SDB_ERR_OK) {
             goto error;
           }
@@ -7889,17 +7884,15 @@ int ha_sdb::rnd_next(uchar *buf) {
               "limit[%d], "
               "offset[%d], "
               "table[%s.%s]",
-              condition.toString(false, false).c_str(),
-              selector.toString(false, false).c_str(),
-              order_by.toString(false, false).c_str(),
-              hint.toString(false, false).c_str(), num_to_return, num_to_skip,
-              db_name, table_name);
+              SDB_OBJ_TO_SECURE_STR(condition), SDB_OBJ_TO_SECURE_STR(selector),
+              SDB_OBJ_TO_SECURE_STR(order_by), SDB_OBJ_TO_SECURE_STR(hint),
+              num_to_return, num_to_skip, db_name, table_name);
         } else {
           SDB_LOG_DEBUG(
               "Count message: condition[%s],hint[%s] "
               "table[%s.%s]",
-              condition.toString(false, false).c_str(),
-              hint.toString(false, false).c_str(), db_name, table_name);
+              SDB_OBJ_TO_SECURE_STR(condition), SDB_OBJ_TO_SECURE_STR(hint),
+              db_name, table_name);
         }
       }
 
@@ -9319,8 +9312,8 @@ int ha_sdb::autocommit_statement(bool direct_op) {
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   if (!conn->is_transaction_on()) {
-    if (sdb_is_single_table(thd) && !table->triggers &&
-        thd->lex && !thd->lex->sphead && thd->lex->is_single_level_stmt() &&
+    if (sdb_is_single_table(thd) && !table->triggers && thd->lex &&
+        !thd->lex->sphead && thd->lex->is_single_level_stmt() &&
         pushdown_autocommit(direct_op)) {
       // Use assert to ensure that 1 SQL corresponds 1 JSON API request.
       Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
@@ -11860,7 +11853,8 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     if (ha_thd()) {
       sql_str = sdb_thd_query(ha_thd());
     }
-    SDB_LOG_DEBUG(info_msg, db_name, table_name, sql_str);
+    SDB_LOG_DEBUG(info_msg, db_name, table_name,
+                  SDB_STR_TO_SECURE_STR(sql_str));
     DBUG_PRINT("ha_sdb:info", (info_msg, db_name, table_name, sql_str));
     pushed_condition = SDB_EMPTY_BSON;
   }

@@ -638,6 +638,13 @@ static MYSQL_THDVAR_BOOL(bka_remove_orderby,
                          /*执行 bka join 携带 index 排序*/,
                          NULL, NULL, SDB_DEFAULT_BKA_REMOVE_ORDERBY);
 
+static MYSQL_THDVAR_BOOL(
+    secure_log, PLUGIN_VAR_OPCMDARG,
+    "Encrypt log sensitive information when printing logs"
+    "(Default: OFF)"
+    /* 打印日志时是否需要对 condition 等进行编码处理 */,
+    NULL, NULL, FALSE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -687,6 +694,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(enable_null_reject_for_bka_join),
     MYSQL_SYSVAR(execution_mode),
     MYSQL_SYSVAR(bka_remove_orderby),
+    MYSQL_SYSVAR(secure_log),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -963,4 +971,8 @@ bool sdb_support_cond_const_bool(THD *thd) {
 
 bool sdb_enable_null_reject_for_bka_join(THD *thd) {
   return THDVAR(thd, enable_null_reject_for_bka_join);
+}
+
+bool sdb_use_secure_log(THD *thd) {
+  return THDVAR(thd,secure_log);  
 }
