@@ -1123,6 +1123,9 @@ The following options may be given as the first argument:
  --sequoiadb-rollback-on-timeout 
  Roll back the complete transaction on lock wait timeout.
  (Default: OFF)
+ --sequoiadb-secure-log 
+ Encrypt log sensitive information when printing
+ logs(Default: OFF)
  --sequoiadb-selector-pushdown-threshold[=#] 
  The threshold of selector push down to SequoiaDB.
  (Default: 30)
@@ -1770,6 +1773,7 @@ sequoiadb-preferred-period 60
 sequoiadb-preferred-strict FALSE
 sequoiadb-replica-size 1
 sequoiadb-rollback-on-timeout FALSE
+sequoiadb-secure-log FALSE
 sequoiadb-selector-pushdown-threshold 30
 sequoiadb-sql-push-down FALSE
 sequoiadb-stats-cache TRUE
