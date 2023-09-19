@@ -1125,7 +1125,8 @@ The following options may be given as the first argument:
  (Default: OFF)
  --sequoiadb-secure-log 
  Encrypt log sensitive information when printing
- logs(Default: OFF)
+ logs(Default: ON)
+ (Defaults to on; use --skip-sequoiadb-secure-log to disable.)
  --sequoiadb-selector-pushdown-threshold[=#] 
  The threshold of selector push down to SequoiaDB.
  (Default: 30)
@@ -1773,7 +1774,7 @@ sequoiadb-preferred-period 60
 sequoiadb-preferred-strict FALSE
 sequoiadb-replica-size 1
 sequoiadb-rollback-on-timeout FALSE
-sequoiadb-secure-log FALSE
+sequoiadb-secure-log TRUE
 sequoiadb-selector-pushdown-threshold 30
 sequoiadb-sql-push-down FALSE
 sequoiadb-stats-cache TRUE

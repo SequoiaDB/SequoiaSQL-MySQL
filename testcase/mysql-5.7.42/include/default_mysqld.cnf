@@ -9,6 +9,7 @@ default_tmp_storage_engine=SequoiaDB
 sequoiadb_lock_wait_timeout=3
 sequoiadb_support_mode=
 optimizer_index_sort_prune=ON
+sequoiadb_secure_log=OFF
 
 # Increase default connect_timeout to avoid intermittent
 # disconnects when test servers are put under load see BUG#28359

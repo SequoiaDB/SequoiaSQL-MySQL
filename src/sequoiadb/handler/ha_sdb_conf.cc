@@ -641,9 +641,9 @@ static MYSQL_THDVAR_BOOL(bka_remove_orderby,
 static MYSQL_THDVAR_BOOL(
     secure_log, PLUGIN_VAR_OPCMDARG,
     "Encrypt log sensitive information when printing logs"
-    "(Default: OFF)"
+    "(Default: ON)"
     /* 打印日志时是否需要对 condition 等进行编码处理 */,
-    NULL, NULL, FALSE);
+    NULL, NULL, TRUE);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
