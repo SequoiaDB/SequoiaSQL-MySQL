@@ -1,5 +1,7 @@
 drop database if exists explain_direct_sort_29907;
 create database explain_direct_sort_29907;
+drop database explain_direct_sort_29907;
+create database explain_direct_sort_29907;
 use explain_direct_sort_29907;
 set session sequoiadb_debug_log=on;
 CREATE TABLE `t1` (
@@ -34,6 +36,7 @@ field1	field2	field3	field4
 5	84	2003-11-06	84
 5	56	2007-10-17	56
 5	46	2005-04-21	46
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_date": { "$gt": {"$date": "2003-04-17"} } }, { "col_int": { "$in": [ 5, 6, 7 ] } } ] }, { "col_int": { "$et": 5 } } ] }], selector[{}], order_by[{}], hint[{ "": "ivd" }], limit[-1], offset[0], table[explain_direct_sort_29907.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_date": { "$gt": {"$date": "2003-04-17"} } }, { "col_int": { "$in": [ 5, 6, 7 ] } } ] }, { "col_int": { "$et": 6 } } ] }], selector[{}], order_by[{}], hint[{ "": "ivd" }], limit[-1], offset[0], table[explain_direct_sort_29907.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_date": { "$gt": {"$date": "2003-04-17"} } }, { "col_int": { "$in": [ 5, 6, 7 ] } } ] }, { "col_int": { "$et": 7 } } ] }], selector[{}], order_by[{}], hint[{ "": "ivd" }], limit[-1], offset[0], table[explain_direct_sort_29907.t1]
@@ -55,6 +58,8 @@ field1	field2	field3	field4
 5	84	2003-11-06	84
 5	56	2007-10-17	56
 5	46	2005-04-21	46
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$gt": {"$date": "2003-04-17"} } }, { "col_int": { "$in": [ 5, 6, 7 ] } } ] }], selector[{}], order_by[{ "col_int": -1, "pk": -1, "col_date": -1 }], hint[{ "": "ivd" }], limit[-1], offset[0], table[explain_direct_sort_29907.t1]
 drop database explain_direct_sort_29907;
 set session optimizer_index_sort_prune = default;

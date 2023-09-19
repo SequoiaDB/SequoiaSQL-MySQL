@@ -17,18 +17,18 @@ insert into t2 values(1,1),(2,2),(3,3),(1,2),(2,3);
 #满足(a=1 and b=2) or (a=2 and b=3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a,t1.b) in ((1,2),(2,3));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a,t1.b) in ((1,2),(2,3));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a,t1.b) in ((1,2),(2,3));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #满足(a=1 or a=2) and (b=2 or b=3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a in(1,2) and t1.b in(2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a in(1,2) and t1.b in(2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a in(1,2) and t1.b in(2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #满足(a=1 or a=2) or (b=2 or b=3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a in(1,2) or t1.b in(2,3));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a in(1,2) or t1.b in(2,3));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a in(1,2) or t1.b in(2,3));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 
 set session optimizer_switch=default;

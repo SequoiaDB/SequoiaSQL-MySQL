@@ -17,43 +17,43 @@ insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5),(1,12),(6,3),(10,2),(10,10),(
 #范围:a∈[1,10] and b in(1,2,3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b in(1,2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b in(1,2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b in(1,2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围:a∈(1,10] and b in(1,2,3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b in(1,2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b in(1,2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b in(1,2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围:a∈[1,10) and b in(1,2,3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b in(1,2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b in(1,2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b in(1,2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围:a∈(1,10) and b in(1,2,3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b in(1,2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b in(1,2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b in(1,2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围:a∈[1,10] or b in(1,2,3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b in(1,2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b in(1,2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b in(1,2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围:a∈(1,10] or b in(1,2,3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b in(1,2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b in(1,2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b in(1,2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围:a∈[1,10) or b in(1,2,3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b in(1,2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b in(1,2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b in(1,2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围:a∈(1,10) or b in(1,2,3)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b in(1,2,3);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b in(1,2,3);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b in(1,2,3);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 
 set session optimizer_switch=default;

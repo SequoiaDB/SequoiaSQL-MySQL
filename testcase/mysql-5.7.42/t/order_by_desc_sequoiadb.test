@@ -8,7 +8,8 @@ set session sequoiadb_debug_log=on;
 --disable_warnings
 drop database if exists order_by_desc_sequoiadb;
 --enable_warnings
-
+create database order_by_desc_sequoiadb;
+drop database order_by_desc_sequoiadb;
 create database order_by_desc_sequoiadb;
 use order_by_desc_sequoiadb;
 
@@ -31,36 +32,36 @@ ALTER TABLE reverse_order_sequoiadb ADD INDEX dvi(col_date, col_varchar_16, col_
 ALTER TABLE reverse_order_sequoiadb ADD INDEX dvi1(col_date,col_int);
 
 EXPLAIN SELECT col_int  FROM reverse_order_sequoiadb WHERE col_date  between '2000-01-14' AND '2005-01-14' order by col_int desc; 
-SELECT col_int  FROM reverse_order_sequoiadb WHERE col_date  between '2000-01-14' AND '2005-01-14' order by col_int desc; 
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = SELECT col_int  FROM reverse_order_sequoiadb WHERE col_date  between '2000-01-14' AND '2005-01-14' order by col_int desc; 
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT *  FROM reverse_order_sequoiadb WHERE col_date='2005-02-05' and col_int=-657588224  order by col_date desc;
-SELECT *  FROM reverse_order_sequoiadb WHERE col_date='2005-02-05' and col_int=-657588224  order by col_date desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT *  FROM reverse_order_sequoiadb WHERE col_date='2005-02-05' and col_int=-657588224  order by col_date desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN select * from reverse_order_sequoiadb where col_date='2006-03-17' and col_varchar_16='l' and pk=180 and col_int=3 ORDER BY pk DESC;
-select * from reverse_order_sequoiadb where col_date='2006-03-17' and col_varchar_16='l' and pk=180 and col_int=3 ORDER BY pk DESC;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from reverse_order_sequoiadb where col_date='2006-03-17' and col_varchar_16='l' and pk=180 and col_int=3 ORDER BY pk DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN select * from reverse_order_sequoiadb where col_date='2006-03-17' ORDER BY pk DESC;
-select * from reverse_order_sequoiadb where col_date='2006-03-17' ORDER BY pk DESC;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from reverse_order_sequoiadb where col_date='2006-03-17' ORDER BY pk DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT col_int AS field1 FROM reverse_order_sequoiadb WHERE col_date < '2005-01-14' AND col_varchar_16 < 'w' ORDER BY field1 DESC;
-SELECT col_int AS field1 FROM reverse_order_sequoiadb WHERE col_date < '2005-01-14' AND col_varchar_16 < 'w' ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT col_int AS field1 FROM reverse_order_sequoiadb WHERE col_date < '2005-01-14' AND col_varchar_16 < 'w' ORDER BY field1 DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT pk AS field1 FROM reverse_order_sequoiadb WHERE col_int IN (9, 2, 0) AND col_date != '2004-05-09' ORDER BY field1 DESC;
-SELECT pk AS field1 FROM reverse_order_sequoiadb WHERE col_int IN (9, 2, 0) AND col_date != '2004-05-09' ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT pk AS field1 FROM reverse_order_sequoiadb WHERE col_int IN (9, 2, 0) AND col_date != '2004-05-09' ORDER BY field1 DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT col_varchar_16 AS field1 , col_date AS field2 , col_varchar_16 AS field3 FROM reverse_order_sequoiadb WHERE col_int > 3 AND col_int > 2 AND col_int > 1 ORDER BY field1 DESC, field2 DESC, field3 DESC;
-SELECT col_varchar_16 AS field1 , col_date AS field2 , col_varchar_16 AS field3 FROM reverse_order_sequoiadb WHERE col_int > 3 AND col_int > 2 AND col_int > 1 ORDER BY field1 DESC, field2 DESC, field3 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = SELECT col_varchar_16 AS field1 , col_date AS field2 , col_varchar_16 AS field3 FROM reverse_order_sequoiadb WHERE col_int > 3 AND col_int > 2 AND col_int > 1 ORDER BY field1 DESC, field2 DESC, field3 DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 FROM `reverse_order_sequoiadb` WHERE col_int > 8 AND col_int != 8 AND col_date >= '2000-04-07' ORDER BY field1 DESC, field2 DESC, field3 DESC;
-SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 FROM `reverse_order_sequoiadb` WHERE col_int > 8 AND col_int != 8 AND col_date >= '2000-04-07' ORDER BY field1 DESC, field2 DESC, field3 DESC;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 FROM `reverse_order_sequoiadb` WHERE col_int > 8 AND col_int != 8 AND col_date >= '2000-04-07' ORDER BY field1 DESC, field2 DESC, field3 DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 drop database order_by_desc_sequoiadb;
 --source include/uninstall_sequoiadb.inc

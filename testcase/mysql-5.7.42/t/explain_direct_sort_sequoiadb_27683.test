@@ -55,130 +55,130 @@ insert into t4 select * from t3;
 
 #访问类型为ref
 explain select * from t1 where col1 = 1;
-select * from t1 where col1 = 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 = 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 = 1 order by col1,col2;
-select * from t1 where col1 = 1 order by col1,col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 = 1 order by col1,col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 = 1 order by col1 desc, col2 desc;
-select * from t1 where col1 = 1 order by col1 desc,col2 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 = 1 order by col1 desc,col2 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col2 = 'abd' order by col1,col2;
-select * from t1 where col2 = 'abd' order by col1,col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col2 = 'abd' order by col1,col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col2 = 'abd' order by col1 desc,col2 desc;
-select * from t1 where col2 = 'abd' order by col1 desc,col2 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col2 = 'abd' order by col1 desc,col2 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 # SEQUOIASQLMAINSTREAM-1579
 # explain select * from t1 where col1 = 1 order by col3;
-# select * from t1 where col1 = 1 order by col3;
-# --source include/query_pushdown_condition_sequoiadb.inc
+# let $query = select * from t1 where col1 = 1 order by col3;
+# --source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #访问类型为ref_or_null
 explain select * from t1 where col1 = 1 or col1 is null;
-select * from t1 where col1 = 1 or col1 is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 = 1 or col1 is null;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 = 1 or col1 is null order by col1;
-select * from t1 where col1 = 1 or col1 is null order by col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 = 1 or col1 is null order by col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 = 1 or col1 is null order by col1 desc;
-select * from t1 where col1 = 1 or col1 is null order by col1 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 = 1 or col1 is null order by col1 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 = 1 or col1 is null order by col3;
-select * from t1 where col1 = 1 or col1 is null order by col3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 = 1 or col1 is null order by col3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #访问类型为range
 explain select * from t1 where col1 > 1 and col1 < 5;
-select * from t1 where col1 > 1 and col1 < 5;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 > 1 and col1 < 5;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 > 1 and col1 < 5 order by col1;
-select * from t1 where col1 > 1 and col1 < 5 order by col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 > 1 and col1 < 5 order by col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 > 1 and col1 < 5 order by col1 desc;
-select * from t1 where col1 > 1 and col1 < 5 order by col1 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 > 1 and col1 < 5 order by col1 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 > 1 and col1 < 5 order by col3;
-select * from t1 where col1 > 1 and col1 < 5 order by col3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col1 > 1 and col1 < 5 order by col3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col2 > 'abc' and col2 < 'def';
-select * from t1 where col2 > 'abc' and col2 < 'def';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col2 > 'abc' and col2 < 'def';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col2 > 'abc' and col2 < 'def' order by col2;
-select * from t1 where col2 > 'abc' and col2 < 'def' order by col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col2 > 'abc' and col2 < 'def' order by col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col2 > 'abc' and col2 < 'def' order by col2 desc;
-select * from t1 where col2 > 'abc' and col2 < 'def' order by col2 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col2 > 'abc' and col2 < 'def' order by col2 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col2 in ('abc','def','xyz') order by col2;
-select * from t1 where col2 in ('abc','def','xyz') order by col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col2 in ('abc','def','xyz') order by col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col2 like 'a%';
-select * from t1 where col2 like 'a%';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col2 like 'a%';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col2 like 'a%' order by col2;
-select * from t1 where col2 like 'a%' order by col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col2 like 'a%' order by col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #访问类型为index_merge
 explain select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz';
-select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz';
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col1;
-select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col1;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col1 desc;
-select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col1 desc;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col1 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col3;
-select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col3;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 force index(idx_col1,idx_col2) where col1 = 1 or col2 = 'xyz' order by col3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #index_merge范围查询
 explain select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col1;
-select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col1;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col2;
-select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col2;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col3;
-select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col3;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 force index(idx_col1,idx_col2) where (col1 > 1 and col1 < 5) or (col2 > 'abc' and col2 < 'def') order by col3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #访问类型为all
 explain select * from t1;
-select * from t1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 order by col1;
-select * from t1 order by col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 order by col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #访问类型为const
 explain select * from t1 where col4 = 'abc';
-select * from t1 where col4 = 'abc';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col4 = 'abc';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col4 = 'abc' order by col4;
-select * from t1 where col4 = 'abc' order by col4;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where col4 = 'abc' order by col4;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #访问类型为index
 explain select col2 from t1;
-select col2 from t1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select col2 from t1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select col1 from t1 order by col1;
-select col1 from t1 order by col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select col1 from t1 order by col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select col1 from t1 order by col1 desc;
-select col1 from t1 order by col1 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select col1 from t1 order by col1 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select col2 from t1 order by col2;
-select col2 from t1 order by col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select col2 from t1 order by col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select col2 from t1 order by col2 desc;
-select col2 from t1 order by col2 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select col2 from t1 order by col2 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select col1, col2 from t1 order by col2;
-select col1, col2 from t1 order by col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select col1, col2 from t1 order by col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t3,t4;
 
 set session sequoiadb_debug_log=off;

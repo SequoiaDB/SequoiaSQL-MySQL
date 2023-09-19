@@ -86,6 +86,8 @@ id	col1
 20	10
 30	10
 40	30
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[-1], offset[0], table[explain_direct_sort_27692.t1_range]
 explain select * from t1_range where id < 20 order by id desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -99,6 +101,7 @@ id	col1
 11	20
 10	27
 1	30
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$lt": 20 } }], selector[{}], order_by[{ "id": -1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_direct_sort_27692.t1_range]
 explain select * from t1_range where id < 20 order by col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -112,6 +115,8 @@ id	col1
 17	25
 10	27
 1	30
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$lt": 20 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_direct_sort_27692.t1_range]
 explain select * from t1_range partition(p1) order by id;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -124,6 +129,8 @@ id	col1
 11	20
 15	22
 17	25
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184206131753520 ] } }], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[-1], offset[0], table[explain_direct_sort_27692.t1_range]
 explain select * from t2_hash;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -144,6 +151,8 @@ id	col1
 7	9
 8	2
 9	7
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[explain_direct_sort_27692.t2_hash]
 explain select * from t2_hash order by id;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -164,6 +173,8 @@ id	col1
 10	1
 11	4
 12	8
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[-1], offset[0], table[explain_direct_sort_27692.t2_hash]
 drop table t1_range,t2_hash;
 set session sequoiadb_debug_log=off;

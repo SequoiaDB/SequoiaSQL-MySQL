@@ -39,18 +39,18 @@ insert into t2 select * from t1 order by col1 limit 70;
 #派生表关联查询
 #不带order by
 explain select t1.* from t1,(select * from t2 where t2.col1 < 5 ) as tt where t1.col1 = tt.col1;
-select t1.* from t1,(select * from t2 where t2.col1 < 5 ) as tt where t1.col1 = tt.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1,(select * from t2 where t2.col1 < 5 ) as tt where t1.col1 = tt.col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #真实表和derived table同时带order by,覆盖升序和降序
 explain select t1.* from t1,(select * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col2;
-select t1.* from t1,(select * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1,(select * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #真实表和derived table同时带order by,覆盖升序和降序
 explain select t1.* from t1,(select * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1 order by t1.col2 desc;
-select t1.* from t1,(select * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1 order by t1.col2 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1,(select * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1 order by t1.col2 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 
 set session sequoiadb_debug_log=off;

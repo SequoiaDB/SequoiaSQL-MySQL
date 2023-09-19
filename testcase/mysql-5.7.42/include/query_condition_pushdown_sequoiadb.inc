@@ -10,22 +10,22 @@ insert into t1(a, b, c) values(-1,'a',-1),(-9999999999,'a',-2),(-2,'b',-3),(-999
 insert into t1(a, b, c) values(-1,'a',-1),(-1,'a',-1),(-1,'a',-1),(-1,'a',-1);
 insert into t1(b) values('a'),('b');
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a = '-9999999999';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = '-9999999999';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a = 9999999995;
 --sorted_result
-select * from t1 where a != 4;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != 4;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a <> 9999999998;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <> 9999999998;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> 9999999995;
 --sorted_result
@@ -39,8 +39,8 @@ select * from t1 where a between 4 and 9999999991;
 --sorted_result
 select * from t1 where a in(2,-9999999990,9999999995);
 --sorted_result
-select * from t1 where a='a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a='a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a<'1a';
 --sorted_result
@@ -70,11 +70,11 @@ select * from t1 where abs(a) in(9999999998,4) or a=-1;
 
 create index a on t1(a);
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a = '-9999999999';
 --sorted_result
@@ -195,26 +195,26 @@ create table t1(id int auto_increment key, a timestamp(6) not null default '2018
 insert into t1(a, b, c) values('1970-01-01 00:00:01.000000','a','1970-01-01 00:00:01.000000'),('1970-01-01 00:00:01.000001','a','1970-01-01 00:00:01.000001'),('1970-01-02 00:00:01.000000','b','1970-01-02 00:00:01.000000'),('2038-01-19 03:14:07.999999','c','2038-01-19 03:14:07.999999'),('2038-01-19 03:14:07.999998','a','2038-01-18 03:14:07.999998'),('2038-01-18 03:14:07.999999','d','2038-01-19 03:14:07.999999'),('2012-01-02 12:12:12.000000','a','2012-01-02 12:12:12.000000');
 insert into t1(b) values('a'),('b');
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = '1970-01-01 00:00:01.000000';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = '1970-01-01 00:00:01.000000';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a = '2038-01-19 03:14:07.999999';
 --sorted_result
 select * from t1 where a = '2012-01-02 12:12:12.000000';
 
 --sorted_result
-select * from t1 where a != '2012-01-02 12:12:12.000000';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != '2012-01-02 12:12:12.000000';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a <> '2012-01-02 12:12:12.000000';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <> '2012-01-02 12:12:12.000000';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> '2012-01-02 12:12:12.000001';
 
@@ -226,19 +226,19 @@ select * from t1 where a <= '2038-01-18 03:14:07.999999' and a >'2012-01-02 12:1
 select * from t1 where a <=> '2012-01-02 12:12:12.000000';
 
 --sorted_result
-select * from t1 where a between '2012-01-02 12:12:12.000000' and '2038-01-18 03:14:07.999999';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between '2012-01-02 12:12:12.000000' and '2038-01-18 03:14:07.999999';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in('1970-01-01 00:00:01.000000','2038-01-19 03:14:07.999999','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in('1970-01-01 00:00:01.000000','2038-01-19 03:14:07.999999','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a='a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a='a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-175
 --sorted_result
-select * from t1 where a=c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a!=c;
 --sorted_result
@@ -326,22 +326,22 @@ insert into t1(a, b, c) values('1000-01-01','a','1000-01-01'),('9999-12-31','b',
 insert into t1(b) values('a'),('b');
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = '1000-01-01';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = '1000-01-01';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a = '9999-12-31';
 --sorted_result
 select * from t1 where a != '2012-10-13';
 --sorted_result
-select * from t1 where a <> '2012-10-13';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <> '2012-10-13';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < '9999-12-30' and a >= '2012-10-13';
 --sorted_result
@@ -350,31 +350,31 @@ select * from t1 where a <= '9999-12-30' and a > '2012-10-13';
 --sorted_result
 select * from t1 where a <=> '2012-10-13';
 --sorted_result
-select * from t1 where a between '2012-10-13' and '9999-12-30';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between '2012-10-13' and '9999-12-30';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in('1000-01-01','9999-12-29','2013-10-12');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in('1000-01-01','9999-12-29','2013-10-12');
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a='a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a='a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a<'10000-01-01';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a<'10000-01-01';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a=c;
 --sorted_result
-select * from t1 where a!=c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a!=c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-207
 #--sorted_result
 #select * from t1 where a<=>c;
 --sorted_result
-select * from t1 where a>c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a>=c;
 --sorted_result
@@ -446,21 +446,21 @@ insert into t1(a, b, c) values(1,'a',3),(2,'a',1),(3,'a',3),(4,'a',5),(5,'a',6),
 insert into t1(b) values('a'),('b');
 
 --sorted_result
-select hex(a),hex(c) from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select hex(a),hex(c) from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select hex(a),hex(c) from t1 where a = 7;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a = 7;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select hex(a),hex(c) from t1 where a != 4;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a != 4;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select hex(a),hex(c) from t1 where a <> 5;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a <> 5;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select hex(a),hex(c) from t1 where a < 4 and a >= 2;
 --sorted_result
@@ -468,21 +468,21 @@ select hex(a),hex(c) from t1 where a <= 5 and a > 2;
 --sorted_result
 select hex(a),hex(c) from t1 where a <=> 3;
 --sorted_result
-select hex(a),hex(c) from t1 where a between 3 and 5;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a between 3 and 5;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select hex(a),hex(c) from t1 where a in(1,3,8);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a in(1,3,8);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select hex(a),hex(c) from t1 where a='a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a='a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select hex(a),hex(c) from t1 where a<8;
 
 --sorted_result
-select hex(a),hex(c) from t1 where a=c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a=c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select hex(a),hex(c) from t1 where a!=c;
 
@@ -490,8 +490,8 @@ select hex(a),hex(c) from t1 where a!=c;
 #--sorted_result
 #select hex(a),hex(c) from t1 where a<=>c;
 --sorted_result
-select hex(a),hex(c) from t1 where a>c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select hex(a),hex(c) from t1 where a>c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select hex(a),hex(c) from t1 where a>=c;
 --sorted_result
@@ -562,18 +562,18 @@ create table t1(id int auto_increment key, a year, b int, c year);
 insert into t1(a, b, c) values(2155,1,2155),(2153,1,2154),(2154,1,2155),(2152,1,2154),(1901,1,1902),(1902,1,1901),(1903,1,1903),(2155,1,2155),(1902,1,2154);
 insert into t1(b) values(1);
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = 1902;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 1902;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a != 1902;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != 1902;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> 1902;
 --sorted_result
@@ -581,24 +581,24 @@ select * from t1 where a < 2153 and a >= 1903;
 --sorted_result
 select * from t1 where a <= 2153 and a > 1903;
 --sorted_result
-select * from t1 where a <=> 1902;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <=> 1902;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a between 1903 and 2153;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between 1903 and 2153;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in(1902,2155,1904);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in(1902,2155,1904);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a='a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a='a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a<2156;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a<2156;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a=c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a!=c;
 
@@ -606,8 +606,8 @@ select * from t1 where a!=c;
 #--sorted_result
 #select * from t1 where a<=>c;
 --sorted_result
-select * from t1 where a>c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a>=c;
 --sorted_result
@@ -670,23 +670,23 @@ create table t1(id int auto_increment key, a time, b char,c time);
 insert into t1(a, b, c) values('-838:59:59.0000','a','-838:59:59.0000'),('-838:59:56.0000','a','-838:59:57.0008'),('-838:59:58.0002','a','-838:59:56.0003'),('838:59:59.0000','a','838:59:59.0000'),('838:59:58.0002','a','838:59:57.0001'),('838:59:57.0002','a','838:59:58.0003');
 insert into t1(b) values('a');
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-209
 --sorted_result
-select * from t1 where a = '-838:59:58.0002';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = '-838:59:58.0002';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a = '838:59:58.0002';
 --sorted_result
 select * from t1 where a != '-838:59:58.0002';
 --sorted_result
-select * from t1 where a <> '838:59:58.0002';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <> '838:59:58.0002';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
 --sorted_result
@@ -694,26 +694,26 @@ select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
 
 #Bug #SEQUOIASQLMAINSTREAM-209
 --sorted_result
-select * from t1 where a <=> '-838:59:58.0002';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <=> '-838:59:58.0002';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a between '-838:59:58.0002' and '838:59:58.0002';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between '-838:59:58.0002' and '838:59:58.0002';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in('-838:59:59.0000','838:59:58.0002','-837:59:58.0002');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in('-838:59:59.0000','838:59:58.0002','-837:59:58.0002');
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a='a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a='a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-214
 #--sorted_result
 #select * from t1 where a<'-839:59:59.0000';
 
 --sorted_result
-select * from t1 where a=c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a!=c;
 
@@ -730,8 +730,8 @@ select * from t1 where a<c;
 select * from t1 where a<=c;
 
 --sorted_result
-select * from t1 where time_to_sec(a) = 3020398;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where time_to_sec(a) = 3020398;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -803,54 +803,54 @@ insert into t1(a, b, c) values('d',1,'c'),('1',2,'1'),('a',3,'c'),('b',4,'1,b'),
 insert into t1(b) values(6);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = 'c';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 'c';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a != 'c';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != 'c';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> 'c';
 --sorted_result
-select * from t1 where a <=> 'c';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <=> 'c';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < 'c' and a >= '1';
 --sorted_result
 select * from t1 where a <= 'c' and a > '1';
 
 --sorted_result
-select * from t1 where a = c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a < c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a < c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a > c;
 --sorted_result
 select * from t1 where a != c;
 
 --sorted_result
-select * from t1 where a between 'c' and 'd';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between 'c' and 'd';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in ('c','d','f');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in ('c','d','f');
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a = 1;
 --sorted_result
-select * from t1 where a = 'fff';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 'fff';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where UPPER(a) = 'C';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where UPPER(a) = 'C';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -904,32 +904,32 @@ insert into t1(a, b, c) values('d',1,'c'),('1',2,'1'),('a',3,'c'),('1,b',4,'b'),
 insert into t1(b) values(6);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = '1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = '1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a != '1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != '1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> '1';
 --sorted_result
-select * from t1 where a <=> '1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <=> '1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a < 'a' and a >= '1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a < 'a' and a >= '1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <= 'a' and a > '1';
 
 --sorted_result
-select * from t1 where a = c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < c;
 --sorted_result
@@ -938,20 +938,20 @@ select * from t1 where a > c;
 select * from t1 where a != c;
 
 --sorted_result
-select * from t1 where a between 'a' and 'd';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between 'a' and 'd';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in ('1,b','d','f');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in ('1,b','d','f');
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a = 'fff';
 --sorted_result
-select * from t1 where UPPER(a) = 'D';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where UPPER(a) = 'D';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -1006,18 +1006,18 @@ insert into t1(a, b, c) values('1000-01-01 00:00:01.000001',3,'1000-01-01 00:00:
 insert into t1(b) values(10);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = '2012-01-02 12:12:12.000000';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = '2012-01-02 12:12:12.000000';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a != '2012-01-02 12:12:12.000000';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != '2012-01-02 12:12:12.000000';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> '2012-01-02 12:12:12.000000';
 --sorted_result
@@ -1025,22 +1025,22 @@ select * from t1 where a < '9999-12-31 23:59:59.999998' and a >='2012-01-02 12:1
 --sorted_result
 select * from t1 where a <= '9999-12-31 23:59:59.999998' and a >'2012-01-02 12:12:12.000000';
 --sorted_result
-select * from t1 where a <=> '2012-01-02 12:12:12.000000';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <=> '2012-01-02 12:12:12.000000';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a between '2012-01-02 12:12:12.000000' and '2038-01-18 03:14:07.999999';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between '2012-01-02 12:12:12.000000' and '2038-01-18 03:14:07.999999';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in('9999-12-31 23:59:59.999998','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in('9999-12-31 23:59:59.999998','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a='a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a='a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a=c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a!=c;
 
@@ -1055,8 +1055,8 @@ select * from t1 where a<c;
 --sorted_result
 select * from t1 where year(a)=2012;
 --sorted_result
-select * from t1 where a > '10000-01-01 00:00:01.000000';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > '10000-01-01 00:00:01.000000';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -1114,15 +1114,15 @@ insert into t1(a, b, c) values(-128,1,-127),(-127,2,-127),(-126,3,-129),(127,4,1
 insert into t1(b) values(8);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = 125;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 125;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != 125;
 --sorted_result
@@ -1221,11 +1221,11 @@ select * from t1 where a is not null;
 --sorted_result
 select * from t1 where a = 125;
 --sorted_result
-select * from t1 where a != 125;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != 125;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a <> 125;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <> 125;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < 125 and a >= 0;
 --sorted_result
@@ -1234,11 +1234,11 @@ select * from t1 where a <= 125 and a > 0;
 select * from t1 where a <=> -127;
 
 --sorted_result
-select * from t1 where a between 0 and 127;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between 0 and 127;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in(0,125,129);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in(0,125,129);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a = 'a1';
 
@@ -1316,18 +1316,18 @@ insert into t1(a, b, c) values(-32768,1,-32769),(-32766,2,-32766),(-32767,3,-327
 insert into t1(b) values(8);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = -32768;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = -32768;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a != -32768;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != -32768;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> -32768;
 --sorted_result
@@ -1436,18 +1436,18 @@ select * from t1 where a <= 65534 and a > 0;
 select * from t1 where a <=> 65534;
 
 --sorted_result
-select * from t1 where a between 0 and 65534;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between 0 and 65534;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a in(0,65534,129);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in(0,65534,129);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a = 'a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 'a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != c;
 
@@ -1525,8 +1525,8 @@ select * from t1 where a is null;
 select * from t1 where a is not null;
 
 --sorted_result
-select * from t1 where a = 8388607;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 8388607;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != -8388608;
 --sorted_result
@@ -1546,8 +1546,8 @@ select * from t1 where a in(8388606,-8388606,129);
 select * from t1 where a = 'a1';
 
 --sorted_result
-select * from t1 where a = c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != c;
 
@@ -1555,14 +1555,14 @@ select * from t1 where a != c;
 #--sorted_result
 #select * from t1 where a <=> c;
 --sorted_result
-select * from t1 where a > c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < c;
 
 --sorted_result
-select * from t1 where abs(a) = 8388606;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where abs(a) = 8388606;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a > -8388609;
 
@@ -1631,8 +1631,8 @@ select * from t1 where a = 16777215;
 --sorted_result
 select * from t1 where a != 16777215;
 --sorted_result
-select * from t1 where a <> 16777215;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <> 16777215;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < 16777215 and a >= 0;
 --sorted_result
@@ -1650,8 +1650,8 @@ select * from t1 where a = 'a1';
 --sorted_result
 select * from t1 where a = c;
 --sorted_result
-select * from t1 where a != c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-207
 #--sorted_result
@@ -1659,15 +1659,15 @@ select * from t1 where a != c;
 --sorted_result
 select * from t1 where a > c;
 --sorted_result
-select * from t1 where a < c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a < c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where abs(a) = 16777215;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where abs(a) = 16777215;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a > -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > -1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -1726,14 +1726,14 @@ insert into t1(a, b, c) values(-2147483648,1,-2147483649),(-2147483646,2,-214748
 insert into t1(b) values(8);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a is not null;
 
 --sorted_result
-select * from t1 where a = -2147483646;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = -2147483646;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != 2147483647;
 --sorted_result
@@ -1746,13 +1746,13 @@ select * from t1 where a <= 2147483646 and a > -2147483646;
 select * from t1 where a <=> -2147483646;
 
 --sorted_result
-select * from t1 where a between -2147483646 and 2147483646;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between -2147483646 and 2147483646;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a in(2147483646,-2147483646,129);
 --sorted_result
-select * from t1 where a = 'a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 'a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a = c;
@@ -1830,14 +1830,14 @@ insert into t1(b) values(8);
 --sorted_result
 select * from t1 where a is null;
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a = 4294967295;
 --sorted_result
-select * from t1 where a != 4294967295;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != 4294967295;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> 4294967295;
 --sorted_result
@@ -1845,8 +1845,8 @@ select * from t1 where a < 4294967295 and a >= 0;
 --sorted_result
 select * from t1 where a <= 4294967295 and a > 0;
 --sorted_result
-select * from t1 where a <=> 4294967295;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <=> 4294967295;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a between 0 and 4294967293;
@@ -1864,16 +1864,16 @@ select * from t1 where a != c;
 #--sorted_result
 #select * from t1 where a <=> c;
 --sorted_result
-select * from t1 where a > c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < c;
 
 --sorted_result
 select * from t1 where abs(a) = 4294967295;
 --sorted_result
-select * from t1 where a > -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > -1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -1932,15 +1932,15 @@ insert into t1(a, b, c) values(-922337203685477808,1,-922337203685477809),(-9223
 insert into t1(b) values(8);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where a = -922337203685477806;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = -922337203685477806;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != 922337203685477806;
 --sorted_result
@@ -1950,8 +1950,8 @@ select * from t1 where a < 922337203685477806 and a >= -922337203685477806;
 --sorted_result
 select * from t1 where a <= 922337203685477806 and a > -922337203685477806;
 --sorted_result
-select * from t1 where a <=> -922337203685477806;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <=> -922337203685477806;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a between -922337203685477806 and 922337203685477806;
@@ -1961,8 +1961,8 @@ select * from t1 where a in(922337203685477806,-922337203685477806,129);
 select * from t1 where a = 'a1';
 
 --sorted_result
-select * from t1 where a = c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != c;
 
@@ -1970,14 +1970,14 @@ select * from t1 where a != c;
 #--sorted_result
 #select * from t1 where a <=> c;
 --sorted_result
-select * from t1 where a > c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < c;
 
 --sorted_result
-select * from t1 where abs(a) = 922337203685477806;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where abs(a) = 922337203685477806;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a > -922337203685477809;
 
@@ -2039,16 +2039,16 @@ insert into t1(b) values(8);
 --sorted_result
 select * from t1 where a is null;
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a = 18446744073709551615;
 --sorted_result
 select * from t1 where a != 18446744073709551615;
 --sorted_result
-select * from t1 where a <> 18446744073709551615;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a <> 18446744073709551615;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < 18446744073709551613 and a >= 0;
 --sorted_result
@@ -2057,19 +2057,19 @@ select * from t1 where a <= 18446744073709551613 and a > 0;
 select * from t1 where a <=> 18446744073709551615;
 
 --sorted_result
-select * from t1 where a between 0 and 18446744073709551613;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between 0 and 18446744073709551613;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a in(0,18446744073709551615,129);
 --sorted_result
-select * from t1 where a = 'a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 'a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a = c;
 --sorted_result
-select * from t1 where a != c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-207
 #--sorted_result
@@ -2077,16 +2077,16 @@ select * from t1 where a != c;
 --sorted_result
 select * from t1 where a > c;
 --sorted_result
-select * from t1 where a < c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a < c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
-select * from t1 where abs(a) = 18446744073709551615;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where abs(a) = 18446744073709551615;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #BUG #SEQUOIASQLMAINSTREAM-763
 --sorted_result
-select * from t1 where a > -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > -1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -2132,8 +2132,8 @@ select * from t1 where a < c;
 select * from t1 where abs(a) = 18446744073709551615;
 #BUG #SEQUOIASQLMAINSTREAM-763
 --sorted_result
-select * from t1 where a > -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > -1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a limit 1 offset 2;
@@ -2147,15 +2147,15 @@ insert into t1(a, b, c) values(999.99,0,999.99),(-999.99,0,-999.99),(-999.98,1,-
 insert into t1(b) values(8);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a is not null;
 
 #Bug #SEQUOIASQLMAINSTREAM-213
 --sorted_result
-select * from t1 where a = -999.99;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = -999.99;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != -999.99;
 --sorted_result
@@ -2169,8 +2169,8 @@ select * from t1 where a <= 999.99 and a > -999.97;
 select * from t1 where a <=> -999.99;
 
 --sorted_result
-select * from t1 where a between -999.99 and 999.97;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between -999.99 and 999.97;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a in(999.99,-999.99,129);
 --sorted_result
@@ -2178,8 +2178,8 @@ select * from t1 where a = 'a1';
 
 #Bug #SEQUOIASQLMAINSTREAM-213
 --sorted_result
-select * from t1 where a = c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != c;
 
@@ -2187,14 +2187,14 @@ select * from t1 where a != c;
 #--sorted_result
 #select * from t1 where a <=> c;
 --sorted_result
-select * from t1 where a > c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < c;
 
 --sorted_result
-select * from t1 where abs(a) = 999.99;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where abs(a) = 999.99;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a > -10;
 
@@ -2259,15 +2259,15 @@ insert into t1(b) values(8);
 --sorted_result
 select * from t1 where a is null;
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-213
 --sorted_result
 select * from t1 where a = 999.97;
 --sorted_result
-select * from t1 where a != 999.97;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != 999.97;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> 999.97;
 --sorted_result
@@ -2281,18 +2281,18 @@ select * from t1 where a <=> 999.97;
 --sorted_result
 select * from t1 where a between 0 and 999.97;
 --sorted_result
-select * from t1 where a in(0,999.97,129);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in(0,999.97,129);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a = 'a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 'a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-213
 --sorted_result
 select * from t1 where a = c;
 --sorted_result
-select * from t1 where a != c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-207
 #--sorted_result
@@ -2300,14 +2300,14 @@ select * from t1 where a != c;
 --sorted_result
 select * from t1 where a > c;
 --sorted_result
-select * from t1 where a < c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a < c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where abs(a) = 999.97;
 --sorted_result
-select * from t1 where a > -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > -1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -2369,14 +2369,14 @@ insert into t1(a, b, c) values(999.99,0,999.99),(-999.99,0,-999.99),(-999.98,1,-
 insert into t1(b) values(8);
 
 --sorted_result
-select * from t1 where a is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a is not null;
 
 --sorted_result
-select * from t1 where a = -999.99;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = -999.99;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != -999.99;
 --sorted_result
@@ -2389,16 +2389,16 @@ select * from t1 where a <= 999.99 and a > -999.97;
 select * from t1 where a <=> -999.99;
 
 --sorted_result
-select * from t1 where a between -999.99 and 999.97;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between -999.99 and 999.97;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a in(999.99,-999.99,129);
 --sorted_result
 select * from t1 where a = 'a1';
 
 --sorted_result
-select * from t1 where a = c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a != c;
 
@@ -2406,14 +2406,14 @@ select * from t1 where a != c;
 #--sorted_result
 #select * from t1 where a <=> c;
 --sorted_result
-select * from t1 where a > c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a < c;
 
 --sorted_result
-select * from t1 where abs(a) = 999.99;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where abs(a) = 999.99;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a > -10;
 
@@ -2475,14 +2475,14 @@ insert into t1(b) values(8);
 --sorted_result
 select * from t1 where a is null;
 --sorted_result
-select * from t1 where a is not null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a is not null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a = 999.97;
 --sorted_result
-select * from t1 where a != 999.97;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != 999.97;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where a <> 999.97;
 --sorted_result
@@ -2495,17 +2495,17 @@ select * from t1 where a <=> 999.97;
 --sorted_result
 select * from t1 where a between 0 and 999.97;
 --sorted_result
-select * from t1 where a in(0,999.97,129);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a in(0,999.97,129);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-select * from t1 where a = 'a1';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a = 'a1';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a = c;
 --sorted_result
-select * from t1 where a != c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a != c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #Bug #SEQUOIASQLMAINSTREAM-207
 #--sorted_result
@@ -2513,14 +2513,14 @@ select * from t1 where a != c;
 --sorted_result
 select * from t1 where a > c;
 --sorted_result
-select * from t1 where a < c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a < c;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --sorted_result
 select * from t1 where abs(a) = 999.97;
 --sorted_result
-select * from t1 where a > -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a > -1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -2600,13 +2600,13 @@ INSERT INTO t1(a, b, c, d, e) VALUES (" HELLO1 ", " HELLO1 ", " HELLO1 ", " HELL
 INSERT INTO t1(a, b, c, d, e) VALUES ("hello2 ", "hello2 ", "hello2 ", "hello2 ", "hello2 ");
 # tinytext
 --sorted_result
-SELECT * FROM t1 WHERE a IS NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IS NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a IS NOT NULL;
 --sorted_result
-SELECT * FROM t1 WHERE a = "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a = "HELLO";
 --sorted_result
@@ -2622,8 +2622,8 @@ SELECT * FROM t1 WHERE a = " hello ";
 --sorted_result
 SELECT * FROM t1 WHERE a = " HELLO ";
 --sorted_result
-SELECT * FROM t1 WHERE a = e;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = e;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 # SEQUOIASQLMAINSTREAM-206
 #--sorted_result
 #SELECT * FROM t1 WHERE a != "hello";
@@ -2650,8 +2650,8 @@ SELECT * FROM t1 WHERE a = e;
 #--sorted_result
 #SELECT * FROM t1 WHERE a >= "HELLO ";
 --sorted_result
-SELECT * FROM t1 WHERE a <=> "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a <=> "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a <=> "HELLO";
 --sorted_result
@@ -2678,8 +2678,8 @@ SELECT * FROM t1 WHERE a <=> e;
 #--sorted_result
 #SELECT * FROM t1 WHERE a BETWEEN " HELLO1 " AND " HELLO1 ";
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("hello", "hello1");
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IN ("hello", "hello1");
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 #BUG:SEQUOIASQLMAINSTREAM-319(23)
@@ -2697,8 +2697,8 @@ SELECT * FROM t1 WHERE a IN (" hello", " hello1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
-SELECT * FROM t1 WHERE a LIKE "%hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a LIKE "%hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%HELLO";
 --sorted_result
@@ -2723,11 +2723,11 @@ SELECT * FROM t1 WHERE a LIKE "HELLO_";
 --sorted_result
 SELECT * FROM t1 WHERE b IS NULL;
 --sorted_result
-SELECT * FROM t1 WHERE b IS NOT NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b IS NOT NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE b = "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b = "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b = "hello ";
 --sorted_result
@@ -2737,8 +2737,8 @@ SELECT * FROM t1 WHERE b = " hello ";
 --sorted_result
 SELECT * FROM t1 WHERE b = " HELLO ";
 --sorted_result
-SELECT * FROM t1 WHERE b = e;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b = e;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 # SEQUOIASQLMAINSTREAM-206
 #--sorted_result
 #SELECT * FROM t1 WHERE b != "hello";
@@ -2772,8 +2772,8 @@ SELECT * FROM t1 WHERE b <=> e;
 #--sorted_result
 #SELECT * FROM t1 WHERE b BETWEEN " HELLO1 " AND " HELLO1 ";
 --sorted_result
-SELECT * FROM t1 WHERE b IN ("hello", "hello1");
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b IN ("hello", "hello1");
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b IN ("HELLO", "HELLO1");
 --sorted_result
@@ -2783,8 +2783,8 @@ SELECT * FROM t1 WHERE b IN (" hello", " hello1");
 --sorted_result
 SELECT * FROM t1 WHERE b IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
-SELECT * FROM t1 WHERE b LIKE "%hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b LIKE "%hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "%HELLO";
 --sorted_result
@@ -2807,13 +2807,13 @@ SELECT * FROM t1 WHERE b LIKE "HELLO_";
 
 # text
 --sorted_result
-SELECT * FROM t1 WHERE c IS NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE c IS NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c IS NOT NULL;
 --sorted_result
-SELECT * FROM t1 WHERE c = "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE c = "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c = "hello ";
 --sorted_result
@@ -2846,8 +2846,8 @@ SELECT * FROM t1 WHERE c <=> " hello ";
 --sorted_result
 SELECT * FROM t1 WHERE c <=> " HELLO ";
 --sorted_result
-SELECT * FROM t1 WHERE c <=> e;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE c <=> e;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 # SEQUOIASQLMAINSTREAM-206
 #--sorted_result
 #SELECT * FROM t1 WHERE c cETWEEN "hello " AND "hello1 ";
@@ -2858,8 +2858,8 @@ SELECT * FROM t1 WHERE c <=> e;
 #--sorted_result
 #SELECT * FROM t1 WHERE c cETWEEN " HELLO1 " AND " HELLO1 ";
 --sorted_result
-SELECT * FROM t1 WHERE c IN ("hello", "hello1");
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE c IN ("hello", "hello1");
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c IN ("HELLO", "HELLO1");
 --sorted_result
@@ -2894,8 +2894,8 @@ SELECT * FROM t1 WHERE c LIKE "HELLO_";
 --sorted_result
 SELECT * FROM t1 WHERE d IS NULL;
 --sorted_result
-SELECT * FROM t1 WHERE d IS NOT NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE d IS NOT NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d = "hello";
 --sorted_result
@@ -2918,8 +2918,8 @@ SELECT * FROM t1 WHERE d = " HELLO ";
 #--sorted_result
 #SELECT * FROM t1 WHERE d >= "hello ;
 --sorted_result
-SELECT * FROM t1 WHERE d <=> "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE d <=> "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d <=> "hello ";
 --sorted_result
@@ -2938,8 +2938,8 @@ SELECT * FROM t1 WHERE d <=> " HELLO ";
 #--sorted_result
 #SELECT * FROM t1 WHERE d dETWEEN " HELLO1 " AND " HELLO1 ";
 --sorted_result
-SELECT * FROM t1 WHERE d IN ("hello", "hello1");
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE d IN ("hello", "hello1");
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d IN ("HELLO", "HELLO1");
 --sorted_result
@@ -3417,13 +3417,13 @@ INSERT INTO t1(a, b) VALUES ("hello2 ", "hello2 ");
 INSERT INTO t1(a, b) VALUES (REPEAT('a', 127), REPEAT('a', 127));
 INSERT INTO t1(a, b) VALUES (REPEAT('A', 127), REPEAT('A', 127));
 --sorted_result
-SELECT * FROM t1 WHERE a IS NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IS NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a IS NOT NULL;
 --sorted_result
-SELECT * FROM t1 WHERE a = "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a = "hello ";
 --sorted_result
@@ -3433,8 +3433,8 @@ SELECT * FROM t1 WHERE a = " hello ";
 --sorted_result
 SELECT * FROM t1 WHERE a = " HELLO ";
 --sorted_result
-SELECT * FROM t1 WHERE a = b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = b;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 # SEQUOIASQLMAINSTREAM-206
 #--sorted_result
 #SELECT * FROM t1 WHERE a != "hello";
@@ -3472,8 +3472,8 @@ SELECT * FROM t1 WHERE a <=> b;
 #--sorted_result
 #SELECT * FROM t1 WHERE a BETWEEN " HELLO1 " AND " HELLO1 ";
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("hello", "hello1");
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IN ("hello", "hello1");
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 --sorted_result
@@ -3483,8 +3483,8 @@ SELECT * FROM t1 WHERE a IN (" hello", " hello1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
-SELECT * FROM t1 WHERE a LIKE "%hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a LIKE "%hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%HELLO";
 --sorted_result
@@ -3653,11 +3653,11 @@ INSERT INTO t1(a, b) VALUES (REPEAT('A', 127), REPEAT('A', 127));
 --sorted_result
 SELECT * FROM t1 WHERE a IS NULL;
 --sorted_result
-SELECT * FROM t1 WHERE a IS NOT NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IS NOT NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE a = "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a = "hello ";
 --sorted_result
@@ -3667,8 +3667,8 @@ SELECT * FROM t1 WHERE a = " hello ";
 --sorted_result
 SELECT * FROM t1 WHERE a = " HELLO ";
 --sorted_result
-SELECT * FROM t1 WHERE a = b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = b;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 # SEQUOIASQLMAINSTREAM-206
 #--sorted_result
 #SELECT * FROM t1 WHERE a != "hello";
@@ -3695,11 +3695,11 @@ SELECT * FROM t1 WHERE a <=> REPEAT('A', 127);
 --sorted_result
 SELECT * FROM t1 WHERE a <=> REPEAT('a', 256);
 --sorted_result
-SELECT * FROM t1 WHERE a <=> b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a <=> b;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a BETWEEN "HELLO " AND "HELLO1 ";
 --sorted_result
@@ -3707,8 +3707,8 @@ SELECT * FROM t1 WHERE a BETWEEN " hello " AND " hello1 ";
 --sorted_result
 SELECT * FROM t1 WHERE a BETWEEN " HELLO1 " AND " HELLO1 ";
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("hello", "hello1");
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IN ("hello", "hello1");
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 --sorted_result
@@ -3718,8 +3718,8 @@ SELECT * FROM t1 WHERE a IN (" hello", " hello1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
-SELECT * FROM t1 WHERE a LIKE "%hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a LIKE "%hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%HELLO";
 --sorted_result
@@ -3878,13 +3878,13 @@ INSERT INTO t1(a, b) VALUES (" hello1 ", " hello1 ");
 INSERT INTO t1(a, b) VALUES (" HELLO1 ", " HELLO1 ");
 INSERT INTO t1(a, b) VALUES ("hello2 ", "hello2 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IS NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IS NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a IS NOT NULL;
 --sorted_result
-SELECT * FROM t1 WHERE a = "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a = "hello ";
 # SEQUOIASQLMAINSTREAM-206
@@ -3897,11 +3897,11 @@ SELECT * FROM t1 WHERE a = "hello ";
 --sorted_result
 SELECT * FROM t1 WHERE a = b;
 --sorted_result
-SELECT * FROM t1 WHERE a != "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a != "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE a < "hello ";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a < "hello ";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a <= "hello ";
 --sorted_result
@@ -3909,8 +3909,8 @@ SELECT * FROM t1 WHERE a > "hello ";
 --sorted_result
 SELECT * FROM t1 WHERE a >= "hello ";
 --sorted_result
-SELECT * FROM t1 WHERE a <=> "hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a <=> "hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a <=> "hello ";
 # SEQUOIASQLMAINSTREAM-206
@@ -3932,8 +3932,8 @@ SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
 #--sorted_result
 #SELECT * FROM t1 WHERE a BETWEEN " HELLO1 " AND " HELLO1 ";
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("hello", "hello1");
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IN ("hello", "hello1");
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #--sorted_result
 #SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 # SEQUOIASQLMAINSTREAM-206
@@ -3942,8 +3942,8 @@ SELECT * FROM t1 WHERE a IN ("hello", "hello1");
 #--sorted_result
 #SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a LIKE "%hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a LIKE "%hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%HELLO";
 --sorted_result
@@ -4072,8 +4072,8 @@ INSERT INTO t1(a, b) VALUES ("hello2 ", "hello2 ");
 --sorted_result
 SELECT * FROM t1 WHERE a IS NULL;
 --sorted_result
-SELECT * FROM t1 WHERE a IS NOT NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IS NOT NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a = "hello";
 --sorted_result
@@ -4086,8 +4086,8 @@ SELECT * FROM t1 WHERE a = "hello ";
 #--sorted_result
 #SELECT * FROM t1 WHERE a = " HELLO ";
 --sorted_result
-SELECT * FROM t1 WHERE a = b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = b;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a != "hello";
 --sorted_result
@@ -4097,8 +4097,8 @@ SELECT * FROM t1 WHERE a <= "hello ";
 --sorted_result
 SELECT * FROM t1 WHERE a > "hello ";
 --sorted_result
-SELECT * FROM t1 WHERE a >= "hello ";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a >= "hello ";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a <=> "hello";
 --sorted_result
@@ -4111,11 +4111,11 @@ SELECT * FROM t1 WHERE a <=> "hello ";
 #--sorted_result
 #SELECT * FROM t1 WHERE a <=> " HELLO ";
 --sorted_result
-SELECT * FROM t1 WHERE a <=> b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a <=> b;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #--sorted_result
 #SELECT * FROM t1 WHERE a BETWEEN "HELLO " AND "HELLO1 ";
 # SEQUOIASQLMAINSTREAM-206
@@ -4124,8 +4124,8 @@ SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
 #--sorted_result
 #SELECT * FROM t1 WHERE a BETWEEN " HELLO1 " AND " HELLO1 ";
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("hello", "hello1");
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a IN ("hello", "hello1");
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #--sorted_result
 #SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 # SEQUOIASQLMAINSTREAM-206
@@ -4134,8 +4134,8 @@ SELECT * FROM t1 WHERE a IN ("hello", "hello1");
 #--sorted_result
 #SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a LIKE "%hello";
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a LIKE "%hello";
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%HELLO";
 --sorted_result
@@ -4245,24 +4245,24 @@ CREATE TABLE t1 (tinyb TINYBLOB, b BLOB, mediumb MEDIUMBLOB, longb LONGBLOB);
 INSERT INTO t1 VALUES ('op','op','op','op'),('bc','bc','bc','bc'),('123','123','123','123'),('tf','tf','tf','tf'),('001','001','001','001');
 INSERT INTO t1 VALUES ('9a','9a','9a','9a'),('abc','abc','abc','abc'),('jk','jk','jk','jk'),(NULL,NULL,NULL,NULL),('1','1','1','1');
 --sorted_result
-SELECT * FROM t1 WHERE tinyb IS NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE tinyb IS NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE b IS NOT NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b IS NOT NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE mediumb >= 'abc';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE mediumb >= 'abc';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE longb <= 'abc';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE longb <= 'abc';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE longb <=> '123';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE longb <=> '123';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE longb BETWEEN 'ab' AND 'bc';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE longb BETWEEN 'ab' AND 'bc';
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE longb IN ('abc','123','te','st','bc');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE longb IN ('abc','123','te','st','bc');
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;

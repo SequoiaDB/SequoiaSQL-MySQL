@@ -10,10 +10,9 @@
 drop database if exists count_limit_sort_pushdown_sequoiadb_4;
 --enable_warnings
 create database count_limit_sort_pushdown_sequoiadb_4;
+drop database count_limit_sort_pushdown_sequoiadb_4;
+create database count_limit_sort_pushdown_sequoiadb_4;
 use count_limit_sort_pushdown_sequoiadb_4;
---disable_warnings
-drop table if exists t1,t2,t3,t4,t5,t1_partition,t2_partition;
---enable_warnings
 
 create table t1(
   col1 int,

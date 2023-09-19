@@ -32,21 +32,37 @@ CREATE TABLE t1 (a int, b int, c int, key(a), key(b));
 INSERT INTO t1 VALUES (1,3,0), (2,2,0); 
 # comment is incorrect
 --disable_warnings
+--source include/write_mysqld_note_log_sequoiadb.inc
 /*+sql_pushdown=sdb1*/ SELECT t1.a FROM test_sql_pushdown.t1 AS t1 WHERE t1.a > 1;
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/get_mysqld_note_log_sequoiadb.inc
+
+--source include/write_mysqld_note_log_sequoiadb.inc
 /*+sql_pushdown=sdba*/ SELECT t1.a FROM test_sql_pushdown.t1 AS t1 WHERE t1.a > 1;
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/get_mysqld_note_log_sequoiadb.inc
+
+--source include/write_mysqld_note_log_sequoiadb.inc
 /*+sql_pushdown = sdb*/ SELECT t1.a FROM test_sql_pushdown.t1 AS t1 WHERE t1.a > 1;
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/get_mysqld_note_log_sequoiadb.inc
+
+--source include/write_mysqld_note_log_sequoiadb.inc
 SELECT /*+sql_pushdown=sdb1*/ t1.a FROM test_sql_pushdown.t1 AS t1 WHERE t1.a > 1;
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/get_mysqld_note_log_sequoiadb.inc
+
+--source include/write_mysqld_note_log_sequoiadb.inc
 SELECT /*+2sql_pushdown=sdb*/ t1.a FROM test_sql_pushdown.t1 AS t1 WHERE t1.a > 1;
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/get_mysqld_note_log_sequoiadb.inc
+
 # comment is correct
+--source include/write_mysqld_note_log_sequoiadb.inc
 /*+sql_pushdown=sdb*/ SELECT t1.a FROM test_sql_pushdown.t1 AS t1 WHERE t1.a > 1;
-#--source include/query_pushdown_condition_sequoiadb.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/  /table:[^\n]+[0-9]+/table: x/
+--exec tac $MYSQLTEST_VARDIR/log/mysqld.1.err |grep -m1 -B 50 'Testcase: Operation log begin' |tac |grep '\[Note\]'
+
+--source include/write_mysqld_note_log_sequoiadb.inc
 SELECT /*+sql_pushdown=sdb*/ t1.a FROM test_sql_pushdown.t1 AS t1 WHERE t1.a > 1;
-#--source include/query_pushdown_condition_sequoiadb.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/  /table:[^\n]+[0-9]+/table: x/
+--exec tac $MYSQLTEST_VARDIR/log/mysqld.1.err |grep -m1 -B 50 'Testcase: Operation log begin' |tac |grep '\[Note\]'
+
 --enable_warnings
 DROP TABLE t1;
 SET SESSION sequoiadb_sql_push_down = DEFAULT;

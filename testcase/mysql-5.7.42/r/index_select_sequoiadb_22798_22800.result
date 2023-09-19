@@ -28,6 +28,8 @@ Note	1003	/* select#1 */ select '16' AS `a`,'b' AS `b` from `index_select_sequoi
 SELECT * FROM t1 WHERE a=16;
 a	b
 16	b
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 16 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="a";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -43,6 +45,8 @@ a	b
 18	a
 8	a
 9	a
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=10 AND b="a";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -52,6 +56,8 @@ Note	1003	/* select#1 */ select '10' AS `a`,'a' AS `b` from `index_select_sequoi
 SELECT * FROM t1 WHERE a=10 AND b="a";
 a	b
 10	a
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 10 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="b" AND a=13;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -61,6 +67,8 @@ Note	1003	/* select#1 */ select '13' AS `a`,'b' AS `b` from `index_select_sequoi
 SELECT * FROM t1 WHERE b="b" AND a=13;
 a	b
 13	b
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 13 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
@@ -73,6 +81,8 @@ Note	1003	/* select#1 */ select '16' AS `a`,'b' AS `b` from `index_select_sequoi
 SELECT * FROM t1 WHERE a=16;
 a	b
 16	b
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 16 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="a";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -88,6 +98,8 @@ a	b
 18	a
 8	a
 9	a
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=10 AND b="a";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -97,6 +109,8 @@ Note	1003	/* select#1 */ select '10' AS `a`,'a' AS `b` from `index_select_sequoi
 SELECT * FROM t1 WHERE a=10 AND b="a";
 a	b
 10	a
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 10 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="b" AND a=13;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -106,6 +120,8 @@ Note	1003	/* select#1 */ select '13' AS `a`,'b' AS `b` from `index_select_sequoi
 SELECT * FROM t1 WHERE b="b" AND a=13;
 a	b
 13	b
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 13 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
@@ -131,6 +147,8 @@ Note	1003	/* select#1 */ select '1,5,6' AS `a`,'a,c' AS `b` from `index_select_s
 SELECT * FROM t1 WHERE a='1,5,6';
 a	b
 1,5,6	a,c
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 49 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="a";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -142,6 +160,8 @@ a	b
 1,2,3	a
 1,2,3,4	a
 2,4,6	a
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=2 AND b="b,c";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -151,6 +171,8 @@ Note	1003	/* select#1 */ select '2' AS `a`,'b,c' AS `b` from `index_select_sequo
 SELECT * FROM t1 WHERE a=2 AND b="b,c";
 a	b
 2	b,c
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="a" AND a='1,2,3,4';
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -160,6 +182,8 @@ Note	1003	/* select#1 */ select '1,2,3,4' AS `a`,'a' AS `b` from `index_select_s
 SELECT * FROM t1 WHERE b="a" AND a='1,2,3,4';
 a	b
 1,2,3,4	a
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 15 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
@@ -172,6 +196,8 @@ Note	1003	/* select#1 */ select '1,5,6' AS `a`,'a,c' AS `b` from `index_select_s
 SELECT * FROM t1 WHERE a='1,5,6';
 a	b
 1,5,6	a,c
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 49 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="a";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -183,6 +209,8 @@ a	b
 1,2,3	a
 1,2,3,4	a
 2,4,6	a
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=2 AND b="b,c";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -192,6 +220,8 @@ Note	1003	/* select#1 */ select '2' AS `a`,'b,c' AS `b` from `index_select_sequo
 SELECT * FROM t1 WHERE a=2 AND b="b,c";
 a	b
 2	b,c
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b="a" AND a='1,2,3,4';
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -201,6 +231,8 @@ Note	1003	/* select#1 */ select '1,2,3,4' AS `a`,'a' AS `b` from `index_select_s
 SELECT * FROM t1 WHERE b="a" AND a='1,2,3,4';
 a	b
 1,2,3,4	a
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 15 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
@@ -229,6 +261,8 @@ Warnings:
 Note	1003	/* select#1 */ select `index_select_sequoiadb_22798_22800`.`t1`.`a` AS `a`,`index_select_sequoiadb_22798_22800`.`t1`.`b` AS `b` from `index_select_sequoiadb_22798_22800`.`t1` where isnull(`index_select_sequoiadb_22798_22800`.`t1`.`b`)
 SELECT * FROM t1 WHERE b IS NULL;
 a	b
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "b": { "$isnull": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
@@ -240,6 +274,8 @@ Warnings:
 Note	1003	/* select#1 */ select `index_select_sequoiadb_22798_22800`.`t1`.`a` AS `a`,`index_select_sequoiadb_22798_22800`.`t1`.`b` AS `b` from `index_select_sequoiadb_22798_22800`.`t1` where isnull(`index_select_sequoiadb_22798_22800`.`t1`.`b`)
 SELECT * FROM t1 WHERE b IS NULL;
 a	b
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "b": { "$isnull": 1 } }], selector[{}], order_by[{}], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
@@ -275,6 +311,8 @@ a	b
 1	1
 1	1
 1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=1 AND b=1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -287,6 +325,8 @@ a	b
 1	1
 1	1
 1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 }, "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b=1 AND a=1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -299,6 +339,8 @@ a	b
 1	1
 1	1
 1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 }, "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
@@ -317,6 +359,8 @@ a	b
 1	1
 1	1
 1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=1 AND b=1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -329,6 +373,8 @@ a	b
 1	1
 1	1
 1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 }, "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 EXPLAIN SELECT * FROM t1 WHERE b=1 AND a=1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -341,6 +387,8 @@ a	b
 1	1
 1	1
 1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 }, "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 DROP TABLE t1;
 DROP DATABASE index_select_sequoiadb_22798_22800;

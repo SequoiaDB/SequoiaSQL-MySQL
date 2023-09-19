@@ -42,77 +42,77 @@ insert into t2(col1,col2,col3) values (6,'hello','hello'),(7,'world','world'),(8
 #关联算法BKA/BKAH
 #不带order by
 explain select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3;
-select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #带order by
 #order by字段所在表为被驱动表
 explain select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3 order by t1.col1,t1.col2;
-select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3 order by t1.col1,t1.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3 order by t1.col1,t1.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by字段所在表为驱动表
 explain select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3 order by t2.col1,t2.col2;
-select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3 order by t2.col1,t2.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 and t1.col3 = t2.col3 order by t2.col1,t2.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #关联算法BNL
 explain select count(*) from t1 ignore index(idx_col1,idx_col2,idx_col12) inner join t2 ignore index(idx_col1,idx_col2,idx_col12) on t1.col1 = t2.col1 and t1.col2 = t2.col2;
-select count(*) from t1 ignore index(idx_col1,idx_col2,idx_col12) inner join t2 ignore index(idx_col1,idx_col2,idx_col12) on t1.col1 = t2.col1 and t1.col2 = t2.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 ignore index(idx_col1,idx_col2,idx_col12) inner join t2 ignore index(idx_col1,idx_col2,idx_col12) on t1.col1 = t2.col1 and t1.col2 = t2.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by + limit(limit + offset)
 #order by字段所在表为被驱动表
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t1.col2 limit 2;
-select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t1.col2 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t1.col2 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc,t1.col2 desc limit 2;
-select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc,t1.col2 desc limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc,t1.col2 desc limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t1.col2 limit 1,2;
-select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t1.col2 limit 1,2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t1.col2 limit 1,2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by字段所在表为驱动表
 explain select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1,t2.col2 limit 2;
-select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1,t2.col2 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1,t2.col2 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1 desc,t2.col2 desc limit 2;
-select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1 desc,t2.col2 desc limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1 desc,t2.col2 desc limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1,t2.col2 limit 1,2;
-select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1,t2.col2 limit 1,2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t2.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t2.col1,t2.col2 limit 1,2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #null值数据处理
 explain select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2;
-select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2;
-select count(*) from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 is null or t1.col2 is null;
-select t1.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 is null or t1.col2 is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 is null or t1.col2 is null;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #外表使用MRR
 explain select t1.* from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 > 10 and t1.col1 < 60 and t1.col2 > '2c' and t1.col2 < '7d';
-select t1.* from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 > 10 and t1.col1 < 60 and t1.col2 > '2c' and t1.col2 < '7d';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 > 10 and t1.col1 < 60 and t1.col2 > '2c' and t1.col2 < '7d';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #join字段使用表达式t
 #不带order by
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py');
-select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py');
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #带order by
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py') order by t1.col1;
-select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py') order by t1.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py') order by t1.col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py') order by t2.col1;
-select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py') order by t2.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py') order by t2.col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 
 set session sequoiadb_debug_log=off;

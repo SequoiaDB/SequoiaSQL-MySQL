@@ -146,6 +146,7 @@ call p1();
 col1	col2	col3	col4
 2	defg	abd	abd
 5	xyz	abc	efg
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "col1": { "$gt": 1 } }, { "col1": { "$lt": 3 } } ] }, { "col1": { "$et": 5 } } ] }], selector[{}], order_by[{ "col4": 1 }], hint[{}], limit[-1], offset[0], table[explain_direct_sort_28511.t1]
 drop procedure p1;
 alter table t1 engine = memory;

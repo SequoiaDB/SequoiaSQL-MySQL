@@ -17,208 +17,208 @@ insert into t2 values(1,1),(2,2),(3,3),(4,4),(5,5),(1,12),(6,3),(10,5),(10,10),(
 #a范围:[1,10],b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10],b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10),b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10),b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10],b范围:b<10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10],b范围:b<10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10),b范围:b<10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10),b范围:b<10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10],b范围:[5,10]
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>=5 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>=5 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>=5 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10],b范围:(5,10]
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>5 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>5 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>5 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10],b范围:[5,10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>=5 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>=5 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>=5 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10],b范围:(5,10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>5 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>5 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<=10 and t1.b>5 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10],b范围:(5,10]
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b>5 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b>5 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b>5 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10],b范围:[5,10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b>=5 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b>=5 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<=10 and t1.b>=5 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10),b范围:(5,10]
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b>5 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b>5 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b>5 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10),b范围:[5,10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b>=5 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b>=5 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>=1 and t1.a<10 and t1.b>=5 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10),b范围:(5,10]
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b>5 and t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b>5 and t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b>5 and t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10),b范围:[5,10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b>=5 and t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b>=5 and t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and t1.a>1 and t1.a<10 and t1.b>=5 and t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10],b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10],b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10),b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10),b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b<=10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b<=10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b<=10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10],b范围:b<10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10],b范围:b<10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:(1,10),b范围:b<10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围:[1,10),b范围:b<=10
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b<10;
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or t1.b<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>5 and t1.b>10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>5 and t1.b>10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>5 and t1.b>10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>5 and t1.b>10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>=1 and t1.a<5 and t1.b<10) or (t1.a>5 and t1.b>10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<5 and t1.b<10) or (t1.a>5 and t1.b>10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<5 and t1.b<10) or (t1.a>5 and t1.b>10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<5 and t1.b<10) or (t1.a>5 and t1.b>10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>=5 and t1.b>10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>=5 and t1.b>10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>=5 and t1.b>10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>=5 and t1.b>10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>=1 and t1.a<5 and t1.b<=10) or (t1.a>5 and t1.b>10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<5 and t1.b<=10) or (t1.a>5 and t1.b>10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<5 and t1.b<=10) or (t1.a>5 and t1.b>10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<5 and t1.b<=10) or (t1.a>5 and t1.b>10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>=5 and t1.b>=10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>=5 and t1.b>=10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>=5 and t1.b>=10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<5 and t1.b<10) or (t1.a>=5 and t1.b>=10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>=1 and t1.a<=5 and t1.b<=10) or (t1.a>=5 and t1.b>=10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<=5 and t1.b<=10) or (t1.a>=5 and t1.b>=10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<=5 and t1.b<=10) or (t1.a>=5 and t1.b>=10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<=5 and t1.b<=10) or (t1.a>=5 and t1.b>=10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：(t1.a>1 and t1.a<=10) or (t1.b>=5 and t1.b<=10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or (t1.b>=5 and t1.b<=10);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or (t1.b>=5 and t1.b<=10);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<=10) or (t1.b>=5 and t1.b<=10);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：(t1.a>=1 and t1.a<10) or (t1.b>=5 and t1.b<=10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or (t1.b>=5 and t1.b<=10);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or (t1.b>=5 and t1.b<=10);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<10) or (t1.b>=5 and t1.b<=10);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：(t1.a>1 and t1.a<10) or (t1.b>=5 and t1.b<10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or (t1.b>5 and t1.b<10);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or (t1.b>5 and t1.b<10);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>1 and t1.a<10) or (t1.b>5 and t1.b<10);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：(t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10)
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10);
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10);
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and (t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10);
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<=10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<=10) or (t1.b>=5 and t1.b<10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>1 and t1.a<=10) or (t1.b>=5 and t1.b<10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<=10) or (t1.b>=5 and t1.b<10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<=10) or (t1.b>=5 and t1.b<10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<=10) or (t1.b>=5 and t1.b<10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>=1 and t1.a<10) or (t1.b>=5 and t1.b<10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<10) or (t1.b>=5 and t1.b<10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<10) or (t1.b>=5 and t1.b<10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>=1 and t1.a<10) or (t1.b>=5 and t1.b<10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #范围：((t1.a>1 and t1.a<10) or (t1.b>=5 and t1.b<10))
 explain select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<10) or (t1.b>=5 and t1.b<10));
 --sorted_result
-select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<10) or (t1.b>=5 and t1.b<10));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1,t2 where t1.a = t2.a and t1.b = t2.b and ((t1.a>1 and t1.a<10) or (t1.b>=5 and t1.b<10));
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 set session optimizer_switch=default;
 set session sequoiadb_debug_log=off;

@@ -24,8 +24,8 @@ insert into t2 select * from t1;
 SET SESSION optimizer_switch='batched_key_access=on';
 set sequoiadb_bka_remove_orderby=true;
 --sorted_result
-select * from t1 join t2 on t1.a=t2.a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 join t2 on t1.a=t2.a;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --disable_warnings
 explain select * from t1 join t2 on t1.a=t2.a;
 --enable_warnings
@@ -33,8 +33,8 @@ explain select * from t1 join t2 on t1.a=t2.a;
 set sequoiadb_bka_remove_orderby=false;
 
 --sorted_result
-select * from t1 join t2 on t1.a=t2.a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 join t2 on t1.a=t2.a;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --disable_warnings
 explain select * from t1 join t2 on t1.a=t2.a; 
 --enable_warnings

@@ -3,11 +3,10 @@
 
 --disable_warnings
 drop database if exists sort_pushdown_29924;
-drop table if exists t1;
 --enable_warnings
-
 create database sort_pushdown_29924;
-
+drop database sort_pushdown_29924;
+create database sort_pushdown_29924;
 use sort_pushdown_29924;
 
 CREATE TABLE t1 (
@@ -32,63 +31,63 @@ set session sequoiadb_debug_log=on;
 set session optimizer_index_sort_prune = ON;
 set session optimizer_switch='optimizer_sort_pushdown=ON,mrr=on';
 
-SELECT col_int AS field1 , col_varchar_16 AS field2 FROM t1 WHERE col_int IN (5, 3, 1) AND col_varchar_16 < 'c' ORDER BY field1 DESC, field2 DESC;
+let $query = SELECT col_int AS field1 , col_varchar_16 AS field2 FROM t1 WHERE col_int IN (5, 3, 1) AND col_varchar_16 < 'c' ORDER BY field1 DESC, field2 DESC;
 EXPLAIN SELECT col_int AS field1 , col_varchar_16 AS field2 FROM t1 WHERE col_int IN (5, 3, 1) AND col_varchar_16 < 'c' ORDER BY field1 DESC, field2 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 < 'c' AND col_int IN (3, 1, 6) ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 < 'c' AND col_int IN (3, 1, 6) ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 < 'c' AND col_int IN (3, 1, 6) ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_int != 3 AND col_varchar_16 < 'c' AND col_int IN (2, 7, 1) ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_int != 3 AND col_varchar_16 < 'c' AND col_int IN (2, 7, 1) ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_int != 3 AND col_varchar_16 < 'c' AND col_int IN (2, 7, 1) ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_date <= '2001-01-22' AND col_int IN (0, 1, 8) AND col_date <= '2008-06-07' ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_date <= '2001-01-22' AND col_int IN (0, 1, 8) AND col_date <= '2008-06-07' ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_date <= '2001-01-22' AND col_int IN (0, 1, 8) AND col_date <= '2008-06-07' ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 <= 'b' AND col_int IN (2, 6, 5) ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 <= 'b' AND col_int IN (2, 6, 5) ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 <= 'b' AND col_int IN (2, 6, 5) ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'w' AND col_int IN (1, 8, 7) AND col_date > '2001-11-20' ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'w' AND col_int IN (1, 8, 7) AND col_date > '2001-11-20' ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'w' AND col_int IN (1, 8, 7) AND col_date > '2001-11-20' ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'x' AND col_int IN (4, 9, 1) ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'x' AND col_int IN (4, 9, 1) ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'x' AND col_int IN (4, 9, 1) ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 set session optimizer_switch='optimizer_sort_pushdown=ON,mrr=off';
 
-SELECT col_int AS field1 , col_varchar_16 AS field2 FROM t1 WHERE col_int IN (5, 3, 1) AND col_varchar_16 < 'c' ORDER BY field1 DESC, field2 DESC;
+let $query = SELECT col_int AS field1 , col_varchar_16 AS field2 FROM t1 WHERE col_int IN (5, 3, 1) AND col_varchar_16 < 'c' ORDER BY field1 DESC, field2 DESC;
 EXPLAIN SELECT col_int AS field1 , col_varchar_16 AS field2 FROM t1 WHERE col_int IN (5, 3, 1) AND col_varchar_16 < 'c' ORDER BY field1 DESC, field2 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 < 'c' AND col_int IN (3, 1, 6) ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 < 'c' AND col_int IN (3, 1, 6) ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 < 'c' AND col_int IN (3, 1, 6) ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_int != 3 AND col_varchar_16 < 'c' AND col_int IN (2, 7, 1) ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_int != 3 AND col_varchar_16 < 'c' AND col_int IN (2, 7, 1) ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_int != 3 AND col_varchar_16 < 'c' AND col_int IN (2, 7, 1) ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_date <= '2001-01-22' AND col_int IN (0, 1, 8) AND col_date <= '2008-06-07' ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_date <= '2001-01-22' AND col_int IN (0, 1, 8) AND col_date <= '2008-06-07' ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_date <= '2001-01-22' AND col_int IN (0, 1, 8) AND col_date <= '2008-06-07' ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 <= 'b' AND col_int IN (2, 6, 5) ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 <= 'b' AND col_int IN (2, 6, 5) ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 <= 'b' AND col_int IN (2, 6, 5) ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'w' AND col_int IN (1, 8, 7) AND col_date > '2001-11-20' ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'w' AND col_int IN (1, 8, 7) AND col_date > '2001-11-20' ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'w' AND col_int IN (1, 8, 7) AND col_date > '2001-11-20' ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
-SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'x' AND col_int IN (4, 9, 1) ORDER BY field1 DESC;
+let $query = SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'x' AND col_int IN (4, 9, 1) ORDER BY field1 DESC;
 EXPLAIN SELECT col_int AS field1 FROM t1 WHERE col_varchar_16 > 'x' AND col_int IN (4, 9, 1) ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb_2.inc
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 set session sequoiadb_debug_log=default;
 set session optimizer_index_sort_prune = default;

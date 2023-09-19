@@ -19,8 +19,8 @@ SHOW CREATE TABLE t1;
 --replace_column 10 #
 EXPLAIN SELECT * FROM t1 WHERE b IS NULL;
 --sorted_result
-SELECT * FROM t1 WHERE b IS NULL;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b IS NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 
 DROP DATABASE index_select_sequoiadb_22799;

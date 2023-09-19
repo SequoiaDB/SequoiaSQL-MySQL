@@ -43,33 +43,33 @@ insert into t4 select * from t1 order by col1 limit 50;
 #不带order by
 #单字段
 explain select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 limit 10;
-select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 limit 10;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #多字段
 explain select t1.* from t1 join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 and t1.col4 = t4.col4 limit 10;
-select t1.* from t1 join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 and t1.col4 = t4.col4 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 and t1.col4 = t4.col4 limit 10;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #带order by索引字段
 explain select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1 limit 10;
-select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1 limit 10;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #索引多字段
 explain select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1,t1.col2 limit 10;
-select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1,t1.col2 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1,t1.col2 limit 10;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #索引字段降序
 explain select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1 desc,t1.col2 desc limit 10;
-select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1 desc,t1.col2 desc limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col1 desc,t1.col2 desc limit 10;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #非索引字段
 explain select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col8 limit 10;
-select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col8 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 join t2 on t1.col1 = t2.col1 join t3 on t2.col2 = t3.col2 join t4 on t3.col3 = t4.col3 order by t1.col8 limit 10;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2,t3,t4;
 
 set session sequoiadb_debug_log=off;

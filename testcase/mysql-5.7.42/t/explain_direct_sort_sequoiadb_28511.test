@@ -66,8 +66,9 @@ begin
 select * from t1 where col1 > 1 and col1 < 3 or col1 = 5 order by col4;
 end $
 delimiter ;$
+--source include/write_mysqld_note_log_sequoiadb.inc
 call p1();
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/get_mysqld_note_log_sequoiadb.inc
 drop procedure p1;
 
 #

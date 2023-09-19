@@ -39,6 +39,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -54,6 +55,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_SMALL_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -69,6 +71,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BIG_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -84,6 +87,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT HIGH_PRIORITY `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -99,6 +103,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -117,6 +122,7 @@ NULL
 NULL
 Warnings:
 Warning	1681	'SQL_CACHE' is deprecated and will be removed in a future release.
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_NO_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -135,6 +141,7 @@ NULL
 NULL
 Warnings:
 Warning	1681	'SQL_NO_CACHE' is deprecated and will be removed in a future release.
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -150,6 +157,8 @@ NULL
 -1029242880
 -908328960
 -474021888
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 9 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 [Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 + 1 ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -165,6 +174,8 @@ NULL
 -1029242880
 -908328960
 -474021888
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 9 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 [Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 ORDER BY field1 + 1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -180,6 +191,8 @@ NULL
 -1029242880
 -908328960
 -474021888
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 9 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 [Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 ORDER BY col_int LIMIT 7) AS dt;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -196,6 +209,7 @@ NULL	NULL	NULL	p	j	NULL	64
 9	about	NULL	r	NULL	NULL	19
 6	NULL	NULL	NULL	b	r	196
 6	not	NULL	c	j	b	130
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col_int": 1 }], hint[{ "": "" }], limit[7], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 ORDER BY col_int + 1 LIMIT 7) AS dt;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -212,6 +226,7 @@ col_int_key	col_varchar_10	col_int	col_varchar_10_key	col_varchar_16	col_varchar
 NULL	NULL	NULL	y	b	NULL	45
 NULL	u	NULL	j	the	k	26
 NULL	v	NULL	m	y	had	47
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -220,6 +235,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `dt`.`col_int_key` AS `col_int_key`,`dt`.`col_varchar_10` AS `col_varchar_10`,`dt`.`col_int` AS `col_int`,`dt`.`col_varchar_10_key` AS `col_varchar_10_key`,`dt`.`col_varchar_16` AS `col_varchar_16`,`dt`.`col_varchar_16_key` AS `col_varchar_16_key`,`dt`.`pk` AS `pk` from (/* select#2 */ select `partition_sequoiadb_29784`.`t1`.`col_int_key` AS `col_int_key`,`partition_sequoiadb_29784`.`t1`.`col_varchar_10` AS `col_varchar_10`,`partition_sequoiadb_29784`.`t1`.`col_int` AS `col_int`,`partition_sequoiadb_29784`.`t1`.`col_varchar_10_key` AS `col_varchar_10_key`,`partition_sequoiadb_29784`.`t1`.`col_varchar_16` AS `col_varchar_16`,`partition_sequoiadb_29784`.`t1`.`col_varchar_16_key` AS `col_varchar_16_key`,`partition_sequoiadb_29784`.`t1`.`pk` AS `pk` from `partition_sequoiadb_29784`.`t1` group by `partition_sequoiadb_29784`.`t1`.`col_int`) `dt` limit 7
 SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "col_int": { "$first": "$col_int" }, "_id": { "col_int": "$col_int" }, "col_int_key": { "$first": "$col_int_key" }, "col_varchar_10": { "$first": "$col_varchar_10" }, "col_varchar_10_key": { "$first": "$col_varchar_10_key" }, "col_varchar_16": { "$first": "$col_varchar_16" }, "col_varchar_16_key": { "$first": "$col_varchar_16_key" }, "pk": { "$first": "$pk" } } }], sort[{ "$sort": { "col_int": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int + 1) AS dt LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -236,6 +252,7 @@ col_int_key	col_varchar_10	col_int	col_varchar_10_key	col_varchar_16	col_varchar
 1455292416	v	-1987248128	i	u	he	113
 1611137024	NULL	-1925840896	y	y	l	31
 NULL	say	-1810497536	m	can	x	179
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 GROUP BY field1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -257,6 +274,8 @@ NULL
 5
 6
 9
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] } }], group[{ "$group": { "col_int": { "$first": "$col_int" }, "_id": { "col_int": "$col_int" }, "col_int_key": { "$first": "$col_int_key" } } }], sort[{ "$sort": { "col_int": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 ORDER BY field1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -291,6 +310,8 @@ NULL
 6
 9
 9
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] }, { "col_int_key": { "$in": [ 7, 9 ] } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 GROUP BY field1 ORDER BY field1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -312,6 +333,8 @@ NULL
 5
 6
 9
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] } }], group[{ "$group": { "col_int": { "$first": "$col_int" }, "_id": { "col_int": "$col_int" }, "col_int_key": { "$first": "$col_int_key" } } }], sort[{ "$sort": { "col_int": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 EXPLAIN SELECT SQL_BUFFER_RESULT COUNT(`col_int`) AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -321,6 +344,9 @@ Note	1003	/* select#1 */ select sql_buffer_result count(`partition_sequoiadb_297
 SELECT SQL_BUFFER_RESULT COUNT(`col_int`) AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7;
 field1
 22
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "col_int": { "$isnull": 0 }, "$and": [ { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] }, { "col_int_key": { "$in": [ 7, 9 ] } } ] }, table: partition_sequoiadb_29784.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "col_int": { "$isnull": 0 }, "$and": [ { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] }, { "col_int_key": { "$in": [ 7, 9 ] } } ] }],hint[{ "": "col_int_key" }] table[partition_sequoiadb_29784.t1]
 SET SESSION optimizer_index_sort_prune=OFF;
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7 OFFSET 0;
@@ -337,6 +363,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -352,6 +379,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_SMALL_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -367,6 +395,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BIG_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -382,6 +411,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT HIGH_PRIORITY `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -397,6 +427,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -415,6 +446,7 @@ NULL
 NULL
 Warnings:
 Warning	1681	'SQL_CACHE' is deprecated and will be removed in a future release.
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_NO_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -433,6 +465,7 @@ NULL
 NULL
 Warnings:
 Warning	1681	'SQL_NO_CACHE' is deprecated and will be removed in a future release.
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -448,6 +481,8 @@ NULL
 -1029242880
 -908328960
 -474021888
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 9 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 [Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 + 1 ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -463,6 +498,8 @@ NULL
 -1029242880
 -908328960
 -474021888
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 9 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 [Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL GROUP BY field1 ORDER BY field1 + 1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -478,6 +515,8 @@ NULL
 -1029242880
 -908328960
 -474021888
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$et": 9 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 [Note] SequoiaDB: Query message: condition[{ "col_int_key": { "$isnull": 1 } }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int_key": 1 }], hint[{ "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 ORDER BY col_int LIMIT 7) AS dt;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -494,6 +533,7 @@ NULL	NULL	NULL	p	j	NULL	64
 9	about	NULL	r	NULL	NULL	19
 6	NULL	NULL	NULL	b	r	196
 6	not	NULL	c	j	b	130
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col_int": 1 }], hint[{ "": "" }], limit[7], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 ORDER BY col_int + 1 LIMIT 7) AS dt;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -510,6 +550,7 @@ col_int_key	col_varchar_10	col_int	col_varchar_10_key	col_varchar_16	col_varchar
 NULL	NULL	NULL	y	b	NULL	45
 NULL	u	NULL	j	the	k	26
 NULL	v	NULL	m	y	had	47
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -518,6 +559,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 Warnings:
 Note	1003	/* select#1 */ select `dt`.`col_int_key` AS `col_int_key`,`dt`.`col_varchar_10` AS `col_varchar_10`,`dt`.`col_int` AS `col_int`,`dt`.`col_varchar_10_key` AS `col_varchar_10_key`,`dt`.`col_varchar_16` AS `col_varchar_16`,`dt`.`col_varchar_16_key` AS `col_varchar_16_key`,`dt`.`pk` AS `pk` from (/* select#2 */ select `partition_sequoiadb_29784`.`t1`.`col_int_key` AS `col_int_key`,`partition_sequoiadb_29784`.`t1`.`col_varchar_10` AS `col_varchar_10`,`partition_sequoiadb_29784`.`t1`.`col_int` AS `col_int`,`partition_sequoiadb_29784`.`t1`.`col_varchar_10_key` AS `col_varchar_10_key`,`partition_sequoiadb_29784`.`t1`.`col_varchar_16` AS `col_varchar_16`,`partition_sequoiadb_29784`.`t1`.`col_varchar_16_key` AS `col_varchar_16_key`,`partition_sequoiadb_29784`.`t1`.`pk` AS `pk` from `partition_sequoiadb_29784`.`t1` group by `partition_sequoiadb_29784`.`t1`.`col_int`) `dt` limit 7
 SELECT * FROM (SELECT * FROM t1 GROUP BY col_int) AS dt LIMIT 7;
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "col_int": { "$first": "$col_int" }, "_id": { "col_int": "$col_int" }, "col_int_key": { "$first": "$col_int_key" }, "col_varchar_10": { "$first": "$col_varchar_10" }, "col_varchar_10_key": { "$first": "$col_varchar_10_key" }, "col_varchar_16": { "$first": "$col_varchar_16" }, "col_varchar_16_key": { "$first": "$col_varchar_16_key" }, "pk": { "$first": "$pk" } } }], sort[{ "$sort": { "col_int": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 EXPLAIN SELECT * FROM (SELECT * FROM t1 GROUP BY col_int + 1) AS dt LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -534,6 +576,7 @@ col_int_key	col_varchar_10	col_int	col_varchar_10_key	col_varchar_16	col_varchar
 1455292416	v	-1987248128	i	u	he	113
 1611137024	NULL	-1925840896	y	y	l	31
 NULL	say	-1810497536	m	can	x	179
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 GROUP BY field1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -555,6 +598,8 @@ NULL
 5
 6
 9
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] } }], group[{ "$group": { "col_int": { "$first": "$col_int" }, "_id": { "col_int": "$col_int" }, "col_int_key": { "$first": "$col_int_key" } } }], sort[{ "$sort": { "col_int": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 ORDER BY field1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -589,6 +634,8 @@ NULL
 6
 9
 9
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{ "col_int": 1 }], hint[{}], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7 GROUP BY field1 ORDER BY field1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -610,6 +657,8 @@ NULL
 5
 6
 9
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] } }], group[{ "$group": { "col_int": { "$first": "$col_int" }, "_id": { "col_int": "$col_int" }, "col_int_key": { "$first": "$col_int_key" } } }], sort[{ "$sort": { "col_int": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 EXPLAIN SELECT SQL_BUFFER_RESULT COUNT(`col_int`) AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -619,6 +668,9 @@ Note	1003	/* select#1 */ select sql_buffer_result count(`partition_sequoiadb_297
 SELECT SQL_BUFFER_RESULT COUNT(`col_int`) AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key = 7;
 field1
 22
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "col_int": { "$isnull": 0 }, "$and": [ { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] }, { "col_int_key": { "$in": [ 7, 9 ] } } ] }, table: partition_sequoiadb_29784.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "col_int": { "$isnull": 0 }, "$and": [ { "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$et": 7 } } ] }, { "col_int_key": { "$in": [ 7, 9 ] } } ] }],hint[{ "": "col_int_key" }] table[partition_sequoiadb_29784.t1]
 DROP DATABASE partition_sequoiadb_29784;
 SET SESSION sequoiadb_debug_log=default;

@@ -43,74 +43,74 @@ insert into t2 select * from t1;
 
 #单表update
 explain update t1 set col3 = 'hello' where col1 = 6;
-update t1 set col3 = 'hello' where col1 = 6;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set col3 = 'hello' where col1 = 6;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain update t1 set col3 = 'hello' where col1 > 6;
-update t1 set col3 = 'hello' where col1 > 6;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set col3 = 'hello' where col1 > 6;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain update t1 set col3 = concat(col3, '-updated') where col1 > 7;
-update t1 set col3 = concat(col3, '-updated') where col1 > 7;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set col3 = concat(col3, '-updated') where col1 > 7;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #多表update
 explain update t1,t2 set t1.col3 = 'ghi' where t1.col1 = t2.col1 and t1.col2 > 'def';
-update t1,t2 set t1.col3 = 'ghi' where t1.col1 = t2.col1 and t1.col2 > 'def';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1,t2 set t1.col3 = 'ghi' where t1.col1 = t2.col1 and t1.col2 > 'def';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #单表delete
 explain delete from t1 where col1 is null or col2 = 'xyz';
-delete from t1 where col1 is null or col2 = 'xyz';
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = delete from t1 where col1 is null or col2 = 'xyz';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain delete from t1 where col1 <=> null or col2 <=> 'xyz';
-delete from t1 where col1 <=> null or col2 <=> 'xyz';
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = delete from t1 where col1 <=> null or col2 <=> 'xyz';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #delete带有子查询
 explain delete from t1 where t1.col1 = (select t2.col1 from t2 where t2.col4 = 'xyz');
-delete from t1 where t1.col1 = (select t2.col1 from t2 where t2.col4 = 'xyz');
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = delete from t1 where t1.col1 = (select t2.col1 from t2 where t2.col4 = 'xyz');
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #insert操作
 explain insert into t1 select * from t2 where t2.col2 in ('abc','def');
-insert into t1 select * from t2 where t2.col2 in ('abc','def') ;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = insert into t1 select * from t2 where t2.col2 in ('abc','def') ;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain insert into t1 select * from t2 where t2.col2 < 'def' order by t2.col4 limit 2;
-insert into t1 select * from t2 where t2.col2 < 'def' order by t2.col4 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = insert into t1 select * from t2 where t2.col2 < 'def' order by t2.col4 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain insert into t1 select * from t2 where t2.col2 < 'def' order by t2.col2 limit 2;
-insert into t1 select * from t2 where t2.col2 < 'def' order by t2.col2 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = insert into t1 select * from t2 where t2.col2 < 'def' order by t2.col2 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #单表update/delete + order by + limit
 explain update t1 set col3 = 'udi' where col1 > 3 order by col1 limit 2;
-update t1 set col3 = 'udi' where col1 > 3 order by col1 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set col3 = 'udi' where col1 > 3 order by col1 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain update t1 set col3 = 'udi' where col1 > 3 order by col1 desc limit 2;
-update t1 set col3 = 'udi' where col1 > 3 order by col1 desc limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set col3 = 'udi' where col1 > 3 order by col1 desc limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain delete from t1 order by col1 limit 2;
-delete from t1 order by col1 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = delete from t1 order by col1 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain delete from t1 order by col1 desc limit 2;
-delete from t1 order by col1 desc limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = delete from t1 order by col1 desc limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain delete from t1 order by col3 limit 2;
-delete from t1 order by col3 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = delete from t1 order by col3 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #多表update/delete（mysql不支持update + order by / limit）
 explain update t1,t2 set t1.col2 = 'aaa' where t1.col4 = t2.col4 and t1.col1 < 5;
-update t1,t2 set t1.col2 = 'aaa' where t1.col4 = t2.col4 and t1.col1 < 5;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1,t2 set t1.col2 = 'aaa' where t1.col4 = t2.col4 and t1.col1 < 5;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain update t1,t2 set t1.col2 = 'aaa' where t1.col4 = t2.col4 and t1.col1 < 5;
-update t1,t2 set t1.col2 = 'aaa' where t1.col4 = t2.col4 and t1.col1 < 5;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1,t2 set t1.col2 = 'aaa' where t1.col4 = t2.col4 and t1.col1 < 5;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain delete from t1 where t1.col1 < (select col1 from t2 where t2.col4 = 'def') order by t1.col1 limit 3;
-delete from t1 where t1.col1 < (select col1 from t2 where t2.col4 = 'def') order by t1.col1 limit 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = delete from t1 where t1.col1 < (select col1 from t2 where t2.col4 = 'def') order by t1.col1 limit 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain delete from t1 where t1.col1 < (select col1 from t2 where t2.col4 = 'def') order by t1.col3 limit 3;
-delete from t1 where t1.col1 < (select col1 from t2 where t2.col4 = 'def') order by t1.col3 limit 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = delete from t1 where t1.col1 < (select col1 from t2 where t2.col4 = 'def') order by t1.col3 limit 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 
 set session sequoiadb_debug_log=off;

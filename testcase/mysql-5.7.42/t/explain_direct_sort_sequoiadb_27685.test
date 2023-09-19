@@ -38,24 +38,24 @@ select * from t1 order by col4;
 
 #索引字段排序，数据类型分为int、varchar
 explain select * from t1 order by col1 limit 2;
-select * from t1 order by col1 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 order by col1 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 order by col2 limit 2;
-select * from t1 order by col2 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 order by col2 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 order by col2 desc limit 2;
-select * from t1 order by col2 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 order by col2 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #limit + offset组合
 explain select * from t1 order by col2 limit 2,3;
-select * from t1 order by col2 limit 2,3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 order by col2 limit 2,3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #非索引字段排序
 explain select * from t1 order by col3 limit 2;
-select * from t1 order by col3 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 order by col3 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1;
 
 set session sequoiadb_debug_log=off;

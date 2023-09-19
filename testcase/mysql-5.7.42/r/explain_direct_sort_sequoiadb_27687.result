@@ -81,6 +81,7 @@ select col1,col2,col3 from t2 where col1 in(3,5);
 col1	col2	col3
 3	abd	def
 5	xyz	abd
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "abd" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_direct_sort_27687.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 5 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27687.t2]
 explain select col1,col2,col3 from t1 where col2 = 'abd'
@@ -98,6 +99,7 @@ col1	col2	col3
 3	abd	def
 3	abd	def
 5	xyz	abd
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "abd" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_direct_sort_27687.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 5 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27687.t2]
 explain select col1,col2,col3 from t1 where col2 = 'abd'
@@ -115,6 +117,7 @@ select col1,col2,col3 from t2 where col1 in(3,5) order by col2;
 col1	col2	col3
 3	abd	def
 5	xyz	abd
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "abd" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_direct_sort_27687.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 5 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27687.t2]
 explain select col1,col2,col3 from t1 where col2 = 'abd'
@@ -133,6 +136,7 @@ col1	col2	col3
 3	abd	def
 3	abd	def
 5	xyz	abd
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "abd" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_direct_sort_27687.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 5 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27687.t2]
 explain select col1,col2,col3 from t1 where col2 = 'abd'
@@ -150,6 +154,7 @@ select col1,col2,col3 from t2 where col1 in(3,5) order by col3;
 col1	col2	col3
 5	xyz	abd
 3	abd	def
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "abd" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_direct_sort_27687.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 5 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27687.t2]
 explain select col1,col2,col3 from t1 where col2 = 'abd'
@@ -168,6 +173,7 @@ col1	col2	col3
 5	xyz	abd
 3	abd	def
 3	abd	def
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "abd" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_direct_sort_27687.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 5 ] } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27687.t2]
 drop table t1,t2;

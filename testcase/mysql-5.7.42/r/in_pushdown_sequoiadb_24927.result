@@ -1,6 +1,8 @@
 set sequoiadb_debug_log=on;
 drop DATABASE if exists in_pushdown_sequoiadb24927;
 create database in_pushdown_sequoiadb24927;
+drop database in_pushdown_sequoiadb24927;
+create database in_pushdown_sequoiadb24927;
 use in_pushdown_sequoiadb24927;
 create table t1 (a int, b int, c int, key(b))engine=sequoiadb;
 insert into t1 values(1,3,2),(2,1,1),(3,3,4),(4,2,4),(5,3,5);
@@ -32,12 +34,20 @@ a	b	c
 select count(1) from t1 where a in (1,2,3);
 count(1)
 12
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$in": [ 1, 2, 3 ] } }, table: in_pushdown_sequoiadb24927.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }],hint[{}] table[in_pushdown_sequoiadb24927.t1]
 select count(1) from t1 where b in (1,2,3);
 count(1)
 10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "b": { "$in": [ 1, 2, 3 ] } }, table: in_pushdown_sequoiadb24927.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "b": { "$in": [ 1, 2, 3 ] } }],hint[{ "": "b" }] table[in_pushdown_sequoiadb24927.t1]
 update t1 set a = 2 where a in (1,2,3);
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 2 } }, condition: { "a": { "$in": [ 1, 2, 3 ] } }, table: in_pushdown_sequoiadb24927.t1
 select * from t1 order by a,b,c;
 a	b	c
@@ -62,6 +72,8 @@ a	b	c
 5	4	5
 5	4	5
 update t1 set b = 2 where a in (1,2,3);
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": 2 } }, condition: { "a": { "$in": [ 1, 2, 3 ] } }, table: in_pushdown_sequoiadb24927.t1
 select * from t1 order by a,b,c;
 a	b	c
@@ -86,6 +98,8 @@ a	b	c
 5	4	5
 5	4	5
 delete from t1 where a in (1,2,3);
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer delete: 1, condition: { "a": { "$in": [ 1, 2, 3 ] } }, table: in_pushdown_sequoiadb24927.t1
 select * from t1 order by a,b,c;
 a	b	c
@@ -98,6 +112,8 @@ a	b	c
 5	4	5
 5	4	5
 delete from t1 where b in (1,2,3);
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer delete: 1, condition: { "b": { "$in": [ 1, 2, 3 ] } }, table: in_pushdown_sequoiadb24927.t1
 select * from t1 order by a,b,c;
 a	b	c

@@ -28,6 +28,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = 1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -45,6 +47,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = -1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": -1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -54,6 +58,8 @@ id	a	b	c
 4	8	4	4
 5	8	NULL	NULL
 update t1 set a = a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "a" }, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -63,6 +69,8 @@ id	a	b	c
 4	16	4	4
 5	16	NULL	NULL
 update t1 set a = b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": { "$field": "b" } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -72,6 +80,8 @@ id	a	b	c
 4	4	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -105,6 +115,8 @@ id	a	b	c
 4	-23	4	4
 5	NULL	NULL	NULL
 update t1 set a = -b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -114,6 +126,8 @@ id	a	b	c
 4	-4	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -123,6 +137,8 @@ id	a	b	c
 4	7	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -132,6 +148,8 @@ id	a	b	c
 4	21	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + c;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -141,6 +159,8 @@ id	a	b	c
 4	8	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -150,6 +170,8 @@ id	a	b	c
 4	13	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 + a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -159,6 +181,8 @@ id	a	b	c
 4	18	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -240,6 +264,8 @@ id	a	b	c
 4	-3	4	4
 5	NULL	NULL	NULL
 update t1 set a = a - b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -257,6 +283,8 @@ id	a	b	c
 4	11	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -295,6 +323,8 @@ create table t1(id int auto_increment key, a tinyint, b tinyint, c tinyint);
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4);
 insert into t1 values();
 update t1 set a = 1 + 2 + 3;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 6 } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -304,6 +334,8 @@ id	a	b	c
 4	6	4	4
 5	6	NULL	NULL
 update t1 set a = a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 0, "Min": -128, "Max": 127, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -313,6 +345,8 @@ id	a	b	c
 4	6	4	4
 5	6	NULL	NULL
 update t1 set a = a + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 3, "Min": -128, "Max": 127, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -322,6 +356,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = 1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -128, "Max": 127, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -379,6 +415,8 @@ id	a	b	c
 4	12	4	4
 5	NULL	NULL	NULL
 update t1 set a = -a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -388,6 +426,8 @@ id	a	b	c
 4	-12	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -397,6 +437,8 @@ id	a	b	c
 4	-23	4	4
 5	NULL	NULL	NULL
 update t1 set a = -b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -406,6 +448,8 @@ id	a	b	c
 4	-4	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -415,6 +459,8 @@ id	a	b	c
 4	7	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -424,6 +470,8 @@ id	a	b	c
 4	21	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + c;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -622,6 +670,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = -1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": -1, "Min": -32768, "Max": 32767, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -631,6 +681,8 @@ id	a	b	c
 4	8	4	4
 5	8	NULL	NULL
 update t1 set a = a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "a" }, "Min": -32768, "Max": 32767, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -640,6 +692,8 @@ id	a	b	c
 4	16	4	4
 5	16	NULL	NULL
 update t1 set a = b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": { "$field": "b" } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -649,6 +703,8 @@ id	a	b	c
 4	4	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Min": -32768, "Max": 32767, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -658,6 +714,8 @@ id	a	b	c
 4	8	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Min": -32768, "Max": 32767, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -715,6 +773,8 @@ id	a	b	c
 4	8	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -732,6 +792,8 @@ id	a	b	c
 4	18	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -749,6 +811,8 @@ id	a	b	c
 4	24	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -758,6 +822,8 @@ id	a	b	c
 4	5	4	4
 5	NULL	NULL	NULL
 update t1 set a = b - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -775,6 +841,8 @@ id	a	b	c
 4	5	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -800,6 +868,8 @@ id	a	b	c
 4	43	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -817,6 +887,8 @@ id	a	b	c
 4	-3	4	4
 5	NULL	NULL	NULL
 update t1 set a = a - b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -834,6 +906,8 @@ id	a	b	c
 4	11	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -872,6 +946,8 @@ create table t1(id int auto_increment key, a mediumint, b mediumint, c mediumint
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4);
 insert into t1 values();
 update t1 set a = 1 + 2 + 3;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 6 } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -881,6 +957,8 @@ id	a	b	c
 4	6	4	4
 5	6	NULL	NULL
 update t1 set a = a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 0, "Min": -8388608, "Max": 8388607, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -890,6 +968,8 @@ id	a	b	c
 4	6	4	4
 5	6	NULL	NULL
 update t1 set a = a + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 3, "Min": -8388608, "Max": 8388607, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -899,6 +979,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = 1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -8388608, "Max": 8388607, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -956,6 +1038,8 @@ id	a	b	c
 4	12	4	4
 5	NULL	NULL	NULL
 update t1 set a = -a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -965,6 +1049,8 @@ id	a	b	c
 4	-12	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -974,6 +1060,8 @@ id	a	b	c
 4	-23	4	4
 5	NULL	NULL	NULL
 update t1 set a = -b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -983,6 +1071,8 @@ id	a	b	c
 4	-4	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -992,6 +1082,8 @@ id	a	b	c
 4	7	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1158,6 +1250,8 @@ create table t1(id int auto_increment key, a bigint, b bigint, c bigint);
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4);
 insert into t1 values();
 update t1 set a = 1 + 2 + 3;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 6 } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1167,6 +1261,8 @@ id	a	b	c
 4	6	4	4
 5	6	NULL	NULL
 update t1 set a = a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 0, "Max": 9223372036854775807, "Min": -9223372036854775808, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1176,6 +1272,8 @@ id	a	b	c
 4	6	4	4
 5	6	NULL	NULL
 update t1 set a = a + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 3, "Max": 9223372036854775807, "Min": -9223372036854775808, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1185,6 +1283,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = 1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Max": 9223372036854775807, "Min": -9223372036854775808, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1194,6 +1294,8 @@ id	a	b	c
 4	10	4	4
 5	10	NULL	NULL
 update t1 set a = a - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": -1, "Max": 9223372036854775807, "Min": -9223372036854775808, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1203,6 +1305,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = -1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": -1, "Max": 9223372036854775807, "Min": -9223372036854775808, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1212,6 +1316,8 @@ id	a	b	c
 4	8	4	4
 5	8	NULL	NULL
 update t1 set a = a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "a" }, "Max": 9223372036854775807, "Min": -9223372036854775808, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1221,6 +1327,8 @@ id	a	b	c
 4	16	4	4
 5	16	NULL	NULL
 update t1 set a = b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": { "$field": "b" } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1230,6 +1338,8 @@ id	a	b	c
 4	4	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Max": 9223372036854775807, "Min": -9223372036854775808, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1239,6 +1349,8 @@ id	a	b	c
 4	8	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Max": 9223372036854775807, "Min": -9223372036854775808, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1248,6 +1360,8 @@ id	a	b	c
 4	12	4	4
 5	NULL	NULL	NULL
 update t1 set a = -a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1257,6 +1371,8 @@ id	a	b	c
 4	-12	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1266,6 +1382,8 @@ id	a	b	c
 4	-23	4	4
 5	NULL	NULL	NULL
 update t1 set a = -b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1275,6 +1393,8 @@ id	a	b	c
 4	-4	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1284,6 +1404,8 @@ id	a	b	c
 4	7	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1293,6 +1415,8 @@ id	a	b	c
 4	21	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + c;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1302,6 +1426,8 @@ id	a	b	c
 4	8	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1311,6 +1437,8 @@ id	a	b	c
 4	13	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 + a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1320,6 +1448,8 @@ id	a	b	c
 4	18	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1329,6 +1459,8 @@ id	a	b	c
 4	21	4	4
 5	NULL	NULL	NULL
 update t1 set a = -1 + a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1338,6 +1470,8 @@ id	a	b	c
 4	24	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1347,6 +1481,8 @@ id	a	b	c
 4	5	4	4
 5	NULL	NULL	NULL
 update t1 set a = b - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1356,6 +1492,8 @@ id	a	b	c
 4	3	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1365,6 +1503,8 @@ id	a	b	c
 4	5	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1374,6 +1514,8 @@ id	a	b	c
 4	11	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a -1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1383,6 +1525,8 @@ id	a	b	c
 4	21	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1392,6 +1536,8 @@ id	a	b	c
 4	43	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1401,6 +1547,8 @@ id	a	b	c
 4	-42	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1410,6 +1558,8 @@ id	a	b	c
 4	-3	4	4
 5	NULL	NULL	NULL
 update t1 set a = a - b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1419,6 +1569,8 @@ id	a	b	c
 4	-7	4	4
 5	NULL	NULL	NULL
 update t1 set a = b - a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1428,6 +1580,8 @@ id	a	b	c
 4	11	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1437,6 +1591,8 @@ id	a	b	c
 4	-6	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - b + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1467,6 +1623,8 @@ create table t1(id int auto_increment key, a float, b float, c float);
 insert into t1 values(1.25,1.25,1.25,1.25),(2.33,2.333,2.3333,2.3333),(3.25,3.25,3.25,3.25),(4.3333,4.3333,4.3333,4.3333);
 insert into t1 values();
 update t1 set a = 1 + 2 + 3;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 6.0 } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1476,6 +1634,8 @@ id	a	b	c
 4	6	4.3333	4.3333
 5	6	NULL	NULL
 update t1 set a = a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 0.0, "Min": -3.402823466385289e+38, "Max": 3.402823466385289e+38, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1485,6 +1645,8 @@ id	a	b	c
 4	6	4.3333	4.3333
 5	6	NULL	NULL
 update t1 set a = a + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 3.0, "Min": -3.402823466385289e+38, "Max": 3.402823466385289e+38, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1494,6 +1656,8 @@ id	a	b	c
 4	9	4.3333	4.3333
 5	9	NULL	NULL
 update t1 set a = 1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1.0, "Min": -3.402823466385289e+38, "Max": 3.402823466385289e+38, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1503,6 +1667,8 @@ id	a	b	c
 4	10	4.3333	4.3333
 5	10	NULL	NULL
 update t1 set a = a - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": -1.0, "Min": -3.402823466385289e+38, "Max": 3.402823466385289e+38, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1552,6 +1718,8 @@ id	a	b	c
 4	12.9999	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = -a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1561,6 +1729,8 @@ id	a	b	c
 4	-12.9999	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1570,6 +1740,8 @@ id	a	b	c
 4	-24.9998	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = -b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1579,6 +1751,8 @@ id	a	b	c
 4	-4.3333	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = b + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1588,6 +1762,8 @@ id	a	b	c
 4	7.3333	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = a + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1597,6 +1773,8 @@ id	a	b	c
 4	21.9999	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = b + c;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1606,6 +1784,8 @@ id	a	b	c
 4	8.6666	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = a + b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1615,6 +1795,8 @@ id	a	b	c
 4	13.9999	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = 1 + a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1798,6 +1980,8 @@ id	a	b	c
 4	9	4.3333	4.3333
 5	9	NULL	NULL
 update t1 set a = -1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": -1.0, "Min": -1.797693134862316e+308, "Max": 1.797693134862316e+308, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1807,6 +1991,8 @@ id	a	b	c
 4	8	4.3333	4.3333
 5	8	NULL	NULL
 update t1 set a = a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "a" }, "Min": -1.797693134862316e+308, "Max": 1.797693134862316e+308, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1816,6 +2002,8 @@ id	a	b	c
 4	16	4.3333	4.3333
 5	16	NULL	NULL
 update t1 set a = b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": { "$field": "b" } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1825,6 +2013,8 @@ id	a	b	c
 4	4.3333	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Min": -1.797693134862316e+308, "Max": 1.797693134862316e+308, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1834,6 +2024,8 @@ id	a	b	c
 4	8.6666	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = b + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Min": -1.797693134862316e+308, "Max": 1.797693134862316e+308, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -1915,6 +2107,8 @@ id	a	b	c
 4	22.666500000000003	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = -1 + a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1924,6 +2118,8 @@ id	a	b	c
 4	25.999800000000004	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1933,6 +2129,8 @@ id	a	b	c
 4	5.3333	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = b - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1942,6 +2140,8 @@ id	a	b	c
 4	3.3333000000000004	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = 1 + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1951,6 +2151,8 @@ id	a	b	c
 4	5.3333	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1960,6 +2162,8 @@ id	a	b	c
 4	11.6666	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = a + a -1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1969,6 +2173,8 @@ id	a	b	c
 4	22.3332	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = 1 + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1978,6 +2184,8 @@ id	a	b	c
 4	45.6664	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = 1 - a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1987,6 +2195,8 @@ id	a	b	c
 4	-44.6664	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = 1 - b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -1996,6 +2206,8 @@ id	a	b	c
 4	-3.3333000000000004	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = a - b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2005,6 +2217,8 @@ id	a	b	c
 4	-7.666600000000001	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = b - a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2014,6 +2228,8 @@ id	a	b	c
 4	11.9999	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = 1 - a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2023,6 +2239,8 @@ id	a	b	c
 4	-6.6666	4.3333	4.3333
 5	NULL	NULL	NULL
 update t1 set a = 1 - b + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2067,6 +2285,8 @@ Note	1265	Data truncated for column 'b' at row 4
 Note	1265	Data truncated for column 'c' at row 4
 insert into t1 values();
 update t1 set a = 1 + 2 + 3;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": { "$decimal": "6" } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2076,6 +2296,8 @@ id	a	b	c
 4	6	4	4
 5	6	NULL	NULL
 update t1 set a = a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$decimal": "0" }, "Min": { "$decimal": "-9999999999" }, "Max": { "$decimal": "9999999999" }, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2085,6 +2307,8 @@ id	a	b	c
 4	6	4	4
 5	6	NULL	NULL
 update t1 set a = a + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$decimal": "3" }, "Min": { "$decimal": "-9999999999" }, "Max": { "$decimal": "9999999999" }, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2094,6 +2318,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = 1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$decimal": "1" }, "Min": { "$decimal": "-9999999999" }, "Max": { "$decimal": "9999999999" }, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2103,6 +2329,8 @@ id	a	b	c
 4	10	4	4
 5	10	NULL	NULL
 update t1 set a = a - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$decimal": "-1" }, "Min": { "$decimal": "-9999999999" }, "Max": { "$decimal": "9999999999" }, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2112,6 +2340,8 @@ id	a	b	c
 4	9	4	4
 5	9	NULL	NULL
 update t1 set a = -1 + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$decimal": "-1" }, "Min": { "$decimal": "-9999999999" }, "Max": { "$decimal": "9999999999" }, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2121,6 +2351,8 @@ id	a	b	c
 4	8	4	4
 5	8	NULL	NULL
 update t1 set a = a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "a" }, "Min": { "$decimal": "-9999999999" }, "Max": { "$decimal": "9999999999" }, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2130,6 +2362,8 @@ id	a	b	c
 4	16	4	4
 5	16	NULL	NULL
 update t1 set a = b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": { "$field": "b" } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2139,6 +2373,8 @@ id	a	b	c
 4	4	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Min": { "$decimal": "-9999999999" }, "Max": { "$decimal": "9999999999" }, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2148,6 +2384,8 @@ id	a	b	c
 4	8	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": { "$field": "b" }, "Min": { "$decimal": "-9999999999" }, "Max": { "$decimal": "9999999999" }, "Default": null } } }, condition: {}, table: update_pushdown_sequoiadb.t1
 select * from t1 order by id;
 id	a	b	c
@@ -2157,6 +2395,8 @@ id	a	b	c
 4	12	4	4
 5	NULL	NULL	NULL
 update t1 set a = -a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2166,6 +2406,8 @@ id	a	b	c
 4	-12	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2175,6 +2417,8 @@ id	a	b	c
 4	-23	4	4
 5	NULL	NULL	NULL
 update t1 set a = -b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2184,6 +2428,8 @@ id	a	b	c
 4	-4	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + 1 + 2;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2193,6 +2439,8 @@ id	a	b	c
 4	7	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2202,6 +2450,8 @@ id	a	b	c
 4	21	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + c;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2211,6 +2461,8 @@ id	a	b	c
 4	8	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2220,6 +2472,8 @@ id	a	b	c
 4	13	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 + a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2229,6 +2483,8 @@ id	a	b	c
 4	18	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + b - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2238,6 +2494,8 @@ id	a	b	c
 4	21	4	4
 5	NULL	NULL	NULL
 update t1 set a = -1 + a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2247,6 +2505,8 @@ id	a	b	c
 4	24	4	4
 5	NULL	NULL	NULL
 update t1 set a = b + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2256,6 +2516,8 @@ id	a	b	c
 4	5	4	4
 5	NULL	NULL	NULL
 update t1 set a = b - 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2265,6 +2527,8 @@ id	a	b	c
 4	3	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2274,6 +2538,8 @@ id	a	b	c
 4	5	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2283,6 +2549,8 @@ id	a	b	c
 4	11	4	4
 5	NULL	NULL	NULL
 update t1 set a = a + a -1;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2292,6 +2560,8 @@ id	a	b	c
 4	21	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 + a + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2301,6 +2571,8 @@ id	a	b	c
 4	43	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2310,6 +2582,8 @@ id	a	b	c
 4	-42	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2319,6 +2593,8 @@ id	a	b	c
 4	-3	4	4
 5	NULL	NULL	NULL
 update t1 set a = a - b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2328,6 +2604,8 @@ id	a	b	c
 4	-7	4	4
 5	NULL	NULL	NULL
 update t1 set a = b - a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2337,6 +2615,8 @@ id	a	b	c
 4	11	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - a + b;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -2346,6 +2626,8 @@ id	a	b	c
 4	-6	4	4
 5	NULL	NULL	NULL
 update t1 set a = 1 - b + a;
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: update_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[update_pushdown_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c

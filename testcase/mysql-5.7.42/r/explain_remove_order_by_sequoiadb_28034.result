@@ -39,6 +39,15 @@ id	col1
 20	30
 30	30
 40	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 10 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 11 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 15 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 17 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 20 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 30 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
 [Note] SequoiaDB: Query message: condition[{ "id": { "$et": 40 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
 explain select t1.* from t1_range t1 join t1_range t2 on t1.id = t2.id where t1.id < 20 order by id desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -53,6 +62,12 @@ id	col1
 11	22
 10	20
 1	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$lt": 20 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 1 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 10 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 11 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 15 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
 [Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 17 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
 explain select t1.* from t1_range t1 join t1_range t2 on t1.id = t2.id where t1.id < 20 order by t1.col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -67,6 +82,12 @@ id	col1
 11	22
 15	25
 17	27
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$lt": 20 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 1 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 10 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 11 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 15 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
 [Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184198987054342, 25184206131753520 ] }, "id": { "$et": 17 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
 explain select t1.* from t1_range partition(p1) as t1 join t1_range partition(p1) as t2 on t1.id = t2.id where t2.id < 15 order by t1.id;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -78,6 +99,9 @@ select t1.* from t1_range partition(p1) as t1 join t1_range partition(p1) as t2 
 id	col1
 10	20
 11	22
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184206131753520 ] }, "id": { "$lt": 15 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
+[Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184206131753520 ] }, "id": { "$et": 10 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
 [Note] SequoiaDB: Query message: condition[{ "_phid_": { "$in": [ 25184206131753520 ] }, "id": { "$et": 11 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t1_range]
 explain select t1.* from t2_hash t1 join t2_hash t2 on t1.id = t2.id order by t1.id;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -99,6 +123,19 @@ id	col1
 10	10
 11	11
 12	12
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 3 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 4 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 5 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 6 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 7 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 8 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 9 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 10 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 11 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
 [Note] SequoiaDB: Query message: condition[{ "id": { "$et": 12 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
 explain select t1.* from t2_hash t1 join t2_hash t2 on t1.id = t2.id order by t1.id desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -120,6 +157,19 @@ id	col1
 3	3
 2	2
 1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 12 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 11 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 10 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 9 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 8 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 7 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 6 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 5 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 4 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 3 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
 [Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
 explain select t1.* from t2_hash t1 join t2_hash t2 on t1.id = t2.id order by t1.col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -141,6 +191,19 @@ id	col1
 10	10
 11	11
 12	12
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 3 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 4 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 5 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 6 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 7 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 8 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 9 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 10 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 11 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
 [Note] SequoiaDB: Query message: condition[{ "id": { "$et": 12 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
 explain select t1.* from t2_hash t1 join t2_hash t2 on t1.id = t2.id where t1.id > 5 and t1.id <9 order by t1.id;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -153,6 +216,10 @@ id	col1
 6	6
 7	7
 8	8
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 5 } }, { "id": { "$lt": 9 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 6 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 7 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
 [Note] SequoiaDB: Query message: condition[{ "id": { "$et": 8 } }], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "idx_id" }], limit[-1], offset[0], table[explain_remove_order_by_28034.t2_hash]
 drop table t1_range,t2_hash;
 set session sequoiadb_debug_log=off;

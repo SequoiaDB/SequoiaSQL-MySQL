@@ -41,147 +41,147 @@ insert into t2 select * from t1 order by col1 limit 70;
 #不带order by
 #数据类型覆盖int、varchar、char、decimal、float、double、datetime；
 explain select count(*) from t1 inner join t2 on t1.col1 = t2.col1;
-select count(*) from t1 inner join t2 on t1.col1 = t2.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col1 = t2.col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 inner join t2 on t1.col2 = t2.col2;
-select count(*) from t1 inner join t2 on t1.col2 = t2.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col2 = t2.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 inner join t2 on t1.col3 = t2.col3;
-select count(*) from t1 inner join t2 on t1.col3 = t2.col3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col3 = t2.col3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 inner join t2 on t1.col4 = t2.col4;
-select count(*) from t1 inner join t2 on t1.col4 = t2.col4;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col4 = t2.col4;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 inner join t2 on t1.col5 = t2.col5;
-select count(*) from t1 inner join t2 on t1.col5 = t2.col5;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col5 = t2.col5;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 inner join t2 on t1.col6 = t2.col6;
-select count(*) from t1 inner join t2 on t1.col6 = t2.col6;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col6 = t2.col6;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 inner join t2 on t1.col7 = t2.col7;
-select count(*) from t1 inner join t2 on t1.col7 = t2.col7;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col7 = t2.col7;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #带order by
 #数据类型覆盖int、varchar、char、decimal、float、double、datetime；
 explain select t1.* from t1 inner join t2 on t1.col1 = t2.col1 order by t1.col1 limit 10;
 --sorted_result
-select t1.* from t1 inner join t2 on t1.col1 = t2.col1 order by t1.col1 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col1 = t2.col1 order by t1.col1 limit 10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 inner join t2 on t1.col2 = t2.col2 order by t1.col2 limit 10;
 --sorted_result
-select t1.* from t1 inner join t2 on t1.col2 = t2.col2 order by t1.col2 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col2 = t2.col2 order by t1.col2 limit 10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 inner join t2 on t1.col3 = t2.col3 order by t2.col3 limit 10;
 --sorted_result
-select t1.* from t1 inner join t2 on t1.col3 = t2.col3 order by t2.col3 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col3 = t2.col3 order by t2.col3 limit 10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 inner join t2 on t1.col4 = t2.col4 order by t1.col4 limit 10;
 --sorted_result
-select t1.* from t1 inner join t2 on t1.col4 = t2.col4 order by t1.col4 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col4 = t2.col4 order by t1.col4 limit 10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 inner join t2 on t1.col5 = t2.col5 order by t1.col5 limit 10;
 --sorted_result
-select t1.* from t1 inner join t2 on t1.col5 = t2.col5 order by t1.col5 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col5 = t2.col5 order by t1.col5 limit 10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 inner join t2 on t1.col6 = t2.col6 order by t1.col6 limit 10;
 --sorted_result
-select t1.* from t1 inner join t2 on t1.col6 = t2.col6 order by t1.col6 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col6 = t2.col6 order by t1.col6 limit 10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 inner join t2 on t1.col6 = t2.col7 order by t1.col7 limit 10;
 --sorted_result
-select t1.* from t1 inner join t2 on t1.col6 = t2.col7 order by t1.col7 limit 10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col6 = t2.col7 order by t1.col7 limit 10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #关联算法BNL
 explain select t1.* from t1 ignore index(idx_col1,idx_col12) inner join t2 ignore index(idx_col1,idx_col12) on t1.col1 = t2.col1 order by t1.col1 limit 5;
 --sorted_result
-select t1.* from t1 ignore index(idx_col1,idx_col12) inner join t2 ignore index(idx_col1,idx_col12) on t1.col1 = t2.col1 order by t1.col1 limit 5;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 ignore index(idx_col1,idx_col12) inner join t2 ignore index(idx_col1,idx_col12) on t1.col1 = t2.col1 order by t1.col1 limit 5;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by + limit(limit + offset)
 #order by字段所在表为被驱动表
 explain select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 limit 2;
 --sorted_result
-select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 limit 2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col2 limit 2;
 --sorted_result
-select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col2 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col2 limit 2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 desc limit 2;
 --sorted_result
-select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 desc limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 desc limit 2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 limit 1,2;
 --sorted_result
-select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 limit 1,2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1,t1.col2 limit 1,2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by字段所在表为驱动表
 explain select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1;
 --sorted_result
-select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 limit 2;
 --sorted_result
-select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 limit 2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col2,t2.col1 limit 2;
 --sorted_result
-select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col2,t2.col1 limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col2,t2.col1 limit 2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 desc limit 2;
 --sorted_result
-select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 desc limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 desc limit 2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 limit 1,2;
 --sorted_result
-select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 limit 1,2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t2.* from t1 left join t2 on t1.col1 = t2.col1 order by t2.col1 limit 1,2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by字段为非索引字段
 explain select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col4 desc limit 2;
 --sorted_result
-select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col4 desc limit 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 left join t2 on t1.col1 = t2.col1 order by t1.col4 desc limit 2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #null值数据处理
 explain select count(*) from t1 inner join t2 on t1.col1 = t2.col1;
 --sorted_result
-select count(*) from t1 inner join t2 on t1.col1 = t2.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 inner join t2 on t1.col1 = t2.col1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 left join t2 on t1.col1 = t2.col1;
 --sorted_result
-select count(*) from t1 left join t2 on t1.col1 = t2.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 left join t2 on t1.col1 = t2.col1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 is null or t1.col2 is null;
 --sorted_result
-select t1.* from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 is null or t1.col2 is null;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 is null or t1.col2 is null;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #外表使用MRR
 explain select t1.* from t1 inner join t2 on t1.col1 = t2.col1 where t1.col1 > 10 and t1.col1 < 60;
-select t1.* from t1 inner join t2 on t1.col1 = t2.col1 where t1.col1 > 10 and t1.col1 < 60;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col1 = t2.col1 where t1.col1 > 10 and t1.col1 < 60;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select t1.* from t1 inner join t2 on t1.col1 = t2.col1 where t1.col2 > '2c' and t1.col2 < '4d' order by t1.col2;
 --sorted_result
-select t1.* from t1 inner join t2 on t1.col1 = t2.col1 where t1.col2 > '2c' and t1.col2 < '4d' order by t1.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select t1.* from t1 inner join t2 on t1.col1 = t2.col1 where t1.col2 > '2c' and t1.col2 < '4d' order by t1.col2;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #join字段使用表达式
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 +1;
 --sorted_result
-select * from t1 inner join t2 on t1.col1 = t2.col1 +1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 inner join t2 on t1.col1 = t2.col1 +1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 +1 order by t1.col1;
 --sorted_result
-select * from t1 inner join t2 on t1.col1 = t2.col1 +1 order by t1.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 inner join t2 on t1.col1 = t2.col1 +1 order by t1.col1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 +1 order by t2.col1;
 --sorted_result
-select * from t1 inner join t2 on t1.col1 = t2.col1 +1 order by t2.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 inner join t2 on t1.col1 = t2.col1 +1 order by t2.col1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 
 set session optimizer_switch=default;

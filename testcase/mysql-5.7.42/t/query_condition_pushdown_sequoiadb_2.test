@@ -25,100 +25,109 @@ set session sql_mode = "STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_C
 # seqDB-29766:查询条件为condA and condB，
 # 其中condA为不确定性函数，condB覆盖普通条件和可确定性函数
 
+--source include/write_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where b>rand() and c=current_timestamp();
---replace_regex /^([^s]*)\[Note\]/[Note]/
---exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/\<condition.*, selector/condition\[{""}\], selector/'
+--replace_regex /^([^s]*)\[Note\]/[Note]/  /"\$timestamp": .*}/"$timestamp": x/
+--exec tac $MYSQLTEST_VARDIR/log/mysqld.1.err |grep -m1 -B 50 'Testcase: Operation log begin' |tac |grep '\[Note\]'
+#--replace_regex /^([^s]*)\[Note\]/[Note]/
+#--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/\<condition.*, selector/condition\[{""}\], selector/'
 explain select * from t1 where b>rand() and c=current_timestamp();
 
+--source include/write_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where b=uuid() and c=now();
---replace_regex /^([^s]*)\[Note\]/[Note]/
---exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/\<condition.*, selector/condition\[{""}\], selector/'
+--replace_regex /^([^s]*)\[Note\]/[Note]/  /"\$timestamp": .*}/"$timestamp": x/
+--exec tac $MYSQLTEST_VARDIR/log/mysqld.1.err |grep -m1 -B 50 'Testcase: Operation log begin' |tac |grep '\[Note\]'
+#--replace_regex /^([^s]*)\[Note\]/[Note]/
+#--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/\<condition.*, selector/condition\[{""}\], selector/'
 explain select * from t1 where b=uuid() and c=now();
 
 --sorted_result
-select * from t1 where a=sysdate() and a>4;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=sysdate() and a>4;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where a=sysdate() and a>4;
 
 --sorted_result
-select * from t1 where a=f1() and a>4;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=f1() and a>4;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where a=f1() and a>4;
 
 # seqDB-29767:查询条件为condA or condB,
 # 其中condA和B都为不确定性函数
 --sorted_result
-select * from t1 where b>rand() or b=uuid();
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where b>rand() or b=uuid();
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where b>rand() or b=uuid();
 
 --sorted_result
-select * from t1 where a=sysdate() or a=f1();
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=sysdate() or a=f1();
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where a=sysdate() or a=f1();
 
 # seqDB-29768:覆盖查询条件为condA and condB,
 # 其中condA和condB都为可确定性函数
+--source include/write_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from t1 where c=current_timestamp() and c=now();
---replace_regex /^([^s]*)\[Note\]/[Note]/
---exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/\<condition.*, selector/condition\[{""}\], selector/'
+--replace_regex /^([^s]*)\[Note\]/[Note]/  /"\$timestamp": .*}/"$timestamp": x/
+--exec tac $MYSQLTEST_VARDIR/log/mysqld.1.err |grep -m1 -B 50 'Testcase: Operation log begin' |tac |grep '\[Note\]'
+#--replace_regex /^([^s]*)\[Note\]/[Note]/
+#--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/\<condition.*, selector/condition\[{""}\], selector/'
 explain select * from t1 where c=current_timestamp() and c=now();
 
 # seqDB-29769:查询条件为不确定性函数与算子的组合
 # 单个算子
 --sorted_result
-select count(*) from t1 where b>rand();
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 where b>rand();
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 where b>rand();
 
 --sorted_result
-select * from t1 where b=uuid() limit 4;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where b=uuid() limit 4;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where b=uuid() limit 4;
 
 --sorted_result
-select * from t1 where a=sysdate() order by a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=sysdate() order by a;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where a=sysdate() order by a;
 
 --sorted_result
-select * from t1 where a=f1() group by a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=f1() group by a;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where a=f1() group by a;
 
 --sorted_result
-select * from t1 where a=f1() group by a having a>1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a=f1() group by a having a>1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where a=f1() group by a having a>1;
 
 # 多个算子
 --sorted_result
-select count(*) from t1 where b>rand() group by a order by a limit 4;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select count(*) from t1 where b>rand() group by a order by a limit 4;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select count(*) from t1 where b>rand() group by a order by a limit 4;
 
 # seqDB-29770:多查询块单表，多查询块中带有不确定性函数和单个算子的组合场景
 --sorted_result
-select * from (select count(*) from t1 where a>1 and b>rand()) as t;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from (select count(*) from t1 where a>1 and b>rand()) as t;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from (select count(*) from t1 where a>1 and b>rand()) as t;
 
 --sorted_result
-select * from (select * from t1 where a>1 and b=uuid() order by a) as t;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from (select * from t1 where a>1 and b=uuid() order by a) as t;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from (select * from t1 where a>1 and b=uuid() order by a) as t;
 
 --sorted_result
-select * from (select * from t1 where a>1 and a=sysdate() group by a) as t;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from (select * from t1 where a>1 and a=sysdate() group by a) as t;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from (select * from t1 where a>1 and a=sysdate() group by a) as t;
 
 --sorted_result
-select * from (select * from t1 where a>1 and a=f1() limit 4) as t;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from (select * from t1 where a>1 and a=f1() limit 4) as t;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from (select * from t1 where a>1 and a=f1() limit 4) as t;
 
 --enable_warnings

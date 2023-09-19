@@ -64,14 +64,14 @@ select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR20131
 --disable_warnings
 explain select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 1 ;
 --enable_warnings
-select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 1 ;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 1 ;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --disable_warnings
 explain select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 2 ;
 --enable_warnings
-select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 2 ;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from index_merge_sequoiadb_29908 where del_flag=0 AND (uuid = 'CUR2013101100000005' OR customer_code = 'CUR2013101100000005') limit 2 ;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 drop table index_merge_sequoiadb_29908;
 

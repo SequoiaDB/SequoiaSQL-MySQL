@@ -80,6 +80,9 @@ col1	col2	col3	col4
 2	defg	abd	abd
 3	abd	def	defg
 4	abc	abcdef	xyz
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27693.t2]
+[Note] SequoiaDB: Query message: Batched keys num[5], table[explain_direct_sort_27693.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 3, 0, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27693.t1]
 explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -95,6 +98,9 @@ col1	col2	col3	col4
 0	abde	xyz	def
 1	def	defg	abcdef
 2	defg	abd	abd
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27693.t2]
+[Note] SequoiaDB: Query message: Batched keys num[5], table[explain_direct_sort_27693.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 1, 0, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27693.t1]
 explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2) as tt where t1.col1 = tt.col1 order by t1.col2 desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -110,6 +116,9 @@ col1	col2	col3	col4
 0	abde	xyz	def
 3	abd	def	defg
 4	abc	abcdef	xyz
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27693.t2]
+[Note] SequoiaDB: Query message: Batched keys num[5], table[explain_direct_sort_27693.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 3, 0, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27693.t1]
 explain select t1.* from t1,(select distinct * from t2 where t2.col1 < 5 order by t2.col2 desc) as tt where t1.col1 = tt.col1 order by t1.col3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -125,6 +134,9 @@ col1	col2	col3	col4
 3	abd	def	defg
 1	def	defg	abcdef
 0	abde	xyz	def
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27693.t2]
+[Note] SequoiaDB: Query message: Batched keys num[5], table[explain_direct_sort_27693.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 1, 0, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[explain_direct_sort_27693.t1]
 drop table t1,t2;
 set session optimizer_switch=default;

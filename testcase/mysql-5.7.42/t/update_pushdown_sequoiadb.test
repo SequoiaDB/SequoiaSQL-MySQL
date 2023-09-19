@@ -18,22 +18,22 @@ update t1 set a = a;
 select * from t1 order by id;
 update t1 set a = a + 1 + 2;
 select * from t1 order by id;
-update t1 set a = 1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = a - 1;
 select * from t1 order by id;
-update t1 set a = -1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = b + a;
 select * from t1 order by id;
@@ -43,26 +43,26 @@ update t1 set a = -a;
 select * from t1 order by id;
 update t1 set a = a + a + 1;
 select * from t1 order by id;
-update t1 set a = -b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + c;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = -1 + a + b;
 select * from t1 order by id;
@@ -82,13 +82,13 @@ update t1 set a = 1 - a;
 select * from t1 order by id;
 update t1 set a = 1 - b;
 select * from t1 order by id;
-update t1 set a = a - b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a - b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = b - a;
 select * from t1 order by id;
-update t1 set a = 1 - a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = 1 - b + a;
 select * from t1 order by id;
@@ -116,17 +116,17 @@ create table t1(id int auto_increment key, a tinyint, b tinyint, c tinyint);
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4);
 insert into t1 values();
 #pushdown sequoiadb
-update t1 set a = 1 + 2 + 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + 2 + 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = a - 1;
 select * from t1 order by id;
@@ -142,23 +142,23 @@ update t1 set a = b + a;
 select * from t1 order by id;
 
 #can not pushdown sequoiadb
-update t1 set a = -a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + c;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = a + b + 1;
 select * from t1 order by id;
@@ -226,20 +226,20 @@ update t1 set a = 1 + a;
 select * from t1 order by id;
 update t1 set a = a - 1;
 select * from t1 order by id;
-update t1 set a = -1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 
 #can not pushdown sequoiadb
@@ -255,43 +255,43 @@ update t1 set a = a + a + a;
 select * from t1 order by id;
 update t1 set a = b + c;
 select * from t1 order by id;
-update t1 set a = a + b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = 1 + a + b;
 select * from t1 order by id;
-update t1 set a = a + b - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = -1 + a + b;
 select * from t1 order by id;
-update t1 set a = b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = 1 + b;
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = a + a -1;
 select * from t1 order by id;
 update t1 set a = 1 + a + a;
 select * from t1 order by id;
-update t1 set a = 1 - a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = 1 - b;
 select * from t1 order by id;
-update t1 set a = a - b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a - b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = b - a;
 select * from t1 order by id;
-update t1 set a = 1 - a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = 1 - b + a;
 select * from t1 order by id;
@@ -319,17 +319,17 @@ create table t1(id int auto_increment key, a mediumint, b mediumint, c mediumint
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4);
 insert into t1 values();
 #pushdown sequoiadb
-update t1 set a = 1 + 2 + 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + 2 + 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = a - 1;
 select * from t1 order by id;
@@ -345,20 +345,20 @@ update t1 set a = b + a;
 select * from t1 order by id;
 
 #can not pushdown sequoiadb
-update t1 set a = -a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = b + c;
 select * from t1 order by id;
@@ -418,103 +418,103 @@ create table t1(id int auto_increment key, a bigint, b bigint, c bigint);
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4);
 insert into t1 values();
 #pushdown sequoiadb
-update t1 set a = 1 + 2 + 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + 2 + 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 
 #can not pushdown sequoiadb
-update t1 set a = -a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + c;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -1 + a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -1 + a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a -1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a - b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a - b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b - a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b - a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - b + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - b + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 
 #out of range
@@ -541,20 +541,20 @@ create table t1(id int auto_increment key, a float, b float, c float);
 insert into t1 values(1.25,1.25,1.25,1.25),(2.33,2.333,2.3333,2.3333),(3.25,3.25,3.25,3.25),(4.3333,4.3333,4.3333,4.3333);
 insert into t1 values();
 #pushdown sequoiadb
-update t1 set a = 1 + 2 + 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + 2 + 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = -1 + a;
 select * from t1 order by id;
@@ -568,29 +568,29 @@ update t1 set a = b + a;
 select * from t1 order by id;
 
 #can not pushdown sequoiadb
-update t1 set a = -a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + c;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 update t1 set a = a + b - 1;
 select * from t1 order by id;
@@ -655,20 +655,20 @@ update t1 set a = 1 + a;
 select * from t1 order by id;
 update t1 set a = a - 1;
 select * from t1 order by id;
-update t1 set a = -1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 
 #can not pushdown sequoiadb
@@ -690,44 +690,44 @@ update t1 set a = 1 + a + b;
 select * from t1 order by id;
 update t1 set a = a + b - 1;
 select * from t1 order by id;
-update t1 set a = -1 + a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -1 + a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a -1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a - b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a - b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b - a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b - a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - b + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - b + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 drop table t1;
 
@@ -754,103 +754,103 @@ create table t1(id int auto_increment key, a decimal, b decimal, c decimal);
 insert into t1 values(1.25,1.25,1.25,1.25),(2.33,2.333,2.3333,2.3333),(3.25,3.25,3.25,3.25),(4.3333,4.3333,4.3333,4.3333);
 insert into t1 values();
 #pushdown sequoiadb
-update t1 set a = 1 + 2 + 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + 2 + 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -1 + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -1 + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 
 #can not pushdown sequoiadb
-update t1 set a = -a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1 + 2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1 + 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + c;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + b - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + b - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = -1 + a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = -1 + a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b - 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b - 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a + 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a + 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a + a -1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a + a -1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 + a + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 + a + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = a - b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = a - b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = b - a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = b - a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - a + b;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - a + b;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
-update t1 set a = 1 - b + a;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = update t1 set a = 1 - b + a;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 select * from t1 order by id;
 drop table t1;
 

@@ -1,7 +1,12 @@
 # seqDB-30363 、seqDB-30364 、seqDB-30365 、seqDB-30366 、seqDB-30367 、seqDB-30368 、seqDB-30369 、seqDB-30386
 --source include/have_sequoiadb.inc
 
-CREATE DATABASE const_cond_sequoiadb;
+--disable_warnings
+drop database if exists const_cond_sequoiadb;
+--enable_warnings
+create database const_cond_sequoiadb;
+drop database const_cond_sequoiadb;
+create database const_cond_sequoiadb;
 use const_cond_sequoiadb;
 
 CREATE TABLE const_table(pk int primary key, c1 int, c2 int, c3 TEXT);

@@ -20,6 +20,9 @@ a	b	a	b
 2	mariadb	2	mariadb
 3	sequoiadb	3	sequoiadb
 3	sequoiadb	3	sequoiadb
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[order_by_bka_sequoiadb_29799.t1]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[order_by_bka_sequoiadb_29799.t2]
 [Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[order_by_bka_sequoiadb_29799.t2]
 explain select * from t1 join t2 on t1.a=t2.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -34,6 +37,9 @@ a	b	a	b
 2	mariadb	2	mariadb
 3	sequoiadb	3	sequoiadb
 3	sequoiadb	3	sequoiadb
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[order_by_bka_sequoiadb_29799.t1]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[order_by_bka_sequoiadb_29799.t2]
 [Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[order_by_bka_sequoiadb_29799.t2]
 explain select * from t1 join t2 on t1.a=t2.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra

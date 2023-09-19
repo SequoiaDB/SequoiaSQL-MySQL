@@ -52,27 +52,27 @@ create view v3 as select * from t1 where t1.col1 > 3 order by t1.col3 desc;
 create view v4 as select * from t1 group by col1;
 
 explain select * from v1;
-select * from v1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from v1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from v2;
-select * from v2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from v2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from v3;
-select * from v3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from v3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from v4 where col1 > 3;
-select * from v4 where col1 > 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from v4 where col1 > 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #with as语句查询（mysql不支持with）
 #不带order by条件
 #explain with tmp as (select * from t1 where col2 in('abc','abd','def')) select * from tmp where tmp.col1 > 1;
 #with tmp as (select * from t1 where col2 in('abc','abd','def')) select * from tmp where tmp.col1 > 1;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #带order by条件
 #explain with tmp as (select * from t1 where col2 in('abc','abd','def')) select * from tmp where tmp.col1 > 1 order by col2;
 #with tmp as (select * from t1 where col2 in('abc','abd','def')) select * from tmp where tmp.col1 > 1 order by col2;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1;
 
 set session sequoiadb_debug_log=off;

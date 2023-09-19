@@ -32,12 +32,12 @@ INSERT INTO `t1` VALUES ('2003-11-18',NULL,1,3),('2005-01-14','n',2,NULL),('2005
 
 analyze table t1;
 
-SELECT `col_int` AS field1 FROM `t1` WHERE col_date != '2007-11-27' AND `col_int` IS NULL AND col_varchar_16 = 'c' ORDER BY field1 DESC;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT `col_int` AS field1 FROM `t1` WHERE col_date != '2007-11-27' AND `col_int` IS NULL AND col_varchar_16 = 'c' ORDER BY field1 DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain SELECT `col_int` AS field1 FROM `t1` WHERE col_date != '2007-11-27' AND `col_int` IS NULL AND col_varchar_16 = 'c' ORDER BY field1 DESC;
 
-SELECT `pk` AS field1 FROM `t1` WHERE `col_int` IS NULL AND col_date != '1999-12-05' AND col_varchar_16 = 'r';
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT `pk` AS field1 FROM `t1` WHERE `col_int` IS NULL AND col_date != '1999-12-05' AND col_varchar_16 = 'r';
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain  SELECT `pk` AS field1 FROM `t1` WHERE `col_int` IS NULL AND col_date != '1999-12-05' AND col_varchar_16 = 'r';
 
 drop database mutli_key_range_sequoiadb;

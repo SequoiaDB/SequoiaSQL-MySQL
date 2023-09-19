@@ -47,28 +47,28 @@ SELECT * FROM t1 WHERE pk = 1 LIMIT 1 OFFSET 1;
 ALTER TABLE t1 engine = SequoiaDB;
 
 EXPLAIN SELECT count(col_varchar_16_key) AS field1 FROM `t1` WHERE pk = 7 LIMIT 8 OFFSET 9;
-SELECT count(col_varchar_16_key) AS field1 FROM `t1` WHERE pk = 7 LIMIT 8 OFFSET 9;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT count(col_varchar_16_key) AS field1 FROM `t1` WHERE pk = 7 LIMIT 8 OFFSET 9;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT ALL SQL_BUFFER_RESULT MIN( pk ) AS field1 FROM `t1` WHERE pk = 8 LIMIT 1 OFFSET 3;
-SELECT ALL SQL_BUFFER_RESULT MIN( pk ) AS field1 FROM `t1` WHERE pk = 8 LIMIT 1 OFFSET 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT ALL SQL_BUFFER_RESULT MIN( pk ) AS field1 FROM `t1` WHERE pk = 8 LIMIT 1 OFFSET 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT ALL SQL_SMALL_RESULT SUM( col_int ) AS field1 FROM `t1` WHERE pk = 3 LIMIT 8 OFFSET 3;
-SELECT ALL SQL_SMALL_RESULT SUM( col_int ) AS field1 FROM `t1` WHERE pk = 3 LIMIT 8 OFFSET 3;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT ALL SQL_SMALL_RESULT SUM( col_int ) AS field1 FROM `t1` WHERE pk = 3 LIMIT 8 OFFSET 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT ALL MAX( col_int ) AS field1 FROM `t1` WHERE pk = 7 LIMIT 3 OFFSET 6;
-SELECT ALL MAX( col_int ) AS field1 FROM `t1` WHERE pk = 7 LIMIT 3 OFFSET 6;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT ALL MAX( col_int ) AS field1 FROM `t1` WHERE pk = 7 LIMIT 3 OFFSET 6;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT ALL COUNT( distinct col_varchar_16 ) AS field1 FROM `t1` WHERE pk = 5 LIMIT 2 OFFSET 5;
-SELECT ALL COUNT( distinct col_varchar_16 ) AS field1 FROM `t1` WHERE pk = 5 LIMIT 2 OFFSET 5;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT ALL COUNT( distinct col_varchar_16 ) AS field1 FROM `t1` WHERE pk = 5 LIMIT 2 OFFSET 5;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 EXPLAIN SELECT * FROM t1 WHERE pk = 1 LIMIT 1 OFFSET 1;
-SELECT * FROM t1 WHERE pk = 1 LIMIT 1 OFFSET 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE pk = 1 LIMIT 1 OFFSET 1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --enable_warnings
 DROP DATABASE limit_offset_window_aggr_sequoiadb;

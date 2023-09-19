@@ -14,8 +14,8 @@ CREATE TABLE t1 (
 
 set @@sequoiadb_debug_log=on;
 INSERT INTO t1 VALUES (1,2,13), (2,2,17), (2,2,20), (2,2,25);
-SELECT a,b,c FROM t1 force index(a,b) WHERE (b = 2 or a = 2) order by c;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT a,b,c FROM t1 force index(a,b) WHERE (b = 2 or a = 2) order by c;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 EXPLAIN SELECT a,b,c FROM t1 force index(a,b) WHERE (b = 2 or a = 2) order by c;
 
 DROP TABLE t1;

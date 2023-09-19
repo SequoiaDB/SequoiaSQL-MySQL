@@ -1,4 +1,7 @@
-CREATE DATABASE const_cond_sequoiadb;
+drop database if exists const_cond_sequoiadb;
+create database const_cond_sequoiadb;
+drop database const_cond_sequoiadb;
+create database const_cond_sequoiadb;
 use const_cond_sequoiadb;
 CREATE TABLE const_table(pk int primary key, c1 int, c2 int, c3 TEXT);
 CREATE TABLE normal_table(c1 int, c2 int, c3 TEXT);
@@ -38,6 +41,10 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS NULL OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS NOT NULL OR n.c1 < 1);
@@ -51,6 +58,10 @@ WHERE c.pk = 1 AND (c.c1 IS NOT NULL OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 = n.c2 OR n.c1 < 1);
@@ -63,6 +74,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 = n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$et": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 = 1 OR n.c1 < 1);
@@ -76,6 +89,10 @@ WHERE c.pk = 1 AND (c.c1 = 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <=> n.c2 OR n.c1 < 1);
@@ -88,6 +105,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <=> n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$et": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <=> 1 OR n.c1 < 1);
@@ -101,6 +120,10 @@ WHERE c.pk = 1 AND (c.c1 <=> 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 != n.c2 OR n.c1 < 1);
@@ -113,6 +136,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 != n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$ne": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 != 1 OR n.c1 < 1);
@@ -124,6 +149,10 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 != 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 < n.c2 OR n.c1 < 1);
@@ -136,6 +165,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 < n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$gt": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 < 1 OR n.c1 < 1);
@@ -147,6 +178,10 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 < 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <= n.c2 OR n.c1 < 1);
@@ -160,6 +195,8 @@ WHERE c.pk = 1 AND (c.c1 <= n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$gte": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <= 1 OR n.c1 < 1);
@@ -173,6 +210,10 @@ WHERE c.pk = 1 AND (c.c1 <= 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 > n.c2 OR n.c1 < 1);
@@ -184,6 +225,8 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 > n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$lt": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 > 1 OR n.c1 < 1);
@@ -195,6 +238,10 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 > 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 >= n.c2 OR n.c1 < 1);
@@ -207,6 +254,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 >= n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$lte": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 >= 1 OR n.c1 < 1);
@@ -220,6 +269,10 @@ WHERE c.pk = 1 AND (c.c1 >= 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 BETWEEN 1 AND 3 OR n.c1 < 1);
@@ -233,6 +286,10 @@ WHERE c.pk = 1 AND (c.c1 BETWEEN 1 AND 3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 BETWEEN c.c1 AND 3 OR n.c1 < 1);
@@ -246,6 +303,8 @@ WHERE c.pk = 1 AND (n.c2 BETWEEN c.c1 AND 3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "c2": { "$gte": 1 } }, { "c2": { "$lte": 3 } } ] }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 BETWEEN n.c2 AND 3 OR n.c1 < 1);
@@ -258,6 +317,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 BETWEEN n.c2 AND 3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IN (1, 2, 3) OR n.c1 < 1);
@@ -271,6 +334,10 @@ WHERE c.pk = 1 AND (c.c1 IN (1, 2, 3) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 IN (c.c1, 2, 3) OR n.c1 < 1);
@@ -284,6 +351,8 @@ WHERE c.pk = 1 AND (n.c2 IN (c.c1, 2, 3) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$in": [ 1, 2, 3 ] } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IN (n.c2, 2, 3) OR n.c1 < 1);
@@ -296,6 +365,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IN (n.c2, 2, 3) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c3 LIKE '1%' OR n.c1 < 1);
@@ -309,6 +382,10 @@ WHERE c.pk = 1 AND (c.c3 LIKE '1%' OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c3 LIKE c.c3 OR n.c1 < 1);
@@ -321,6 +398,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c3 LIKE c.c3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c3 LIKE n.c3 OR n.c1 < 1);
@@ -333,6 +414,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c3 LIKE n.c3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND 
@@ -351,6 +436,10 @@ WHERE c.pk = 1 AND
 n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND 
@@ -369,6 +458,10 @@ WHERE c.pk = 1 AND
 n.c1 < 1) XOR n.c3 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (NOT (c.c3 <=> '1') OR n.c1 < 1);
@@ -380,6 +473,10 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (NOT (c.c3 <=> '1') OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 = MOD(c.c2, 10) OR n.c1 < 1);
@@ -392,6 +489,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 = MOD(c.c2, 10) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$et": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c2 = MOD(n.c2, 10) OR n.c1 < 1);
@@ -404,6 +503,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c2 = MOD(n.c2, 10) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 >= (c.c3 <=> '1') OR n.c1 < 1);
@@ -417,6 +520,9 @@ WHERE c.pk = 1 AND (n.c2 >= (c.c3 <=> '1') OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$gte": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
@@ -430,6 +536,10 @@ WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS NOT TRUE OR n.c1 < 1);
@@ -441,6 +551,10 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS NOT TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c LEFT JOIN normal_table AS n
 ON c.c1 = n.c1
@@ -455,6 +569,9 @@ ON c.c1 = n.c1
 WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c LEFT JOIN normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c RIGHT JOIN normal_table AS n
 ON c.c1 = n.c1
@@ -469,6 +586,8 @@ ON c.c1 = n.c1
 WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "c1": { "$et": 1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c INNER JOIN normal_table AS n
 ON c.c1 = n.c1
@@ -483,6 +602,8 @@ ON c.c1 = n.c1
 WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "c1": { "$et": 1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM sys_user a LEFT JOIN sys_office o 
 ON o.id = a.office_id 
@@ -497,6 +618,9 @@ WHERE a.del_flag = '0' AND o.id = '13189' AND ( o.id = '1' OR o.parent_ids LIKE 
 ORDER BY o.CODE ,a.NO;
 id	company_id	office_id	login_name	password	no	del_flag	id	parent_ids	code	del_flag
 13189	12	13189	aaa	bbb	123	0	13189	0,1,abc	abc	0
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 13189 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.sys_office]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[sys_user], sql=[SELECT * FROM sys_user a LEFT JOIN sys_office o 
 [Note] SequoiaDB: Query message: condition[{ "del_flag": { "$et": "0" } }], selector[{}], order_by[{ "del_flag": 1 }], hint[{ "": "del_flag" }], limit[-1], offset[0], table[const_cond_sequoiadb.sys_user]
 EXPLAIN SELECT * FROM sys_user a LEFT JOIN sys_office o 
 ON o.id = a.office_id 
@@ -511,6 +635,9 @@ WHERE a.del_flag = '0' AND o.id = '13189' AND ( o.id = '1' OR o.parent_ids LIKE 
 ORDER BY o.CODE ,a.NO;
 id	company_id	office_id	login_name	password	no	del_flag	id	parent_ids	code	del_flag
 13189	12	13189	aaa	bbb	123	0	13189	0,1,abc	abc	0
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 13189 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.sys_office]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[sys_user], sql=[SELECT * FROM sys_user a LEFT JOIN sys_office o 
 [Note] SequoiaDB: Query message: condition[{ "del_flag": { "$et": "0" } }], selector[{}], order_by[{ "del_flag": 1 }], hint[{ "": "del_flag" }], limit[-1], offset[0], table[const_cond_sequoiadb.sys_user]
 set session sequoiadb_support_cond_const_bool = ON;
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
@@ -523,6 +650,8 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS NULL OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 0 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS NOT NULL OR n.c1 < 1);
@@ -536,6 +665,8 @@ WHERE c.pk = 1 AND (c.c1 IS NOT NULL OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 = n.c2 OR n.c1 < 1);
@@ -548,6 +679,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 = n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$et": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 = 1 OR n.c1 < 1);
@@ -561,6 +694,10 @@ WHERE c.pk = 1 AND (c.c1 = 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <=> n.c2 OR n.c1 < 1);
@@ -573,6 +710,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <=> n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$et": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <=> 1 OR n.c1 < 1);
@@ -586,6 +725,8 @@ WHERE c.pk = 1 AND (c.c1 <=> 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 != n.c2 OR n.c1 < 1);
@@ -598,6 +739,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 != n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$ne": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 != 1 OR n.c1 < 1);
@@ -609,6 +752,8 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 != 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 0 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 < n.c2 OR n.c1 < 1);
@@ -621,6 +766,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 < n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$gt": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 < 1 OR n.c1 < 1);
@@ -632,6 +779,8 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 < 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 0 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <= n.c2 OR n.c1 < 1);
@@ -645,6 +794,8 @@ WHERE c.pk = 1 AND (c.c1 <= n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$gte": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 <= 1 OR n.c1 < 1);
@@ -658,6 +809,8 @@ WHERE c.pk = 1 AND (c.c1 <= 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 > n.c2 OR n.c1 < 1);
@@ -669,6 +822,8 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 > n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$lt": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 > 1 OR n.c1 < 1);
@@ -680,6 +835,8 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 > 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 0 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 >= n.c2 OR n.c1 < 1);
@@ -692,6 +849,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 >= n.c2 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$lte": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 >= 1 OR n.c1 < 1);
@@ -705,6 +864,8 @@ WHERE c.pk = 1 AND (c.c1 >= 1 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 BETWEEN 1 AND 3 OR n.c1 < 1);
@@ -718,6 +879,8 @@ WHERE c.pk = 1 AND (c.c1 BETWEEN 1 AND 3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 BETWEEN c.c1 AND 3 OR n.c1 < 1);
@@ -731,6 +894,8 @@ WHERE c.pk = 1 AND (n.c2 BETWEEN c.c1 AND 3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "c2": { "$gte": 1 } }, { "c2": { "$lte": 3 } } ] }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 BETWEEN n.c2 AND 3 OR n.c1 < 1);
@@ -743,6 +908,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 BETWEEN n.c2 AND 3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IN (1, 2, 3) OR n.c1 < 1);
@@ -756,6 +925,8 @@ WHERE c.pk = 1 AND (c.c1 IN (1, 2, 3) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 IN (c.c1, 2, 3) OR n.c1 < 1);
@@ -769,6 +940,8 @@ WHERE c.pk = 1 AND (n.c2 IN (c.c1, 2, 3) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$in": [ 1, 2, 3 ] } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IN (n.c2, 2, 3) OR n.c1 < 1);
@@ -781,6 +954,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IN (n.c2, 2, 3) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c3 LIKE '1%' OR n.c1 < 1);
@@ -794,6 +971,8 @@ WHERE c.pk = 1 AND (c.c3 LIKE '1%' OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c3 LIKE c.c3 OR n.c1 < 1);
@@ -806,6 +985,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c3 LIKE c.c3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c3 LIKE n.c3 OR n.c1 < 1);
@@ -818,6 +1001,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c3 LIKE n.c3 OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND 
@@ -836,6 +1023,8 @@ WHERE c.pk = 1 AND
 n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "_id": { "$exists": 1 } }, { "c2": { "$lt": 2 } } ] }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND 
@@ -854,6 +1043,10 @@ WHERE c.pk = 1 AND
 n.c1 < 1) XOR n.c3 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (NOT (c.c3 <=> '1') OR n.c1 < 1);
@@ -865,6 +1058,8 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (NOT (c.c3 <=> '1') OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "_id": { "$exists": 0 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 = MOD(c.c2, 10) OR n.c1 < 1);
@@ -877,6 +1072,8 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 = MOD(c.c2, 10) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$et": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c2 = MOD(n.c2, 10) OR n.c1 < 1);
@@ -889,6 +1086,10 @@ SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c2 = MOD(n.c2, 10) OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (n.c2 >= (c.c3 <=> '1') OR n.c1 < 1);
@@ -902,6 +1103,8 @@ WHERE c.pk = 1 AND (n.c2 >= (c.c3 <=> '1') OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "c2": { "$gte": 1 } }, { "c1": { "$lt": 1 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
@@ -915,6 +1118,10 @@ WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
 1	1	1	1	2	2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS NOT TRUE OR n.c1 < 1);
@@ -926,6 +1133,10 @@ Note	1003	/* select#1 */ select '1' AS `pk`,'1' AS `c1`,'1' AS `c2`,'1' AS `c3`,
 SELECT * FROM const_table AS c, normal_table AS n
 WHERE c.pk = 1 AND (c.c1 IS NOT TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c, normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c LEFT JOIN normal_table AS n
 ON c.c1 = n.c1
@@ -940,6 +1151,9 @@ ON c.c1 = n.c1
 WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[normal_table], sql=[SELECT * FROM const_table AS c LEFT JOIN normal_table AS n
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c RIGHT JOIN normal_table AS n
 ON c.c1 = n.c1
@@ -954,6 +1168,8 @@ ON c.c1 = n.c1
 WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "c1": { "$et": 1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM const_table AS c INNER JOIN normal_table AS n
 ON c.c1 = n.c1
@@ -968,6 +1184,8 @@ ON c.c1 = n.c1
 WHERE c.pk = 1 AND (c.c1 IS TRUE OR n.c1 < 1);
 pk	c1	c2	c3	c1	c2	c3
 1	1	1	1	1	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.const_table]
 [Note] SequoiaDB: Query message: condition[{ "c1": { "$et": 1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[const_cond_sequoiadb.normal_table]
 EXPLAIN SELECT * FROM sys_user a LEFT JOIN sys_office o 
 ON o.id = a.office_id 
@@ -982,6 +1200,9 @@ WHERE a.del_flag = '0' AND o.id = '13189' AND ( o.id = '1' OR o.parent_ids LIKE 
 ORDER BY o.CODE ,a.NO;
 id	company_id	office_id	login_name	password	no	del_flag	id	parent_ids	code	del_flag
 13189	12	13189	aaa	bbb	123	0	13189	0,1,abc	abc	0
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 13189 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.sys_office]
+[Note] SequoiaDB: Condition can't be pushed down. db=[const_cond_sequoiadb], table[sys_user], sql=[SELECT * FROM sys_user a LEFT JOIN sys_office o 
 [Note] SequoiaDB: Query message: condition[{ "del_flag": { "$et": "0" } }], selector[{}], order_by[{ "del_flag": 1 }], hint[{ "": "del_flag" }], limit[-1], offset[0], table[const_cond_sequoiadb.sys_user]
 EXPLAIN SELECT * FROM sys_user a LEFT JOIN sys_office o 
 ON o.id = a.office_id 
@@ -996,6 +1217,8 @@ WHERE a.del_flag = '0' AND o.id = '13189' AND ( o.id = '1' OR o.parent_ids LIKE 
 ORDER BY o.CODE ,a.NO;
 id	company_id	office_id	login_name	password	no	del_flag	id	parent_ids	code	del_flag
 13189	12	13189	aaa	bbb	123	0	13189	0,1,abc	abc	0
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 13189 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[const_cond_sequoiadb.sys_office]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "_id": { "$exists": 1 } }, { "id": { "$et": 12066 } } ] }, { "del_flag": { "$et": "0" } } ] }], selector[{}], order_by[{ "del_flag": 1 }], hint[{ "": "del_flag" }], limit[-1], offset[0], table[const_cond_sequoiadb.sys_user]
 set session sequoiadb_debug_log = default;
 set session sequoiadb_support_cond_const_bool = default;

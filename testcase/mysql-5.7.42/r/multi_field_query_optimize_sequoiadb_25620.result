@@ -20,6 +20,9 @@ a	b	a	b
 1	1	1	1
 2	2	2	2
 3	3	3	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$isnull": 0 } }, { "b": { "$isnull": 0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[multi_field_query_optimize_25620.t1]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[multi_field_query_optimize_25620.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": true, "PrefixNum": 2, "IndexValue": [ { "1": 1, "2": 1 }, { "1": 2, "2": 2 }, { "1": 3, "2": 3 } ] }, "": "union_ab3_2" }], limit[-1], offset[0], table[multi_field_query_optimize_25620.t2]
 drop table t1,t2;
 set session optimizer_switch=default;

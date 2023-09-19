@@ -18,6 +18,10 @@ a	b
 1	2
 2	3
 2	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Condition can't be pushed down. db=[multi_field_query_optimize_25617], table[t1], sql=[select * from t1 where (a,b) in((1,2),(2,3))]
+[Note] SequoiaDB: Condition can't be pushed down. db=[multi_field_query_optimize_25617], table[t1], sql=[select * from t1 where (a,b) in((1,2),(2,3))]
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "a": null, "b": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": true, "PrefixNum": 2, "IndexValue": [ { "1": 1, "2": 2 }, { "1": 2, "2": 3 } ] }, "": "union_ab1" }], limit[-1], offset[0], table[multi_field_query_optimize_25617.t1]
 drop table t1;
 set session optimizer_switch=default;

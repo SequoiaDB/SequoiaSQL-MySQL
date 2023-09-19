@@ -9,14 +9,14 @@ INSERT INTO t1 VALUES (0,0),(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9
 EXPLAIN SELECT * FROM t1 FORCE INDEX(ka) WHERE a = 1 AND b = 1; 
 EXPLAIN SELECT * FROM t1 FORCE INDEX(kb) WHERE a = 1 AND b = 1;  
 EXPLAIN SELECT * FROM t1 WHERE a = 1 AND b = 1;
-SELECT * FROM t1 WHERE a = 1 AND b = 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = 1 AND b = 1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 FORCE INDEX(ka) WHERE a = 1 AND b = 1;
 EXPLAIN SELECT * FROM t1 FORCE INDEX(kb) WHERE a = 1 AND b = 1;
 EXPLAIN SELECT * FROM t1 WHERE a = 1 AND b = 1;
-SELECT * FROM t1 WHERE a = 1 AND b = 1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a = 1 AND b = 1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 
 #
@@ -36,31 +36,31 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #BUG #SEQUOIASQLMAINSTREAM-816
 EXPLAIN SELECT * FROM t1 WHERE a<10;
 EXPLAIN SELECT * FROM t1 WHERE a>10;
 --sorted_result
-SELECT * FROM t1 WHERE a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE a>10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a>10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #BUG #SEQUOIASQLMAINSTREAM-816
 EXPLAIN SELECT * from t1 WHERE a<10;
 EXPLAIN SELECT * from t1 WHERE a>10;
 --sorted_result
-SELECT * FROM t1 WHERE a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE a>10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE a>10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 # smallint
 CREATE TABLE t1 (
@@ -76,13 +76,13 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 # mediumint
 CREATE TABLE t1 (
@@ -98,13 +98,13 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 # int
 CREATE TABLE t1 (
@@ -120,13 +120,13 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 # bigint
 CREATE TABLE t1 (
@@ -142,13 +142,13 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 --sorted_result
-SELECT * FROM t1 WHERE b>1 AND a<10;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE b>1 AND a<10;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 #BUG #SEQUOIASQLMAINSTREAM-815
 CREATE TABLE t1 (
@@ -165,24 +165,22 @@ INSERT INTO t1 VALUES (1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7),(8
 EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
-SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
---source include/query_pushdown_condition_sequoiadb.inc
-SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
---source include/query_pushdown_condition_sequoiadb.inc
-SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
---replace_regex /^([^s]*)\[Note\]/[Note]/
---exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+let $query = SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
-SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
---source include/query_pushdown_condition_sequoiadb.inc
-SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
---source include/query_pushdown_condition_sequoiadb.inc
-SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
---replace_regex /^([^s]*)\[Note\]/[Note]/
---exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+let $query = SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
+let $query = SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 
 # 
@@ -201,15 +199,15 @@ INSERT INTO t1 VALUES (1.1,1.1),(2.1,2.1),(3.1,3.1),(4.1,4.1),(5.1,5.1),(6.1,6.1
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 --sorted_result
-SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
+let $query = SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 #BUG #SEQUOIASQLMAINSTREAM-960
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 --sorted_result
-SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
+let $query = SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 #BUG #SEQUOIASQLMAINSTREAM-960
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 # double
 CREATE TABLE t1 (
@@ -224,15 +222,15 @@ INSERT INTO t1 VALUES (1.1,1.1),(2.1,2.1),(3.1,3.1),(4.1,4.1),(5.1,5.1),(6.1,6.1
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 --sorted_result
-SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
+let $query = SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 #BUG #SEQUOIASQLMAINSTREAM-960
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 --sorted_result
-SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
+let $query = SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 #BUG #SEQUOIASQLMAINSTREAM-960
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;
 # decimal
 CREATE TABLE t1 (
@@ -247,13 +245,13 @@ INSERT INTO t1 VALUES (1.1,1.1),(2.1,2.1),(3.1,3.1),(4.1,4.1),(5.1,5.1),(6.1,6.1
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 --sorted_result
-SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
+let $query = SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 #BUG #SEQUOIASQLMAINSTREAM-960
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 --sorted_result
-SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
+let $query = SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 #BUG #SEQUOIASQLMAINSTREAM-960
---source include/query_pushdown_condition_sequoiadb.inc
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 DROP TABLE t1;

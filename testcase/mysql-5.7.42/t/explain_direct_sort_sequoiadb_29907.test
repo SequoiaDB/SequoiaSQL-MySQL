@@ -4,6 +4,8 @@
 drop database if exists explain_direct_sort_29907;
 --enable_warnings
 create database explain_direct_sort_29907;
+drop database explain_direct_sort_29907;
+create database explain_direct_sort_29907;
 use explain_direct_sort_29907;
 
 set session sequoiadb_debug_log=on;
@@ -33,16 +35,16 @@ set session optimizer_switch = 'optimizer_sort_pushdown=on,mrr=off';
 # range + filesort
 EXPLAIN SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 , `pk` AS field4 FROM `t1` WHERE col_date > '2003-04-17' AND col_int IN (5, 6, 7) ORDER BY field1 DESC, field2 DESC, field3 DESC, field4 DESC;
 
-SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 , `pk` AS field4 FROM `t1` WHERE col_date > '2003-04-17' AND col_int IN (5, 6, 7) ORDER BY field1 DESC, field2 DESC, field3 DESC, field4 DESC;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 , `pk` AS field4 FROM `t1` WHERE col_date > '2003-04-17' AND col_int IN (5, 6, 7) ORDER BY field1 DESC, field2 DESC, field3 DESC, field4 DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 set session optimizer_index_sort_prune = on;
 set session optimizer_switch = 'optimizer_sort_pushdown=on,mrr=on';
 
 # range
 EXPLAIN SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 , `pk` AS field4 FROM `t1` WHERE col_date > '2003-04-17' AND col_int IN (5, 6, 7) ORDER BY field1 DESC, field2 DESC, field3 DESC, field4 DESC;
-SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 , `pk` AS field4 FROM `t1` WHERE col_date > '2003-04-17' AND col_int IN (5, 6, 7) ORDER BY field1 DESC, field2 DESC, field3 DESC, field4 DESC;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 , `pk` AS field4 FROM `t1` WHERE col_date > '2003-04-17' AND col_int IN (5, 6, 7) ORDER BY field1 DESC, field2 DESC, field3 DESC, field4 DESC;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 
 drop database explain_direct_sort_29907;

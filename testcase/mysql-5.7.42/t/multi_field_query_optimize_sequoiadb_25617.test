@@ -17,8 +17,8 @@ create table t1(a int,b int,key union_ab1(a,b));
 insert into t1 values(1,1),(1,2),(2,3),(2,1),(1,3),(2,3);
 explain select * from t1 where (a,b) in((1,2),(2,3));
 --sorted_result
-select * from t1 where (a,b) in((1,2),(2,3));
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where (a,b) in((1,2),(2,3));
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1;
 
 set session optimizer_switch=default;

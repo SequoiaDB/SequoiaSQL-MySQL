@@ -44,77 +44,77 @@ insert into t2 select * from t1;
 #关联算法为BKA
 #关联和排序为单个字段，分升序和降序
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1;
-select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
-select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3;
-select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3 order by t1.col1;
-select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3 order by t1.col1;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 where t1.col1 between 1 and 3 order by t1.col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #关联和排序为多个字段，分升序和降序
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2;
-select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
-select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by非索引字段
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col3;
-select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col3;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #关联算法为BNL
 #关联和排序为单个字段，分升序和降序
 explain select * from t1 left join t2 ignore index(idx_col1, idx_col12) on t1.col1 = t2.col1 order by t1.col1;
-select * from t1 left join t2 ignore index(idx_col1) on t1.col1 = t2.col1 order by t1.col1;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 ignore index(idx_col1) on t1.col1 = t2.col1 order by t1.col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 ignore index(idx_col1, idx_col12) on t1.col1 = t2.col1 order by t1.col1 desc;
-select * from t1 left join t2 ignore index(idx_col1) on t1.col1 = t2.col1 order by t1.col1 desc;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 ignore index(idx_col1) on t1.col1 = t2.col1 order by t1.col1 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #关联和排序为多个字段，分升序和降序
 explain select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2;
-select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
-select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 ignore index(idx_col1, idx_col2) on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1 desc ,t2.col2 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #关联算法为BKA，并带有limit子句
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 limit 2;
-select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 limit 2;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc limit 1,2;
-select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc limit 1,2;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 order by t1.col1 desc limit 1,2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 set session optimizer_limit_pushdown_threshold=1;
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2 limit 2;
-select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2 limit 2;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 order by t1.col1,t2.col2 limit 2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 < 3 order by t1.col1 desc ,t2.col2 desc limit 1,2;
-select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 < 3 order by t1.col1 desc ,t2.col2 desc limit 1,2;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = select * from t1 left join t2 on t1.col1 = t2.col1 and t1.col2 = t2.col2 where t1.col1 < 3 order by t1.col1 desc ,t2.col2 desc limit 1,2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #关联算法为NL
 explain select * from t1 join t2 on t1.col1 = t2.col1;
 --sorted_result
-select * from t1 join t2 on t1.col1 = t2.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 join t2 on t1.col1 = t2.col1;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1;
-select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
-select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col1 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col2;
-select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col2;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 join t2 on t1.col1 = t2.col1 order by t1.col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 
 set session optimizer_switch=default;

@@ -13,6 +13,8 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -28,6 +30,8 @@ a	b
 8	8
 9	NULL
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2) t2 order by a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -43,6 +47,8 @@ a	b
 8	8
 9	NULL
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from (select * from t1 where a>2) t2 group by a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -54,6 +60,8 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2) t2 group by a order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -65,6 +73,8 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2) t2 group by concat(a,"") order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -76,6 +86,8 @@ a	b
 1	1
 2	2
 3	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>rand()) t2 where b>rand() group by a order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -91,6 +103,8 @@ a	b
 6	6
 4	4
 3	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -102,6 +116,8 @@ select * from (select 1 from t1 where a>2 order by a) t2 limit 3;
 1
 1
 1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 order by a) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -115,6 +131,8 @@ a	b
 8	8
 9	NULL
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 4 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from v1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -126,6 +144,8 @@ a	b
 6	6
 7	NULL
 8	8
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 4 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t2]
 explain select * from v1 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -139,6 +159,8 @@ a	b
 8	8
 9	NULL
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 4 } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from v1 order by a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -152,6 +174,8 @@ a	b
 8	8
 9	NULL
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 4 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from v1 group by a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -163,6 +187,8 @@ a	b
 6	6
 7	NULL
 8	8
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 4 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from v1 group by a order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -174,6 +200,8 @@ a	b
 6	6
 7	NULL
 8	8
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 4 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from v1 group by concat(a,"") order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -185,6 +213,8 @@ a	b
 6	6
 8	8
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 4 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from v1 where b>rand() group by a order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -196,6 +226,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 limit 3) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -208,6 +239,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from (select * from t1 where a>2 group by a) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -220,6 +252,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -232,6 +265,7 @@ a	b
 10	10
 9	NULL
 8	8
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -244,6 +278,7 @@ select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 1
 1
 1
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -256,6 +291,8 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select t1.* from t1,t2 where t1.a>2) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -268,6 +305,8 @@ a	b	a	b
 3	3	3	3
 4	4	4	4
 6	6	6	6
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select * from t1 where a>2) t3,t2 where t2.a=t3.a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -280,6 +319,8 @@ a	b	a	b
 3	3	3	3
 4	4	4	4
 6	6	6	6
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -360,6 +401,8 @@ a	b
 10	10
 10	10
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select t1.* from t1,t2 where t1.a>2) t2 order by t2.a,t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -376,6 +419,8 @@ a	b	a	b
 8	8	8	8
 9	NULL	9	NULL
 10	10	10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select * from t1 where a>2) t3,t2 where t2.a=t3.a order by t2.a,t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -388,6 +433,8 @@ a	b	a	b
 3	3	3	3
 4	4	4	4
 6	6	6	6
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a order by t2.a,t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -404,6 +451,8 @@ a	b
 6	6
 8	8
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select t1.* from t1,t2 where t1.a>2) t2 group by t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -419,6 +468,8 @@ a	b	a	b
 6	6	6	6
 8	8	8	8
 10	10	10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select * from t1 where a>2) t3,t2 where t2.a=t3.a group by t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -431,6 +482,8 @@ a	b	a	b
 3	3	3	3
 4	4	4	4
 6	6	6	6
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a group by t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -444,6 +497,8 @@ a	b
 1	1
 2	2
 3	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 5 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select * from t1 where a in (select a from t1 where b<5) limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -457,6 +512,8 @@ a	b	(select a from t2 limit 1)
 1	1	1
 2	2	1
 3	3	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[1], offset[0], table[db_28276.t2]
 explain select *,(select a from t2 limit 1) from t1 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -469,6 +526,8 @@ a	b
 1	1
 2	2
 3	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 union select * from t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -481,6 +540,18 @@ select * from t1 where a in(select a from t2 where a=2 union select 1) limit 3;
 a	b
 1	1
 2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Condition can't be pushed down. db=[db_28276], table[t1], sql=[select * from t1 where a in(select a from t2 where a=2 union select 1) limit 3]
+[Note] SequoiaDB: Condition can't be pushed down. db=[db_28276], table[t1], sql=[select * from t1 where a in(select a from t2 where a=2 union select 1) limit 3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 where a in(select a from t2 where a=2 union select 1) limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -495,6 +566,8 @@ a	b	a	b
 1	1	1	1
 2	2	1	1
 3	3	1	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1,t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -507,6 +580,8 @@ a	b	a	b
 1	1	1	1
 2	2	2	2
 3	3	3	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 left outer join t2 on t1.a=t2.a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -519,6 +594,8 @@ a	b	b
 1	1	1
 2	2	2
 3	3	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 join t2 using(a) limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -532,6 +609,8 @@ a	b
 2	2
 3	3
 4	4
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 5 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select * from t1 where a in (select a from t1 where b<5) order by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -551,6 +630,8 @@ NULL	5	1
 8	8	1
 9	NULL	1
 10	10	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[1], offset[0], table[db_28276.t2]
 explain select *,(select a from t2 limit 1) from t1 order by a,b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -570,6 +651,8 @@ NULL	5
 8	8
 9	NULL
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 union select * from t2 order by a,b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -582,6 +665,17 @@ select * from t1 where a in(select a from t2 where a=2 union select 1) order by 
 a	b
 1	1
 2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Condition can't be pushed down. db=[db_28276], table[t1], sql=[select * from t1 where a in(select a from t2 where a=2 union select 1) order by b]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 where a in(select a from t2 where a=2 union select 1) order by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -693,6 +787,8 @@ NULL	5	10	10
 10	10	8	8
 10	10	9	NULL
 10	10	10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1,t2 order by t1.a,t2.a,t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -712,6 +808,8 @@ NULL	5	NULL	NULL
 8	8	8	8
 9	NULL	9	NULL
 10	10	10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 left outer join t2 on t1.a=t2.a order by t2.a,t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -730,6 +828,8 @@ a	b	b
 8	8	8
 9	NULL	NULL
 10	10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 join t2 using(a);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -743,6 +843,8 @@ a	b
 2	2
 3	3
 4	4
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 5 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select * from t1 where a in (select a from t1 where b<5) group by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -761,6 +863,8 @@ NULL	5	1
 6	6	1
 8	8	1
 10	10	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "b": { "$first": "$b" }, "_id": { "b": "$b" }, "a": { "$first": "$a" } } }], sort[{ "$sort": { "b": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[1], offset[0], table[db_28276.t2]
 explain select *,(select a from t2 limit 1) from t1 group by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -780,6 +884,8 @@ NULL	5
 8	8
 9	NULL
 10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "b": { "$first": "$b" }, "_id": { "b": "$b" }, "a": { "$first": "$a" } } }], sort[{ "$sort": { "b": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from t1 union select * from t2 group by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -792,6 +898,18 @@ select * from t1 where a in(select a from t2 where a=2 union select 1) group by 
 a	b
 1	1
 2	2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Condition can't be pushed down. db=[db_28276], table[t1], sql=[select * from t1 where a in(select a from t2 where a=2 union select 1) group by b]
+[Note] SequoiaDB: Condition can't be pushed down. db=[db_28276], table[t1], sql=[select * from t1 where a in(select a from t2 where a=2 union select 1) group by b]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 where a in(select a from t2 where a=2 union select 1) group by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -812,6 +930,8 @@ a	b	a	b
 1	1	6	6
 1	1	8	8
 1	1	10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1,t2 group by t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -829,6 +949,8 @@ a	b	a	b
 6	6	6	6
 8	8	8	8
 10	10	10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 left outer join t2 on t1.a=t2.a group by t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -846,6 +968,8 @@ a	b	b
 6	6	6
 8	8	8
 10	10	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select * from t1 join t2 using(a) group by t2.b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -856,6 +980,9 @@ Note	1003	/* select#1 */ select `db_28276`.`t1`.`a` AS `a`,`db_28276`.`t1`.`b` A
 select count(*) from (select * from t1 where a>2) t2;
 count(*)
 7
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 2 } }, table: db_28276.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -865,6 +992,9 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` wher
 select count(*) from (select * from t1 where a>2) t2 limit 3;
 count(*)
 7
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 2 } }, table: db_28276.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -874,6 +1004,9 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` wher
 select count(*) from (select * from t1 where a>2) t2 order by a;
 count(*)
 7
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 2 } }, table: db_28276.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2) t2 order by a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -889,6 +1022,8 @@ count(*)
 1
 1
 1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2) t2 group by a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -900,6 +1035,8 @@ count(*)
 1
 1
 1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2) t2 group by a order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -909,6 +1046,9 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` wher
 select count(*) from (select * from t1 where a>2 order by a DESC) t2;
 count(*)
 7
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 2 } }, table: db_28276.t1
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2 order by a DESC) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -918,6 +1058,9 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` wher
 select count(*) from v1;
 count(*)
 5
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 4 } }, table: db_28276.t2
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 4 } }],hint[{}] table[db_28276.t2]
 explain select count(*) from v1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -927,6 +1070,9 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t2` wher
 select count(*) from v1 limit 3;
 count(*)
 5
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 4 } }, table: db_28276.t2
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 4 } }],hint[{}] table[db_28276.t2]
 explain select count(*) from v1 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -936,6 +1082,9 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t2` wher
 select count(*) from v1 order by a;
 count(*)
 5
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 4 } }, table: db_28276.t2
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 4 } }],hint[{}] table[db_28276.t2]
 explain select count(*) from v1 order by a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -949,6 +1098,8 @@ count(*)
 1
 1
 1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 4 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from v1 group by a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -960,6 +1111,8 @@ count(*)
 1
 1
 1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 4 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from v1 group by a order by a limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -969,6 +1122,7 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t2` wher
 select count(*) from (select * from t1 where a>2 limit 3) t2;
 count(*)
 3
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2 limit 3) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -979,6 +1133,7 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from (/* select#2 */ sele
 select count(*) from (select * from t1 where a>2 group by a) t2;
 count(*)
 7
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select count(*) from (select * from t1 where a>2 group by a) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -989,6 +1144,7 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from (/* select#2 */ sele
 select count(*) from (select * from t1 where a>2 group by a order by a limit 3) t2;
 count(*)
 3
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select count(*) from (select * from t1 where a>2 group by a order by a limit 3) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -999,6 +1155,7 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from (/* select#2 */ sele
 select count(*) from (select * from t1 where a>2 order by a DESC limit 3) t2;
 count(*)
 3
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select count(*) from (select * from t1 where a>2 order by a DESC limit 3) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1009,6 +1166,7 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from (/* select#2 */ sele
 select count(*) from (select 1 from t1 where a>2 limit 3) t2;
 count(*)
 3
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select count(*) from (select 1 from t1 where a>2 limit 3) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1021,6 +1179,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 limit 3) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1033,6 +1192,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from (select * from t1 where a>2 group by a) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1045,6 +1205,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1057,6 +1218,7 @@ a	b
 10	10
 9	NULL
 8	8
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1069,6 +1231,7 @@ select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 1
 1
 1
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 limit 3) t2 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1081,6 +1244,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 limit 3) t2 order by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1097,6 +1261,7 @@ a	b
 8	8
 9	NULL
 10	10
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from (select * from t1 where a>2 group by a) t2 order by a,b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1109,6 +1274,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 order by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1121,6 +1287,7 @@ a	b
 10	10
 8	8
 9	NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 order by b DESC;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1133,6 +1300,7 @@ select * from (select 1 from t1 where a>2 limit 3) t2 order by 1 DESC;
 1
 1
 1
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 limit 3) t2 order by 1 DESC;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1145,6 +1313,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 limit 3) t2 group by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1160,6 +1329,7 @@ a	b
 6	6
 8	8
 10	10
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain select * from (select * from t1 where a>2 group by a) t2 group by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1172,6 +1342,7 @@ a	b
 3	3
 4	4
 6	6
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$gt": 2 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 explain select * from (select * from t1 where a>2 group by a order by a limit 3) t2 group by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1184,6 +1355,7 @@ a	b
 9	NULL
 8	8
 10	10
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{ "a": -1 }], hint[{ "": "" }], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select * from t1 where a>2 order by a DESC limit 3) t2 group by b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1194,6 +1366,7 @@ Note	1003	/* select#1 */ select `t2`.`a` AS `a`,`t2`.`b` AS `b` from (/* select#
 select * from (select 1 from t1 where a>2 limit 3) t2 group by 1;
 1
 1
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 explain select * from (select 1 from t1 where a>2 limit 3) t2 group by 1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1204,6 +1377,8 @@ Note	1003	/* select#1 */ select `t2`.`1` AS `1` from (/* select#2 */ select 1 AS
 select count(*) from (select t1.* from t1,t2 where t1.a>2) t2;
 count(*)
 70
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from (select t1.* from t1,t2 where t1.a>2) t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1214,6 +1389,8 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` join
 select count(*) from (select * from t1 where a>2) t3,t2 where t2.a=t3.a;
 count(*)
 7
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from (select * from t1 where a>2) t3,t2 where t2.a=t3.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1224,6 +1401,8 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` join
 select count(*) from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a;
 count(*)
 3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from (select * from t1 where a>2 limit 3) t3,t2 where t2.a=t3.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1235,6 +1414,8 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from (/* select#2 */ sele
 select count(*) from t1 where a in (select a from t1 where b<5);
 count(*)
 4
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 5 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 explain select count(*) from t1 where a in (select a from t1 where b<5);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1246,6 +1427,9 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` semi
 select count(*),(select a from t2 limit 1) from t1;
 count(*)	(select a from t2 limit 1)
 10	1
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: {}, table: db_28276.t1
+[Note] SequoiaDB: Count message: condition[{}],hint[{}] table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[1], offset[0], table[db_28276.t2]
 explain select count(*),(select a from t2 limit 1) from t1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1265,6 +1449,9 @@ NULL
 7
 8
 9
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer count: 1, condition: {}, table: db_28276.t1
+[Note] SequoiaDB: Count message: condition[{}],hint[{}] table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from t1 union select a from t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1276,6 +1463,18 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` unio
 select count(*) from t1 where a in(select a from t2 where a=2 union select 1);
 count(*)
 2
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Condition can't be pushed down. db=[db_28276], table[t1], sql=[select count(*) from t1 where a in(select a from t2 where a=2 union select 1)]
+[Note] SequoiaDB: Condition can't be pushed down. db=[db_28276], table[t1], sql=[select count(*) from t1 where a in(select a from t2 where a=2 union select 1)]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from t1 where a in(select a from t2 where a=2 union select 1);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1288,6 +1487,8 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` wher
 select count(*) from t1,t2;
 count(*)
 100
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from t1,t2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1298,6 +1499,8 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` join
 select count(*) from t1 left outer join t2 on t1.a=t2.a;
 count(*)
 10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from t1 left outer join t2 on t1.a=t2.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1308,6 +1511,8 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `db_28276`.`t1` left
 select count(*) from t1 join t2 using(a);
 count(*)
 9
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[db_28276.t2]
 explain select count(*) from t1 join t2 using(a);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra

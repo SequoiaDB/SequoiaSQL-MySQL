@@ -3,6 +3,8 @@ set session optimizer_index_sort_prune=on;
 set session sequoiadb_debug_log=on;
 drop database if exists order_by_desc_sequoiadb;
 create database order_by_desc_sequoiadb;
+drop database order_by_desc_sequoiadb;
+create database order_by_desc_sequoiadb;
 use order_by_desc_sequoiadb;
 CREATE TABLE `reverse_order_sequoiadb` (
 `col_date` date DEFAULT NULL,
@@ -110,6 +112,7 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$gte": {"$date": "2000-01-14"} } }, { "col_date": { "$lte": {"$date": "2005-01-14"} } } ] }], selector[{ "col_date": null, "col_int": null }], order_by[{ "col_int": -1 }], hint[{ "": "dvi1" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT *  FROM reverse_order_sequoiadb WHERE col_date='2005-02-05' and col_int=-657588224  order by col_date desc;
@@ -120,6 +123,8 @@ Note	1003	/* select#1 */ select `order_by_desc_sequoiadb`.`reverse_order_sequoia
 SELECT *  FROM reverse_order_sequoiadb WHERE col_date='2005-02-05' and col_int=-657588224  order by col_date desc;
 col_date	col_varchar_16	pk	col_int
 2005-02-05	p	3	-657588224
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "col_int": { "$et": -657588224 }, "col_date": { "$et": {"$date": "2005-02-05"} } }], selector[{}], order_by[{}], hint[{ "": "idv" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN select * from reverse_order_sequoiadb where col_date='2006-03-17' and col_varchar_16='l' and pk=180 and col_int=3 ORDER BY pk DESC;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -129,6 +134,8 @@ Note	1003	/* select#1 */ select '2006-03-17' AS `col_date`,'l' AS `col_varchar_1
 select * from reverse_order_sequoiadb where col_date='2006-03-17' and col_varchar_16='l' and pk=180 and col_int=3 ORDER BY pk DESC;
 col_date	col_varchar_16	pk	col_int
 2006-03-17	l	180	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 180 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN select * from reverse_order_sequoiadb where col_date='2006-03-17' ORDER BY pk DESC;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -138,6 +145,8 @@ Note	1003	/* select#1 */ select `order_by_desc_sequoiadb`.`reverse_order_sequoia
 select * from reverse_order_sequoiadb where col_date='2006-03-17' ORDER BY pk DESC;
 col_date	col_varchar_16	pk	col_int
 2006-03-17	l	180	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$gte": {"$date": "2006-03-17"} } }, { "col_date": { "$lte": {"$date": "2006-03-17"} } } ] }], selector[{}], order_by[{}], hint[{ "": "d_i_v" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT col_int AS field1 FROM reverse_order_sequoiadb WHERE col_date < '2005-01-14' AND col_varchar_16 < 'w' ORDER BY field1 DESC;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -208,6 +217,8 @@ NULL
 NULL
 NULL
 NULL
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_date": { "$lt": {"$date": "2005-01-14"} } }, { "col_varchar_16": { "$lt": "w" } } ] }], selector[{ "col_date": null, "col_varchar_16": null, "col_int": null }], order_by[{ "col_int": -1 }], hint[{ "": "d_i_v" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT pk AS field1 FROM reverse_order_sequoiadb WHERE col_int IN (9, 2, 0) AND col_date != '2004-05-09' ORDER BY field1 DESC;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -244,6 +255,8 @@ field1
 17
 14
 13
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "col_int": { "$in": [ 9, 2, 0 ] } }, { "col_date": { "$ne": {"$date": "2004-05-09"} } } ] }, { "col_int": { "$in": [ 0, 2, 9 ] } } ] }], selector[{}], order_by[{ "pk": -1 }], hint[{ "": "ivd" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT col_varchar_16 AS field1 , col_date AS field2 , col_varchar_16 AS field3 FROM reverse_order_sequoiadb WHERE col_int > 3 AND col_int > 2 AND col_int > 1 ORDER BY field1 DESC, field2 DESC, field3 DESC;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -332,6 +345,7 @@ NULL	2000-03-01	NULL
 NULL	NULL	NULL
 NULL	NULL	NULL
 NULL	NULL	NULL
+[Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int": { "$gt": 3 } }, { "col_int": { "$gt": 2 } }, { "col_int": { "$gt": 1 } } ] }], selector[{ "col_date": null, "col_varchar_16": null, "col_int": null }], order_by[{ "col_varchar_16": -1, "col_date": -1 }], hint[{ "": "ivd" }], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 EXPLAIN SELECT `col_int` AS field1 , `pk` AS field2 , `col_date` AS field3 FROM `reverse_order_sequoiadb` WHERE col_int > 8 AND col_int != 8 AND col_date >= '2000-04-07' ORDER BY field1 DESC, field2 DESC, field3 DESC;
@@ -362,5 +376,7 @@ field1	field2	field3
 9	61	2001-11-23
 9	41	2006-09-04
 9	23	2007-12-07
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col_int": { "$gt": 8 } }, { "col_int": { "$ne": 8 } }, { "col_date": { "$gte": {"$date": "2000-04-07"} } } ] }], selector[{}], order_by[{ "col_int": -1, "pk": -1, "col_date": -1 }], hint[{}], limit[-1], offset[0], table[order_by_desc_sequoiadb.reverse_order_sequoiadb]
 drop database order_by_desc_sequoiadb;

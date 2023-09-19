@@ -41,6 +41,12 @@ col1	col2	col3	col4	col5	col6	col7	col8
 311	2f6584	cdc668	185.78	556.45	2.25	2022-09-23 16:17:03	af7c20
 397	334d53	58b126	3.32	482.06	4.00	2022-09-23 16:17:13	ca50ae
 282	3a126e	519bd8	769.83	24.17	8.11	2022-09-23 16:17:55	2b5842
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col2": { "$gt": "2c" } }, { "col2": { "$lt": "3d" } }, { "col1": { "$isnull": 0 } } ] }], selector[{ "_id": null, "col1": null, "col2": null }], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 499 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 291 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 311 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 397 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 282 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
 explain select t1.* from t1 join (select * from t2 where col2 > '2c' and col2 < '3d') as tt2 on t1.col1 = tt2.col1 order by tt2.col2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -56,6 +62,12 @@ col1	col2	col3	col4	col5	col6	col7	col8
 311	2f6584	cdc668	185.78	556.45	2.25	2022-09-23 16:17:03	af7c20
 397	334d53	58b126	3.32	482.06	4.00	2022-09-23 16:17:13	ca50ae
 282	3a126e	519bd8	769.83	24.17	8.11	2022-09-23 16:17:55	2b5842
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col2": { "$gt": "2c" } }, { "col2": { "$lt": "3d" } }, { "col1": { "$isnull": 0 } } ] }], selector[{ "_id": null, "col1": null, "col2": null }], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 499 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 291 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 311 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 397 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 282 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
 explain select t1.* from t1 join (select * from t2 where col2 > '2c' and col2 < '3d') as tt2 on t1.col1 = tt2.col1 order by tt2.col2 desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -71,6 +83,12 @@ col1	col2	col3	col4	col5	col6	col7	col8
 291	2f2517	7d407e	453.24	100.33	1.42	2022-09-23 16:16:57	88a93f
 291	913dc1	542eee	83.39	820.56	8.53	2022-09-23 16:17:37	16a27e
 499	2db783	52146f	53.42	845.76	0.69	2022-09-23 16:17:38	7f24f7
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col2": { "$gt": "2c" } }, { "col2": { "$lt": "3d" } }, { "col1": { "$isnull": 0 } } ] }], selector[{ "_id": null, "col1": null, "col2": null }], order_by[{ "col2": -1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 282 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 397 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 311 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 291 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 499 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
 explain select t1.* from t1 join (select * from t2 where col2 > '2c' and col2 < '3d' order by t2.col1) as tt2 on t1.col1 = tt2.col1 and t1.col2 = tt2.col2 order by t1.col1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -85,6 +103,8 @@ col1	col2	col3	col4	col5	col6	col7	col8
 311	2f6584	cdc668	185.78	556.45	2.25	2022-09-23 16:17:03	af7c20
 397	334d53	58b126	3.32	482.06	4.00	2022-09-23 16:17:13	ca50ae
 499	2db783	52146f	53.42	845.76	0.69	2022-09-23 16:17:38	7f24f7
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col2": { "$gt": "2c" } }, { "col2": { "$lt": "3d" } } ] }], selector[{ "_id": null, "col1": null, "col2": null }], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[explain_remove_order_by_28031.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[explain_remove_order_by_28031.t1]
 drop table t1,t2;
 set session sequoiadb_debug_log=off;

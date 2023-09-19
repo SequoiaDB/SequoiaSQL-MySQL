@@ -35,6 +35,43 @@ col1	col2	col1	col2	col1	col2
 31	32	31	32	31	32
 32	33	32	33	32	33
 33	34	33	34	33	34
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$isnull": 0 } }, { "col1": { "$isnull": 0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 10, 11, 12 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 10, 11, 12 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 13, 14, 15, 16 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 13, 14, 15, 16 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 17, 21, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 17, 21, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 24, 25, 26, 27 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 24, 25, 26, 27 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 28, 29, 30, 31 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 28, 29, 30, 31 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 32, 33, 34, 35 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 32, 33, 34, 35 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 36, 37 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 36, 37 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -55,6 +92,51 @@ col1	col2	col1	col2	col1	col2
 31	32	31	32	31	32
 32	33	32	33	32	33
 33	34	33	34	33	34
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 4 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 8 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 10, 11, 12 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 10, 11 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 12 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 13, 14, 15, 16 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 13, 14, 15 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 16 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 17, 21, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 17, 21, 22 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 23 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 24, 25, 26, 27 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 24, 25, 26 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 27 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 28, 29, 30, 31 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 28, 29, 30 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 31 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 32, 33, 34, 35 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 32, 33, 34 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 35 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 36, 37 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 36, 37 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t3 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1 limit 20,10;
@@ -76,6 +158,30 @@ col1	col2	col1	col2	col1	col2
 31	32	31	32	31	32
 32	33	32	33	32	33
 33	34	33	34	33	34
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 10, 11 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 12, 13, 14, 15 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 16, 17, 21, 22 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 23, 24, 25 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 26, 27, 28, 29 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 30, 31, 32, 33 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 34, 35, 36 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 37 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -96,6 +202,34 @@ col1	col2	col1	col2	col1	col2
 31	32	31	32	31	32
 32	33	32	33	32	33
 33	34	33	34	33	34
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 10, 11, 12 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 13, 14, 15, 16 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 17, 21, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 24, 25, 26, 27 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 28, 29, 30, 31 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 32, 33, 34, 35 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 36, 37 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t2 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1 limit 20,10;
@@ -117,6 +251,15 @@ col1	col2	col1	col2	col1	col2
 31	32	31	32	31	32
 32	33	32	33	32	33
 33	34	33	34	33	34
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -137,6 +280,18 @@ col1	col2	col1	col2	col1	col2
 31	32	31	32	31	32
 32	33	32	33	32	33
 33	34	33	34	33	34
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 truncate table t1;
 truncate table t2;
@@ -165,6 +320,24 @@ col1	col2	col1	col2	col1	col2
 4	5	4	3	4	3
 4	5	4	3	4	5
 4	5	4	5	4	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$isnull": 0 } }, { "col1": { "$isnull": 0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 5, 6, 6 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 7, 8, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -185,6 +358,28 @@ col1	col2	col1	col2	col1	col2
 4	5	4	3	4	3
 4	5	4	3	4	5
 4	5	4	5	4	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 5, 6 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 6, 7, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 8, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t3 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
@@ -206,6 +401,19 @@ col1	col2	col1	col2	col1	col2
 4	5	4	3	4	3
 4	5	4	3	4	5
 4	5	4	5	4	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -226,6 +434,16 @@ col1	col2	col1	col2	col1	col2
 4	5	4	3	4	3
 4	5	4	3	4	5
 4	5	4	5	4	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t2 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
@@ -247,6 +465,10 @@ col1	col2	col1	col2	col1	col2
 4	5	4	3	4	3
 4	5	4	3	4	5
 4	5	4	5	4	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -267,6 +489,11 @@ col1	col2	col1	col2	col1	col2
 4	5	4	3	4	3
 4	5	4	3	4	5
 4	5	4	5	4	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 truncate table t1;
 truncate table t2;
@@ -298,6 +525,53 @@ col1	col2	col1	col2	col1	col2
 21	23	21	22	21	10
 21	23	21	22	21	22
 21	24	21	10	21	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$isnull": 0 } }, { "col1": { "$isnull": 0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 21, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 21, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 21, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 22, 22, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 22, 22, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 23, 23, 24, 24 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 23, 23, 24, 24 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 25, 25, 26, 26 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 25, 25, 26, 26 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 27, 27, 28, 28 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 27, 27, 28, 28 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 29, 29 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 29, 29 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -318,7 +592,57 @@ col1	col2	col1	col2	col1	col2
 21	23	21	22	21	10
 21	23	21	22	21	22
 21	24	21	10	21	10
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 29, 29 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 2 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 3 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 7 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 21, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 21, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 21 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 22, 22, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 22, 22, 22 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 23 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 23, 23, 24, 24 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 23, 23, 24 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 24 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 25, 25, 26, 26 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 25, 25, 26 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 26 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 27, 27, 28, 28 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 alter table t3 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -339,6 +663,35 @@ col1	col2	col1	col2	col1	col2
 21	23	21	22	21	10
 21	23	21	22	21	22
 21	24	21	10	21	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 5, 6, 6 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 7, 8, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 21, 21, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 22, 22, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 23, 23, 24, 24 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 25 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 25, 26, 26, 27 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 27, 28, 28, 29 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 29 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -359,6 +712,40 @@ col1	col2	col1	col2	col1	col2
 21	23	21	22	21	10
 21	23	21	22	21	22
 21	24	21	10	21	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 21, 21, 21 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 22, 22, 22, 23 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 23, 23, 24, 24 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 25, 25, 26, 26 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 27, 27, 28, 28 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 29, 29 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t2 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
@@ -380,6 +767,16 @@ col1	col2	col1	col2	col1	col2
 21	23	21	22	21	10
 21	23	21	22	21	22
 21	24	21	10	21	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -400,6 +797,18 @@ col1	col2	col1	col2	col1	col2
 21	23	21	22	21	10
 21	23	21	22	21	22
 21	24	21	10	21	10
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 truncate table t1;
 truncate table t2;
@@ -428,6 +837,45 @@ col1	col2	col1	col2	col1	col2
 2	1	2	1	2	1
 2	1	2	1	2	2
 2	1	2	1	2	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$isnull": 0 } }, { "col1": { "$isnull": 0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 2, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 2, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 3, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 3, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 5 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 5, 6, 6 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 6, 6, 7, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 7, 8, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 8, 8, 9, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -448,6 +896,54 @@ col1	col2	col1	col2	col1	col2
 2	1	2	1	2	1
 2	1	2	1	2	2
 2	1	2	1	2	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 4, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 5, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 5, 6 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 6, 6, 6 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 7, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 8, 8, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[3], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t3 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
@@ -469,6 +965,35 @@ col1	col2	col1	col2	col1	col2
 2	1	2	1	2	1
 2	1	2	1	2	2
 2	1	2	1	2	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 1 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 2, 2, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 2, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 3, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 3, 3, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 4, 4, 4 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 5, 5, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 6, 6, 6, 6 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 7, 7, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 8, 8, 8, 8 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 9, 9, 9, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -489,6 +1014,26 @@ col1	col2	col1	col2	col1	col2
 2	1	2	1	2	1
 2	1	2	1	2	2
 2	1	2	1	2	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 1, 1, 1, 2 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 2, 2, 3, 3 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 3, 4, 4, 5 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 5, 6, 6, 7 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: Batched keys num[4], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$in": [ 7, 8, 8, 9 ] } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$et": 9 } }], selector[{}], order_by[{}], hint[{ "": "col1" }], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 alter table t2 drop index col1;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 inner join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
@@ -510,6 +1055,15 @@ col1	col2	col1	col2	col1	col2
 2	1	2	1	2	1
 2	1	2	1	2	2
 2	1	2	1	2	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 explain select * from t1 left join t2 on t1.col1 = t2.col1 left join t3 on t2.col1 = t3.col1 order by t1.col1,t1.col2,t2.col1,t2.col2,t3.col1,t3.col2 limit 20,10;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -530,6 +1084,16 @@ col1	col2	col1	col2	col1	col2
 2	1	2	1	2	1
 2	1	2	1	2	2
 2	1	2	1	2	3
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t2]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[join_cache_limit_sequoiadb_26655.t3]
 drop table t1,t2,t3;
 set session sequoiadb_debug_log=off;

@@ -42,26 +42,26 @@ insert into t2 select * from t1;
 
 #不带order by条件
 explain select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def');
-select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def');
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def');
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #带order by条件，字段类型分别为int和varhchar
 explain select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col1;
-select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col1;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col1;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 explain select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col2;
-select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col2;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col2;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by字段为非索引字段
 explain select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col3;
-select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col3;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col3;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #order by降序
 explain select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col2 desc;
-select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col2 desc;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = select * from t1 where col1 > (select max(col1) from t2 where col2 > 'abc' and col2 < 'def') order by col2 desc;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1,t2;
 
 set session sequoiadb_debug_log=off;

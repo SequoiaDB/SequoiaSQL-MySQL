@@ -33,19 +33,19 @@ UNLOCK TABLES;
 
 # case 29395
 EXPLAIN SELECT ALL col_int FROM t1 WHERE col_int_key < 5 ORDER BY col_int;
-SELECT ALL col_int FROM t1 WHERE col_int_key < 5 ORDER BY col_int;
---source include/query_pushdown_condition_sequoiadb_2.inc
+let $query = SELECT ALL col_int FROM t1 WHERE col_int_key < 5 ORDER BY col_int;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 # case 29390
 EXPLAIN SELECT ALL SQL_BUFFER_RESULT col_int FROM t1 WHERE col_int_key = 5 OR col_int_key IS NULL ORDER BY col_int;
-SELECT ALL SQL_BUFFER_RESULT col_int FROM t1 WHERE col_int_key = 5 OR col_int_key IS NULL ORDER BY col_int;
---source include/query_pushdown_condition_sequoiadb_3.inc
+let $query = SELECT ALL SQL_BUFFER_RESULT col_int FROM t1 WHERE col_int_key = 5 OR col_int_key IS NULL ORDER BY col_int;
+--source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 # case 29391
 EXPLAIN SELECT DISTINCT col_int_key FROM t1 WHERE col_int_key = 1 OR col_int_key = 7 OR col_int_key IS NULL;
 --sorted_result
-SELECT DISTINCT col_int_key FROM t1 WHERE col_int_key = 1 OR col_int_key = 7 OR col_int_key IS NULL;
---source include/query_pushdown_condition_sequoiadb_7.inc
+let $query = SELECT DISTINCT col_int_key FROM t1 WHERE col_int_key = 1 OR col_int_key = 7 OR col_int_key IS NULL;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 drop database sort_sequoiadb;
 eval set global sequoiadb_auto_partition = $sequoiadb_auto_partition;

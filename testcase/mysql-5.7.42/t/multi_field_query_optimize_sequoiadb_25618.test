@@ -14,73 +14,73 @@ create table t1(a int,b int,key union_ab2(a,b));
 insert into t1 values(1,2),(1,20),(1,30),(2,3),(3,11),(5,21),(10,10),(20,9),(20,10),(20,30),(21,20),(30,19),(30,25);
 explain select * from t1 where a between 1 and 20 and b between 20 and 30;
 --sorted_result
-select * from t1 where a between 1 and 20 and b between 20 and 30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a between 1 and 20 and b between 20 and 30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围[1,20],b范围[10,30]
 explain select * from t1 where a>=1 and a<=20 and b>=10 and b<=30;
 --sorted_result
-select * from t1 where a>=1 and a<=20 and b>=10 and b<=30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>=1 and a<=20 and b>=10 and b<=30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围(1,20),b范围(10,30)
 explain select * from t1 where a>1 and a<20 and b>10 and b<30;
 --sorted_result
-select * from t1 where a>1 and a<20 and b>10 and b<30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>1 and a<20 and b>10 and b<30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围[1,20),b范围(10,30)
 explain select * from t1 where a>=1 and a<20 and b>10 and b<30;
 --sorted_result
-select * from t1 where a>=1 and a<20 and b>10 and b<30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>=1 and a<20 and b>10 and b<30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围(1,20],b范围(10,30)
 explain select * from t1 where a>1 and a<=20 and b>10 and b<30;
 --sorted_result
-select * from t1 where a>1 and a<=20 and b>10 and b<30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>1 and a<=20 and b>10 and b<30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围[1,20],b范围(10,30)
 explain select * from t1 where a>=1 and a<=20 and b>10 and b<30;
 --sorted_result
-select * from t1 where a>=1 and a<=20 and b>10 and b<30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>=1 and a<=20 and b>10 and b<30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围(1,20),b范围[10,30)
 explain select * from t1 where a>1 and a<20 and b>=10 and b<30;
 --sorted_result
-select * from t1 where a>1 and a<20 and b>=10 and b<30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>1 and a<20 and b>=10 and b<30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围[1,20),b范围[10,30)
 explain select * from t1 where a>=1 and a<20 and b>=10 and b<30;
 --sorted_result
-select * from t1 where a>=1 and a<20 and b>=10 and b<30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>=1 and a<20 and b>=10 and b<30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围(1,20],b范围[10,30)
 explain select * from t1 where a>1 and a<=20 and b>=10 and b<30;
 --sorted_result
-select * from t1 where a>1 and a<=20 and b>=10 and b<30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>1 and a<=20 and b>=10 and b<30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围[1,20],b范围[10,30)
 explain select * from t1 where a>=1 and a<=20 and b>= 10 and b<30;
 --sorted_result
-select * from t1 where a>=1 and a<=20 and b>= 10 and b<30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>=1 and a<=20 and b>= 10 and b<30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围(1,20),b范围(10,30]
 explain select * from t1 where a>1 and a<20 and b>10 and b<=30;
 --sorted_result
-select * from t1 where a>1 and a<20 and b>10 and b<=30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>1 and a<20 and b>10 and b<=30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围[1,20),b范围(10,30]
 explain select * from t1 where a>=1 and a<20 and b>10 and b<=30;
 --sorted_result
-select * from t1 where a>=1 and a<20 and b>10 and b<=30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>=1 and a<20 and b>10 and b<=30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围(1,20],b范围(10,30]
 explain select * from t1 where a>1 and a<=20 and b>10 and b<=30;
 --sorted_result
-select * from t1 where a>1 and a<=20 and b>10 and b<=30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>1 and a<=20 and b>10 and b<=30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 #a范围[1,20],b范围(10,30]
 explain select * from t1 where a>=1 and a<=20 and b>10 and b<=30;
 --sorted_result
-select * from t1 where a>=1 and a<=20 and b>10 and b<=30;
---source include/query_pushdown_condition_sequoiadb.inc
+let $query = select * from t1 where a>=1 and a<=20 and b>10 and b<=30;
+--source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 drop table t1;
 
 set session optimizer_switch=default;
