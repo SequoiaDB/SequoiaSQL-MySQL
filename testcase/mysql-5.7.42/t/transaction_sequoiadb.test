@@ -2,12 +2,7 @@
 #Case 22435#Case 22436#Case 22449#Case 22450#Case 23038#Case 23039
 
 --source include/have_sequoiadb.inc
-
-let $tx_iso = SELECT TRANS_ISOLATION FROM information_schema.SDB_SESSION_ATTR_CURRENT;
-if( $tx_iso == 3 ){
-    echo $tx_iso;
-    skip the testcase, the TRANS_ISOLATION is 3;
-}
+--source include/sequoiadb_trans_rr_skip.inc
 
 --disable_query_log
 CALL mtr.add_suppression(".*failed to query with condition.*rc: 40013");
@@ -48,7 +43,7 @@ select * from t1;
 #session2 commit,then select
 connection con2;
 commit; 
-select * from t1;
+select * from t1 order by a;
 
 connection default;
 drop table t1;
@@ -84,7 +79,7 @@ commit;
 #session2 commit,then select
 connection con2;
 commit; 
-select * from t1;
+select * from t1 order by a;
 commit;
 
 connection default;
@@ -480,28 +475,28 @@ SELECT * FROM t1;
 COMMIT;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
-#SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-#disconnect con1;
+SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+disconnect con1;
 
-#Bug #SEQUOIASQLMAINSTREAM-721
-#connect (con1, localhost, root);
-#connection con1;
-#BEGIN;
-#--error 131
-#SELECT * FROM t1;
-#ROLLBACK;
+#Bug #SEQUOIASQLMAINSTREAM-721, SEQUOIASQLMAINSTREAM-1963
+connect (con1, localhost, root);
+connection con1;
+BEGIN;
+--error 200
+SELECT * FROM t1;
+ROLLBACK;
 
-#SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-#BEGIN;
-#--error 131
-#SELECT * FROM t1;
-#ROLLBACK;
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+--error 200
+SELECT * FROM t1;
+ROLLBACK;
 
-#SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-#BEGIN;
-#--error 131
-#SELECT * FROM t1;
-#ROLLBACK;
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+--error 200
+SELECT * FROM t1;
+ROLLBACK;
 
 connection default;
 DROP TABLE t1;

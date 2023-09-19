@@ -21,7 +21,7 @@ select * from t1;
 a
 1
 commit;
-select * from t1;
+select * from t1 order by a;
 a
 1
 2
@@ -52,7 +52,7 @@ a
 1
 commit;
 commit;
-select * from t1;
+select * from t1 order by a;
 a
 1
 2
@@ -426,6 +426,21 @@ id
 2
 COMMIT;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
+ROLLBACK;
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
+ROLLBACK;
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
+ROLLBACK;
 DROP TABLE t1;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 create table t1(a int, b int, c int);
