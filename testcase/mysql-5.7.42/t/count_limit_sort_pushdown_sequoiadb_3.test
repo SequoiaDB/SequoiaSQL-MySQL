@@ -794,8 +794,8 @@ select * from replace_table4;
 truncate table replace_table4;
  
 --replace_column 10 #  11 #
-explain replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3 limit 3;
-let $query = replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3 limit 3;
+explain replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3,col1 limit 3;
+let $query = replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3,col1 limit 3;
  
 --source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
@@ -1377,8 +1377,8 @@ select * from replace_table2;
 truncate table replace_table2;
 
 --replace_column 10 #  11 #
-explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
-let $query = replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
+explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3,col1 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
+let $query = replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3,col1 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 --source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 --sorted_result
 select * from replace_table2;

@@ -1362,14 +1362,14 @@ col1	col2	col3	col4	col5
 2	def	NULL	def	NULL
 3	NULL	2022-11-15 11:40:15	abcdef	NULL
 truncate table replace_table4;
-explain replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3 limit 3;
+explain replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3,col1 limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	REPLACE	replace_table4	NULL	ALL	NULL	NULL	NULL	NULL	#	#	NULL
 1	PRIMARY	t2	NULL	NULL	idx_col1,idx_col12	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t2`.`col1` < 6); Using pushed ORDER BY; Storage engine handles access type
 2	SUBQUERY	t1	NULL	range	idx_col3	idx_col3	6	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` >= '20221215114210'); Using filesort
-replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3 limit 3;
+replace into replace_table4 select *,(select col1 from t1 where col3>="20221215114210" order by col1) from t2 where t2.col1 < 6 order by col3,col1 limit 3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 6 } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "" }], limit[3], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 6 } }], selector[{}], order_by[{ "col3": 1, "col1": 1 }], hint[{ "": "" }], limit[3], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-12-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table4;
 col1	col2	col3	col4	col5
@@ -2440,19 +2440,19 @@ select * from replace_table2;
 col1	col2	col3	col4	col5
 1	defg 	2022-11-15 11:45:10	defg	7
 truncate table replace_table2;
-explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
+explain replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3,col1 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	REPLACE	replace_table2	NULL	ALL	NULL	NULL	NULL	NULL	#	#	NULL
 1	PRIMARY	t2	NULL	range	idx_col1,idx_col2,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t2`.`col1` < (/* select#3 */ select `count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` from `count_limit_sort_pushdown_sequoiadb_3`.`t1` where (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 5) order by `count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col4` limit 0,1)); Using temporary; Using filesort
 4	SUBQUERY	t1	NULL	NULL	idx_col2	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col2` < 'abcdef'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 3	SUBQUERY	t1	NULL	NULL	idx_col1,idx_col12	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 5); Using pushed ORDER BY; Storage engine handles access type
 2	SUBQUERY	t1	NULL	NULL	idx_col1,idx_col12	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 1); Using pushed ORDER BY; Storage engine handles access type
-replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
+replace into replace_table2 select *,(select col1 from t1 where col1>=1 order by col3,col1 desc limit 2,1)  from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 5 } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col3": -1 }], hint[{ "": "" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_3.t1]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 1 } }], selector[{}], order_by[{ "col3": 1, "col1": -1 }], hint[{ "": "" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table2;
 col1	col2	col3	col4	col5
 0	abc	2022-11-15 11:40:10	abc	3
