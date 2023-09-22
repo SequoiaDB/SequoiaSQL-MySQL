@@ -268,25 +268,27 @@ explain replace into t5 select * from t1 where col2>="def" group by col1 order b
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	REPLACE	t5	NULL	ALL	NULL	NULL	NULL	NULL	#	#	NULL
 1	SIMPLE	t1	NULL	NULL	idx_col2	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col2` >= 'def'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-replace into t5 select * from t1 where col2>="def" group by col2 order by col4 limit 2,3;
+replace into t5 select * from t1 where col2>="def" group by col1 order by col4 limit 2,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gte": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gte": "def" } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 3 }]
 select * from t5;
 col1	col2	col3	col4
-2	xyzz 	2022-11-15 11:45:10	xyzz 
+1	defg 	2022-11-15 11:45:10	defg
 3	xyz	2022-11-15 11:45:10	xyz 
+7	def	2022-11-15 11:40:20	def
 truncate table t5;
 explain  replace into t3_partition select * from t1_partition where col2>="def" group by col1 order by col4 limit 2,3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	REPLACE	t3_partition	NULL	ALL	NULL	NULL	NULL	NULL	#	#	NULL
 1	SIMPLE	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	NULL	idx_col2	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col2` >= 'def'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-replace into t3_partition select * from t1_partition where col2>="def" group by col2 order by col4 limit 2,3;
+replace into t3_partition select * from t1_partition where col2>="def" group by col1 order by col4 limit 2,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gte": "def" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" }, "col5": { "$first": "$col5" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 3 }]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gte": "def" } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" }, "col5": { "$first": "$col5" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 3 }]
 select * from t3_partition;
 col1	col2	col3	col4	col5
 0	abc	2022-11-15 11:40:10	abc	3
 1	abcde	2022-11-15 11:40:20	NULL	3
+1	defg 	2022-11-15 11:45:10	defg	5
 1	defg 	2022-11-15 11:45:10	defg	5
 10	abcdef	2022-11-15 11:40:15	abcdef	4
 11	abcde	2022-11-15 11:40:20	efg	2
@@ -294,13 +296,13 @@ col1	col2	col3	col4	col5
 2	xyz 	2022-11-15 11:45:10	xyz 	1
 3	NULL	2022-11-15 11:40:15	abcdef	3
 3	xyz	2022-11-15 11:45:10	xyz 	4
-3	xyz	2022-11-15 11:45:10	xyz 	4
 4	abcde	2022-11-15 11:40:20	efg	5
 5	abcdef	2022-11-15 11:40:15	abcdef	5
 6	def	2022-11-15 11:42:10	def	1
 7	def	2022-11-15 11:40:20	def	4
+7	def	2022-11-15 11:40:20	def	4
 8	xyz 	2022-11-15 11:45:10	xyz 	3
-8	xyz 	2022-11-15 11:45:10	xyz 	3
+9	def	2022-11-15 11:40:20	def	2
 9	def	2022-11-15 11:40:20	def	2
 NULL	NULL	NULL	NULL	NULL
 NULL	NULL	NULL	NULL	NULL
@@ -1938,14 +1940,14 @@ col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 4	abcde	2022-11-15 11:40:20	efg
 truncate table t5;
-explain  replace into replace_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
+explain replace into replace_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4,col1 limit 0,1) order by col4 desc;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	REPLACE	replace_table7	NULL	ALL	NULL	NULL	NULL	NULL	#	#	NULL
-1	PRIMARY	t2_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t2_partition`.`col1` < (/* select#2 */ select `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` from `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition` where (`count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` >= 5) order by `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col4` limit 0,1)); Using filesort
+1	PRIMARY	t2_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t2_partition`.`col1` < (/* select#2 */ select `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` from `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition` where (`count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` >= 5) order by `count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col4`,`count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` limit 0,1)); Using filesort
 2	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	NULL	idx_col1,idx_col12	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col1` >= 5); Using pushed ORDER BY; Storage engine handles access type
-replace into replace_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4 limit 0,1) order by col4 desc;
+replace into replace_table7 select col4 from t2_partition where t2_partition.col1 < (select col1 from t1_partition where col1>=5 order by col4,col1 limit 0,1) order by col4 desc;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 5 } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 5 } }], selector[{}], order_by[{ "col4": 1, "col1": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 5 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2_partition]
 select * from replace_table7;
 col4
