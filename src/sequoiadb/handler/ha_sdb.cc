@@ -1221,11 +1221,9 @@ int sdb_build_aggregate_obj(bson::BSONObj &condition,
   SDB_LOG_DEBUG(
       "Query message: match[%s], group[%s], sort[%s], skip[%s], "
       "limit[%s]",
-      match_obj.toString(false, false).c_str(),
-      group_obj.toString(false, false).c_str(),
-      sort_obj.toString(false, false).c_str(),
-      skip_obj.toString(false, false).c_str(),
-      limit_obj.toString(false, false).c_str());
+      SDB_OBJ_TO_SECURE_STR(match_obj), SDB_OBJ_TO_SECURE_STR(group_obj),
+      SDB_OBJ_TO_SECURE_STR(sort_obj), SDB_OBJ_TO_SECURE_STR(skip_obj),
+      SDB_OBJ_TO_SECURE_STR(limit_obj));
 
 done:
   return rc;
@@ -6468,8 +6466,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       }
     }
     SDB_LOG_DEBUG("optimizer delete: %d, condition: %s, table: %s.%s",
-                  optimizer_delete, condition.toString(false, false).c_str(),
-                  db_name, table_name);
+                  optimizer_delete, SDB_OBJ_TO_SECURE_STR(condition), db_name,
+                  table_name);
     if (optimizer_delete) {
 #ifdef IS_MARIADB
       SELECT_LEX *select_lex = thd->lex->first_select_lex();
