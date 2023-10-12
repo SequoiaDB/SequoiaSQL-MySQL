@@ -6092,9 +6092,10 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
     rule = sub_builder.obj();
   }
 done:
-  DBUG_PRINT("ha_sdb:info",
-             ("optimizer update: %d, rule: %s, condition: %s", optimizer_update,
-              SDB_OBJ_TO_SECURE_STR(rule), SDB_OBJ_TO_SECURE_STR(condition)));
+  DBUG_PRINT(
+      "ha_sdb:info",
+      ("optimizer update: %d, rule: [%s], condition: [%s]", optimizer_update,
+       SDB_OBJ_TO_SECURE_STR(rule), SDB_OBJ_TO_SECURE_STR(condition)));
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -6153,7 +6154,7 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
   optimizer_delete = true;
 done:
   DBUG_PRINT("ha_sdb:info",
-             ("optimizer delete: %d, condition: %s", optimizer_delete,
+             ("optimizer delete: %d, condition: [%s]", optimizer_delete,
               SDB_OBJ_TO_SECURE_STR(condition)));
   DBUG_RETURN(optimizer_delete);
 }
@@ -6274,7 +6275,7 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
           }
           count_cond_blder.appendElements(condition);
           condition = count_cond_blder.obj();
-          SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
+          SDB_LOG_DEBUG("optimizer count: %d, condition: [%s], table: %s.%s",
                         count_query, SDB_OBJ_TO_SECURE_STR(condition), db_name,
                         table_name);
         }
@@ -6465,7 +6466,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
         goto error;
       }
     }
-    SDB_LOG_DEBUG("optimizer delete: %d, condition: %s, table: %s.%s",
+    SDB_LOG_DEBUG("optimizer delete: %d, condition: [%s], table: %s.%s",
                   optimizer_delete, SDB_OBJ_TO_SECURE_STR(condition), db_name,
                   table_name);
     if (optimizer_delete) {
@@ -6510,9 +6511,10 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
         goto error;
       }
     }
-    SDB_LOG_DEBUG("optimizer update: %d, rule: %s, condition: %s, table: %s.%s",
-                  optimizer_update, SDB_OBJ_TO_SECURE_STR(rule),
-                  SDB_OBJ_TO_SECURE_STR(condition), db_name, table_name);
+    SDB_LOG_DEBUG(
+        "optimizer update: %d, rule: [%s], condition: [%s], table: %s.%s",
+        optimizer_update, SDB_OBJ_TO_SECURE_STR(rule),
+        SDB_OBJ_TO_SECURE_STR(condition), db_name, table_name);
     if (optimizer_update) {
       DBUG_ASSERT(!rule.isEmpty());
       first_read = false;
@@ -7242,8 +7244,8 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
         "Collection[%s.%s] failed to query with "
         "condition[%s], order[%s], hint[%s]. rc: %d",
         collection->get_cs_name(), collection->get_cl_name(),
-        condition.toString().c_str(), order_by.toString().c_str(),
-        hint.toString().c_str(), rc);
+        SDB_OBJ_TO_SECURE_STR(condition), SDB_OBJ_TO_SECURE_STR(order_by),
+        SDB_OBJ_TO_SECURE_STR(hint), rc);
     goto error;
   }
 
