@@ -8,7 +8,7 @@ a	b	c	d
 UPDATE t1 SET a = 2 WHERE c = 2;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=[generate_column_sequoiadb], table[t1], sql=[UPDATE t1 SET a = 2 WHERE c = 2]
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 SELECT * FROM t1;
 a	b	c	d
@@ -16,34 +16,34 @@ a	b	c	d
 UPDATE t1 SET a = 4;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 4 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 4 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d
 4	2	5	4
 UPDATE t1 SET b = 4 WHERE d = 4;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": 4, "d": 6 } }, condition: { "d": { "$et": 4 } }, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "b": 4, "d": 6 } }], condition: [{ "d": { "$et": 4 } }], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d
 4	4	5	6
 UPDATE t1 SET b = 8;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": 8, "d": 10 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "b": 8, "d": 10 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d
 4	8	5	10
 UPDATE t1 SET a = a + 1;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d
 5	8	6	10
 UPDATE t1 SET b = b + 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 SELECT * FROM t1;
 a	b	c	d
@@ -51,7 +51,7 @@ a	b	c	d
 DELETE FROM t1 where d = 11;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "d": { "$et": 11 } }, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "d": { "$et": 11 } }], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d
 DROP TABLE t1;
@@ -63,7 +63,7 @@ a	b	c
 UPDATE t1 SET a = 2 WHERE c = 40;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 2, "c": 60 } }, condition: { "c": { "$et": 40 } }, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 2, "c": 60 } }], condition: [{ "c": { "$et": 40 } }], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c
 2	3	60
@@ -76,7 +76,7 @@ a	b	c
 UPDATE t1 SET a = 2;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 2, "b": 3 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 2, "b": 3 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c
 2	3	23
@@ -89,7 +89,7 @@ a	b	c
 UPDATE t1 SET a = 2;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 2 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 2 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c
 2	3	23
@@ -102,7 +102,7 @@ a	b	c
 UPDATE t1 SET a = 2;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 2, "b": 3, "c": 23 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 2, "b": 3, "c": 23 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c
 2	3	23
@@ -115,7 +115,7 @@ a	b	c
 UPDATE t1 SET a = 2;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 2, "c": 23 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 2, "c": 23 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c
 2	3	23
@@ -124,14 +124,14 @@ CREATE TABLE t1 (a INT, b INT, c INT GENERATED ALWAYS AS (a + 1) VIRTUAL, d INT 
 INSERT INTO t1 (a, b) VALUES (1,2);
 UPDATE t1 SET b = 8;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 SELECT * FROM t1;
 a	b	c	d	e
 1	8	2	11	10
 UPDATE t1 SET a = 8;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 SELECT * FROM t1;
 a	b	c	d	e
@@ -139,7 +139,7 @@ a	b	c	d	e
 UPDATE t1 SET a = 8, b=1;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 8, "b": 1, "d": 11, "e": 10 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 8, "b": 1, "d": 11, "e": 10 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d	e
 8	1	9	11	10
@@ -161,16 +161,16 @@ a	b	c	d
 1	1	2	22
 UPDATE t1 SET a = 2;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 UPDATE t1 SET b = 2;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 UPDATE t1 SET a = 4, b = 4;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 4, "b": 4, "d": 28 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 4, "b": 4, "d": 28 } }], condition: [{}], table: generate_column_sequoiadb.t1
 CREATE INDEX a ON t1(a);
 CREATE INDEX b ON t1(b);
 CREATE INDEX c ON t1(c);
@@ -178,16 +178,16 @@ ERROR HY000: Table storage engine 'SequoiaDB' does not support the create option
 CREATE INDEX d ON t1(d);
 UPDATE t1 SET a =6;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 UPDATE t1 SET b =6;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 UPDATE t1 SET a = 8, b = 8;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 8, "b": 8, "d": 36 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 8, "b": 8, "d": 36 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d
 8	8	9	36
@@ -294,20 +294,20 @@ INSERT INTO t1 (a, b, c, d) VALUES (1,2,1,2);
 UPDATE t1 SET a = 8;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 8 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 8 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d	e	f
 8	2	1	2	11	4
 UPDATE t1 SET c = 8;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 SELECT * FROM t1;
 a	b	c	d	e	f
 8	2	8	2	11	11
 UPDATE t1 SET d = d + 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{}], table: generate_column_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[generate_column_sequoiadb.t1]
 SELECT * FROM t1;
 a	b	c	d	e	f
@@ -315,14 +315,14 @@ a	b	c	d	e	f
 UPDATE t1 SET a = 9, b = 9;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 9, "b": 9 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "a": 9, "b": 9 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d	e	f
 9	9	8	3	19	12
 UPDATE t1 SET c = 9, d = 9;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "c": 9, "d": 9, "f": 19 } }, condition: {}, table: generate_column_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "c": 9, "d": 9, "f": 19 } }], condition: [{}], table: generate_column_sequoiadb.t1
 SELECT * FROM t1;
 a	b	c	d	e	f
 9	9	9	9	19	19

@@ -196,7 +196,7 @@ SELECT COUNT(*) FROM t1 WHERE a=4;
 COUNT(*)
 10626
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$et": 4 } }, table: index_select_sequoiadb_22794.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$et": 4 } }], table: index_select_sequoiadb_22794.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$et": 4 } }],hint[{ "": "a" }] table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=4 AND b="a,b";
@@ -208,7 +208,7 @@ SELECT COUNT(*) FROM t1 WHERE a=4 AND b="a,b";
 COUNT(*)
 1598
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$et": 4 }, "b": { "$et": 3 } }, table: index_select_sequoiadb_22794.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$et": 4 }, "b": { "$et": 3 } }], table: index_select_sequoiadb_22794.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$et": 4 }, "b": { "$et": 3 } }],hint[{ "": "ab" }] table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE id=338285 AND a=3;
@@ -267,7 +267,7 @@ SELECT COUNT(*) FROM t1 WHERE a=4;
 COUNT(*)
 10626
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$et": 4 } }, table: index_select_sequoiadb_22794.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$et": 4 } }], table: index_select_sequoiadb_22794.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$et": 4 } }],hint[{ "": "a" }] table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE a=4 AND b="a,b";
@@ -279,7 +279,7 @@ SELECT COUNT(*) FROM t1 WHERE a=4 AND b="a,b";
 COUNT(*)
 1598
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$et": 4 }, "b": { "$et": 3 } }, table: index_select_sequoiadb_22794.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$et": 4 }, "b": { "$et": 3 } }], table: index_select_sequoiadb_22794.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$et": 4 }, "b": { "$et": 3 } }],hint[{ "": "ab" }] table[index_select_sequoiadb_22794.t1]
 EXPLAIN SELECT * FROM t1 WHERE id=338285 AND a=3;

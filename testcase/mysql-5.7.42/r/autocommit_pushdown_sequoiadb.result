@@ -1107,14 +1107,14 @@ SELECT COUNT(*) FROM t1;
 COUNT(*)
 200
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: {}, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{}], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{}],hint[{ "": "PRIMARY" }] table[autocommit_pushdown_sequoiadb.t1]
 SELECT COUNT(*) FROM t1 WHERE col_int = 11;
 COUNT(*)
 0
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col_int": { "$et": 11 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col_int": { "$et": 11 } }], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "col_int": { "$et": 11 } }],hint[{ "": "col_int" }] table[autocommit_pushdown_sequoiadb.t1]
 select * from t1 where pk < 10 order by col_int;
@@ -1167,7 +1167,7 @@ col_date	col_varchar_16	pk	col_int
 [Note] SequoiaDB: Query message: condition[{ "col_int": { "$et": 1 } }], selector[{}], order_by[{ "col_int": 1 }], hint[{ "": "col_int" }], limit[1], offset[0], table[autocommit_pushdown_sequoiadb.t1]
 UPDATE t1 SET col_int = ((col_int + 1) - 1) * 1 WHERE pk = 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 0, rule: {}, condition: { "pk": { "$et": 1 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 0, rule: [{}], condition: [{ "pk": { "$et": 1 } }], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[autocommit_pushdown_sequoiadb.t1]
 UPDATE t1, t2 SET t1.col_int = (t1.col_int + 1 - 1) WHERE t1.pk = t2.pk AND t2.pk = 2;
 [Note] Testcase: Operation log begin
@@ -1177,23 +1177,23 @@ UPDATE t1, t2 SET t1.col_int = (t1.col_int + 1 - 1) WHERE t1.pk = t2.pk AND t2.p
 UPDATE t1 SET col_int = 1 WHERE col_int = 1;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col_int": 1 } }, condition: { "col_int": { "$et": 1 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "col_int": 1 } }], condition: [{ "col_int": { "$et": 1 } }], table: autocommit_pushdown_sequoiadb.t1
 /* multi request */
 explain UPDATE t1 SET col_int = 3 WHERE pk = 10000 OR col_varchar_16 = "matchs none";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	UPDATE	t1	NULL	index_merge	PRIMARY,col_varchar_16,multi_key	PRIMARY,col_varchar_16	4,67	NULL	3	100.00	Using sdb_union(PRIMARY,col_varchar_16); Using where
 UPDATE t1 SET col_int = 3 WHERE pk = 10000 OR col_varchar_16 = "matchs none";
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col_int": 3 } }, condition: { "pk": { "$et": 10000 } }, table: autocommit_pushdown_sequoiadb.t1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col_int": 3 } }, condition: { "col_varchar_16": { "$et": "matchs none" } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "col_int": 3 } }], condition: [{ "pk": { "$et": 10000 } }], table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "col_int": 3 } }], condition: [{ "col_varchar_16": { "$et": "matchs none" } }], table: autocommit_pushdown_sequoiadb.t1
 SET SESSION optimizer_switch = 'mrr=off';
 explain UPDATE t1 SET col_int = 5 WHERE pk = 30000 OR pk = 50000;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	UPDATE	t1	NULL	range	PRIMARY	PRIMARY	4	const	2	100.00	Using where
 UPDATE t1 SET col_int = 5 WHERE pk = 30000 OR pk = 50000;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col_int": 5 } }, condition: { "pk": { "$et": 30000 } }, table: autocommit_pushdown_sequoiadb.t1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col_int": 5 } }, condition: { "pk": { "$et": 50000 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "col_int": 5 } }], condition: [{ "pk": { "$et": 30000 } }], table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "col_int": 5 } }], condition: [{ "pk": { "$et": 50000 } }], table: autocommit_pushdown_sequoiadb.t1
 SET SESSION optimizer_switch = 'mrr=on';
 /* using mrr */
 explain UPDATE t1 SET col_int = 5 WHERE pk = 30000 OR pk = 50000;
@@ -1202,11 +1202,11 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 UPDATE t1 SET col_int = 5 WHERE pk = 30000 OR pk = 50000;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col_int": 5 } }, condition: { "$and": [ { "$or": [ { "pk": { "$et": 30000 } }, { "pk": { "$et": 50000 } } ] }, { "pk": { "$in": [ 30000, 50000 ] } } ] }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "col_int": 5 } }], condition: [{ "$and": [ { "$or": [ { "pk": { "$et": 30000 } }, { "pk": { "$et": 50000 } } ] }, { "pk": { "$in": [ 30000, 50000 ] } } ] }], table: autocommit_pushdown_sequoiadb.t1
 DELETE FROM t1 WHERE col_int * col_int = 3;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=[autocommit_pushdown_sequoiadb], table[t1], sql=[DELETE FROM t1 WHERE col_int * col_int = 3]
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[autocommit_pushdown_sequoiadb.t1]
 DELETE t1 FROM t1 INNER JOIN t2 WHERE t1.pk = t2.pk AND t2.pk < 0;
 [Note] Testcase: Operation log begin
@@ -1215,23 +1215,23 @@ DELETE t1 FROM t1 INNER JOIN t2 WHERE t1.pk = t2.pk AND t2.pk < 0;
 DELETE FROM t1 WHERE pk = 20000;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "pk": { "$et": 20000 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "pk": { "$et": 20000 } }], table: autocommit_pushdown_sequoiadb.t1
 /* multi request */
 explain DELETE FROM t1 WHERE pk = 70000 OR col_varchar_16 = "matchs nothing";
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	DELETE	t1	NULL	index_merge	PRIMARY,col_varchar_16,multi_key	PRIMARY,col_varchar_16	4,67	NULL	3	100.00	Using sdb_union(PRIMARY,col_varchar_16); Using where
 DELETE FROM t1 WHERE pk = 70000 OR col_varchar_16 = "matchs nothing";
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 1, condition: { "pk": { "$et": 70000 } }, table: autocommit_pushdown_sequoiadb.t1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "col_varchar_16": { "$et": "matchs nothing" } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "pk": { "$et": 70000 } }], table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "col_varchar_16": { "$et": "matchs nothing" } }], table: autocommit_pushdown_sequoiadb.t1
 SET SESSION optimizer_switch = 'mrr=off';
 explain DELETE FROM t1 WHERE pk = 60000 OR pk = 80000;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	DELETE	t1	NULL	range	PRIMARY	PRIMARY	4	const	2	100.00	Using where
 DELETE FROM t1 WHERE pk = 60000 OR pk = 80000;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 1, condition: { "pk": { "$et": 60000 } }, table: autocommit_pushdown_sequoiadb.t1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "pk": { "$et": 80000 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "pk": { "$et": 60000 } }], table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "pk": { "$et": 80000 } }], table: autocommit_pushdown_sequoiadb.t1
 SET SESSION optimizer_switch = 'mrr=on';
 /* using mrr */
 explain DELETE FROM t1 WHERE pk = 60000 OR pk = 80000;
@@ -1240,7 +1240,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 DELETE FROM t1 WHERE pk = 60000 OR pk = 80000;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "$or": [ { "pk": { "$et": 60000 } }, { "pk": { "$et": 80000 } } ] }, { "pk": { "$in": [ 60000, 80000 ] } } ] }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "$and": [ { "$or": [ { "pk": { "$et": 60000 } }, { "pk": { "$et": 80000 } } ] }, { "pk": { "$in": [ 60000, 80000 ] } } ] }], table: autocommit_pushdown_sequoiadb.t1
 INSERT LOW_PRIORITY INTO t1 VALUES("2000-01-01", "abc", null, 1);
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
@@ -1373,7 +1373,7 @@ call p1;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 2 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[autocommit_pushdown_sequoiadb.t1]
 [Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 2 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[autocommit_pushdown_sequoiadb.t2]
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col_int": 1 } }, condition: { "col_int": { "$et": 1 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "col_int": 1 } }], condition: [{ "col_int": { "$et": 1 } }], table: autocommit_pushdown_sequoiadb.t1
 drop procedure p1;
 SELECT "Use this query to flush new log" FROM t1 LIMIT 1;
 Use this query to flush new log
@@ -1386,7 +1386,7 @@ end ||
 call p1;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "pk": { "$lt": 0 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[autocommit_pushdown_sequoiadb.t2]
-[Note] SequoiaDB: optimizer delete: 1, condition: { "pk": { "$et": 20000 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "pk": { "$et": 20000 } }], table: autocommit_pushdown_sequoiadb.t1
 drop procedure p1;
 SELECT "Use this query to flush new log" FROM t1 LIMIT 1;
 Use this query to flush new log
@@ -1448,10 +1448,10 @@ col_date	col_varchar_16	pk	col_int
 [Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{ "pk": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[autocommit_pushdown_sequoiadb.t1]
 delete from t1 where pk = 10000;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 1, condition: { "pk": { "$et": 10000 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "pk": { "$et": 10000 } }], table: autocommit_pushdown_sequoiadb.t1
 update t1 set col_int = 1 where col_int = 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col_int": 1 } }, condition: { "col_int": { "$et": 1 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: [{ "$set": { "col_int": 1 } }], condition: [{ "col_int": { "$et": 1 } }], table: autocommit_pushdown_sequoiadb.t1
 DROP TRIGGER t1_bi;
 SELECT "Use this query to flush new log" FROM t1 LIMIT 1;
 Use this query to flush new log
@@ -1527,7 +1527,7 @@ select count(*) from v1 limit 3;
 count(*)
 5
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 4 } }, table: autocommit_pushdown_sequoiadb.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$gt": 4 } }], table: autocommit_pushdown_sequoiadb.t2
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 4 } }],hint[{}] table[autocommit_pushdown_sequoiadb.t2]
 explain select count(*) from (select * from t1 where a>2) t2;
@@ -1539,7 +1539,7 @@ select count(*) from (select * from t1 where a>2) t2;
 count(*)
 7
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 2 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$gt": 2 } }], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[autocommit_pushdown_sequoiadb.t1]
 explain select count(*) from (select * from t1 where a>2) t2 limit 3;
@@ -1551,7 +1551,7 @@ select count(*) from (select * from t1 where a>2) t2 limit 3;
 count(*)
 7
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 2 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$gt": 2 } }], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[autocommit_pushdown_sequoiadb.t1]
 explain select count(*) from (select * from t1 where a>2) t2 order by a;
@@ -1563,7 +1563,7 @@ select count(*) from (select * from t1 where a>2) t2 order by a;
 count(*)
 7
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 2 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$gt": 2 } }], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[autocommit_pushdown_sequoiadb.t1]
 explain select count(*) from (select * from t1 where a>2) t2 group by a;
@@ -1605,7 +1605,7 @@ select count(*) from (select * from t1 where a>2 order by a DESC) t2;
 count(*)
 7
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "a": { "$gt": 2 } }, table: autocommit_pushdown_sequoiadb.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "a": { "$gt": 2 } }], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 [Note] SequoiaDB: Count message: condition[{ "a": { "$gt": 2 } }],hint[{}] table[autocommit_pushdown_sequoiadb.t1]
 explain select * from (select * from t1 where a>2) t2 limit 3;

@@ -9,18 +9,18 @@ delete from t1 where a=10;
 affected rows: 1
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "a": { "$et": 10 } }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "a": { "$et": 10 } }], table: delete_sequoiadb.t1
 delete from t1 where c='ss';
 affected rows: 1
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=[delete_sequoiadb], table[t1], sql=[delete from t1 where c='ss']
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t1]
 delete from t1 where a=1000 or c='q';
 affected rows: 2
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=[delete_sequoiadb], table[t1], sql=[delete from t1 where a=1000 or c='q']
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -31,22 +31,22 @@ insert into t1(a,b,c) values(11, 'sb', 'sb'), (1001, 'st', 'st'),(102, 'sr', 'r'
 delete from t1 where id=1 order by id;
 affected rows: 1
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 0, condition: { "id": { "$et": 1 } }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{ "id": { "$et": 1 } }], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[delete_sequoiadb.t1]
 delete from t1 where id=2 order by a;
 affected rows: 1
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 0, condition: { "id": { "$et": 2 } }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{ "id": { "$et": 2 } }], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[delete_sequoiadb.t1]
 delete from t1 where a=100 order by id;
 affected rows: 1
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t1]
 delete from t1 where a=1000 order by a;
 affected rows: 0
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 0, condition: { "a": { "$et": 1000 } }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{ "a": { "$et": 1000 } }], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1000 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t1]
 delete from t1 order by id;
 affected rows: 5
@@ -59,17 +59,17 @@ insert into t1(a,b,c) values(11, 'sb', 'sb'), (1001, 'st', 'st'),(102, 'sr', 'r'
 delete from t1 where c='sa' order by id;
 affected rows: 1
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t1]
 delete from t1 order by id limit 2;
 affected rows: 2
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[delete_sequoiadb.t1]
 delete from t1 where a=1001 order by id limit 1;
 affected rows: 1
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[delete_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -80,13 +80,13 @@ id	a	b	c
 delete from t1 where a>2 limit 1;
 affected rows: 1
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 0, condition: { "a": { "$gt": 2 } }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{ "a": { "$gt": 2 } }], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t1]
 delete from t1 where c in('sz', 'r', 'sy') limit 1;
 affected rows: 1
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=[delete_sequoiadb], table[t1], sql=[delete from t1 where c in('sz', 'r', 'sy') limit 1]
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t1]
 select * from t1 order by id;
 id	a	b	c
@@ -99,7 +99,7 @@ delete ignore from t1 where id>2;
 affected rows: 2
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "id": { "$gt": 2 } }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "id": { "$gt": 2 } }], table: delete_sequoiadb.t1
 select * from t1 order by id;
 id
 1
@@ -108,7 +108,7 @@ delete low_priority from t1 where id>1;
 affected rows: 1
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "id": { "$gt": 1 } }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "id": { "$gt": 1 } }], table: delete_sequoiadb.t1
 drop table t1;
 create temporary table t1(id int auto_increment key, a int, b varchar(255), c varbinary(255))engine=sequoiadb;
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
@@ -116,12 +116,12 @@ delete from t1 where a=10;
 affected rows: 1
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "a": { "$et": 10 } }, table: x
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "a": { "$et": 10 } }], table: x
 delete from t1 where c='ss';
 affected rows: 1
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=x, table[x], sql=[delete from t1 where c='ss']
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: x
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: x
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[x]
 select * from t1 order by id;
 id	a	b	c
@@ -167,13 +167,13 @@ delete from t1 WHERE c1 IN (SELECT c2 FROM t2);
 affected rows: 1
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=[delete_sequoiadb], table[t1], sql=[delete from t1 WHERE c1 IN (SELECT c2 FROM t2)]
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t1]
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t2
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t2
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t2]
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t2
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t2
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t2]
-[Note] SequoiaDB: optimizer delete: 0, condition: {}, table: delete_sequoiadb.t2
+[Note] SequoiaDB: optimizer delete: 0, condition: [{}], table: delete_sequoiadb.t2
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[delete_sequoiadb.t2]
 select *from t1;
 c1
@@ -186,7 +186,7 @@ delete quick from t1 where c1=2;
 affected rows: 1
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "c1": { "$et": 2 } }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "c1": { "$et": 2 } }], table: delete_sequoiadb.t1
 select * from t1;
 c1
 3
@@ -230,8 +230,8 @@ INSERT INTO t1 VALUES ('1'),('2'),('3'),('4');
 DELETE FROM t1 WHERE a <> '4';
 affected rows: 3
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "a": { "$ne": "4" } }, { "a": { "$lt": "4" } } ] }, table: delete_sequoiadb.t1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "a": { "$ne": "4" } }, { "a": { "$gt": "4" } } ] }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "$and": [ { "a": { "$ne": "4" } }, { "a": { "$lt": "4" } } ] }], table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "$and": [ { "a": { "$ne": "4" } }, { "a": { "$gt": "4" } } ] }], table: delete_sequoiadb.t1
 SELECT * FROM t1;
 a
 4
@@ -241,8 +241,8 @@ INSERT INTO t1 VALUES ('1','1'),('2','2'),('3','3'),('4','4');
 DELETE FROM t1 WHERE a <> '4' AND b <> '4';
 affected rows: 3
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "$and": [ { "a": { "$ne": "4" } }, { "b": { "$ne": "4" } } ] }, { "a": { "$lt": "4" } } ] }, table: delete_sequoiadb.t1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "$and": [ { "a": { "$ne": "4" } }, { "b": { "$ne": "4" } } ] }, { "a": { "$gt": "4" } } ] }, table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "$and": [ { "$and": [ { "a": { "$ne": "4" } }, { "b": { "$ne": "4" } } ] }, { "a": { "$lt": "4" } } ] }], table: delete_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "$and": [ { "$and": [ { "a": { "$ne": "4" } }, { "b": { "$ne": "4" } } ] }, { "a": { "$gt": "4" } } ] }], table: delete_sequoiadb.t1
 SELECT * FROM t1;
 a	b
 4	4

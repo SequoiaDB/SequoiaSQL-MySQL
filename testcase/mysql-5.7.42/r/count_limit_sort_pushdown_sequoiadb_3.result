@@ -173,7 +173,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 1	SIMPLE	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 1); Using index
 replace into replace_table1 select count(1) from t1 where col1>=1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -383,7 +383,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 1	SIMPLE	t1	NULL	range	idx_col2	idx_col2	13	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col2` >= 'def'); Using index
 replace into replace_table1 select count(1) from t1 where col2>="def" limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gte": "def" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col2": { "$gte": "def" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gte": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -395,7 +395,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 1	SIMPLE	t1	NULL	range	idx_col2	idx_col2	13	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col2` >= 'bcd')
 replace into replace_table1 select count(1) from t1 where col2>="bcd" order by col4 desc;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gte": "bcd" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col2": { "$gte": "bcd" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gte": "bcd" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -407,7 +407,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 1	SIMPLE	t1	NULL	range	idx_col3	idx_col3	6	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` >= '20221115114210')
 replace into replace_table1 select count(1) from t1 where col3>="20221115114210" order by col4 limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gte": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -421,9 +421,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
 replace into replace_table1(select count(1) from t1 where col1>1) union ALL (select count(1) from t2 where col4<"zzz") limit 1,1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$lt": "zzz" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$lt": "zzz" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "zzz" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -744,9 +744,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
 replace into replace_table1(select count(*) from t1 where col1>=1 limit 0,4) union ALL (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col2": { "$gt": "def" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -760,9 +760,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
 replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) union ALL (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col2": { "$gt": "def" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -776,9 +776,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
 replace into replace_table1(select count(col4) from t1 where col1>1 order by col4 desc) union ALL (select count(col4) from t2 where col3>="20221115114210" order by col4 limit 1)  limit 1,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$isnull": 0 }, "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$isnull": 0 }, "col1": { "$gt": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$isnull": 0 }, "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -792,9 +792,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
 replace into replace_table1(select count(1) from t1 where col1>1) UNION (select count(1) from t2 where col4<"zzz") limit 1,1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$lt": "zzz" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$lt": "zzz" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "zzz" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -1108,9 +1108,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
 replace into replace_table1(select count(*) from t1 where col1>=1 limit 0,4) UNION (select count(*)  from t2 where col2>"def" limit 0,3) limit 1,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col2": { "$gt": "def" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -1124,9 +1124,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
 replace into replace_table1(select count(1) from t1 where col1>=1 order by col1 desc) UNION (select count(1) from t2 where col2>"def" order by col4 desc) limit 1,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col2": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col2": { "$gt": "def" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col2": { "$gt": "def" } }],hint[{ "": "idx_col2" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -1140,9 +1140,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
 replace into replace_table1(select count(1) from t1 where col1>1 order by col1 desc) UNION (select count(1) from t2 where col3>="20221115114210" order by col4 limit 2,3)  limit 1,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gte": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -1158,7 +1158,7 @@ replace into replace_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 4 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$lt": "zzz" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$lt": "zzz" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "zzz" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -1180,7 +1180,7 @@ replace into replace_table1(select count(1) from t1, t2 where t1.col1>=4 and t2.
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$gte": "def" } }], selector[{ "_id": null, "col4": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col4": { "$lt": "zzz" } }], selector[{ "_id": null, "col4": null }], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$lt": "zzz" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$lt": "zzz" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "zzz" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -1235,9 +1235,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 1); Using index
 replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1) from t2 where col3>"20221115114210";
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gt": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gt": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table3;
 col1	col2
@@ -1386,7 +1386,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	NULL	idx_col3	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` < '20221215114210'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 replace into replace_table5 select count(*),(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 < 6;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 6 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 6 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 6 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$lt": "2022-12-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 select * from replace_table5;
@@ -1539,9 +1539,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 1); Using index
 replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1 limit 1,3) from t2 where col3>"20221115114210" limit 3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gt": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gt": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table3;
 col1	col2
@@ -1554,7 +1554,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	ref	idx_col2	idx_col2	13	const	#	#	Using where; Using filesort
 replace into replace_table3 select count(1),(select col1 from t1 where col2="bcd" order by col3) from t2 where col3>"20221115114210" order by col4;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gt": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gt": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "bcd" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table3;
@@ -1568,7 +1568,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	NULL	idx_col2	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col2` >= 'bcd'); Using pushed ORDER BY; Storage engine handles access type
 replace into replace_table3 select count(1),(select col1 from t1 where col2>="bcd" order by col3 limit 2,1) from t2 where col3>"20221115114210" order by col4 limit 1,3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gt": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gt": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gte": "bcd" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "" }], limit[1], offset[2], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table3;
@@ -1581,9 +1581,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	range	idx_col3	idx_col3	6	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` >= '20221115114210')
 replace into replace_table1 select count(*) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 4 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 4 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 4 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -1792,7 +1792,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 1); Using index
 replace into replace_table1 select col1 from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 order by col1 limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 9 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 select * from replace_table1;
@@ -1806,7 +1806,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 1); Using index
 replace into t5 select * from t2 where t2.col1 <(select count(col1) from t1 where col1>=1 limit 0,1)  group by col1 limit 3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 9 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 select * from t5;
@@ -2052,7 +2052,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 replace into replace_table1 select count(1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 limit 0,1)  limit 3;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 5 } }], selector[{ "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -2082,7 +2082,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 replace into replace_table1 select count(1) from t2 where t2.col1 < (select col1 from t1 where col1>=5 order by col4 limit 0,1)  order by col3 desc limit 3;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 5 } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 select * from replace_table1;
 col1
@@ -2096,7 +2096,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 replace into replace_table1 select count(*) from t2 where col1>4 group by col1 having col1> (select count(1) from t1 where col4>"def") ;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gt": 4 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$gt": "def" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$gt": "def" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$gt": "def" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -2394,7 +2394,7 @@ replace into replace_table3 select count(*),(select count(col1) from t1 where co
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=[count_limit_sort_pushdown_sequoiadb_3], table[t2], sql=[replace into replace_table3 select count(*),(select count(col1) from t1 where col1>=1)  from t2 where t2.col1 in(select count(col4) from t1 where col3>"20221115114210" ) group by col2 having col2< (select col4 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3]
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$isnull": 0 }, "col3": { "$gt": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$isnull": 0 }, "col3": { "$gt": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$isnull": 0 }, "col3": { "$gt": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 select * from replace_table3;
@@ -2617,7 +2617,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	NULL	idx_col3	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` < '20221215114210'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 replace into replace_table4 select *,(select col4 from t1 where col3<"20221215114210" group by col4 order by col4 limit 1) from t2 where t2.col1 <(select count(1) from t1 where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1) order by col3 limit 3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 9 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col3": { "$first": "$col3" }, "_id": { "col3": "$col3" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
@@ -2637,7 +2637,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	NULL	idx_col3	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1_partition`.`col3` < '20221215114210'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 replace into replace_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1_partition
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1_partition
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 14 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2_partition]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
@@ -2755,10 +2755,10 @@ Warnings:
 Warning	1052	Column 'col1' in group statement is ambiguous
 Warning	1052	Column 'col1' in having clause is ambiguous
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col1": { "$gte": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col1": { "$gte": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col1": { "$gte": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 3 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "abcdef" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table3;
@@ -2776,9 +2776,9 @@ replace into replace_table3 select count(1),(select count(col1) from t1 where co
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Condition can't be pushed down. db=[count_limit_sort_pushdown_sequoiadb_3], table[t2], sql=[replace into replace_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col1 desc)  from t2 where t2.col1 in (select count(col1) from t1 where col3>"20221115114210" order by col1 desc) group by t2.col1 having t2.col1> (select count(col1) from t1 where col2>"abcdef" group by col1 order by col1 desc limit 1 )   limit 3]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col3": { "$gt": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col3": { "$gt": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col3": { "$gt": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "abcdef" } }], selector[{}], order_by[{ "col1": -1, "col2": -1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table3;
@@ -2794,10 +2794,10 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` >= 1)
 replace into replace_table3 select count(1),(select count(col1) from t1 where col1>=1 order by col3 desc limit 2,1)  from t2 where t2.col1 < (select count(col1) from t1 where col1>=5 order by col4 limit 0,1) group by t2.col1 having t2.col1< (select count(col4) from t1 where col2<"abcdef" group by col3 order by col4 desc limit 1 )   limit 3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col1": { "$gte": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col1": { "$gte": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col1": { "$gte": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 3 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$isnull": 0 }, "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "abcdef" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table3;
@@ -2813,9 +2813,9 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	SUBQUERY	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t2`.`col1` <= 6); Using index; Using join buffer (Block Nested Loop)
 replace into replace_table3 select count(*),(select count(1) from t1, t2 where t1.col1>=4 and t2.col1 <=6 ) from t2 where t2.col1 < (select count(col4) from t1 where col3>="20221115114210" ) ;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$isnull": 0 }, "col3": { "$gte": "2022-11-15 11:42:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 4 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 4 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 4 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 4 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
@@ -2849,7 +2849,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col3	idx_col3	6	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` >= '20221115114310'); Using index
 replace into replace_table1 select * from (select count(*) from t1 where col3>="20221115114310") dt;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:43:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gte": "2022-11-15 11:43:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:43:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3051,7 +3051,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col3	idx_col3	6	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` >= '20221115114010'); Using index
 replace into replace_table1 select count(*) from (select count(*) from t1 where col3>="20221115114010" limit 8) dt limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:40:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gte": "2022-11-15 11:40:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:40:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3064,7 +3064,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col3	idx_col3	6	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` >= '20221115114310')
 replace into replace_table1 select count(1) from (select count(1) from t1 where col3>="20221115114310" order by col1) dt;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:43:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gte": "2022-11-15 11:43:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:43:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3076,7 +3076,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col3	idx_col3	6	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col3` >= '20221115114310')
 replace into replace_table1 select count(1) from (select count(1) from t1 where col3>="20221115114310" order by col1 limit 2,1) dt;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col3": { "$gte": "2022-11-15 11:43:10" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col3": { "$gte": "2022-11-15 11:43:10" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col3": { "$gte": "2022-11-15 11:43:10" } }],hint[{ "": "idx_col3" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3113,7 +3113,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` > 2)
 replace into replace_table2 select * from v6 where col2<="dd" group by col3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table2;
 col1	col2	col3	col4	col5
@@ -3137,7 +3137,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` > 2)
 replace into replace_table2 select * from v6 where col2<="dd" group by col3 limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table2;
 col1	col2	col3	col4	col5
@@ -3148,7 +3148,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` > 2)
 replace into replace_table2 select * from v6 where col2<="dd" group by col3 order by col3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table2;
 col1	col2	col3	col4	col5
@@ -3159,7 +3159,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` > 2)
 replace into replace_table2 select * from v6 where col2<="dd" group by col3 order by col3 limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table2;
 col1	col2	col3	col4	col5
@@ -3185,7 +3185,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` > 2)
 replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3196,7 +3196,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` > 2)
 replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3207,7 +3207,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` > 2)
 replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 order by col3;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3218,7 +3218,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 2	DERIVED	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_3`.`t1`.`col1` > 2)
 replace into replace_table1 select count(1) from v6 where col2<="dd" group by col3 order by col3 limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$gt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3500,7 +3500,7 @@ replace into replace_table1 select * from (select count(*) from v7) dt;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 2 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$lt": "zzz" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$lt": "zzz" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "zzz" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3521,7 +3521,7 @@ replace into replace_table1 select count(*) from t1,t2, (select count(*) from v7
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 2 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$lt": "zzz" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$lt": "zzz" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "zzz" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
@@ -3544,9 +3544,9 @@ replace into replace_table3 select count(*),(select count(1) from t1, t2 where t
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 2 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col4": { "$lt": "zzz" } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col4": { "$lt": "zzz" } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col4": { "$lt": "zzz" } }],hint[{}] table[count_limit_sort_pushdown_sequoiadb_3.t1]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 2 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 2 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 2 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 4 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
@@ -3655,7 +3655,7 @@ replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 8 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
@@ -3678,7 +3678,7 @@ replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" order by col4 limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col1 limit 1);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 8 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
@@ -3701,7 +3701,7 @@ replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" group by col4 limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gt": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 8 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
@@ -3724,7 +3724,7 @@ replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<
 union
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col1);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 8 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
@@ -3749,7 +3749,7 @@ replace into t5(select * from t1 where col1<(select count(1) from t2 where col1<
 union 
 (select * from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 8 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
@@ -3856,10 +3856,10 @@ replace into replace_table1(select count(*) from t1 where col1<(select count(1) 
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" group by col4 limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col1 limit 1);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$gt": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 8 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 8 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 8 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "defg" } } ] }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
@@ -3881,10 +3881,10 @@ replace into replace_table1(select count(*)  from t1 where col1<(select count(1)
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3<"20221115114210" group by col4 limit 1) order by col1 desc) dt where col1>0  group by col2 limit 1);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$lt": "2022-11-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 8 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 8 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 8 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
 col1
@@ -3904,10 +3904,10 @@ replace into replace_table1(select count(*)  from t1 where col1<(select count(1)
 union
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2 order by col1);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 8 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 8 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 8 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "defg" } } ] }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
@@ -3929,10 +3929,10 @@ replace into replace_table1(select count(*)  from t1 where col1<(select count(1)
 union 
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc) dt where col1>0  group by col2);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 8 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 8 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 8 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "col1": { "$gt": 0 } }, { "col2": { "$gt": "defg" } } ] }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
@@ -3955,10 +3955,10 @@ replace into replace_table1(select count(*)  from t1 where col1<(select count(1)
 union 
 (select count(*)  from (select * from t1 where col2>(select col4 from t2 where col3>"20221115114210" limit 0,1) order by col1 desc limit 9) dt where col1>0  group by col2);
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 5 } }, table: count_limit_sort_pushdown_sequoiadb_3.t2
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 5 } }], table: count_limit_sort_pushdown_sequoiadb_3.t2
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 5 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t2]
 [Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[1], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t2]
-[Note] SequoiaDB: optimizer count: 1, condition: { "col1": { "$lt": 8 } }, table: count_limit_sort_pushdown_sequoiadb_3.t1
+[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$lt": 8 } }], table: count_limit_sort_pushdown_sequoiadb_3.t1
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$lt": 8 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_3.t1]
 [Note] SequoiaDB: Query message: condition[{ "col2": { "$gt": "defg" } }], selector[{}], order_by[{ "col1": -1 }], hint[{ "": "" }], limit[9], offset[0], table[count_limit_sort_pushdown_sequoiadb_3.t1]
 select * from replace_table1;
