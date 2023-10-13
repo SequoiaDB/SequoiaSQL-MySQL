@@ -228,8 +228,12 @@ update t1 set c = 'updateC' where id = 3;
 set sequoiadb_rollback_on_timeout = on;
 begin;
 insert into t1 values (4,4,'d');
+set session sequoiadb_debug_log = on;
+set session sequoiadb_secure_log = on;
 select * from t1 where id = 3 for update;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+[Note] Testcase: Operation log begin
+[Note] SequoiaDB: Query message: condition[SDBSECURE0000(hfIciAVcBcK6CJCrMYVcBcImCP/ogV==)], selector[SDBSECURE0000(h5/=)], order_by[SDBSECURE0000(h5/=)], hint[SDBSECURE0000(hfIcCqboCszrCcK2)], limit[-1], offset[0], table[test_parallel_1.t1]
 select * from t1;
 id	id1	c
 1	1	a
