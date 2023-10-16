@@ -1523,7 +1523,8 @@ static inline int retry_alter_sequence_stmt(THD *thd, const char *query,
 
   rc = server_ha_query(thd, sql_cmd, strlen(sql_cmd));
   if (rc) {
-    SDB_LOG_ERROR("HA: Failed to execute '%s', mysql error: %s", sql_cmd,
+    SDB_LOG_ERROR("HA: Failed to execute '%s', mysql error: %s",
+                  SDB_STR_TO_SECURE_STR(sql_cmd),
                   sdb_da_message_text(thd->get_stmt_da()));
   } else {
     rc = server_ha_query(thd, query, strlen(query));
@@ -2276,7 +2277,7 @@ static int replay_pending_log(THD *thd, const char *db, const char *query,
     SDB_LOG_ERROR(
         "HA: Failed to set session attributes for query '%s', "
         "mysql error: %s",
-        query, sdb_da_message_text(da));
+        SDB_STR_TO_SECURE_STR(query), sdb_da_message_text(da));
     goto error;
   }
 
@@ -2314,7 +2315,7 @@ static int replay_pending_log(THD *thd, const char *db, const char *query,
       SDB_LOG_ERROR(
           "HA: Failed to change database before executing "
           "pending log '%s', mysql error: %s",
-          query, sdb_da_message_text(da));
+          SDB_STR_TO_SECURE_STR(query), sdb_da_message_text(da));
       goto error;
     }
   }
@@ -2328,13 +2329,14 @@ static int replay_pending_log(THD *thd, const char *db, const char *query,
   if (ha_is_ddl_ignorable_error(rc)) {
     SDB_LOG_WARNING(
         "HA: An ignorable error '%s' is found while executing pending log '%s'",
-        sdb_da_message_text(da), query);
+        sdb_da_message_text(da), SDB_STR_TO_SECURE_STR(query));
     rc = 0;
   }
   HA_RC_CHECK(rc, error,
-              "HA: Failed to replay pending log '%s', mysql error: %s", query,
-              sdb_da_message_text(da));
-  SDB_LOG_DEBUG("HA: Pending log '%s' has been executed", query);
+              "HA: Failed to replay pending log '%s', mysql error: %s",
+              SDB_STR_TO_SECURE_STR(query), sdb_da_message_text(da));
+  SDB_LOG_DEBUG("HA: Pending log '%s' has been executed",
+                SDB_STR_TO_SECURE_STR(query));
 done:
   return rc;
 error:

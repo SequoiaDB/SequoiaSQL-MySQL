@@ -3781,7 +3781,7 @@ static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
     version_error = true;
     DBUG_ASSERT(!sql_info->is_result_set_started);
     SDB_LOG_DEBUG("HA: Set result set started flag to true for %s",
-                  sdb_thd_query(thd));
+                  SDB_STR_TO_SECURE_STR(sdb_thd_query(thd)));
     sql_info->is_result_set_started = true;
   } else if (SQLCOM_SELECT == thd_sql_command(thd) &&
              get_sdb_code(mysql_errno) == SDB_DMS_NOTEXIST) {
@@ -4497,8 +4497,8 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   sql_info->pending_sql_id = pending_id;
 
   query = query_without_password(thd, sql_info);
-  SDB_LOG_DEBUG("HA: Writing pending log '%s' with pending ID: %d", query,
-                pending_id);
+  SDB_LOG_DEBUG("HA: Writing pending log '%s' with pending ID: %d",
+                SDB_STR_TO_SECURE_STR(query), pending_id);
 
   // write 'HAPendingObject'
   for (ha_table_list *table = sql_info->tables; table; table = table->next) {
@@ -4967,7 +4967,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       goto error;
     }
     SDB_LOG_DEBUG("HA: Metadata recover finished, start execute: %s",
-                  query_without_password(thd, sql_info));
+                  SDB_STR_TO_SECURE_STR(query_without_password(thd, sql_info)));
     if (thd_killed(thd) || ha_thread.stopped) {
       rc = SDB_HA_ABORT_BY_USER;
       goto error;
@@ -4997,8 +4997,9 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         goto error;
       }
 
-      SDB_LOG_DEBUG("HA: At the beginning of persisting SQL: %s, thread: %p",
-                    query_without_password(thd, sql_info), thd);
+      SDB_LOG_DEBUG(
+          "HA: At the beginning of persisting SQL: %s, thread: %p",
+          SDB_STR_TO_SECURE_STR(query_without_password(thd, sql_info)), thd);
       SDB_LOG_DEBUG("HA: SQL command: %d, event: %d, subevent: %d, thread: %p",
                     sql_command, event_class, *((int *)ev), thd);
       SDB_LOG_DEBUG("HA: Start transaction for persisting SQL log");
@@ -5087,7 +5088,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
 
   if (need_complete(event, is_trans_on, sql_command, event_class)) {
     SDB_LOG_DEBUG("HA: At the end of persisting SQL: %s, thread: %p",
-                  query_without_password(thd, sql_info), thd);
+                  SDB_STR_TO_SECURE_STR(query_without_password(thd, sql_info)),
+                  thd);
     sql_info->single_query = NULL;
     // simulate crash or error while writing SQL log
     if (SDB_ERROR_INJECT_CRASH("crash_while_writing_sql_log") ||
