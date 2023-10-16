@@ -79,7 +79,7 @@ a
 delete from t1 where a = 1;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "a": { "$et": 1 } }, table: log_secure_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [{ "a": { "$et": 1 } }], table: log_secure_sequoiadb.t1
 select * from (select * from t1 where a>3) t2 group by a;
 a
 4
@@ -99,7 +99,7 @@ a
 delete from t1 where a = 1;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: SDBSECURE0000(hfIcFWC1CPwoCcDznJC1CNHogWK2), table: log_secure_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: [SDBSECURE0000(hfIcFWC1CPwoCcDznJC1CNHogWK2)], table: log_secure_sequoiadb.t1
 select * from (select * from t1 where a>3) t2 group by a;
 a
 4
