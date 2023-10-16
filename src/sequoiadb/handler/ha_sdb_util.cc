@@ -268,7 +268,7 @@ int sdb_convert_charset(const String &src_str, String &dst_str,
     rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
-  if (conv_errors) {
+  if (conv_errors && !sdb_use_secure_log(current_thd)) {
     SDB_LOG_DEBUG("String[%s] cannot be converted from %s to %s.",
                   src_str.ptr(), src_str.charset()->csname,
                   dst_charset->csname);
