@@ -286,8 +286,12 @@ connection con2;
 set sequoiadb_rollback_on_timeout = on;
 begin;
 insert into t1 values (4,4,'d');
+set session sequoiadb_debug_log = on;
+set session sequoiadb_secure_log = on;
+--source include/write_mysqld_note_log_sequoiadb.inc
 --error 1205
 select * from t1 where id = 3 for update;
+--source include/get_mysqld_note_log_sequoiadb.inc
 select * from t1;
 #session2 commit
 insert into t1 values (5,5,'e'),(6,6,'f');
