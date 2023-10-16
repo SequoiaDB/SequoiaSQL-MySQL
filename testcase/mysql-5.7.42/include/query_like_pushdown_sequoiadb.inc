@@ -1269,7 +1269,7 @@ let $query = SELECT * FROM t1 WHERE a LIKE "^a" ORDER BY a;
 let $query = SELECT * FROM t1 WHERE b LIKE "a^bc" ORDER BY b;
 --source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 SELECT * FROM t1 WHERE a LIKE "\\a" ORDER BY a;
-SELECT * FROM t1 WHERE b LIKE "a\\bc" ORDER BY b;
+SELECT * FROM t1 WHERE b LIKE "a\\bc" ORDER BY id;
 SELECT * FROM t1 WHERE a LIKE "$a" ORDER BY a;
 SELECT * FROM t1 WHERE b LIKE "a$bc" ORDER BY b;
 SELECT * FROM t1 WHERE a LIKE "*a" ORDER BY a;
