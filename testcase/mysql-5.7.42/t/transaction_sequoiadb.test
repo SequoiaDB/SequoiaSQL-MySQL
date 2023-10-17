@@ -291,7 +291,8 @@ set session sequoiadb_secure_log = on;
 --source include/write_mysqld_note_log_sequoiadb.inc
 --error 1205
 select * from t1 where id = 3 for update;
---source include/get_mysqld_note_log_sequoiadb.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/ /test_parallel_[0-9]/x/
+--exec tac $MYSQLTEST_VARDIR/log/mysqld.1.err |grep -m1 -B 10 'Testcase: Operation log begin' |tac |grep '\[Note\]'
 select * from t1;
 #session2 commit
 insert into t1 values (5,5,'e'),(6,6,'f');

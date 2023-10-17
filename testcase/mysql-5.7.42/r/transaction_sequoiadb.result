@@ -233,7 +233,7 @@ set session sequoiadb_secure_log = on;
 select * from t1 where id = 3 for update;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: Query message: condition[SDBSECURE0000(hfIciAVcBcK6CJCrMYVcBcImCP/ogV==)], selector[SDBSECURE0000(h5/=)], order_by[SDBSECURE0000(h5/=)], hint[SDBSECURE0000(hfIcCqboCszrCcK2)], limit[-1], offset[0], table[test_parallel_1.t1]
+[Note] SequoiaDB: Query message: condition[SDBSECURE0000(hfIciAVcBcK6CJCrMYVcBcImCP/ogV==)], selector[SDBSECURE0000(h5/=)], order_by[SDBSECURE0000(h5/=)], hint[SDBSECURE0000(hfIcCqboCszrCcK2)], limit[-1], offset[0], table[x.t1]
 select * from t1;
 id	id1	c
 1	1	a
