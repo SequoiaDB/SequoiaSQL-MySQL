@@ -107,6 +107,8 @@ let $query = select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 
 --source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 #带order by
+delete from t1 where col1 is null;
+delete from t2 where col1 is null;
 explain select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py') order by t1.col1;
 let $query = select * from t1 inner join t2 on t1.col1 = t2.col1 +1 and t1.col2 = concat(t2.col2,'py') order by t1.col1;
 --source include/query_without_sorted_and_get_mysqld_note_log_sequoiadb.inc
