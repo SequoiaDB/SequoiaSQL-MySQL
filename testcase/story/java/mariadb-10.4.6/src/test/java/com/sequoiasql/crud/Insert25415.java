@@ -1,13 +1,7 @@
 package com.sequoiasql.crud;
 
-import java.sql.PreparedStatement;
-
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
-import com.sequoiadb.threadexecutor.exception.SchException;
-import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -54,7 +48,7 @@ public class Insert25415 extends MysqlTestBase {
             // 设置autoCommit为true
             jdbc.setAutoCommit( true );
             // 设置事务隔离级别为RC
-            jdbc.setTransactionIsolatrion( 1 );
+            jdbc.setTransactionIsolatrion( 2 );
         } catch ( Exception e ) {
             if ( sdb != null )
                 sdb.close();
