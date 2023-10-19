@@ -1,7 +1,8 @@
-DROP DATABASE IF EXISTS test_join_nested;
-CREATE DATABASE test_join_nested;
-USE test_join_nested;
-DROP TABLE IF EXISTS t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
+SET @random_integer = FLOOR(RAND() * 1000);
+SET @database_name = CONCAT('test_join_nested_', @random_integer);
+DROP DATABASE IF EXISTS test_join_nested_x;
+CREATE DATABASE test_join_nested_x;
+USE test_join_nested_x;
 SET @save_optimizer_switch=@@optimizer_switch;
 SET optimizer_switch=ifnull(@optimizer_switch_for_join_nested_test,'outer_join_with_cache=off');
 set join_cache_level=1;
@@ -1565,5 +1566,4 @@ a	b	c	a	a	b
 DROP TABLE t1, t2, t3;
 set join_cache_level= @save_join_cache_level;
 # end of 10.3 tests
-DROP TABLE IF EXISTS t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
-DROP DATABASE test_join_nested;
+DROP DATABASE test_join_nested_x;

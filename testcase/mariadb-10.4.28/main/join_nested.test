@@ -1,10 +1,17 @@
+# main.join_nested_jcl6 有 source 当前 test，并发跑着这两个用例时，一个用例执行过程中另一个用例执行了 drop database 会导致用例失败
+# database name 添加随机数后缀，减少失败 
+SET @random_integer = FLOOR(RAND() * 1000);
+SET @database_name = CONCAT('test_join_nested_', @random_integer);
+let $dbName = `SELECT @database_name`;
 
 --disable_warnings
-DROP DATABASE IF EXISTS test_join_nested;
-CREATE DATABASE test_join_nested;
-USE test_join_nested;
-DROP TABLE IF EXISTS t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
+--replace_regex /test_join_nested_[0-9]+/test_join_nested_x/
+eval DROP DATABASE IF EXISTS $dbName;
 --enable_warnings
+--replace_regex /test_join_nested_[0-9]+/test_join_nested_x/
+eval CREATE DATABASE $dbName;
+--replace_regex /test_join_nested_[0-9]+/test_join_nested_x/
+eval USE $dbName;
 
 SET @save_optimizer_switch=@@optimizer_switch;
 SET optimizer_switch=ifnull(@optimizer_switch_for_join_nested_test,'outer_join_with_cache=off');
@@ -1461,7 +1468,6 @@ set join_cache_level= @save_join_cache_level;
 
 --echo # end of 10.3 tests
 
---disable_warnings
-DROP TABLE IF EXISTS t0,t1,t2,t3,t4,t5,t6,t7,t8,t9;
-DROP DATABASE test_join_nested;
---enable_warnings
+
+--replace_regex /test_join_nested_[0-9]+/test_join_nested_x/
+eval DROP DATABASE $dbName;
