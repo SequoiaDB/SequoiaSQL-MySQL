@@ -833,6 +833,8 @@ class ha_sdb : public handler {
   void fix_start_end_key_if_range_scan_desc(key_range *&start_key_ptr,
                                             key_range *&end_key_ptr);
 
+  uint64 get_current_share_idx_map(boost::shared_ptr<Sdb_share> share_ptr);
+
  private:
   // swap table if swap_table is true
   int rename_or_swap_table(const char *from, const char *to, bool swap_table);

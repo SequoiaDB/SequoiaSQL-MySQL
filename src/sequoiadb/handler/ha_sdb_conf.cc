@@ -638,12 +638,18 @@ static MYSQL_THDVAR_BOOL(bka_remove_orderby,
                          /*执行 bka join 携带 index 排序*/,
                          NULL, NULL, SDB_DEFAULT_BKA_REMOVE_ORDERBY);
 
-static MYSQL_THDVAR_BOOL(
-    secure_log, PLUGIN_VAR_OPCMDARG,
-    "Encrypt log sensitive information when printing logs"
-    "(Default: ON)"
-    /* 打印日志时是否需要对 condition 等进行编码处理 */,
-    NULL, NULL, TRUE);
+static MYSQL_THDVAR_BOOL(secure_log, PLUGIN_VAR_OPCMDARG,
+                         "Encrypt log sensitive information when printing logs"
+                         "(Default: ON)"
+                         /* 打印日志时是否需要对 condition 等进行编码处理 */,
+                         NULL, NULL, TRUE);
+
+static MYSQL_THDVAR_BOOL(share_log_output,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+                         "Whether to output share logs"
+                         "(Default: OFF)"
+                         /*是否打印统计信息相关日志*/,
+                         NULL, NULL, FALSE);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
@@ -695,6 +701,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(execution_mode),
     MYSQL_SYSVAR(bka_remove_orderby),
     MYSQL_SYSVAR(secure_log),
+    MYSQL_SYSVAR(share_log_output),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -974,5 +981,9 @@ bool sdb_enable_null_reject_for_bka_join(THD *thd) {
 }
 
 bool sdb_use_secure_log(THD *thd) {
-  return THDVAR(thd,secure_log);  
+  return THDVAR(thd, secure_log);
+}
+
+bool sdb_share_log_output(THD *thd) {
+  return THDVAR(thd, share_log_output);
 }
