@@ -120,6 +120,26 @@ extern ulonglong key_block_no(TABLE *table, uint keyno, ha_rows keyentry_pos);
 PSI_stage_info stage_exec_sql_in_sdb = {0, "Execute sql in sdb", 0};
 PSI_stage_info stage_exec_fetch_data_in_sdb = {0, "Fetch data in sdb.", 0};
 
+struct sdb_var_t {
+  ulonglong sdb_share_inserted;
+  ulonglong sdb_share_deleted;
+  ulonglong sdb_share_updated;
+
+  sdb_var_t() {
+    sdb_share_inserted = 0;
+    sdb_share_deleted = 0;
+    sdb_share_updated = 0;
+  }
+
+  ~sdb_var_t() {
+    sdb_share_inserted = 0;
+    sdb_share_deleted = 0;
+    sdb_share_updated = 0;
+  }
+};
+
+static sdb_var_t sdb_vars_status;
+
 static void update_shares_stats(THD *thd);
 static uchar *sdb_get_key(boost::shared_ptr<Sdb_share> *share, size_t *length,
                           my_bool not_used MY_ATTRIBUTE((unused))) {
@@ -230,6 +250,7 @@ static void get_sdb_share(const char *table_name, TABLE *table,
       goto error;
     }
     is_created = true;
+    sdb_vars_status.sdb_share_inserted++;
   } else {
     tmp_ptr = (boost::shared_ptr<Sdb_share> *)ptr;
   }
@@ -2090,7 +2111,15 @@ int ha_sdb::close(void) {
     share = null_ptr;
     // Delete global share object only if nobody referred.
     if (ptr && 1 == (*((boost::shared_ptr<Sdb_share> *)ptr)).use_count()) {
+      if (ha_thd() && sdb_share_log_output(ha_thd())) {
+        SDB_LOG_INFO(
+            "Sdb_share will be removed from the global bucket,Sql_str:%s,"
+            " table_name:%s",
+            SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+            ((boost::shared_ptr<Sdb_share> *)ptr)->get()->table_name);
+      }
       my_hash_delete(&sdb_open_tables, (uchar *)ptr);
+      sdb_vars_status.sdb_share_deleted++;
     }
     mysql_mutex_unlock(&sdb_mutex);
   }
@@ -8329,8 +8358,17 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
         // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
         // 'Sdb_share' in 'sdb_open_tables', because the global and the
         // local shared_ptr may not point to the same 'Sdb_share'
+        if (ha_thd() && sdb_share_log_output(ha_thd())) {
+          SDB_LOG_INFO(
+              "Sdb_share has marked expired in update_stats(),"
+              "replace the Sdb_share in the bucket with a new one "
+              ",sql_str:%s , table_name:%s, current idx stats map:%lld",
+              ha_thd()->query().str, new_share_ptr->table_name,
+              get_current_share_idx_map(new_share_ptr));
+        }
         (*glob_ssp)->expired = true;
         (*glob_ssp) = new_share_ptr;
+        sdb_vars_status.sdb_share_updated++;
       } else {
         /*
          * set expired state for new shared_ptr, use only one time if current
@@ -8342,6 +8380,16 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
          * the new_share_ptr->expired = true here.
          */
         new_share_ptr->expired = true;
+        if (ha_thd() && sdb_share_log_output(ha_thd())) {
+          SDB_LOG_INFO(
+              "New Sdb_share has marked expired in update_stats,because "
+              "the "
+              "bucket does not contain the Sdb_share of this table "
+              ",sql_str:%s, "
+              "table_name:%s",
+              SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+              new_share_ptr->table_name);
+        }
       }
       share = new_share_ptr;
       mysql_mutex_unlock(&sdb_mutex);
@@ -9050,13 +9098,31 @@ int ha_sdb::extra(enum ha_extra_function operation) {
         // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
         // 'Sdb_share' in 'sdb_open_tables', because the global and the
         // local shared_ptr may not point to the same 'Sdb_share'
+        if (ha_thd() && sdb_share_log_output(ha_thd())) {
+          SDB_LOG_INFO(
+              "Sdb_share has marked expired in extra(), replace the "
+              "Sdb_share in "
+              "the bucket with a new one ,sql_str:%s , table_name:%s, "
+              "new idx stats map:%lld",
+              SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+              share_newly_obtain->table_name,
+              get_current_share_idx_map(share_newly_obtain));
+        }
         (*glob_ssp)->expired = true;
         (*glob_ssp) = share_newly_obtain;
+        sdb_vars_status.sdb_share_updated++;
       } else {
         // set expired state for new shared_ptr, use only one time if current
         // 'Sdb_share' has been removed(in 'update_shares_stats' function) from
         // 'sdb_open_tables'
         share_newly_obtain->expired = true; /* purecov: inspected */
+        if (ha_thd() && sdb_share_log_output(ha_thd())) {
+          SDB_LOG_INFO(
+              "The new Sdb_share has marked expired in extra(),"
+              "sql_str: %s, table_name: %s ",
+              SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+              share_newly_obtain->table_name);
+        }
       }
       share = share_newly_obtain;
       mysql_mutex_unlock(&sdb_mutex);
@@ -9954,8 +10020,20 @@ int ha_sdb::ensure_index_stat(int keynr) {
           // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
           // 'Sdb_share' in 'sdb_open_tables', because the global and the
           // local shared_ptr may not point to the same 'Sdb_share'
+          if (ha_thd() && sdb_share_log_output(ha_thd())) {
+            SDB_LOG_INFO(
+                "The index stat is invalid. key_name:%s, "
+                "Sdb_share has marked expired in ensure_index_stat(), replace "
+                "the Sdb_share in the bucket with a new one ,sql_str:%s , "
+                "table_name:%s, current idx stats map :%lld.",
+                sdb_key_name(key_info),
+                SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+                new_share_ptr->table_name,
+                get_current_share_idx_map(new_share_ptr));
+          }
           (*glob_ssp)->expired = true;
           (*glob_ssp) = new_share_ptr;
+          sdb_vars_status.sdb_share_updated++;
         } else {
           /*
            * More precisely, the new_share_ptr is physically newly allocated,
@@ -9981,6 +10059,14 @@ int ha_sdb::ensure_index_stat(int keynr) {
            *                 failed to find in the sdb_open_tables.
            */
           new_share_ptr->expired = true;
+          if (ha_thd() && sdb_share_log_output(ha_thd())) {
+            SDB_LOG_INFO(
+                "The new Sdb_share has marked expired in extra(),"
+                "sql_str:%s, table_name:%s, current idx stats map:%lld,",
+                SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+                new_share_ptr->table_name,
+                get_current_share_idx_map(new_share_ptr));
+          }
         }
         //(1) Replace the handler::share in normal case.
         share = new_share_ptr;
@@ -10142,6 +10228,14 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
     }
 
     rc = cl.get_index_stat(sdb_key_name(key_info), obj, need_detail);
+
+    if (thd && sdb_share_log_output(thd)) {
+      SDB_LOG_INFO(
+          "cl get index stat static on ensure_index_stat(),"
+          "table_name:%s ,key_name:%s, sql_str:%s, rc :%d",
+          table_name, sdb_key_name(key_info),
+          SDB_STR_TO_SECURE_STR(thd->query().str), rc);
+    }
     if (SDB_INVALIDARG == get_sdb_code(rc)) {
       s.sample_records = 0;
       s.static_total_records = 0;
@@ -10215,7 +10309,6 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to parse index statistics, exception: %s",
                         e.what());
-
 done:
   DBUG_RETURN(rc);
 error:
@@ -12267,6 +12360,21 @@ uint ha_sdb::get_engine_optim_flag() {
   return flag;
 }
 
+uint64 ha_sdb::get_current_share_idx_map(
+    boost::shared_ptr<Sdb_share> share_ptr) {
+  DBUG_ASSERT(share_ptr);
+
+  uint64 curr_idx_map = 0;
+
+  for (uint i = 0; i < share_ptr->idx_count; i++) {
+    if (is_idx_stat_valid(share_ptr->idx_stat_arr[i])) {
+      curr_idx_map |= (1 << i);
+    }
+  }
+
+  return curr_idx_map;
+}
+
 #ifdef IS_MARIADB
 int ha_sdb::prepare_range_scan(const key_range *start_key,
                                const key_range *end_key) {
@@ -12546,11 +12654,28 @@ static void update_shares_stats(THD *thd) {
         // 'sdb_open_tables', let handlers in other session release their shares
         (*((boost::shared_ptr<Sdb_share> *)ptr))->expired = true;
         my_hash_delete(&sdb_open_tables, (uchar *)ptr);
+        if (current_thd && sdb_share_log_output(current_thd)) {
+          SDB_LOG_INFO(
+              "The Sdb_share is deleted from the bucket on "
+              "update_shares_stats(),sql_str:"
+              "%s, table_name:%s ",
+              SDB_STR_TO_SECURE_STR(current_thd->query().str),
+              share->table_name);
+        }
+        sdb_vars_status.sdb_share_deleted++;
       }
       // set 'Sdb_share' to expired status, share of the handler of the current
       // session will be set to null_ptr in 'ha_sdb::reset()'
+      if (current_thd && sdb_share_log_output(current_thd)) {
+        SDB_LOG_INFO(
+            "The handler has cleaered Sdb_share , the information in the "
+            "bucket "
+            "is marked as expired sql_str:%s, table_name:%s",
+            SDB_STR_TO_SECURE_STR(current_thd->query().str), share->table_name);
+      }
       share->expired = true;
       share = null_ptr;
+      sdb_vars_status.sdb_share_updated++;
       mysql_mutex_unlock(&sdb_mutex);
     }
 
@@ -13085,6 +13210,15 @@ error:
 static struct st_mysql_show_var sdb_status[] = {
     SDB_ST_SHOW_VAR("sequoiadb_remote_version", (char *)show_sdb_remote_version,
                     SHOW_FUNC, SHOW_SCOPE_GLOBAL),
+    SDB_ST_SHOW_VAR("sdb_share_inserted",
+                    (char *)&sdb_vars_status.sdb_share_inserted, SHOW_LONGLONG,
+                    SHOW_SCOPE_GLOBAL),
+    SDB_ST_SHOW_VAR("sdb_share_deleted",
+                    (char *)&sdb_vars_status.sdb_share_deleted, SHOW_LONGLONG,
+                    SHOW_SCOPE_GLOBAL),
+    SDB_ST_SHOW_VAR("sdb_share_updated",
+                    (char *)&sdb_vars_status.sdb_share_updated, SHOW_LONGLONG,
+                    SHOW_SCOPE_GLOBAL),
     SDB_ST_SHOW_VAR(0, 0, SHOW_UNDEF, SHOW_SCOPE_UNDEF)};
 
 static struct st_mysql_storage_engine sdb_storage_engine = {
