@@ -1795,15 +1795,16 @@ bool sdb_batched_keys_ranges::build_probing_key() {
       goto done;
     }
 
-    uchar *fld_ptr = fld->ptr;
-    int fld_start_pos = 0;
+    uchar *tmp_ptr = NULL;
+    fld->get_ptr(&tmp_ptr);
+
     if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
          MYSQL_TYPE_VARCHAR == fld->type()) &&
         !fld->binary()) {
-      int length_bytes = ((Field_varstring *)fld)->length_bytes;
-      fld_start_pos += length_bytes;
+      memcpy(key_probing_ptr, tmp_ptr, fld->data_length());
+    } else {
+      memcpy(key_probing_ptr, tmp_ptr, key_part->length);
     }
-    memcpy(key_probing_ptr, fld_ptr + fld_start_pos, key_part->length);
     key_probing_ptr += key_part->length;
   }
 done:
