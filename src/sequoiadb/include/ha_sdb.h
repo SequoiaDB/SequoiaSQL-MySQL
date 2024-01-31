@@ -154,6 +154,8 @@ class sdb_batched_keys_ranges {
   TABLE *m_table;
   uint m_active_index;
   bool m_is_mrr_assoc;
+
+  uchar* m_key_probing;
 };
 
 class ha_sdb : public handler {

@@ -1298,6 +1298,7 @@ sdb_batched_keys_ranges::sdb_batched_keys_ranges() {
   m_table = NULL;
   m_active_index = 0;
   m_is_mrr_assoc = false;
+  m_key_probing = NULL;
 }
 
 sdb_batched_keys_ranges::~sdb_batched_keys_ranges() {
@@ -1318,10 +1319,10 @@ int sdb_batched_keys_ranges::init(TABLE *table, uint active_index,
     goto error;
   }
 
-  ptr = (uchar *)sdb_multi_malloc(sdb_key_memory_batched_keys_buf,
-                                  MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
-                                  key_length * n_ranges, &m_records_buf,
-                                  sizeof(sdb_key_range_info) * n_ranges, NullS);
+  ptr = (uchar *)sdb_multi_malloc(
+      sdb_key_memory_batched_keys_buf, MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
+      key_length * n_ranges, &m_records_buf,
+      sizeof(sdb_key_range_info) * n_ranges, &m_key_probing, key_length, NullS);
   if (NULL == ptr) {
     rc = HA_ERR_OUT_OF_MEM;
     SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
@@ -1447,16 +1448,22 @@ sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_first() {
   bool maybe_null = m_table->field[key_part->fieldnr - 1]->is_real_null();
   Field *fld = m_table->field[key_part->fieldnr - 1];
   uchar *fld_ptr = fld->ptr;
+  /* clear the probing key.*/
+  memset(m_key_probing, 0, m_key_length);
   int fld_start_pos = maybe_null ? 1 : 0;
   if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
        MYSQL_TYPE_VARCHAR == fld->type()) &&
       !fld->binary()) {
-    int length_bytes = ((Field_varstring *)fld)->length_bytes;
-    fld_start_pos += length_bytes;
-  }
+    uchar *tmp_ptr = NULL;
+    fld->get_ptr(&tmp_ptr);
+    memcpy(m_key_probing, tmp_ptr, fld->data_length());
 
-  return (sdb_key_range_info *)my_hash_first(
-      ranges_buf, fld_ptr + fld_start_pos, ranges_buf->key_length, &m_state);
+    return (sdb_key_range_info *)my_hash_first(
+        ranges_buf, m_key_probing, ranges_buf->key_length, &m_state);
+  } else {
+    return (sdb_key_range_info *)my_hash_first(
+        ranges_buf, fld_ptr + fld_start_pos, ranges_buf->key_length, &m_state);
+  }
 }
 
 sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_next() {
@@ -1466,16 +1473,21 @@ sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_next() {
   bool maybe_null = m_table->field[key_part->fieldnr - 1]->is_real_null();
   Field *fld = m_table->field[key_part->fieldnr - 1];
   uchar *fld_ptr = fld->ptr;
+  memset(m_key_probing, 0, m_key_length);
   int fld_start_pos = maybe_null ? 1 : 0;
   if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
        MYSQL_TYPE_VARCHAR == fld->type()) &&
       !fld->binary()) {
-    int length_bytes = ((Field_varstring *)fld)->length_bytes;
-    fld_start_pos += length_bytes;
-  }
+    uchar *tmp_ptr = NULL;
+    fld->get_ptr(&tmp_ptr);
+    memcpy(m_key_probing, tmp_ptr, fld->data_length());
 
-  return (sdb_key_range_info *)my_hash_next(ranges_buf, fld_ptr + fld_start_pos,
-                                            ranges_buf->key_length, &m_state);
+    return (sdb_key_range_info *)my_hash_next(ranges_buf, m_key_probing,
+                                              ranges_buf->key_length, &m_state);
+  } else {
+    return (sdb_key_range_info *)my_hash_next(
+        ranges_buf, fld_ptr + fld_start_pos, ranges_buf->key_length, &m_state);
+  }
 }
 
 ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
