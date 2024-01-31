@@ -8363,7 +8363,8 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
               "Sdb_share has marked expired in update_stats(),"
               "replace the Sdb_share in the bucket with a new one "
               ",sql_str:%s , table_name:%s, current idx stats map:%lld",
-              ha_thd()->query().str, new_share_ptr->table_name,
+              SDB_STR_TO_SECURE_STR(ha_thd()->query().str), 
+              new_share_ptr->table_name,
               get_current_share_idx_map(new_share_ptr));
         }
         (*glob_ssp)->expired = true;
