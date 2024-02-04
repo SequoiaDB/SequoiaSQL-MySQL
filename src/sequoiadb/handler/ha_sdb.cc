@@ -1795,16 +1795,21 @@ bool sdb_batched_keys_ranges::build_probing_key() {
       goto done;
     }
 
-    uchar *tmp_ptr = NULL;
-    fld->get_ptr(&tmp_ptr);
+    uchar *fld_ptr = fld->ptr;
+    int length_bytes = 0;
+  
 
     if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
          MYSQL_TYPE_VARCHAR == fld->type()) &&
         !fld->binary()) {
-      memcpy(key_probing_ptr, tmp_ptr, fld->data_length());
+      length_bytes = ((Field_varstring *)fld)->length_bytes;
+
+      memcpy(key_probing_ptr, fld_ptr + length_bytes, 
+             length_bytes == 1 ? *fld_ptr : uint2korr(fld_ptr));
     } else {
-      memcpy(key_probing_ptr, tmp_ptr, key_part->length);
+      memcpy(key_probing_ptr, fld_ptr, key_part->length);
     }
+
     key_probing_ptr += key_part->length;
   }
 done:
@@ -2116,7 +2121,7 @@ int ha_sdb::close(void) {
         SDB_LOG_INFO(
             "Sdb_share will be removed from the global bucket,Sql_str:%s,"
             " table_name:%s",
-            SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+            SDB_STR_TO_SECURE_STR(sdb_thd_query_str(ha_thd())),
             ((boost::shared_ptr<Sdb_share> *)ptr)->get()->table_name);
       }
       my_hash_delete(&sdb_open_tables, (uchar *)ptr);
@@ -8364,7 +8369,7 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
               "Sdb_share has marked expired in update_stats(),"
               "replace the Sdb_share in the bucket with a new one "
               ",sql_str:%s , table_name:%s, current idx stats map:%lld",
-              SDB_STR_TO_SECURE_STR(ha_thd()->query().str), 
+              SDB_STR_TO_SECURE_STR(sdb_thd_query_str(ha_thd())),
               new_share_ptr->table_name,
               get_current_share_idx_map(new_share_ptr));
         }
@@ -8389,7 +8394,7 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
               "bucket does not contain the Sdb_share of this table "
               ",sql_str:%s, "
               "table_name:%s",
-              SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+              SDB_STR_TO_SECURE_STR(sdb_thd_query_str(ha_thd())),
               new_share_ptr->table_name);
         }
       }
@@ -9106,7 +9111,7 @@ int ha_sdb::extra(enum ha_extra_function operation) {
               "Sdb_share in "
               "the bucket with a new one ,sql_str:%s , table_name:%s, "
               "new idx stats map:%lld",
-              SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+              SDB_STR_TO_SECURE_STR(sdb_thd_query_str(ha_thd())),
               share_newly_obtain->table_name,
               get_current_share_idx_map(share_newly_obtain));
         }
@@ -9122,7 +9127,7 @@ int ha_sdb::extra(enum ha_extra_function operation) {
           SDB_LOG_INFO(
               "The new Sdb_share has marked expired in extra(),"
               "sql_str: %s, table_name: %s ",
-              SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+              SDB_STR_TO_SECURE_STR(sdb_thd_query_str(ha_thd())),
               share_newly_obtain->table_name);
         }
       }
@@ -10029,7 +10034,7 @@ int ha_sdb::ensure_index_stat(int keynr) {
                 "the Sdb_share in the bucket with a new one ,sql_str:%s , "
                 "table_name:%s, current idx stats map :%lld.",
                 sdb_key_name(key_info),
-                SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+                SDB_STR_TO_SECURE_STR(sdb_thd_query_str(ha_thd())),
                 new_share_ptr->table_name,
                 get_current_share_idx_map(new_share_ptr));
           }
@@ -10065,7 +10070,7 @@ int ha_sdb::ensure_index_stat(int keynr) {
             SDB_LOG_INFO(
                 "The new Sdb_share has marked expired in extra(),"
                 "sql_str:%s, table_name:%s, current idx stats map:%lld,",
-                SDB_STR_TO_SECURE_STR(ha_thd()->query().str),
+                SDB_STR_TO_SECURE_STR(sdb_thd_query_str(ha_thd())),
                 new_share_ptr->table_name,
                 get_current_share_idx_map(new_share_ptr));
           }
@@ -10236,7 +10241,7 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
           "cl get index stat static on ensure_index_stat(),"
           "table_name:%s ,key_name:%s, sql_str:%s, rc :%d",
           table_name, sdb_key_name(key_info),
-          SDB_STR_TO_SECURE_STR(thd->query().str), rc);
+          SDB_STR_TO_SECURE_STR(sdb_thd_query_str(thd)), rc);
     }
     if (SDB_INVALIDARG == get_sdb_code(rc)) {
       s.sample_records = 0;
@@ -12661,7 +12666,7 @@ static void update_shares_stats(THD *thd) {
               "The Sdb_share is deleted from the bucket on "
               "update_shares_stats(),sql_str:"
               "%s, table_name:%s ",
-              SDB_STR_TO_SECURE_STR(current_thd->query().str),
+              SDB_STR_TO_SECURE_STR(sdb_thd_query_str(current_thd)),
               share->table_name);
         }
         sdb_vars_status.sdb_share_deleted++;
@@ -12673,7 +12678,8 @@ static void update_shares_stats(THD *thd) {
             "The handler has cleaered Sdb_share , the information in the "
             "bucket "
             "is marked as expired sql_str:%s, table_name:%s",
-            SDB_STR_TO_SECURE_STR(current_thd->query().str), share->table_name);
+            SDB_STR_TO_SECURE_STR(sdb_thd_query_str(current_thd)),
+            share->table_name);
       }
       share->expired = true;
       share = null_ptr;
