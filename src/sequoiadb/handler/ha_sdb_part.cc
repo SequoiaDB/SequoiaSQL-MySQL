@@ -1414,10 +1414,6 @@ int ha_sdb_part_wrapper::external_lock(THD *thd, int lock_type) {
   }
   if (lock_type == F_UNLCK) {
     bitmap_clear_all(used_partitions);
-    if (m_lock_type == F_WRLCK && m_part_info->vers_require_hist_part(thd)) {
-      static_cast<ha_sdb_part *>(m_file[0])->vers_check_limit(
-          thd, m_part_info->vers_info);
-    }
   }
   if (lock_type == F_WRLCK) {
     if (m_part_info->part_expr) {

@@ -1382,7 +1382,8 @@ int sdb_batched_keys_ranges::expand_buf(int n_ranges) {
   int records_buf_size = sizeof(sdb_key_range_info) * n_ranges;
   ptr = (uchar *)sdb_multi_malloc(
       sdb_key_memory_batched_keys_buf, MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
-      keys_buf_size, &m_records_buf, records_buf_size, NullS);
+      keys_buf_size, &m_records_buf, records_buf_size, &m_key_probing,
+      m_key_length, NullS);
   if (NULL == ptr) {
     rc = HA_ERR_OUT_OF_MEM;
     SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
@@ -1454,9 +1455,8 @@ sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_first() {
   if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
        MYSQL_TYPE_VARCHAR == fld->type()) &&
       !fld->binary()) {
-    uchar *tmp_ptr = NULL;
-    fld->get_ptr(&tmp_ptr);
-    memcpy(m_key_probing, tmp_ptr, fld->data_length());
+    fld_start_pos += ((Field_varstring *)fld)->length_bytes;
+    memcpy(m_key_probing, fld_ptr + fld_start_pos, fld->data_length());
 
     return (sdb_key_range_info *)my_hash_first(
         ranges_buf, m_key_probing, ranges_buf->key_length, &m_state);
@@ -1478,9 +1478,8 @@ sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_next() {
   if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
        MYSQL_TYPE_VARCHAR == fld->type()) &&
       !fld->binary()) {
-    uchar *tmp_ptr = NULL;
-    fld->get_ptr(&tmp_ptr);
-    memcpy(m_key_probing, tmp_ptr, fld->data_length());
+    fld_start_pos += ((Field_varstring *)fld)->length_bytes;
+    memcpy(m_key_probing, fld_ptr + fld_start_pos, fld->data_length());
 
     return (sdb_key_range_info *)my_hash_next(ranges_buf, m_key_probing,
                                               ranges_buf->key_length, &m_state);
