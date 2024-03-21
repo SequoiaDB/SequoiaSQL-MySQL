@@ -1654,14 +1654,13 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
                  SQLCOM_ALTER_EVENT == sql_command ||
                  SQLCOM_ALTER_TABLE == sql_command || is_dcl_meta_sql(thd) ||
                  SQLCOM_CREATE_TABLE == sql_command ||
-                 SQLCOM_ANALYZE == sql_command || SQLCOM_FLUSH == sql_command) {
+                 SQLCOM_FLUSH == sql_command) {
         // 1. creating view depends on multiple tables and functions
         // 2. grant/revoke operation may depends on table/fun/proc
         // 3. 'create/drop user' can hold multiple users
         // 4. 'alter event/table rename' hold two objects
         // 5. 'create table dst2(a int primary key default(next value for ts1))'
         //    depend on sequence(just for mariadb).
-        // 6. analyze/flush table t1, t2, t3;
 
         // write SQL statement just for the first object
         if (first_object) {
@@ -1671,6 +1670,9 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       } else if (have_exist_warning(thd) && !ha_is_executing_pending_log(thd)) {
         // if thd have 'not exist' or 'already exist' warning
         continue;
+      } else if (SQLCOM_ANALYZE == sql_command) {
+        oom = query.append("ANALYZE TABLE ");
+        oom |= build_full_table_name(thd, query, db_name, table_name);
       } else {
         oom = query.append(general_query);
       }
@@ -1729,7 +1731,13 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     // write sql info into 'HASQLLog' table
     obj_builder.reset();
     obj_builder.append(HA_FIELD_SQL_ID, sql_id);
-    obj_builder.append(HA_FIELD_DB, db_name);
+
+    if (SQLCOM_ANALYZE == sql_command) {
+      obj_builder.append(HA_FIELD_DB, HA_MYSQL_DB);
+    } else {
+      obj_builder.append(HA_FIELD_DB, db_name);
+    }
+
     obj_builder.append(HA_FIELD_TABLE, table_name);
     obj_builder.append(HA_FIELD_TYPE, op_type);
     obj_builder.append(HA_FIELD_SQL, query.c_ptr_safe());
