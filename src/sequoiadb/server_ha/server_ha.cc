@@ -153,6 +153,8 @@ static struct st_mysql_show_var ha_status[] = {
 
 static bool check_if_table_exists(THD *thd, TABLE_LIST *table);
 static bool is_pending_log_ignorable_error(THD *thd);
+static bool check_if_table_exists(THD *thd, const char *db_name,
+                                     const char *table_name);
 
 uint ha_sql_log_check_interval() {
   return sql_log_check_interval;
@@ -1654,14 +1656,13 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
                  SQLCOM_ALTER_EVENT == sql_command ||
                  SQLCOM_ALTER_TABLE == sql_command || is_dcl_meta_sql(thd) ||
                  SQLCOM_CREATE_TABLE == sql_command ||
-                 SQLCOM_ANALYZE == sql_command || SQLCOM_FLUSH == sql_command) {
+                 SQLCOM_FLUSH == sql_command) {
         // 1. creating view depends on multiple tables and functions
         // 2. grant/revoke operation may depends on table/fun/proc
         // 3. 'create/drop user' can hold multiple users
         // 4. 'alter event/table rename' hold two objects
         // 5. 'create table dst2(a int primary key default(next value for ts1))'
         //    depend on sequence(just for mariadb).
-        // 6. analyze/flush table t1, t2, t3;
 
         // write SQL statement just for the first object
         if (first_object) {
@@ -1671,6 +1672,12 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       } else if (have_exist_warning(thd) && !ha_is_executing_pending_log(thd)) {
         // if thd have 'not exist' or 'already exist' warning
         continue;
+      } else if (SQLCOM_ANALYZE == sql_command) {
+        if (!check_if_table_exists(thd, db_name, table_name)) {
+          continue;
+        }
+        oom = query.append("ANALYZE TABLE ");
+        oom |= build_full_table_name(thd, query, db_name, table_name);
       } else {
         oom = query.append(general_query);
       }
@@ -1967,6 +1974,19 @@ static inline bool check_if_table_exists(THD *thd, TABLE_LIST *table) {
                          reg_ext, 0);
     return (0 == access(path, F_OK));
   }
+#endif
+}
+
+static inline bool check_if_table_exists(THD *thd, const char *db_name,
+                                            const char *table_name) {
+#ifdef IS_MARIADB
+  const LEX_CSTRING db = {db_name, strlen(db_name)};
+  const LEX_CSTRING table = {table_name, strlen(table_name)};
+  return ha_table_exists(thd, &db, &table);
+#elif IS_MYSQL
+  char path[FN_REFLEN + 1] = {0};
+  build_table_filename(path, sizeof(path) - 1, db_name, table_name, reg_ext, 0);
+  return (0 == access(path, F_OK));
 #endif
 }
 
