@@ -9982,9 +9982,6 @@ int ha_sdb::ensure_index_stat(int keynr) {
        * new_share. (c) inherit the expired flag in hander::share.
        */
       new_share->stat = share->stat;
-      for (uint i = 0; i < share->idx_count; i++) {
-        new_share->idx_stat_arr[i] = cur_updating_share->idx_stat_arr[i];
-      }
 
       new_share->table_type = m_sdb_table_type;
       new_share->stat = cur_updating_share->stat;
@@ -10022,12 +10019,25 @@ int ha_sdb::ensure_index_stat(int keynr) {
       // 4. update global and local shared statistics with fresh data
       if (m_refresh_share_stats_phase == NOT_IN_REFRESH) {
         mysql_mutex_lock(&sdb_mutex);
+
         boost::shared_ptr<Sdb_share> *glob_ssp =
             (boost::shared_ptr<Sdb_share> *)my_hash_search(
                 &sdb_open_tables, (uchar *)cur_updating_share->table_name,
                 cur_updating_share->table_name_length);
+
         // let the global and the local shared_ptr point to the new Sdb_share
         if (glob_ssp) {
+          for (uint i = 0; i < share->idx_count; i++) {
+            if (i == keynr) {
+              continue;
+            }
+            // if current ha_sdb::share have index_stat
+            if (cur_updating_share->idx_stat_arr[i].get()) {
+              new_share->idx_stat_arr[i] = cur_updating_share->idx_stat_arr[i];
+            } else {
+              new_share->idx_stat_arr[i] = glob_ssp->get()->idx_stat_arr[i];
+            }
+          }
           // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
           // 'Sdb_share' in 'sdb_open_tables', because the global and the
           // local shared_ptr may not point to the same 'Sdb_share'
@@ -10069,6 +10079,11 @@ int ha_sdb::ensure_index_stat(int keynr) {
            *   time8: <con2> external_lock()->ensure_index_stat(-1) here will
            *                 failed to find in the sdb_open_tables.
            */
+          for (uint i = 0; i < share->idx_count; i++) {
+            if (i == keynr)
+              continue;
+            new_share->idx_stat_arr[i] = cur_updating_share->idx_stat_arr[i];
+          }
           new_share_ptr->expired = true;
           if (ha_thd() && sdb_share_log_output(ha_thd())) {
             SDB_LOG_INFO(
@@ -10086,8 +10101,14 @@ int ha_sdb::ensure_index_stat(int keynr) {
         /*
           (2) Use the share_newly_obtain to tempory store the new built share
               stats, later replace the handler::share with share_newly_obtain
-              in handler::extra in the case of refresh tables [tbl_name] stats.
+              in handler::extra in the case of refresh tables [tbl_name]
+          stats.
         */
+        for (uint i = 0; i < share->idx_count; i++) {
+          if (i == keynr)
+            continue;
+          new_share->idx_stat_arr[i] = cur_updating_share->idx_stat_arr[i];
+        }
         share_newly_obtain = new_share_ptr;
       }
 
@@ -10353,9 +10374,9 @@ error:
 
 #ifdef IS_MARIADB
 /* For delete and rename operation, there has no table_share that distinguish
-   between a normal table and a sequence. For sequence, we can distinguish from
-   normal table by .FRM files. For temporary sequence, we need distinguish by
-   extra maintaining a hash.
+   between a normal table and a sequence. For sequence, we can distinguish
+   from normal table by .FRM files. For temporary sequence, we need
+   distinguish by extra maintaining a hash.
 */
 int ha_sdb::try_drop_as_sequence(Sdb_conn *conn, bool is_temporary,
                                  const char *db_name, const char *table_name,
@@ -10990,7 +11011,8 @@ double ha_sdb::scan_time() {
          because filesort cannot keep the TABLE_REF structure.
       5. Now, this QUICK_RANGE_SELECT call the multi_range_read_init without
          multi_range_read_info_const.
-      6. Here we set m_method as unknown, leads to multi_range_read_init choose
+      6. Here we set m_method as unknown, leads to multi_range_read_init
+      choose
     */
     if (sdb_choose_all_in_mrr_info(ha_thd())) {
       m_method = IDX_ACCESS_UNKNOWN;
@@ -11903,17 +11925,17 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     sdb_condition->to_bson(pushed_condition);
     sdb_condition->clear();
   } catch (std::bad_alloc &e) {
-    SDB_PRINT_ERROR(
-        HA_ERR_OUT_OF_MEM,
-        "Failed to build pushdown condition object, table:%s.%s, exception:%s",
-        db_name, table_name, e.what());
+    SDB_PRINT_ERROR(HA_ERR_OUT_OF_MEM,
+                    "Failed to build pushdown condition object, table:%s.%s, "
+                    "exception:%s",
+                    db_name, table_name, e.what());
     sdb_condition->status = SDB_COND_UNSUPPORTED;
     DBUG_ASSERT(0);
   } catch (std::exception &e) {
-    SDB_PRINT_ERROR(
-        HA_ERR_INTERNAL_ERROR,
-        "Failed to build pushdown condition object, table:%s.%s, exception:%s",
-        db_name, table_name, e.what());
+    SDB_PRINT_ERROR(HA_ERR_INTERNAL_ERROR,
+                    "Failed to build pushdown condition object, table:%s.%s, "
+                    "exception:%s",
+                    db_name, table_name, e.what());
     DBUG_ASSERT(0);
     sdb_condition->status = SDB_COND_UNSUPPORTED;
   }
@@ -12275,9 +12297,9 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
               sdb_rollback_on_timeout(ha_thd())) {
 #ifdef IS_MARIADB
             /*
-              MariaDB not clear the option_bits OPTION_BEGIN flag after rollback
-              transaction implicitly. Cause the next transaction still be begin
-              transaction after implict transaction rollback.
+              MariaDB not clear the option_bits OPTION_BEGIN flag after
+              rollback transaction implicitly. Cause the next transaction
+              still be begin transaction after implict transaction rollback.
             */
             connection->set_rollback_on_timeout(TRUE);
 #endif
@@ -12308,8 +12330,8 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
         break;
       }
       case SDB_IXM_KEY_NOTNULL: {
-        // Print more error messages if 'AUTO_INCREMENT' field is 'Undefined' in
-        // last error object.
+        // Print more error messages if 'AUTO_INCREMENT' field is 'Undefined'
+        // in last error object.
         bool print_verbose_msg = false;
         const char *auto_incr_field_name =
             (table && table->next_number_field)
@@ -12426,9 +12448,9 @@ static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
   }
   /*
     Just like a normal table, the handler of sequence is also created by us.
-    Sequence operations are performed according to the handler we created later.
-    This is handled in the same way as a partition table, abstract a sequence
-    handler class.
+    Sequence operations are performed according to the handler we created
+    later. This is handled in the same way as a partition table, abstract a
+    sequence handler class.
   */
   if (table && table->sequence) {
     ha_sdb_seq *p = new (mem_root) ha_sdb_seq(hton, table);
@@ -12643,7 +12665,8 @@ static void update_shares_stats(THD *thd) {
           total_records, share->stat.udi_counter, last_reset_time,
           now_datetime);
       SDB_LOG_DEBUG(
-          "'sequoiadb_stats_flush_time_threshold' is %d %s, %ld %s since last "
+          "'sequoiadb_stats_flush_time_threshold' is %d %s, %ld %s since "
+          "last "
           "refresh of statistics",
           sdb_stats_flush_time_threshold(thd), time_unit,
           now_timestamp - share->last_reset_time, time_unit);
@@ -12662,7 +12685,8 @@ static void update_shares_stats(THD *thd) {
                                  share->table_name_length);
       if (ptr) {
         // set expired state for 'Sdb_share' to be removed from
-        // 'sdb_open_tables', let handlers in other session release their shares
+        // 'sdb_open_tables', let handlers in other session release their
+        // shares
         (*((boost::shared_ptr<Sdb_share> *)ptr))->expired = true;
         my_hash_delete(&sdb_open_tables, (uchar *)ptr);
         if (current_thd && sdb_share_log_output(current_thd)) {
@@ -12675,8 +12699,8 @@ static void update_shares_stats(THD *thd) {
         }
         sdb_vars_status.sdb_share_deleted++;
       }
-      // set 'Sdb_share' to expired status, share of the handler of the current
-      // session will be set to null_ptr in 'ha_sdb::reset()'
+      // set 'Sdb_share' to expired status, share of the handler of the
+      // current session will be set to null_ptr in 'ha_sdb::reset()'
       if (current_thd && sdb_share_log_output(current_thd)) {
         SDB_LOG_INFO(
             "The handler has cleaered Sdb_share , the information in the "
