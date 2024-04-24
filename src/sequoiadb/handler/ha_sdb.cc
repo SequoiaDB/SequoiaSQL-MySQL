@@ -1797,14 +1797,13 @@ bool sdb_batched_keys_ranges::build_probing_key() {
 
     uchar *fld_ptr = fld->ptr;
     int length_bytes = 0;
-  
 
     if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
          MYSQL_TYPE_VARCHAR == fld->type()) &&
         !fld->binary()) {
       length_bytes = ((Field_varstring *)fld)->length_bytes;
 
-      memcpy(key_probing_ptr, fld_ptr + length_bytes, 
+      memcpy(key_probing_ptr, fld_ptr + length_bytes,
              length_bytes == 1 ? *fld_ptr : uint2korr(fld_ptr));
     } else {
       memcpy(key_probing_ptr, fld_ptr, key_part->length);
@@ -8353,7 +8352,10 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
     // point to the new Sdb_share
     new_share_ptr.reset(new_share, free_sdb_share);
     /* Update shared statistics with fresh data */
-    if (m_refresh_share_stats_phase == NOT_IN_REFRESH) {
+    if (m_refresh_share_stats_phase == NOT_IN_REFRESH ||
+        share->stat.total_records ==
+            ~(ha_rows)0  // current handler has no table statistics
+    ) {
       mysql_mutex_lock(&sdb_mutex);
       boost::shared_ptr<Sdb_share> *glob_ssp =
           (boost::shared_ptr<Sdb_share> *)my_hash_search(
@@ -8400,7 +8402,9 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       }
       share = new_share_ptr;
       mysql_mutex_unlock(&sdb_mutex);
-    } else if (m_refresh_share_stats_phase == REFRESH_PREPARE_SHARE_STATS) {
+    }
+
+    if (m_refresh_share_stats_phase == REFRESH_PREPARE_SHARE_STATS) {
       share_newly_obtain = new_share_ptr;
     }
   }
