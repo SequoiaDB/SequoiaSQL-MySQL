@@ -54,8 +54,6 @@ sdb_share_deleted	5
 refresh table t3 stats;
 alter table t3 drop index idx_b;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: cl get index stat static on ensure_index_stat(),table_name:t3 ,key_name:a, sql_str:alter table t3 drop index idx_b, rc :40356
-[Note] SequoiaDB: The index stat is invalid. key_name:a, Sdb_share has marked expired in ensure_index_stat(), replace the Sdb_share in the bucket with a new one ,sql_str:alter table t3 drop index idx_b , table_name:./statistics_trace_sequoiadb_33974/t3, current idx stats map :3.
 [Note] SequoiaDB: Sdb_share will be removed from the global bucket,Sql_str:alter table t3 drop index idx_b, table_name:./statistics_trace_sequoiadb_33974/t3
 show status like "sdb_share_deleted";
 Variable_name	Value
