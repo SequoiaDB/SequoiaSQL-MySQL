@@ -57,6 +57,8 @@
 #define HA_PENDING_LOG_CL "HAPendingLog"
 #define HA_PENDING_OBJECT_CL "HAPendingObject"
 #define HA_SQLID_GENERATOR_CL "HASQLIDGenerator"
+#define HA_TABLE_STATS_CL "HATableStatistics"
+#define HA_INDEX_STATS_CL "HAIndexStatistics"
 
 #define HA_INST_GROUP_PREFIX "HAInstanceGroup_"
 #define HA_INST_LOCK_DB_PREFIX "GLOBAL_INSTANCE_DDL_LOCK_RECORD_DB_"
@@ -120,6 +122,8 @@
 #define HA_PENDING_OBJECT_DB_TABLE_TYPE_INDEX "PendingObjectDBTableTypeIndex"
 #define HA_PENDING_OBJECT_SQLID_INDEX "PendingObjectSQLIDIndex"
 #define HA_CONFIG_CONFIG_TYPE_INDEX "ConfigConfigTypeIndex"
+#define HA_TABLE_STATS_CL_NAME_INDEX "TableStatisticsNameIndex"
+#define HA_INDEX_STATS_CL_COLLECTION_INDEX "IndexStatisticsCollectionIndex"
 
 #define HA_LOOPBACK_ADDRESS "127.0.0.1"
 

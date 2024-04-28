@@ -68,4 +68,10 @@ int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
 int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
                              Sdb_cl &pending_object_cl,
                              const char *data_group = NULL);
+int ha_get_table_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
+                          Sdb_cl &table_stats_cl,
+                          const char *data_group = NULL);
+int ha_get_index_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
+                          Sdb_cl &index_stats_cl,
+                          const char *data_group = NULL);
 #endif

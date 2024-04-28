@@ -53,6 +53,7 @@ static const double SDB_DEFAULT_STATS_SAMPLE_PERCENT = 0.0;
 static const uint SDB_DEFAULT_STATS_CACHE_LEVEL = SDB_STATS_LVL_MCV;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
+static const my_bool SDB_DEFAULT_STATS_PERSISTENCE = TRUE;
 
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
 
@@ -72,6 +73,7 @@ uint sdb_stats_cache_version = 1;
 int sdb_stats_mode = SDB_DEFAULT_STATS_MODE;
 int sdb_stats_sample_num = SDB_DEFAULT_STATS_SAMPLE_NUM;
 double sdb_stats_sample_percent = SDB_DEFAULT_STATS_SAMPLE_PERCENT;
+my_bool sdb_stats_persistence = SDB_DEFAULT_STATS_PERSISTENCE;
 
 // use to metadata mapping function
 my_bool sdb_enable_mapping = FALSE;
@@ -650,6 +652,15 @@ static MYSQL_THDVAR_BOOL(share_log_output,
                          "(Default: OFF)"
                          /*是否打印统计信息相关日志*/,
                          NULL, NULL, FALSE);
+// TODO: make it hidden
+// SDB_DOC_OPT = IGNORE
+static MYSQL_SYSVAR_BOOL(stats_persistence, sdb_stats_persistence,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
+                         "Persist statistics into SequoiaDB system table. "
+                         "(Default: ON). If it is not in HA group, value "
+                         "would be fixed to OFF."
+                         /*持久化统计信息到 SequoiaDB 系统表中。*/,
+                         NULL, NULL, SDB_DEFAULT_STATS_PERSISTENCE);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
@@ -702,6 +713,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(bka_remove_orderby),
     MYSQL_SYSVAR(secure_log),
     MYSQL_SYSVAR(share_log_output),
+    MYSQL_SYSVAR(stats_persistence),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {

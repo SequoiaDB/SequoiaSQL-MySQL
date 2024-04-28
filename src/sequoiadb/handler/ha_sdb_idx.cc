@@ -1096,7 +1096,7 @@ int sdb_fill_mcv_stat(const KEY *key_info, const bson::BSONObj &frac_obj,
   uint total_str_field_len = 0;
 
   sdb_dbug_tmp_use_all_columns(table, org_bitmap, &table->read_set,
-                           &table->write_set);
+                               &table->write_set);
   org_check_field_status = table->in_use->count_cuted_fields;
   table->in_use->count_cuted_fields = CHECK_FIELD_IGNORE;
 
@@ -1193,7 +1193,8 @@ done:
   if (tmp_buffer) {
     free(tmp_buffer);
   }
-  sdb_dbug_tmp_restore_column_maps(&table->read_set, &table->write_set, org_bitmap);
+  sdb_dbug_tmp_restore_column_maps(&table->read_set, &table->write_set,
+                                   org_bitmap);
   table->in_use->count_cuted_fields = org_check_field_status;
   return rc;
 error:

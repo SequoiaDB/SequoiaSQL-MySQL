@@ -128,8 +128,8 @@ error:
   which may lead to unknown problems.
 */
 static MY_BITMAP *sdb_tmp_use_all_columns(TABLE *table, MY_BITMAP **bitmap) {
-  MY_BITMAP *old= *bitmap;
-  *bitmap= &table->s->all_set;
+  MY_BITMAP *old = *bitmap;
+  *bitmap = &table->s->all_set;
   return old;
 }
 
@@ -144,14 +144,14 @@ MY_BITMAP *sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **bitmap) {
 }
 
 void sdb_dbug_tmp_use_all_columns(TABLE *table, MY_BITMAP **save,
-                                      MY_BITMAP **read_set, MY_BITMAP **write_set) {
+                                  MY_BITMAP **read_set, MY_BITMAP **write_set) {
 #ifndef NDEBUG
   if (!table || !save || !read_set || !write_set)
     return;
   save[0] = *read_set;
   save[1] = *write_set;
-  (void) sdb_tmp_use_all_columns(table, read_set);
-  (void) sdb_tmp_use_all_columns(table, write_set);
+  (void)sdb_tmp_use_all_columns(table, read_set);
+  (void)sdb_tmp_use_all_columns(table, write_set);
 #endif
 }
 
@@ -167,8 +167,8 @@ void sdb_dbug_tmp_restore_column_map(MY_BITMAP **bitmap, MY_BITMAP *old) {
 #endif
 }
 
-void sdb_dbug_tmp_restore_column_maps(MY_BITMAP **read_set, MY_BITMAP **write_set,
-                                      MY_BITMAP **old) {
+void sdb_dbug_tmp_restore_column_maps(MY_BITMAP **read_set,
+                                      MY_BITMAP **write_set, MY_BITMAP **old) {
 #ifndef NDEBUG
   if (!read_set || !write_set || !old)
     return;
