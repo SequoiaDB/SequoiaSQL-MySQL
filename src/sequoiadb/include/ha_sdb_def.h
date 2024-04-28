@@ -237,6 +237,7 @@
 #define SDB_FIELD_SAMPLE_RECORDS "SampleRecords"
 #define SDB_FIELD_ENSURE_EMPTY "EnsureEmpty"
 #define SDB_FIELD_INITIAL "Initial"
+#define SDB_FIELD_INDEX "Index"
 
 #define SDB_FIELD_ALTER_TYPE "AlterType"
 #define SDB_FIELD_VERSION "Version"

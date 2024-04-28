@@ -1541,7 +1541,8 @@ error:
   goto done;
 }
 
-int drop_index(Sdb_cl &cl, List<KEY> &drop_keys) {
+int drop_index(THD *thd, Sdb_cl &cl, List<KEY> &drop_keys,
+               Mapping_context *mapping_ctx) {
   int rc = 0;
   List_iterator<KEY> it(drop_keys);
   KEY *key_info = NULL;
@@ -1551,6 +1552,8 @@ int drop_index(Sdb_cl &cl, List<KEY> &drop_keys) {
     if (rc) {
       goto error;
     }
+    ha_remove_cached_index_stats(thd, cl.get_cs_name(), cl.get_cl_name(),
+                                 sdb_key_name(key_info), mapping_ctx);
   }
 done:
   return rc;
@@ -2408,7 +2411,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
 
     if (!drop_keys.is_empty()) {
-      rc = drop_index(cl, drop_keys);
+      rc = drop_index(ha_thd(), cl, drop_keys, &tbl_ctx_impl);
       if (0 != rc) {
         goto error;
       }

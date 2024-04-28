@@ -563,7 +563,8 @@ class ha_sdb : public handler {
                                Sdb_statistics &stats,
                                Mapping_context *mapping_ctx = NULL);
 
-  int get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats);
+  int get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats,
+                               std::vector<bson::BSONObj> *stats_vec = NULL);
 
   int read_current_table_diag_info_file(THD *thd, const char *file_name,
                                         bson::BSONObj &diag_info);

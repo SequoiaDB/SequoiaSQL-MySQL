@@ -264,4 +264,30 @@ void ha_set_data_group(const char *name);
 const char *ha_get_data_group();
 const char *ha_get_inst_group();
 const char *ha_get_sys_meta_group();
+
+int ha_get_cached_table_stats(THD *thd, const char *db_name,
+                              const char *table_name, Sdb_cl &cl,
+                              Mapping_context *mapping_ctx);
+
+int ha_set_cached_table_stats(THD *thd, std::vector<bson::BSONObj> &stats_vec);
+
+int ha_get_cached_index_stats(THD *thd, const char *db_name,
+                              const char *table_name, const char *index_name,
+                              bson::BSONObj &index_stats, bool need_detail,
+                              Mapping_context *mapping_ctx);
+
+int ha_set_cached_index_stats(THD *thd, const bson::BSONObj &index_stats);
+
+/**
+  both table and index statistics will be removed.
+  if parameters db_name and table_name are NULL, remove all tables contents.
+*/
+int ha_remove_cached_stats(THD *thd, const char *db_name,
+                           const char *table_name,
+                           Mapping_context *mapping_ctx);
+
+int ha_remove_cached_index_stats(THD *thd, const char *db_name,
+                                 const char *table_name, const char *index_name,
+                                 Mapping_context *mapping_ctx);
+
 #endif

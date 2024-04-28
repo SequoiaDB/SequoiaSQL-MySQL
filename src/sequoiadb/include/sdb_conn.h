@@ -570,6 +570,44 @@ class Sdb_stat_cursor : public Stat_cursor {
   int (Sdb_cl::*m_func)(sdbclient::sdbCursor &cur);
 };
 
+class Cached_stat_cursor : public Stat_cursor {
+  typedef int (*get_cached_stats_func)(THD *, const char *, const char *,
+                                       Sdb_cl &, Mapping_context *);
+
+ public:
+  Cached_stat_cursor()
+      : m_func(NULL),
+        m_thd(NULL),
+        m_cs_name(NULL),
+        m_cl_name(NULL),
+        m_cl(NULL),
+        m_mapping_ctx(NULL) {}
+  ~Cached_stat_cursor() {}
+
+  void init(get_cached_stats_func func, THD *thd, const char *cs_name,
+            const char *cl_name, Mapping_context *mapping_ctx) {
+    m_func = func;
+    m_thd = thd;
+    m_cs_name = cs_name;
+    m_cl_name = cl_name;
+    m_mapping_ctx = mapping_ctx;
+  }
+
+  int open();
+
+  int next(bson::BSONObj &obj, bool getOwned);
+
+  int close();
+
+ private:
+  get_cached_stats_func m_func;
+  THD *m_thd;
+  const char *m_cs_name;
+  const char *m_cl_name;
+  Sdb_cl *m_cl;
+  Mapping_context *m_mapping_ctx;
+};
+
 class Replaced_stat_cursor : public Stat_cursor {
  public:
   Replaced_stat_cursor() {}

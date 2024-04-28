@@ -6453,13 +6453,30 @@ int ha_sdb::get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
                                        Sdb_statistics &stats,
                                        Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
-  Sdb_stat_cursor cursor;
+  Stat_cursor *cursor = NULL;
+  Sdb_stat_cursor sdb_cursor;
+  Cached_stat_cursor cached_cursor;
   bson::BSONObj obj;
   Sdb_cl cl;
   Sdb_conn *connection = NULL;
+  std::vector<bson::BSONObj> stats_vec;
 
   DBUG_ASSERT(NULL != cs_name);
   DBUG_ASSERT(strlength(cs_name) != 0);
+
+  cached_cursor.init(ha_get_cached_table_stats, ha_thd(), cs_name, cl_name,
+                     &tbl_ctx_impl);
+  cursor = &cached_cursor;
+  rc = cursor->open();
+  if (SDB_ERR_OK == rc) {
+    rc = get_cl_stats_from_cursor(*cursor, stats, &stats_vec);
+    rc = (HA_ERR_END_OF_FILE == rc) ? SDB_ERR_OK : rc;
+    if (SDB_ERR_OK == rc && !stats_vec.empty()) {
+      goto done;
+    } else {
+      cursor->close();
+    }
+  }
 
   rc = check_sdb_in_thd(ha_thd(), &connection, true);
   if (0 != rc) {
@@ -6471,13 +6488,15 @@ int ha_sdb::get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
     goto error;
   }
 
-  cursor.init(&cl, &Sdb_cl::get_detail);
-  rc = cursor.open();
+  sdb_cursor.init(&cl, &Sdb_cl::get_detail);
+  cursor = &sdb_cursor;
+
+  rc = cursor->open();
   if (rc != SDB_ERR_OK) {
     goto error;
   }
 
-  rc = get_cl_stats_from_cursor(cursor, stats);
+  rc = get_cl_stats_from_cursor(*cursor, stats, &stats_vec);
   if (SDB_DMS_EOC == rc) {
     rc = SDB_ERR_OK;
   }
@@ -6485,10 +6504,13 @@ int ha_sdb::get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
     goto error;
   }
 
-  stats.last_flush_total_records = stats.total_records;
+  ha_set_cached_table_stats(ha_thd(), stats_vec);
 
 done:
-  cursor.close();
+  stats.last_flush_total_records = stats.total_records;
+  if (cursor) {
+    cursor->close();
+  }
   return rc;
 error:
   convert_sdb_code(rc);
@@ -6601,8 +6623,8 @@ error:
   goto done;
 }
 
-int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor,
-                                     Sdb_statistics &stats) {
+int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats,
+                                     std::vector<bson::BSONObj> *stats_vec) {
   static const int PAGE_SIZE_MIN = 4096;
   static const int PAGE_SIZE_MAX = 65536;
 
@@ -6618,6 +6640,9 @@ int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor,
 
   try {
     while (!(rc = cursor.next(obj, false))) {
+      if (stats_vec) {
+        stats_vec->push_back(obj.copy());
+      }
       // Reject SequoiaDB in standalone mode. It's not supported yet.
       if (obj.getField(SDB_FIELD_UNIQUEID).numberLong() <= 0) {
         rc = SDB_RTN_COORD_ONLY;
@@ -7639,6 +7664,7 @@ int ha_sdb::analyze(THD *thd, HA_CHECK_OPT *check_opt) {
       rc = HA_ADMIN_FAILED;
       goto error;
     }
+    ha_remove_cached_stats(thd, db_name, table_name, &tbl_ctx_impl);
   } catch (std::exception &e) {
     sdb_print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
                         sdb_table_alias(table), "analyze",
@@ -7942,7 +7968,16 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
       goto error;
     }
 
-    rc = cl.get_index_stat(sdb_key_name(key_info), obj, need_detail);
+    rc = ha_get_cached_index_stats(thd, db_name, table_name,
+                                   sdb_key_name(key_info), obj, need_detail,
+                                   &tbl_ctx_impl);
+    if (rc != 0) {
+      rc = cl.get_index_stat(sdb_key_name(key_info), obj, need_detail);
+      if (rc == SDB_OK) {
+        ha_set_cached_index_stats(thd, obj);
+      }
+    }
+
     if (SDB_INVALIDARG == get_sdb_code(rc)) {
       s.sample_records = 0;
       s.static_total_records = 0;
@@ -8265,6 +8300,8 @@ int ha_sdb::delete_table(const char *from) {
   }
 #endif
 
+  ha_remove_cached_stats(thd, db_name, table_name, &tbl_ctx_impl);
+
   rc = conn->drop_cl(db_name, table_name, &tbl_mapping);
   if (0 != rc) {
     goto error;
@@ -8538,6 +8575,8 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     rc = HA_ERR_NOT_ALLOWED_COMMAND;
     goto error;
   }
+
+  ha_remove_cached_stats(thd, old_db_name, old_table_name, &tbl_ctx_impl);
 
   if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb &&
       thd_sdb->cl_copyer) {
@@ -10554,6 +10593,21 @@ error:
   goto done;
 }
 
+bool sdb_flush_table(THD *thd, const char *db_name, const char *table_name) {
+  DBUG_ENTER("sdb_flush_table");
+  Mapping_context_impl ctx_impl;
+
+  if (sdb_execute_only_in_mysql(thd)) {
+    goto done;
+  }
+
+  ctx_impl.reset();
+
+  ha_remove_cached_stats(thd, db_name, table_name, &ctx_impl);
+done:
+  DBUG_RETURN(0);
+}
+
 #ifdef IS_MARIADB
 static handler *(*mysql_org_create_partition_func)(handlerton *, TABLE_SHARE *,
                                                    MEM_ROOT *) = NULL;
@@ -10615,6 +10669,8 @@ static int sdb_init_func(void *p) {
     part_engine->create = sdb_create_partition_handler;
   }
 #endif
+  sdb_hton->flush_table = sdb_flush_table;
+
   if (conn_addrs.parse_conn_addrs(sdb_conn_str)) {
     SDB_LOG_ERROR("Invalid value sequoiadb_conn_addr=%s", sdb_conn_str);
     return 1;

@@ -128,15 +128,15 @@ int ha_get_instance_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
                   "sequoiadb error: %s",
                   HA_INSTANCE_OBJECT_STATE_CL,
                   ha_error_string(sdb_conn, rc, err_buf));
-    }
 
-    if (!indexes_created) {
-      std::vector<std::string> idx_elems;
       rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl);
       HA_RC_CHECK(
           rc, error, "HA: Unable to get table '%s', sequoiadb error: %s",
           HA_INSTANCE_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
+    if (!indexes_created) {
+      std::vector<std::string> idx_elems;
       idx_elems.push_back(HA_FIELD_DB);
       idx_elems.push_back(HA_FIELD_TABLE);
       idx_elems.push_back(HA_FIELD_TYPE);
@@ -192,17 +192,17 @@ int ha_get_instance_state_cl(Sdb_conn &sdb_conn, const char *group_name,
           rc, error,
           "HA: Unable to create instance state table '%s', sequoiadb error: %s",
           HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-    }
 
-    if (!indexes_created) {
-      // create index on 'InstanceID'
-      std::vector<std::string> idx_elems;
       rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_STATE_CL, cl);
       HA_RC_CHECK(
           rc, error,
           "HA: Unable to get instance state table '%s', sequoiadb error: %s",
           HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
+    if (!indexes_created) {
+      // create index on 'InstanceID'
+      std::vector<std::string> idx_elems;
       idx_elems.push_back(HA_FIELD_INSTANCE_ID);
       rc = create_index_if_not_exists(cl, HA_INST_STATE_INSTID_INDEX, idx_elems,
                                       true);
@@ -249,16 +249,16 @@ int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
           rc, error,
           "HA: Unable to create object state table '%s', sequoiadb error: %s",
           HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-    }
 
-    if (!indexes_created) {
-      std::vector<std::string> idx_elems;
       rc = sdb_conn.get_cl((char *)group_name, HA_OBJECT_STATE_CL, cl);
       HA_RC_CHECK(
           rc, error,
           "HA: Unable to get object state table '%s', sequoiadb error: %s",
           HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
+    if (!indexes_created) {
+      std::vector<std::string> idx_elems;
       idx_elems.push_back(HA_FIELD_DB);
       idx_elems.push_back(HA_FIELD_TABLE);
       idx_elems.push_back(HA_FIELD_TYPE);
@@ -305,15 +305,15 @@ int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &lock_cl,
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create lock table '%s', sequoiadb error: %s",
                   HA_LOCK_CL, ha_error_string(sdb_conn, rc, err_buf));
-    }
 
-    if (!indexes_created) {
-      std::vector<std::string> idx_elems;
       rc = sdb_conn.get_cl((char *)group_name, HA_LOCK_CL, lock_cl);
       HA_RC_CHECK(rc, error,
                   "HA: Unable to get lock table '%s', sequoiadb error: %s",
                   HA_LOCK_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
+    if (!indexes_created) {
+      std::vector<std::string> idx_elems;
       idx_elems.push_back(HA_FIELD_DB);
       idx_elems.push_back(HA_FIELD_TABLE);
       idx_elems.push_back(HA_FIELD_TYPE);
@@ -361,15 +361,15 @@ int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name,
           rc, error,
           "HA: Unable to create registry table '%s', sequoiadb error: %s",
           HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
-    }
 
-    if (!indexes_created) {
-      std::vector<std::string> idx_elems;
       rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl, true);
       HA_RC_CHECK(rc, error,
                   "HA: Unable to get table '%s', sequoiadb error: %s",
                   HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
+    if (!indexes_created) {
+      std::vector<std::string> idx_elems;
       idx_elems.push_back(HA_FIELD_INSTANCE_ID);
       rc = create_index_if_not_exists(registry_cl, HA_REGISTRY_INSTID_INDEX,
                                       idx_elems, true);
@@ -426,15 +426,15 @@ int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
       rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error, "HA: Unable to create '%s', sequoiadb error: %s",
                   HA_PENDING_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
-    }
 
-    if (!indexes_created) {
-      std::vector<std::string> idx_elems;
       rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_LOG_CL,
                            pending_log_cl);
       HA_RC_CHECK(rc, error, "HA: Unable to get '%s', sequoiadb error: %s",
                   HA_PENDING_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
+    if (!indexes_created) {
+      std::vector<std::string> idx_elems;
       idx_elems.push_back(HA_FIELD_SQL_ID);
       rc = create_index_if_not_exists(
           pending_log_cl, HA_PENDING_LOG_PENDING_ID_INDEX, idx_elems, true);
@@ -474,15 +474,15 @@ int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
       rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error, "HA: Unable to create '%s', sequoiadb error: %s",
                   HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
-    }
 
-    if (!indexes_created) {
-      std::vector<std::string> idx_elems;
       rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_OBJECT_CL,
                            pending_object_cl);
       HA_RC_CHECK(rc, error, "HA: Unable to get '%s', sequoiadb error: %s",
                   HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
+    if (!indexes_created) {
+      std::vector<std::string> idx_elems;
       idx_elems.push_back(HA_FIELD_DB);
       idx_elems.push_back(HA_FIELD_TABLE);
       idx_elems.push_back(HA_FIELD_TYPE);
@@ -503,6 +503,120 @@ int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
                         HA_PENDING_OBJECT_CL, e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_get_table_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
+                          Sdb_cl &table_stats_cl, const char *data_group) {
+  static bool indexes_created = false;
+
+  int rc = 0;
+  char err_buf[HA_BUF_LEN] = {0};
+  Sdb_pool_conn pool_conn(0, true);
+  Sdb_conn &tmp_conn = pool_conn;
+
+  rc = sdb_conn.get_cl((char *)group_name, HA_TABLE_STATS_CL, table_stats_cl,
+                       true);
+  try {
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      sql_print_information("HA: Creating '%s:%s'", group_name,
+                            HA_TABLE_STATS_CL);
+      bson::BSONObj cl_options;
+      if (NULL != data_group && '\0' != data_group[0]) {
+        cl_options = BSON(SDB_FIELD_GROUP << data_group);
+      }
+
+      // Use a new connection to create table to prevent the affect of
+      // transaction of original connection.
+      rc = tmp_conn.connect();
+      if (rc) {
+        goto error;
+      }
+      rc =
+          tmp_conn.create_cl((char *)group_name, HA_TABLE_STATS_CL, cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error, "HA: Unable to create '%s', sequoiadb error: %s",
+                  HA_TABLE_STATS_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      rc = sdb_conn.get_cl((char *)group_name, HA_TABLE_STATS_CL,
+                           table_stats_cl);
+      HA_RC_CHECK(rc, error, "HA: Unable to get '%s', sequoiadb error: %s",
+                  HA_TABLE_STATS_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
+
+    if (!indexes_created) {
+      std::vector<std::string> idx_elems;
+      idx_elems.push_back(SDB_FIELD_NAME);
+      idx_elems.push_back(SDB_FIELD_DETAILS "." SDB_FIELD_GROUP_NAME);
+      rc = create_index_if_not_exists(
+          table_stats_cl, HA_TABLE_STATS_CL_NAME_INDEX, idx_elems, true);
+      HA_RC_CHECK(rc, error, "Failed to create index on '%s'",
+                  table_stats_cl.get_cl_name());
+      indexes_created = true;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
+                        HA_TABLE_STATS_CL, e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_get_index_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
+                          Sdb_cl &index_stats_cl, const char *data_group) {
+  static bool indexes_created = false;
+
+  int rc = 0;
+  char err_buf[HA_BUF_LEN] = {0};
+  Sdb_pool_conn pool_conn(0, true);
+  Sdb_conn &tmp_conn = pool_conn;
+
+  rc = sdb_conn.get_cl((char *)group_name, HA_INDEX_STATS_CL, index_stats_cl,
+                       true);
+  try {
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      sql_print_information("HA: Creating '%s:%s'", group_name,
+                            HA_INDEX_STATS_CL);
+      bson::BSONObj cl_options;
+      if (NULL != data_group && '\0' != data_group[0]) {
+        cl_options = BSON(SDB_FIELD_GROUP << data_group);
+      }
+
+      // Use a new connection to create table to prevent the affect of
+      // transaction of original connection.
+      rc = tmp_conn.connect();
+      if (rc) {
+        goto error;
+      }
+      rc =
+          tmp_conn.create_cl((char *)group_name, HA_INDEX_STATS_CL, cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error, "HA: Unable to create '%s', sequoiadb error: %s",
+                  HA_INDEX_STATS_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      rc = sdb_conn.get_cl((char *)group_name, HA_INDEX_STATS_CL,
+                           index_stats_cl);
+      HA_RC_CHECK(rc, error, "HA: Unable to get '%s', sequoiadb error: %s",
+                  HA_INDEX_STATS_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
+
+    if (!indexes_created) {
+      std::vector<std::string> idx_elems;
+      idx_elems.push_back(SDB_FIELD_COLLECTION);
+      idx_elems.push_back(SDB_FIELD_INDEX);
+      rc = create_index_if_not_exists(
+          index_stats_cl, HA_INDEX_STATS_CL_COLLECTION_INDEX, idx_elems, true);
+      HA_RC_CHECK(rc, error, "Failed to create index on '%s'",
+                  index_stats_cl.get_cl_name());
+      indexes_created = true;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
+                        HA_INDEX_STATS_CL, e.what());
 done:
   return rc;
 error:

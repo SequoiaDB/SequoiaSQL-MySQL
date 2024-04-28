@@ -154,7 +154,7 @@ static struct st_mysql_show_var ha_status[] = {
 static bool check_if_table_exists(THD *thd, TABLE_LIST *table);
 static bool is_pending_log_ignorable_error(THD *thd);
 static bool check_if_table_exists(THD *thd, const char *db_name,
-                                     const char *table_name);
+                                  const char *table_name);
 
 uint ha_sql_log_check_interval() {
   return sql_log_check_interval;
@@ -202,6 +202,397 @@ const char *ha_get_inst_group() {
 
 const char *ha_get_sys_meta_group() {
   return sdb_enable_mapping ? NM_SYS_META_GROUP : NULL;
+}
+
+int ha_get_cached_table_stats(THD *thd, const char *db_name,
+                              const char *table_name, Sdb_cl &cl,
+                              Mapping_context *mapping_ctx) {
+  int rc = 0;
+  DBUG_ENTER("ha_get_cached_table_stats");
+
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_cl &table_stats_cl = cl;
+  bson::BSONObj cond;
+  bson::BSONObjBuilder bson_builder;
+  char full_name_buffer[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
+
+  if (!thd || !db_name || !table_name) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  if (!sdb_stats_persistence) {
+    rc = HA_ERR_UNSUPPORTED;
+    goto error;
+  }
+
+  // get sdb connection
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (HA_ERR_OUT_OF_MEM == rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    goto error;
+  }
+
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, sdb_conn, mapping_ctx);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
+  }
+
+  try {
+    rc = ha_get_table_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
+                               table_stats_cl, ha_get_sys_meta_group());
+    if (rc) {
+      goto error;
+    }
+
+    sprintf(full_name_buffer, "%s.%s", cs_name, cl_name);
+    bson_builder.append(SDB_FIELD_NAME, full_name_buffer);
+    cond = bson_builder.obj();
+    rc = table_stats_cl.query(cond);
+    if (rc) {
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to query from '%s.%s', exception:%s",
+                        db_name, table_name, e.what());
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_set_cached_table_stats(THD *thd, std::vector<bson::BSONObj> &stats_vec) {
+  int rc = 0;
+  DBUG_ENTER("ha_set_cached_table_stats");
+
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_cl table_stats_cl;
+  char full_name_buffer[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+
+  if (!thd) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  if (!sdb_stats_persistence) {
+    rc = HA_ERR_UNSUPPORTED;
+    goto error;
+  }
+
+  // get sdb connection
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (HA_ERR_OUT_OF_MEM == rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    goto error;
+  }
+
+  try {
+    rc = ha_get_table_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
+                               table_stats_cl, ha_get_sys_meta_group());
+    if (rc) {
+      goto error;
+    }
+
+    rc = table_stats_cl.insert(stats_vec, SDB_EMPTY_BSON,
+                               FLG_INSERT_REPLACEONDUP);
+    if (rc) {
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to insert into table statistics table, exception:%s",
+      e.what());
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_get_cached_index_stats(THD *thd, const char *db_name,
+                              const char *table_name, const char *index_name,
+                              bson::BSONObj &index_stats, bool need_detail,
+                              Mapping_context *mapping_ctx) {
+  int rc = 0;
+  DBUG_ENTER("ha_get_cached_index_stats");
+
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_cl index_stats_cl;
+  bson::BSONObj cond;
+  bson::BSONObjBuilder bson_builder;
+  char full_name_buffer[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
+
+  if (!thd || !db_name || !table_name || !index_name) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  if (!sdb_stats_persistence) {
+    rc = HA_ERR_UNSUPPORTED;
+    goto error;
+  }
+
+  // get sdb connection
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (HA_ERR_OUT_OF_MEM == rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    goto error;
+  }
+
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, sdb_conn, mapping_ctx);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
+  }
+
+  try {
+    rc = ha_get_index_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
+                               index_stats_cl, ha_get_sys_meta_group());
+    if (rc) {
+      goto error;
+    }
+
+    sprintf(full_name_buffer, "%s.%s", cs_name, cl_name);
+    bson_builder.append(SDB_FIELD_COLLECTION, full_name_buffer);
+    bson_builder.append(SDB_FIELD_INDEX, index_name);
+    cond = bson_builder.obj();
+    rc = index_stats_cl.query_one(index_stats, cond);
+    if (rc) {
+      goto error;
+    }
+    if (need_detail && !index_stats.hasField(SDB_FIELD_MCV)) {
+      rc = HA_ERR_END_OF_FILE;
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to query from '%s.%s', exception:%s",
+                        db_name, table_name, e.what());
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_set_cached_index_stats(THD *thd, const bson::BSONObj &index_stats) {
+  int rc = 0;
+  DBUG_ENTER("ha_set_cached_index_stats");
+
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_cl index_stats_cl;
+  char full_name_buffer[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+
+  if (!thd) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  if (!sdb_stats_persistence) {
+    rc = HA_ERR_UNSUPPORTED;
+    goto error;
+  }
+
+  // get sdb connection
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (HA_ERR_OUT_OF_MEM == rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    goto error;
+  }
+
+  try {
+    rc = ha_get_index_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
+                               index_stats_cl, ha_get_sys_meta_group());
+    if (rc) {
+      goto error;
+    }
+
+    rc = index_stats_cl.insert(index_stats, SDB_EMPTY_BSON,
+                               FLG_INSERT_REPLACEONDUP);
+    if (rc) {
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to insert into index statistics table, exception:%s",
+      e.what());
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_remove_cached_stats(THD *thd, const char *db_name,
+                           const char *table_name,
+                           Mapping_context *mapping_ctx) {
+  int rc = 0;
+  DBUG_ENTER("ha_remove_cached_stats");
+
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_cl table_stats_cl;
+  Sdb_cl index_stats_cl;
+  bson::BSONObj cond1;
+  bson::BSONObjBuilder bson_builder1;
+  bson::BSONObj cond2;
+  bson::BSONObjBuilder bson_builder2;
+  char full_name_buffer[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
+
+  if (!thd) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  if (!sdb_stats_persistence) {
+    rc = HA_ERR_UNSUPPORTED;
+    goto error;
+  }
+
+  // get sdb connection
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (HA_ERR_OUT_OF_MEM == rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    goto error;
+  }
+
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, sdb_conn, mapping_ctx);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
+  }
+
+  try {
+    rc = ha_get_table_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
+                               table_stats_cl, ha_get_sys_meta_group());
+    if (rc) {
+      goto error;
+    }
+    if (cs_name && cl_name) {
+      sprintf(full_name_buffer, "%s.%s", cs_name, cl_name);
+      bson_builder1.append(SDB_FIELD_NAME, full_name_buffer);
+      cond1 = bson_builder1.obj();
+    }
+    rc = table_stats_cl.del(cond1);
+    if (rc) {
+      goto error;
+    }
+
+    rc = ha_get_index_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
+                               index_stats_cl, ha_get_sys_meta_group());
+    if (rc) {
+      goto error;
+    }
+    if (cs_name && cl_name) {
+      bson_builder2.append(SDB_FIELD_COLLECTION, full_name_buffer);
+      cond2 = bson_builder2.obj();
+    }
+    rc = index_stats_cl.del(cond2);
+    if (rc) {
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to delete statistics cache for '%s.%s', exception:%s",
+      db_name, table_name, e.what());
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_remove_cached_index_stats(THD *thd, const char *db_name,
+                                 const char *table_name, const char *index_name,
+                                 Mapping_context *mapping_ctx) {
+  int rc = 0;
+  DBUG_ENTER("ha_remove_cached_index_stats");
+
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_cl table_stats_cl;
+  Sdb_cl index_stats_cl;
+  bson::BSONObj cond;
+  bson::BSONObjBuilder bson_builder;
+  char full_name_buffer[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
+
+  if (!thd || !db_name || !table_name || !index_name) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  if (!sdb_stats_persistence) {
+    rc = HA_ERR_UNSUPPORTED;
+    goto error;
+  }
+
+  // get sdb connection
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (HA_ERR_OUT_OF_MEM == rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    goto error;
+  }
+
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, sdb_conn, mapping_ctx);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
+  }
+
+  try {
+    rc = ha_get_index_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
+                               index_stats_cl, ha_get_sys_meta_group());
+    if (rc) {
+      goto error;
+    }
+    sprintf(full_name_buffer, "%s.%s", cs_name, cl_name);
+    bson_builder.append(SDB_FIELD_COLLECTION, full_name_buffer);
+    bson_builder.append(SDB_FIELD_INDEX, index_name);
+    cond = bson_builder.obj();
+    rc = index_stats_cl.del(cond);
+    if (rc) {
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to delete statistics cache for '%s.%s', exception:%s",
+      db_name, table_name, e.what());
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 static int mysql_thread_join(my_thread_handle *thread, void **value_ptr) {
@@ -1978,7 +2369,7 @@ static inline bool check_if_table_exists(THD *thd, TABLE_LIST *table) {
 }
 
 static inline bool check_if_table_exists(THD *thd, const char *db_name,
-                                            const char *table_name) {
+                                         const char *table_name) {
 #ifdef IS_MARIADB
   const LEX_CSTRING db = {db_name, strlen(db_name)};
   const LEX_CSTRING table = {table_name, strlen(table_name)};
@@ -5762,6 +6153,9 @@ static int server_ha_init(void *p) {
     SDB_LOG_INFO(
         "Metadata mapping is on, make sure that 'SysMetaGroup' group has been "
         "created");
+  }
+  if (!ha_is_open()) {
+    sdb_stats_persistence = FALSE;
   }
   DBUG_RETURN(0);
 }

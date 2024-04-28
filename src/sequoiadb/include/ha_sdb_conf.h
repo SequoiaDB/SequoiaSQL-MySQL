@@ -127,6 +127,7 @@ extern String sdb_encoded_password;
 extern my_bool sdb_enable_mapping;
 extern int sdb_mapping_unit_size;
 extern int sdb_mapping_unit_count;
+extern my_bool sdb_stats_persistence;
 
 extern mysql_var_update_func sdb_set_connection_addr;
 extern mysql_var_update_func sdb_set_user;

@@ -1581,3 +1581,36 @@ void Sdb_normal_conn::release_connection() {
   m_connection->disconnect();
   m_connection = NULL;
 }
+
+int Cached_stat_cursor::open() {
+  int rc = 0;
+  m_cl = new Sdb_cl();
+  if (!m_cl) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+  rc = (*m_func)(m_thd, m_cs_name, m_cl_name, *m_cl, m_mapping_ctx);
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Cached_stat_cursor::next(bson::BSONObj &obj, bool getOwned) {
+  int rc = 0;
+  if (m_cl) {
+    rc = m_cl->next(obj, getOwned);
+  } else {
+    rc = HA_ERR_INTERNAL_ERROR;
+  }
+  return rc;
+}
+
+int Cached_stat_cursor::close() {
+  if (m_cl) {
+    m_cl->close();
+    delete m_cl;
+    m_cl = NULL;
+  }
+  return 0;
+}
