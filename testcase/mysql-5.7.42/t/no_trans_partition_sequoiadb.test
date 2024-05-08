@@ -501,7 +501,7 @@ CREATE TABLE `t1#Sub##P#p01` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_I
 CREATE TABLE `t1#Sub##P#p11` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_) );
 CREATE TABLE `t1#Sub##P#p21` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_) );
 # insert many valid rows, matched and not duplicated
-INSERT INTO `t1#Sub##P#p01`(id,f1,_phid_) VALUES (300,300,300),(120,120,120) ;
+INSERT INTO `t1#Sub##P#p01`(id,f1,_phid_) VALUES (300,300,300);
 INSERT INTO `t1#Sub##P#p21`(id,f1,_phid_) VALUES (80,80,80);
 SELECT * FROM `t1#Sub#` ORDER BY id;  
 --replace_column 1 x

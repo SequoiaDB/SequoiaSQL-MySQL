@@ -1908,14 +1908,14 @@ UPDATE t1 PARTITION (p3,p1) SET a = 2 WHERE a = 3;
 ERROR 0A000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1;
 a	b
-3	0
-3	6
-3	4
-2	4
-4	3
-8	2
 0	7
+2	4
+3	0
+3	4
+3	6
+4	3
 7	8
+8	2
 DROP TABLE t1;
 #
 # MDEV-21134 Crash with partitioned table, PARTITION syntax, and index_merge.

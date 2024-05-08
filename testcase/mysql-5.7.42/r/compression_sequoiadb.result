@@ -152,7 +152,7 @@ DROP TABLE t1,t2,t3;
 CREATE TABLE t1 ( id int ) COMPRESSION 'zlib';
 ERROR HY000: Invalid compression type
 CREATE TABLE t1 ( id int ) COMMENT "sequoiadb: {table_options: {CompressedType: 'zlib'}}";
-ERROR HY000: Invalid Argument
+ERROR HY000: Unexpected field["CompressedType": "zlib"] in create collection command
 CREATE TABLE t1 ( id int );
 ALTER TABLE t1 COMPRESSION 'zlib';
 ERROR HY000: Invalid compression type

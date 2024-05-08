@@ -930,16 +930,16 @@ string
 word
 SELECT c FROM t1 WHERE b NOT IN ("abcd", "22222", "11111");
 c
-testc2
-helloworld
 1234567
-xxyyzz
 ABCD2e
-testc1
-testc6
-testc3
+helloworld
 string
+testc1
+testc2
+testc3
 testc4
+testc6
+xxyyzz
 SELECT * FROM t1 WHERE b LIKE "abc%";
 a	b	c
 6	abcd	testc5
@@ -953,32 +953,32 @@ a	b	c
 3	1234567	1234567
 SELECT * FROM t1 WHERE b != "abcd2e";
 a	b	c
-11	helloworld	helloworld
-3	1234567	1234567
-8	xxyyzz	xxyyzz
-6	abcd	testc5
-2	abcd1e	testc1
-15	ABCD1e	testc6
-7	22222	22222
-10	ccccc	testc3
-12	string	string
-9	word	testc4
 1	ABCD	ABCD
+10	ccccc	testc3
+11	helloworld	helloworld
+12	string	string
 14	11111	11111
+15	ABCD1e	testc6
+2	abcd1e	testc1
+3	1234567	1234567
+6	abcd	testc5
+7	22222	22222
+8	xxyyzz	xxyyzz
+9	word	testc4
 SELECT * FROM t1 WHERE b <> "ABCD";
 a	b	c
-5	abcd2e	testc2
-11	helloworld	helloworld
-3	1234567	1234567
-8	xxyyzz	xxyyzz
-4	ABCD2e	ABCD2e
-2	abcd1e	testc1
-15	ABCD1e	testc6
-7	22222	22222
 10	ccccc	testc3
+11	helloworld	helloworld
 12	string	string
-9	word	testc4
 14	11111	11111
+15	ABCD1e	testc6
+2	abcd1e	testc1
+3	1234567	1234567
+4	ABCD2e	ABCD2e
+5	abcd2e	testc2
+7	22222	22222
+8	xxyyzz	xxyyzz
+9	word	testc4
 SELECT b,c FROM t1 WHERE b = c;
 b	c
 11111	11111

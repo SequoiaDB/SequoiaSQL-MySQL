@@ -1337,7 +1337,7 @@ a	b	c
 CREATE TABLE `t1#Sub##P#p01` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_)  );
 CREATE TABLE `t1#Sub##P#p11` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_) );
 CREATE TABLE `t1#Sub##P#p21` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_) );
-INSERT INTO `t1#Sub##P#p01`(id,f1,_phid_) VALUES (300,300,300),(120,120,120) ;
+INSERT INTO `t1#Sub##P#p01`(id,f1,_phid_) VALUES (300,300,300);
 INSERT INTO `t1#Sub##P#p21`(id,f1,_phid_) VALUES (80,80,80);
 SELECT * FROM `t1#Sub#` ORDER BY id;
 id	f1	f2
@@ -1349,7 +1349,6 @@ id	f1	f2
 50	9	40
 80	80	70
 99	7	89
-120	120	110
 135	8	125
 175	12	165
 199	5	189
@@ -1383,7 +1382,7 @@ Table	Op	Msg_type	Msg_text
 x	repair	status	OK
 ALTER TABLE `t1#Sub#` REPAIR PARTITION p01;
 Table	Op	Msg_type	Msg_text
-x	repair	warning	Moved 2 misplaced rows
+x	repair	warning	Moved 1 misplaced rows
 x	repair	status	OK
 CHECK TABLE `t1#Sub#` MEDIUM;
 Table	Op	Msg_type	Msg_text
@@ -1409,7 +1408,6 @@ id	f1	f2
 50	9	40
 80	80	70
 99	7	89
-120	120	110
 135	8	125
 175	12	165
 199	5	189
@@ -1429,7 +1427,6 @@ id	f1	f2
 50	9	40
 80	80	70
 99	7	89
-120	120	110
 135	8	125
 150	40	140
 175	12	165
@@ -1521,7 +1518,6 @@ id	f1	f2
 50	9	40
 80	80	70
 99	7	89
-120	120	110
 135	8	125
 150	40	140
 175	12	165

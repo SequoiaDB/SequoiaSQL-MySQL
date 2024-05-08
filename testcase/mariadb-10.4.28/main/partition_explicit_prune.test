@@ -947,6 +947,7 @@ FLUSH TABLES;
 # failed: 131: Cannot specify HASH or KEY partitions
 --error 131
 UPDATE t1 PARTITION (p3,p1) SET a = 2 WHERE a = 3;
+--sorted_result
 SELECT * FROM t1;
 DROP TABLE t1;
 

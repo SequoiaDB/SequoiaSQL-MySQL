@@ -12600,7 +12600,7 @@ id	a	b
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE a LIKE "\\a" ORDER BY a;
 id	a	b
-SELECT * FROM t1 WHERE b LIKE "a\\bc" ORDER BY b;
+SELECT * FROM t1 WHERE b LIKE "a\\bc" ORDER BY id;
 id	a	b
 12	abc                             	abc
 136	abc                             	abc

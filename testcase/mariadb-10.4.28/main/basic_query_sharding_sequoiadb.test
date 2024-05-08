@@ -245,11 +245,14 @@ SELECT * FROM t1 WHERE b >= "ABCD1e" ORDER BY b,a LIMIT 7;
 SELECT a FROM t1 WHERE b BETWEEN "abcd1e" AND "xxyyzz" ORDER BY a DESC LIMIT 7;
 --sorted_result
 SELECT b FROM t1 WHERE b IN ("word", "ABCD", "ABCD2e", "string", "helloworld", "11111", "1234567");
+--sorted_result
 SELECT c FROM t1 WHERE b NOT IN ("abcd", "22222", "11111");
 SELECT * FROM t1 WHERE b LIKE "abc%";
 --sorted_result
 SELECT * FROM t1 WHERE b REGEXP "1";
+--sorted_result
 SELECT * FROM t1 WHERE b != "abcd2e";
+--sorted_result
 SELECT * FROM t1 WHERE b <> "ABCD";
 --sorted_result
 SELECT b,c FROM t1 WHERE b = c;

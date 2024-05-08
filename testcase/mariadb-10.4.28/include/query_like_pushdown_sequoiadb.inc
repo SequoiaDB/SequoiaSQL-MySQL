@@ -1265,7 +1265,7 @@ SELECT * FROM t1 WHERE a LIKE "^a" ORDER BY a;
 SELECT * FROM t1 WHERE b LIKE "a^bc" ORDER BY b;
 --source include/query_pushdown_condition_sequoiadb.inc
 SELECT * FROM t1 WHERE a LIKE "\\a" ORDER BY a;
-SELECT * FROM t1 WHERE b LIKE "a\\bc" ORDER BY b;
+SELECT * FROM t1 WHERE b LIKE "a\\bc" ORDER BY id;
 SELECT * FROM t1 WHERE a LIKE "$a" ORDER BY a;
 SELECT * FROM t1 WHERE b LIKE "a$bc" ORDER BY b;
 SELECT * FROM t1 WHERE a LIKE "*a" ORDER BY a;
