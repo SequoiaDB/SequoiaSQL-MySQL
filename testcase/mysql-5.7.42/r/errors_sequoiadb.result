@@ -15,7 +15,7 @@ Warning	40178	Sharding key cannot be updated
 set global sequoiadb_error_level=error;
 drop table t1;
 create table t1 ( a char(10) ) COMMENT="sequoiadb:{ table_options: { a : 1 } }";
-ERROR HY000: Invalid Argument
+ERROR HY000: Unexpected field["a": 1] in create collection command
 create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}, ShardingType : 'hash' }}";
 create unique index a on t1(a);
 ERROR HY000: The unique index must include all fields in sharding key

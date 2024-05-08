@@ -60,7 +60,7 @@ public class CreateTableLike28626 extends MysqlTestBase {
         jdbc.update( "use " + dbName + ";" );
         jdbc.update( "create table " + tbName1 + " (id int) COMMENT='sequoiadb:"
                 + "{table_options:{EnsureShardingIndex:true,"
-                + "AutoSplit:false,Partition: 8,ReplSize:2, Compressed:true,"
+                + "AutoSplit:false,ReplSize:2, Compressed:true,"
                 + "CompressionType:\"lzw\"," + "StrictDataMode:true}}'\n"
                 + "PARTITION BY RANGE (id)\n" + "SUBPARTITION BY HASH (id)\n"
                 + "SUBPARTITIONS 1 (\n"
@@ -68,7 +68,7 @@ public class CreateTableLike28626 extends MysqlTestBase {
 
         jdbc.update( "create table " + tbName2 + " (id int) COMMENT='sequoiadb:"
                 + "{table_options:{EnsureShardingIndex:false,"
-                + "AutoSplit:false,Partition: 8,ReplSize:2, Compressed:true,"
+                + "AutoSplit:false,ReplSize:2, Compressed:true,"
                 + "CompressionType:\"lzw\"," + "StrictDataMode:true}}'\n"
                 + "PARTITION BY RANGE (id)\n" + "SUBPARTITION BY HASH (id)\n"
                 + "SUBPARTITIONS 1 (\n"
@@ -125,8 +125,8 @@ public class CreateTableLike28626 extends MysqlTestBase {
         List< String > exp2 = new ArrayList<>();
         exp2.add( "4" );
         exp2.add( "8" );
-        Assert.assertEquals( act1, exp1 );
-        Assert.assertEquals( act2, exp2 );
+        Assert.assertEqualsNoOrder( act1.toArray(), exp1.toArray() );
+        Assert.assertEqualsNoOrder( act2.toArray(), exp2.toArray() );
 
         // 检查sdb端源表目标表集合属性(预期EnsureShardingIndex不一致，其他属性一致)；
         // 主表

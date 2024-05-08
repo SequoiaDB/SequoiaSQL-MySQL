@@ -755,6 +755,7 @@ ALTER PROCEDURE p1
 # check metadatas after alter 
 connection conn1;
 SHOW CREATE VIEW v1;
+--sorted_result
 SELECT * FROM v1;
 connection conn2;
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/

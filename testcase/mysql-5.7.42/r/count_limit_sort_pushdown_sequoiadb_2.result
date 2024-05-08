@@ -2626,19 +2626,19 @@ col1	col2	col3	col4	col5
 2	def	NULL	def	NULL
 3	NULL	2022-11-15 11:40:15	abcdef	NULL
 truncate table insert_table4;
-explain  insert into insert_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
+explain  insert into insert_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select max(col1) from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	INSERT	insert_table5	NULL	ALL	NULL	NULL	NULL	NULL	#	#	NULL
 1	PRIMARY	t2_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t2_partition`.`col1` < (/* select#3 */ select count(1) from `count_limit_sort_pushdown_sequoiadb_2`.`t1_partition` where (`count_limit_sort_pushdown_sequoiadb_2`.`t1_partition`.`col1` >= 1) limit 0,1)); Using temporary; Using filesort
-4	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	NULL	idx_col2	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1_partition`.`col2` < 'abcdef'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
+4	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_col2	idx_col2	13	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1_partition`.`col2` < 'abcdef'); Using temporary; Using filesort
 3	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1_partition`.`col1` >= 1); Using index
 2	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	NULL	idx_col3	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1_partition`.`col3` < '20221215114210'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
-insert into insert_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
+insert into insert_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select max(col1) from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_2.t1_partition
 [Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_2.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 14 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t2_partition]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$lt": "abcdef" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t1_partition]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$lt": "2022-12-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 select * from insert_table5;
 col1	col2
@@ -2653,13 +2653,12 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 4	SUBQUERY	t1	NULL	index	idx_col2	idx_col2	13	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1`.`col2` > 'abcdef'); Using pushed GROUP BY; Using pushed ORDER BY; Using index
 2	SUBQUERY	t1	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1`.`col1` >= 7); Using index
 insert into insert_table2 select *,(select col1 from t1 where col1>=7 order by col1 desc)  from t2 where t2.col2 in(select col2 from t1 where col3>"20221115114210" order by col2 desc) group by col2 having col2> (select col2 from t1 where col2>"abcdef" group by col2 order by col2 desc limit 1 )   limit 1;
-insert into insert_table5 select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
 [Note] Testcase: Operation log begin
-[Note] SequoiaDB: optimizer count: 1, condition: [{ "col1": { "$gte": 1 } }], table: count_limit_sort_pushdown_sequoiadb_2.t1_partition
-[Note] SequoiaDB: Count message: condition[{ "col1": { "$gte": 1 } }],hint[{ "": "idx_col1" }] table[count_limit_sort_pushdown_sequoiadb_2.t1_partition]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$lt": 14 } }], selector[{}], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t2_partition]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$lt": "abcdef" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col1": { "$first": "$col1" }, "col2": { "$first": "$col2" } } }], sort[{ "$sort": { "col4": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: match[{ "$match": { "col3": { "$lt": "2022-12-15 11:42:10" } } }], group[{ "$group": { "col4": { "$first": "$col4" }, "_id": { "col4": "$col4" }, "col3": { "$first": "$col3" } } }], sort[{ "$sort": { "col4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
+[Note] SequoiaDB: Query message: condition[{ "col3": { "$gt": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col3": 1 }], hint[{ "": "idx_col3" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t1]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "defg " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyz" } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t2]
+[Note] SequoiaDB: Query message: condition[{ "col2": { "$et": "xyzz " } }], selector[{}], order_by[{ "col2": 1 }], hint[{ "": "idx_col2" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t2]
+[Note] SequoiaDB: Query message: match[{ "$match": { "col2": { "$gt": "abcdef" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
 select * from insert_table2;
 col1	col2	col3	col4	col5
 truncate table insert_table2;
@@ -3638,7 +3637,6 @@ insert into insert_table5 select t2_partition.col1, (select t1_partition.col2 fr
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t2_partition]
 select * from insert_table5;
 col1	col2
-0	NULL
 2	NULL
 truncate table insert_table5;
 explain insert into t5(select * from t1 where col1<(select count(1) from t2 where col1<5) limit 1) 

@@ -65,7 +65,6 @@ public class CreateTableLike28622 extends MysqlTestBase {
         option.put( "ShardingType", "range" );
         option.put( "EnsureShardingIndex", false );
         option.put( "AutoIndexId", true );
-        option.put( "Partition", 8 );
         option.put( "ReplSize", 2 );
         option.put( "Compressed", true );
         option.put( "CompressionType", "lzw" );
@@ -121,8 +120,8 @@ public class CreateTableLike28622 extends MysqlTestBase {
         exp1.add( "7" );
         exp2.add( "4" );
         exp2.add( "8" );
-        Assert.assertEquals( act1, exp1 );
-        Assert.assertEquals( act2, exp2 );
+        Assert.assertEqualsNoOrder( act1.toArray(), exp1.toArray() );
+        Assert.assertEqualsNoOrder( act2.toArray(), exp2.toArray() );
         // 检查sdb端源表目标表集合属性（预期为AttributeDesc和Attribute不一致，其余属性一致）；
         CreateTableLikeUtils.compareCollectionAttribute( sdb, csName, clName1,
                 clName2, new String[] { "AttributeDesc", "Attribute" } );

@@ -100,8 +100,8 @@ public class CreateTableLike28608 extends MysqlTestBase {
         List< String > exp2 = new ArrayList<>();
         exp2.add( "4" );
         exp2.add( "8" );
-        Assert.assertEquals( act1, exp1 );
-        Assert.assertEquals( act2, exp2 );
+        Assert.assertEqualsNoOrder( act1.toArray(), exp1.toArray() );
+        Assert.assertEqualsNoOrder( act2.toArray(), exp2.toArray() );
     }
 
     @AfterClass

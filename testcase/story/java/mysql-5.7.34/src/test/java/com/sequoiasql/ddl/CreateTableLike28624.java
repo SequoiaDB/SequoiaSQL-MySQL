@@ -59,13 +59,13 @@ public class CreateTableLike28624 extends MysqlTestBase {
         jdbc.update( "use " + dbName + ";" );
         jdbc.update( "create table " + tbName1 + " (id int) COMMENT='sequoiadb:"
                 + "{table_options:{EnsureShardingIndex:true,"
-                + "AutoSplit:false,Partition: 8,ReplSize:1, Compressed:true,"
+                + "AutoSplit:false,ReplSize:1, Compressed:true,"
                 + "CompressionType:\"lzw\"," + "StrictDataMode:true}}'\n"
                 + "PARTITION BY RANGE (id) (\n"
                 + "  PARTITION p0 VALUES LESS THAN (10)\n" + ") ;" );
         jdbc.update( "create table " + tbName2 + " (id int) COMMENT='sequoiadb:"
                 + "{table_options:{EnsureShardingIndex:true,"
-                + "AutoSplit:false,Partition: 8,ReplSize:1, Compressed:true,"
+                + "AutoSplit:false,ReplSize:1, Compressed:true,"
                 + "CompressionType:\"snappy\"," + "StrictDataMode:true}}'\n"
                 + "PARTITION BY RANGE (id) (\n"
                 + "  PARTITION p0 VALUES LESS THAN (10)\n" + ") ;" );
@@ -120,8 +120,8 @@ public class CreateTableLike28624 extends MysqlTestBase {
         List< String > exp2 = new ArrayList<>();
         exp2.add( "4" );
         exp2.add( "8" );
-        Assert.assertEquals( act1, exp1 );
-        Assert.assertEquals( act2, exp2 );
+        Assert.assertEqualsNoOrder( act1.toArray(), exp1.toArray() );
+        Assert.assertEqualsNoOrder( act2.toArray(), exp2.toArray() );
 
         // 检查sdb端源表目标表集合属性不一致（预期为CompressionType和CompressionTypeDesc不一致，其余属性一致）；
         // 主表

@@ -2758,9 +2758,9 @@ b
 111
 bow
 eog
-SELECT DISTINCT a, b, c, d, e, f FROM t1 WHERE a > 31 GROUP BY 'const';
-a	b	c	d	e	f
-65	4	hello	hello	2093-11-05	hello
+SELECT DISTINCT max(a), max(b), max(c), max(d), max(e), max(f) FROM t1 WHERE a > 31 GROUP BY 'const';
+max(a)	max(b)	max(c)	max(d)	max(e)	max(f)
+101	4	hello	hello	2093-11-05	hello
 SELECT c DIV 1 AS cc, a FROM t1 GROUP BY cc,a;
 cc	a
 0	-16

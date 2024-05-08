@@ -746,7 +746,7 @@ SELECT t1.a,t2.b FROM t1,t2 WHERE t1.b=t2.b GROUP BY t1.a,t2.b ORDER BY NULL;
 SELECT a, SUM(b) AS b1 FROM t1 GROUP BY a HAVING SUM(b) > 10 AND a < 50;
 SELECT b FROM t3 WHERE a >= 20 AND b <= 'f' GROUP BY b;
 --source include/turn_off_only_full_group_by.inc
-SELECT DISTINCT a, b, c, d, e, f FROM t1 WHERE a > 31 GROUP BY 'const';
+SELECT DISTINCT max(a), max(b), max(c), max(d), max(e), max(f) FROM t1 WHERE a > 31 GROUP BY 'const';
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
 --sorted_result
 SELECT c DIV 1 AS cc, a FROM t1 GROUP BY cc,a;

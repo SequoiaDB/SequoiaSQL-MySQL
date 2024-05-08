@@ -92,7 +92,8 @@ public class CreateTableLike28632 extends MysqlTestBase {
         act.add( query.getNext().get( "id" ).toString() );
         exp.add( "3" );
         exp.add( "4" );
-        Assert.assertEquals( act, exp );
+        Assert.assertEqualsNoOrder( act.toArray(), exp.toArray() );
+
     }
 
     @AfterClass

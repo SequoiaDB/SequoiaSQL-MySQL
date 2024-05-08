@@ -825,9 +825,9 @@ let $query = select *,(select col2 from t1 where col3<"20221215114210" group by 
 
 # partition table
 --replace_column 10 #  11 #
-explain  select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
+explain  select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select max(col1) from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
 --sorted_result
-let $query = select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select col1 from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
+let $query = select col1,(select col4 from t1_partition where col3<"20221215114210" group by col4 order by col4 limit 1) from t2_partition where t2_partition.col1 <(select count(1) from t1_partition where col1>=1 limit 0,1) group by col1 having col1< (select max(col1) from t1_partition where col2<"abcdef" group by col4 order by col4 desc limit 1) order by col4 limit 1;
 --source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 # seqDB-29584
@@ -1325,11 +1325,11 @@ union
 --replace_column 10 #  11 #
 explain (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col1 order by col3,col4 limit 3,1)) )ct))
 union
-(select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
+(select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" order by col4 limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
 --sorted_result
 let $query = (select * from t1_partition where col1<(select count(1) from (select * from  t1_partition where col1<5 union ALL (select * from t1_partition where col2<(select col4 from t1_partition where col4>"aa" group by col1 order by col3,col4 limit 3,1)) )ct))
 union
-(select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
+(select * from (select * from t1_partition where col2>(select col4 from t1_partition where col3>"20221115114210" order by col4 limit 2,1) order by col1 desc) dt where col1>0  group by col2 order by col2 limit 1);
 --source include/query_with_sorted_and_get_mysqld_note_log_sequoiadb.inc
 
 --replace_column 10 #  11 #

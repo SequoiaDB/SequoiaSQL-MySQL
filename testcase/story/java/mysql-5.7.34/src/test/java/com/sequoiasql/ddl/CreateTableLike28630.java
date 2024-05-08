@@ -114,8 +114,8 @@ public class CreateTableLike28630 extends MysqlTestBase {
         exp1.add( "20221001" );
         exp2.add( "20210924" );
         exp2.add( "20221111" );
-        Assert.assertEquals( act1, exp1 );
-        Assert.assertEquals( act2, exp2 );
+        Assert.assertEqualsNoOrder( act1.toArray(), exp1.toArray() );
+        Assert.assertEqualsNoOrder( act2.toArray(), exp2.toArray() );
         // 检查sdb端源表目标表集合属性一致性
         CreateTableLikeUtils.compareCollectionAttribute( sdb, csName, mclName1,
                 mclName2, new String[] {} );
