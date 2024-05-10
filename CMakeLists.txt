@@ -136,6 +136,22 @@ execute_process(
    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
 
+# clean up
+execute_process(
+   COMMAND bash -c "git clean -fdx"
+   WORKING_DIRECTORY "${SQL_SOURCE_ROOT}"
+)
+
+execute_process(
+   COMMAND bash -c "git reset --hard"
+   WORKING_DIRECTORY "${SQL_SOURCE_ROOT}"
+)
+
+execute_process(
+   COMMAND bash -c "git checkout master"
+   WORKING_DIRECTORY "${SQL_SOURCE_ROOT}"
+)
+
 # Fetch branch
 execute_process(
    COMMAND bash -c "git fetch origin ${SQL_SOURCE_BRANCH}:${SQL_SOURCE_BRANCH}"
