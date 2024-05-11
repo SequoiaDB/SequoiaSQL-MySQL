@@ -480,7 +480,7 @@ int ha_remove_cached_stats(THD *thd, const char *db_name,
     goto error;
   }
 
-  if (NULL != mapping_ctx) {
+  if (NULL != mapping_ctx && NULL != db_name && NULL != table_name) {
     rc = Name_mapping::get_mapping(db_name, table_name, sdb_conn, mapping_ctx);
     if (0 != rc) {
       goto error;
