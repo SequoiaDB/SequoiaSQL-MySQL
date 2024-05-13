@@ -1840,6 +1840,12 @@ int Sdb_match_cnt_estimator::cmp_mcv_value(const key_range *key_value,
   const uchar *key_part_ptr_end = key_part_ptr + key_value->length;
   uchar *mcv_part_ptr = mcv_value;
 
+  // a string idx scan use 'like + %' inside an update statement causes 
+  // an error .des : Data too long for column <column_name> at row 1
+  // see SEQUOIASQLMAINSTREAM-1995
+  enum_check_fields old_check_level=m_key_info->table->in_use->count_cuted_fields;
+  m_key_info->table->in_use->count_cuted_fields=CHECK_FIELD_IGNORE;
+
   while (key_part_ptr < key_part_ptr_end) {
     Field *field = kp_info->field;
     bool is_fixed_len_type = sdb_is_fixed_len_type(field);
@@ -1902,6 +1908,7 @@ int Sdb_match_cnt_estimator::cmp_mcv_value(const key_range *key_value,
 
     kp_info++;
   }
+  m_key_info->table->in_use->count_cuted_fields=old_check_level;
 
   return cmp;
 }
