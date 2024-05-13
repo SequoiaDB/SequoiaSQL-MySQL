@@ -104,12 +104,14 @@ static int get_field_max_len(sdbclient::sdbCollection &registry_cl,
                              const char *field_name, bson::BSONObj &cond,
                              int &max_len) {
   int rc = 0;
-  bson::BSONObj result, selector, order_by, obj;
+  bson::BSONObj result, selector, order_by, hint;
   sdbclient::sdbCursor cursor;
 
+  // can not use index sort
+  hint = bson::BSONObjBuilder().appendNull("").obj();
   selector = BSON(field_name << BSON("$strlen" << 1));
   order_by = BSON(field_name << SDB_SORT_DESC);
-  rc = registry_cl.query(cursor, cond, selector, order_by, obj, 0, 1);
+  rc = registry_cl.query(cursor, cond, selector, order_by, hint, 0, 1);
   rc = rc ? rc : cursor.next(result, false);
   if (0 == rc) {
     max_len = result.getIntField(field_name);
