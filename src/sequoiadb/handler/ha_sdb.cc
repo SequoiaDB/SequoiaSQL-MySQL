@@ -7614,6 +7614,8 @@ int ha_sdb::truncate() {
     stats.records = 0;
   }
 
+  ha_remove_cached_stats(ha_thd(), db_name, table_name, &tbl_ctx_impl);
+
 done:
   DBUG_RETURN(rc);
 error:

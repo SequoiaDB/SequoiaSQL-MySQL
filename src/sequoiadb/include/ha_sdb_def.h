@@ -183,6 +183,8 @@
 #define SDB_FIELD_DATASOURCE_ID "DataSourceID"
 #define SDB_FIELD_MAPPING "Mapping"
 
+#define SDB_CL_ATTR_NO_TRANS "NoTrans"
+
 #define SDB_FIELD_IDX_DEF "IndexDef"
 #define SDB_FIELD_UNIQUE "Unique"
 #define SDB_FIELD_ENFORCED "Enforced"

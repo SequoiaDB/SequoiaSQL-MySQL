@@ -510,7 +510,8 @@ error:
 }
 
 int ha_get_table_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
-                          Sdb_cl &table_stats_cl, const char *data_group) {
+                          Sdb_cl &table_stats_cl, const char *data_group,
+                          bool autoCreate) {
   static bool indexes_created = false;
 
   int rc = 0;
@@ -521,13 +522,16 @@ int ha_get_table_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
   rc = sdb_conn.get_cl((char *)group_name, HA_TABLE_STATS_CL, table_stats_cl,
                        true);
   try {
-    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc) && autoCreate) {
       sql_print_information("HA: Creating '%s:%s'", group_name,
                             HA_TABLE_STATS_CL);
+      bson::BSONObjBuilder builder;
       bson::BSONObj cl_options;
       if (NULL != data_group && '\0' != data_group[0]) {
-        cl_options = BSON(SDB_FIELD_GROUP << data_group);
+        builder.append(SDB_FIELD_GROUP, data_group);
       }
+      builder.append(SDB_CL_ATTR_NO_TRANS, true);
+      cl_options = builder.obj();
 
       // Use a new connection to create table to prevent the affect of
       // transaction of original connection.
@@ -547,7 +551,7 @@ int ha_get_table_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
                   HA_TABLE_STATS_CL, ha_error_string(sdb_conn, rc, err_buf));
     }
 
-    if (!indexes_created) {
+    if (!indexes_created && autoCreate) {
       std::vector<std::string> idx_elems;
       idx_elems.push_back(SDB_FIELD_NAME);
       idx_elems.push_back(SDB_FIELD_DETAILS "." SDB_FIELD_GROUP_NAME);
@@ -567,7 +571,8 @@ error:
 }
 
 int ha_get_index_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
-                          Sdb_cl &index_stats_cl, const char *data_group) {
+                          Sdb_cl &index_stats_cl, const char *data_group,
+                          bool autoCreate) {
   static bool indexes_created = false;
 
   int rc = 0;
@@ -578,13 +583,16 @@ int ha_get_index_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
   rc = sdb_conn.get_cl((char *)group_name, HA_INDEX_STATS_CL, index_stats_cl,
                        true);
   try {
-    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc) && autoCreate) {
       sql_print_information("HA: Creating '%s:%s'", group_name,
                             HA_INDEX_STATS_CL);
+      bson::BSONObjBuilder builder;
       bson::BSONObj cl_options;
       if (NULL != data_group && '\0' != data_group[0]) {
-        cl_options = BSON(SDB_FIELD_GROUP << data_group);
+        builder.append(SDB_FIELD_GROUP, data_group);
       }
+      builder.append(SDB_CL_ATTR_NO_TRANS, true);
+      cl_options = builder.obj();
 
       // Use a new connection to create table to prevent the affect of
       // transaction of original connection.
@@ -604,7 +612,7 @@ int ha_get_index_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
                   HA_INDEX_STATS_CL, ha_error_string(sdb_conn, rc, err_buf));
     }
 
-    if (!indexes_created) {
+    if (!indexes_created && autoCreate) {
       std::vector<std::string> idx_elems;
       idx_elems.push_back(SDB_FIELD_COLLECTION);
       idx_elems.push_back(SDB_FIELD_INDEX);

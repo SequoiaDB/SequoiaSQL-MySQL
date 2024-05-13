@@ -458,6 +458,7 @@ int ha_remove_cached_stats(THD *thd, const char *db_name,
   char full_name_buffer[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
   const char *cs_name = db_name;
   const char *cl_name = table_name;
+  bool autoCreate = true;
 
   if (!thd) {
     rc = HA_ERR_INTERNAL_ERROR;
@@ -465,8 +466,10 @@ int ha_remove_cached_stats(THD *thd, const char *db_name,
   }
 
   if (!sdb_stats_persistence) {
-    rc = HA_ERR_UNSUPPORTED;
-    goto error;
+    // Try removing as long as table exists, to ensure nothing remained
+    // rc = HA_ERR_UNSUPPORTED;
+    // goto error;
+    autoCreate = false;
   }
 
   // get sdb connection
@@ -489,7 +492,12 @@ int ha_remove_cached_stats(THD *thd, const char *db_name,
 
   try {
     rc = ha_get_table_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
-                               table_stats_cl, ha_get_sys_meta_group());
+                               table_stats_cl, ha_get_sys_meta_group(),
+                               autoCreate);
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      rc = 0;
+      goto done;
+    }
     if (rc) {
       goto error;
     }
@@ -504,7 +512,12 @@ int ha_remove_cached_stats(THD *thd, const char *db_name,
     }
 
     rc = ha_get_index_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
-                               index_stats_cl, ha_get_sys_meta_group());
+                               index_stats_cl, ha_get_sys_meta_group(),
+                               autoCreate);
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      rc = 0;
+      goto done;
+    }
     if (rc) {
       goto error;
     }
@@ -541,6 +554,7 @@ int ha_remove_cached_index_stats(THD *thd, const char *db_name,
   char full_name_buffer[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
   const char *cs_name = db_name;
   const char *cl_name = table_name;
+  bool autoCreate = true;
 
   if (!thd || !db_name || !table_name || !index_name) {
     rc = HA_ERR_INTERNAL_ERROR;
@@ -548,8 +562,10 @@ int ha_remove_cached_index_stats(THD *thd, const char *db_name,
   }
 
   if (!sdb_stats_persistence) {
-    rc = HA_ERR_UNSUPPORTED;
-    goto error;
+    // Try removing as long as table exists, to ensure nothing remained
+    // rc = HA_ERR_UNSUPPORTED;
+    // goto error;
+    autoCreate = false;
   }
 
   // get sdb connection
@@ -572,7 +588,12 @@ int ha_remove_cached_index_stats(THD *thd, const char *db_name,
 
   try {
     rc = ha_get_index_stats_cl(*sdb_conn, ha_thread.sdb_group_name,
-                               index_stats_cl, ha_get_sys_meta_group());
+                               index_stats_cl, ha_get_sys_meta_group(),
+                               autoCreate);
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      rc = 0;
+      goto done;
+    }
     if (rc) {
       goto error;
     }
