@@ -185,6 +185,7 @@ message(STATUS "SDB plugin version: ${SDB_PLUGIN_VERSION}")
 set(SDB_VERSION "")
 set(SDB_GIT_VERSION "")
 get_sdb_version(SDB_VERSION SDB_GIT_VERSION)
+set(SDB_VERSION "5.8.1.1")
 
 add_definitions(-DSDB_PLUGIN_VERSION="${SDB_PLUGIN_VERSION}")
 add_definitions(-DSDB_DRIVER_VERSION="${SDB_VERSION}")

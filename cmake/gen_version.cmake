@@ -91,6 +91,7 @@ MACRO(gen_version_file)
    set(SDB_VERSION "")
    set(SDB_GIT_VERSION "")
    get_sdb_version(SDB_VERSION SDB_GIT_VERSION)
+   set(SDB_VERSION "5.8.1.1")
 
    string(TIMESTAMP BUILDDATE "%Y-%m-%d-%H.%M.%S")
    set(BUILD_TYPE_STR "")

@@ -1,1 +1,1 @@
-http://gitlab.sequoiadb.com/sequoiadb/mysql/-/archive/v5.7.42/mysql-v5.7.42.tar.gz
+http://gitlab.sequoiadb.com/sequoiadb/mysql/-/archive/v5.7.42-5.8.1.x/mysql-v5.7.42-5.8.1.x.tar.gz
