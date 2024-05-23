@@ -111,6 +111,8 @@ public class StatsFlush26636 extends MysqlTestBase {
                 + "    join " + tbName4 + " as alias3\n"
                 + "    on alias2.cust_no\n" + "    on alias1.prdt_no\n"
                 + "    where alias1.id and alias1.id<3 or alias1.id and alias3.id ;";
+        jdbc1.update( "flush tables" );
+        jdbc2.update( "flush tables" );
         Assert.assertEquals( jdbc1.< Character > query( queryExplain1 ),
                 jdbc2.< Character > query( queryExplain1 ) );
         Assert.assertEquals( jdbc1.< Character > query( queryExplain2 ),
@@ -122,7 +124,7 @@ public class StatsFlush26636 extends MysqlTestBase {
                 queryExplain2, 1 );
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
 
-        // 在实例1中向表tbName1插入数据，使实例1中查询表tbName1的访问计划改变
+        // 在实例1中向表tbName1插入数据，使实例1中查询表tbName1的访问计划改变，使查询tbName1和tbName2访问计划不同
         StatsFlushUtils.insertData1( jdbc1, tbName1, changeRecordsNum );
         explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain1,
                 1 );

@@ -71,6 +71,7 @@ public class StatsFlush26634 extends MysqlTestBase {
         String tbName2 = "tb_26634_2";
         int insertRecordsNum = 600;
         int changeRecordsNum = 5;
+        jdbc1.update( "set debug=\"d,stats_flush_percent_test\";" );
         // 创建带索引的表；
         jdbc1.createDatabase( dbName );
         jdbc1.update( "use " + dbName + ";" );
@@ -102,7 +103,7 @@ public class StatsFlush26634 extends MysqlTestBase {
                 queryExplain, 1 );
         Assert.assertEquals( explainInfo1[ 2 ], "alias2" );
 
-        // 在实例1中向表tbName1插入数据，使实例1中查询表tbName1的访问计划改变
+        // 在实例1中向表tbName1插入数据，使实例1中查询表tbName1的访问计划改变，使查询tbName1和tbName2访问计划不同
         StatsFlushUtils.insertData1( jdbc1, tbName1, changeRecordsNum );
         explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain,
                 1 );
