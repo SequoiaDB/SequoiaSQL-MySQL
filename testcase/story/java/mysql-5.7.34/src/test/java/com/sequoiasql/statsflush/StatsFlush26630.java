@@ -118,7 +118,7 @@ public class StatsFlush26630 extends MysqlTestBase {
                 jdbc2.< Character > query( queryExplain2 ) );
         String[] explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1,
                 queryExplain1, 1 );
-        Assert.assertEquals( explainInfo1[ 2 ], "alias3" );
+        Assert.assertEquals( explainInfo1[ 2 ], "alias2" );
         String[] explainInfo2 = StatsFlushUtils.getLineOfExplain( jdbc1,
                 queryExplain2, 1 );
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
@@ -138,7 +138,7 @@ public class StatsFlush26630 extends MysqlTestBase {
         StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain2 );
         explainInfo2 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain2,
                 1 );
-        Assert.assertEquals( explainInfo2[ 2 ], "alias3" );
+        Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
 
         // 检查此时查询返回的结果的正确性
         List< String > expCount1 = new ArrayList<>();
