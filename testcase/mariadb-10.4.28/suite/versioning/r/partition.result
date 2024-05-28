@@ -552,7 +552,7 @@ engine=sequoiadb with system versioning partition by key() partitions 2;
 insert into t1 (i, c) values (1, 'a'), (2, 'b'), (null, 'c'), (null, 'b');
 alter table t1 drop system versioning;
 replace into t1 select * from t1;
-select * from t1 where i > 0 or pk = 1000 limit 1;
+select * from t1 where i > 0 or pk = 1000 order by i limit 1;
 pk	i	c
 1	1	a
 drop table t1;

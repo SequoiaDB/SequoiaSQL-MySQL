@@ -505,8 +505,8 @@ t1	CREATE TABLE `t1` (
 delete from t1 where a is null;
 select * from t1;
 a
-a
 1
+a
 c
 alter table t1 add primary key(a);
 show create table t1;
@@ -5126,8 +5126,8 @@ t1	CREATE TABLE `t1` (
 insert into t1 values (null);
 select * from t1;
 a
-NULL
 1
+NULL
 drop table t1;
 create table t1 ( a int not null, b int not null, c char(16) not null, index(a,b,c) );
 create table t2 ( a int not null, b int not null, c char(16) not null, index(a,b,c) );
@@ -5155,12 +5155,12 @@ insert into t1 values (null,null,'b');
 insert into t2 values (null,null,null);
 select * from t1;
 a	b	c
-NULL	NULL	b
 1	1	a
+NULL	NULL	b
 select * from t2;
 a	b	c
-NULL	NULL	NULL
 1	1	a
+NULL	NULL	NULL
 drop table t1,t2;
 create table t1 ( a int, b int, c char(16) not null, index(a,b,c) );
 create table t2 ( a int, b int, c char(16), index(a,b,c) );
