@@ -442,6 +442,14 @@ error:
   goto done;
 }
 
+/**
+    If both db_name and table_name exist, this function delete
+    the cached statistics of specific table;
+    If only db_name (without table_name), this function delete
+    the cached statistics of specify database;
+    If no db_name and table_name, this function delete all cached
+    statistics;
+*/
 int ha_remove_cached_stats(THD *thd, const char *db_name,
                            const char *table_name,
                            Mapping_context *mapping_ctx) {
@@ -505,6 +513,9 @@ int ha_remove_cached_stats(THD *thd, const char *db_name,
       sprintf(full_name_buffer, "%s.%s", cs_name, cl_name);
       bson_builder1.append(SDB_FIELD_NAME, full_name_buffer);
       cond1 = bson_builder1.obj();
+    } else if (cs_name) {
+      bson_builder1.append(SDB_FIELD_COLLECTION_SPACE, cs_name);
+      cond1 = bson_builder1.obj();
     }
     rc = table_stats_cl.del(cond1);
     if (rc) {
@@ -523,6 +534,13 @@ int ha_remove_cached_stats(THD *thd, const char *db_name,
     }
     if (cs_name && cl_name) {
       bson_builder2.append(SDB_FIELD_COLLECTION, full_name_buffer);
+      cond2 = bson_builder2.obj();
+    } else if (cs_name) {
+      bson::BSONObjBuilder subBuilder(
+            bson_builder2.subobjStart(SDB_FIELD_COLLECTION));
+      sprintf(full_name_buffer, "^%s\\..*", cs_name);
+      subBuilder.append("$regex", full_name_buffer);
+      subBuilder.done();
       cond2 = bson_builder2.obj();
     }
     rc = index_stats_cl.del(cond2);

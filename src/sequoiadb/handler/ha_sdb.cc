@@ -10525,6 +10525,7 @@ static void sdb_drop_database(handlerton *hton, char *path) {
       SDB_LOG_WARNING("Failed to drop CS '%s', error: %d",
                       mapping_cs[i].c_str(), rc);
     }
+    ha_remove_cached_stats(thd, mapping_cs[i].c_str(), NULL, NULL);
   }
 
   rc = Name_mapping::remove_table_mappings(connection, db_name);
