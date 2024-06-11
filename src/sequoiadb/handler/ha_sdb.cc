@@ -12938,6 +12938,7 @@ static void sdb_drop_database(handlerton *hton, char *path) {
       connection->clear_err_msg();
       goto error;
     }
+    ha_remove_cached_stats(thd, mapping_cs[i].c_str(), NULL, NULL);
   }
 
   rc = Name_mapping::remove_table_mappings(connection, db_name);
