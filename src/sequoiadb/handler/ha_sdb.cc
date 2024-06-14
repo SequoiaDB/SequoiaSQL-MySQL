@@ -12586,8 +12586,10 @@ static bool need_flush_stats_info(Sdb_share *share, THD *thd) {
 }
 
 // write 'FLUSH TABLE XXXX' statement into 'HASQLLog'
-static void write_flush_stats_info_log(THD *thd, const char *full_tab_name) {
-  DBUG_ENTER("write_flush_stats_info_log");
+// and delete cached statistics from SequoiaDB
+static void write_flush_log_and_remove_cached_stats(THD *thd,
+                                                    const char *full_tab_name) {
+  DBUG_ENTER("write_flush_log_and_remove_cached_stats");
   int rc = SDB_ERR_OK;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
@@ -12636,6 +12638,7 @@ static void write_flush_stats_info_log(THD *thd, const char *full_tab_name) {
     goto error;
   }
   ha_write_sync_log(db_name, table_name, query, cl.get_version());
+  ha_remove_cached_stats(thd, db_name, table_name, &tbl_ctx_impl);
 done:
   DBUG_VOID_RETURN;
 error:
@@ -12757,8 +12760,9 @@ static void update_shares_stats(THD *thd) {
     }
 
     // write sync log for table in the current query
+    // and remove cached statistics on sdb cl.
     if (need_flush_stats) {
-      write_flush_stats_info_log(thd, tmp_table_name);
+      write_flush_log_and_remove_cached_stats(thd, tmp_table_name);
     }
     incr_rows = 0;
   }
