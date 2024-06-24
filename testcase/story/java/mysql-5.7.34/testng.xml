@@ -43,6 +43,7 @@
             <package name="com.sequoiasql.session"/>
             <package name="com.sequoiasql.metadatasync.serial"/>
             <package name="com.sequoiasql.stats.serial"></package>
+            <package name="com.sequoiasql.statscache"></package>
         </packages>
     </test>
 
