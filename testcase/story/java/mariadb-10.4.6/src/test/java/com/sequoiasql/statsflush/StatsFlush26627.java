@@ -82,6 +82,7 @@ public class StatsFlush26627 extends MysqlTestBase {
         jdbc1.update( "create table " + tbName2 + "(\n"
                 + "  id int not null auto_increment,\n" + "  primary key(id)\n"
                 + "  ) ;" );
+        jdbc1.update( "analyze table " + tbName1 + "," + tbName2 );
         StatsFlushUtils.insertData2( jdbc1, tbName2, insertRecordsNum + 1 );
 
         // 插入数据，数据量大于1000w，如：1000w+1，（debug包设置该阈值为1000）；

@@ -93,6 +93,8 @@ public class StatsFlush26636 extends MysqlTestBase {
         jdbc1.update( "create table " + tbName4 + "(\n"
                 + "  id int not null auto_increment,\n" + "  primary key(id)\n"
                 + "  ) ;" );
+        jdbc1.update( "analyze table " + tbName1 + "," + tbName2 + "," + tbName3
+                + "," + tbName4 );
         StatsFlushUtils.insertData2( jdbc1, tbName2, insertRecordsNum + 1 );
         StatsFlushUtils.insertData2( jdbc1, tbName4, insertRecordsNum + 1 );
 

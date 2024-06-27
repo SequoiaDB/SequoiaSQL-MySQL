@@ -94,6 +94,8 @@ public class StatsFlush26630 extends MysqlTestBase {
         jdbc1.update( "create table " + tbName4 + "(\n"
                 + "  id int not null auto_increment,\n" + "  primary key(id)\n"
                 + "  ) ;" );
+        jdbc1.update( "analyze table " + tbName1 + "," + tbName2 + "," + tbName3
+                + "," + tbName4 );
         StatsFlushUtils.insertData2( jdbc1, tbName2, insertRecordsNum - 1 );
         StatsFlushUtils.insertData2( jdbc1, tbName4, insertRecordsNum + 1 );
 
@@ -118,7 +120,7 @@ public class StatsFlush26630 extends MysqlTestBase {
                 jdbc2.< Character > query( queryExplain2 ) );
         String[] explainInfo1 = StatsFlushUtils.getLineOfExplain( jdbc1,
                 queryExplain1, 1 );
-        Assert.assertEquals( explainInfo1[ 2 ], "alias2" );
+        Assert.assertEquals( explainInfo1[ 2 ], "alias3" );
         String[] explainInfo2 = StatsFlushUtils.getLineOfExplain( jdbc1,
                 queryExplain2, 1 );
         Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
@@ -138,7 +140,7 @@ public class StatsFlush26630 extends MysqlTestBase {
         StatsFlushUtils.checkExplain( jdbc1, jdbc2, queryExplain2 );
         explainInfo2 = StatsFlushUtils.getLineOfExplain( jdbc1, queryExplain2,
                 1 );
-        Assert.assertEquals( explainInfo2[ 2 ], "alias2" );
+        Assert.assertEquals( explainInfo2[ 2 ], "alias3" );
 
         // 检查此时查询返回的结果的正确性
         List< String > expCount1 = new ArrayList<>();

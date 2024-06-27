@@ -33,15 +33,15 @@
             <package name="com.sequoiasql.crud"/>
             <package name="com.sequoiasql.ddl"/>
             <package name="com.sequoiasql.mysql"/>
-            <package name="com.sequoiasql.statsflush"/>
         </packages>
     </test>
     <test name="serialtest" parallel="classes" thread-count="1">
         <packages>
             <package name="com.sequoiasql.session"/>
             <package name="com.sequoiasql.metadatasync.serial"/>
-            <package name="com.sequoiasql.stats.serial"></package>
-            <package name="com.sequoiasql.statscache"></package>
+            <package name="com.sequoiasql.stats.serial"/>
+            <package name="com.sequoiasql.statscache"/>
+            <package name="com.sequoiasql.statsflush"/>
         </packages>
     </test>
 
