@@ -457,21 +457,21 @@ index_statistics_mcv_sequoiadb_26690.t3_1	analyze	status	Engine-independent stat
 index_statistics_mcv_sequoiadb_26690.t3_1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b=5 or b IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref_or_null	idx_b	idx_b	5	const	18	Using where with pushed condition
+1	SIMPLE	t1	ref_or_null	idx_b	idx_b	5	const	16	Using where with pushed condition
 EXPLAIN SELECT * FROM t1_1 WHERE b=5 or b IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1_1	ref_or_null	idx_b	idx_b	5	const	44	Using where with pushed condition
+1	SIMPLE	t1_1	ref_or_null	idx_b	idx_b	5	const	43	Using where with pushed condition
 EXPLAIN SELECT * FROM t1_2 WHERE b=5 or b IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1_2	ref_or_null	idx_b	idx_b	5	const	27	Using where with pushed condition
+1	SIMPLE	t1_2	ref_or_null	idx_b	idx_b	5	const	25	Using where with pushed condition
 EXPLAIN SELECT * FROM t2 WHERE b=5 or b IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t2	ref_or_null	idx_b	idx_b	5	const	11	Using where with pushed condition
+1	SIMPLE	t2	ref_or_null	idx_b	idx_b	5	const	9	Using where with pushed condition
 EXPLAIN SELECT * FROM t3 WHERE b=5 or b IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t3	ref_or_null	idx_b	idx_b	5	const	23	Using where with pushed condition
+1	SIMPLE	t3	ref_or_null	idx_b	idx_b	5	const	12	Using where with pushed condition
 EXPLAIN SELECT * FROM t3_1 WHERE b=5 or b IS NULL;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t3_1	ref_or_null	idx_b	idx_b	5	const	57	Using where with pushed condition
+1	SIMPLE	t3_1	ref_or_null	idx_b	idx_b	5	const	46	Using where with pushed condition
 DROP TABLE t1,t1_1,t1_2,t2,t3,t3_1;
 DROP DATABASE index_statistics_mcv_sequoiadb_26690;
