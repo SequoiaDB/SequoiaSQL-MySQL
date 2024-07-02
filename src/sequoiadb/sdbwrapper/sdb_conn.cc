@@ -1590,9 +1590,16 @@ int Cached_stat_cursor::open() {
     goto error;
   }
   rc = (*m_func)(m_thd, m_cs_name, m_cl_name, *m_cl, m_mapping_ctx);
+  if (rc != 0) {
+    goto error;
+  }
 done:
   return rc;
 error:
+  if (m_cl) {
+    delete m_cl;
+    m_cl = NULL;
+  }
   goto done;
 }
 
