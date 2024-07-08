@@ -537,7 +537,7 @@ int ha_remove_cached_stats(THD *thd, const char *db_name,
       cond2 = bson_builder2.obj();
     } else if (cs_name) {
       bson::BSONObjBuilder subBuilder(
-            bson_builder2.subobjStart(SDB_FIELD_COLLECTION));
+          bson_builder2.subobjStart(SDB_FIELD_COLLECTION));
       sprintf(full_name_buffer, "^%s\\..*", cs_name);
       subBuilder.append("$regex", full_name_buffer);
       subBuilder.done();
@@ -816,6 +816,10 @@ static bool is_dcl_meta_sql(THD *thd) {
 #endif
       is_dcl = true;
       break;
+    case SQLCOM_SET_OPTION:
+      is_dcl =
+          (dynamic_cast<set_var_password *>(thd->lex->var_list.head()) != NULL);
+      break;
   }
   return is_dcl;
 }
@@ -878,6 +882,10 @@ static bool is_meta_sql(THD *thd, const ha_event_general &event) {
       // "FLUSH TABLES" is not allowed to sync
       is_meta_sql = (thd->lex->type == REFRESH_TABLES &&
                      sdb_lex_first_select(thd)->get_table_list());
+      break;
+    case SQLCOM_SET_OPTION:
+      is_meta_sql =
+          (dynamic_cast<set_var_password *>(thd->lex->var_list.head()) != NULL);
       break;
     default:
       break;
@@ -2258,6 +2266,30 @@ static int get_sql_objects_for_dcl(THD *thd, ha_sql_stmt_info *sql_info) {
   List_iterator<LEX_USER> users_list(thd->lex->users_list);
   ha_table_list *ha_tbl_node = NULL, *ha_tbl_list_tail = NULL;
   TABLE_LIST *tables = sdb_lex_first_select(thd)->get_table_list();
+
+  // handle SET PASSWORD = ...
+  if (SQLCOM_SET_OPTION == sql_command &&
+      dynamic_cast<set_var_password *>(thd->lex->var_list.head()) != NULL) {
+    set_var_password *var =
+        dynamic_cast<set_var_password *>(thd->lex->var_list.head());
+
+    ha_tbl_node = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+    if (NULL == ha_tbl_node) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
+    ha_tbl_node->db_name = HA_MYSQL_DB;
+    ha_tbl_node->table_name = var->get_user()->user.str;
+    ha_tbl_node->op_type = HA_OPERATION_TYPE_DCL;
+
+    if (NULL == sql_info->tables) {
+      sql_info->tables = ha_tbl_node;
+      ha_tbl_list_tail = sql_info->tables;
+    } else {
+      DBUG_ASSERT(FALSE);
+    }
+    goto done;
+  }
 
   if (tables) {
     ha_tbl_node = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
