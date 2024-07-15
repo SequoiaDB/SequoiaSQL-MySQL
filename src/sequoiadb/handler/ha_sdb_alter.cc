@@ -2758,6 +2758,7 @@ int sdb_copy_group_distribution(Sdb_cl &cl, bson::BSONObj &cata_info) {
   bson::BSONElement from_ele = it.next();
   bson::BSONElement from_name_ele;
   const char *from_group_name = NULL;
+  bson::BSONObj obj;
 
   if (from_ele.type() != bson::Object) {
     rc = SDB_ERR_INVALID_ARG;
@@ -2814,6 +2815,17 @@ int sdb_copy_group_distribution(Sdb_cl &cl, bson::BSONObj &cata_info) {
     if (rc != 0) {
       goto error;
     }
+  }
+
+  // Do DQL to update driver catalog version after split.
+  // See SEQUOIASQLMAINSTREAM-2004
+  rc = cl.query_one(obj);
+  if (get_sdb_code(rc) == SDB_CLIENT_CATA_VER_OLD ||
+      get_sdb_code(rc) == SDB_DMS_EOC) {
+    rc = 0;
+  }
+  if (rc != 0) {
+    goto error;
   }
 done:
   DBUG_RETURN(rc);
