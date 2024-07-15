@@ -100,7 +100,7 @@ TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'select * from t1',0
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'delete from t1 where id=1',0
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'select * from t1',0
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'CREATE USER \'u1\'@\'%\' IDENTIFIED WITH \'mysql_native_password\' AS \'*106E5114207FD5B9D3FE67BF45BCEEB56EB55D6B\'',0
-TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'SET PASSWORD FOR `u1`@`%`=<secret>',0
+TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'ALTER USER \'u1\'@\'%\' IDENTIFIED WITH \'mysql_native_password\' AS \'*215F403F993AEF05BCF73D3B7E7D175859C90F60\'',0
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'SHOW WARNINGS',0
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'GRANT ALL PRIVILEGES ON `server_audit`.`t1` TO \'u2\'@\'%\' IDENTIFIED WITH \'mysql_native_password\' AS \'*E92C6EAB2CCEEA98BE5CD32D124A8CAD22E17E0D\'',0
 TIME,HOSTNAME,root,localhost,ID,ID,QUERY,server_audit,'SHOW WARNINGS',0
