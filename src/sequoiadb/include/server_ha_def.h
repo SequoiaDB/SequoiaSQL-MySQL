@@ -75,6 +75,7 @@
 #define HA_FIELD_EXPLICITS_DEFAULTS_TIMESTAMP "ExplicitDefaultsTimestamp"
 #define HA_FIELD_DATA_GROUP "DataGroup"
 
+#define HA_FIELD__ID "_id"
 #define HA_FIELD_SQL_ID "SQLID"
 #define HA_FIELD_DB "DB"
 #define HA_FIELD_TABLE "Table"

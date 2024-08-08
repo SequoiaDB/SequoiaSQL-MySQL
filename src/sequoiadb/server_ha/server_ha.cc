@@ -1966,6 +1966,9 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   Sdb_pool_conn pool_conn(0, false);
   Sdb_conn &lock_conn = pool_conn;
   Sdb_conn *lock_conn_ptr = NULL;
+  bson::OID oid;
+  const uint time_str_len = 20;
+  char write_time[time_str_len] = {0};
 
   if ((SQLCOM_CREATE_TABLE == sql_command) &&
       (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE)) {
@@ -2172,7 +2175,10 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     }
 
     // write sql info into 'HASQLLog' table
+    oid = bson::OID::gen();
+    ha_oid_to_time_str(oid, write_time, time_str_len);
     obj_builder.reset();
+    obj_builder.appendOID(HA_FIELD__ID, &oid) ;
     obj_builder.append(HA_FIELD_SQL_ID, sql_id);
     obj_builder.append(HA_FIELD_DB, db_name);
     obj_builder.append(HA_FIELD_TABLE, table_name);
@@ -2182,6 +2188,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     obj_builder.append(HA_FIELD_SESSION_ATTRS, session_attrs);
     obj_builder.append(HA_FIELD_CLIENT_CHARSET_NUM, client_charset_num);
     obj_builder.append(HA_FIELD_CAT_VERSION, cata_version);
+    obj_builder.append(HA_FIELD_WRITE_TIME, write_time);
     obj = obj_builder.done();
     rc = sql_log_cl.insert(obj, SDB_EMPTY_BSON);
     if (rc) {

@@ -76,4 +76,5 @@ int ha_get_index_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
                           Sdb_cl &index_stats_cl,
                           const char *data_group = NULL,
                           bool autoCreate = true);
+void ha_oid_to_time_str(bson::OID &oid, char *str_buf, const uint buf_len);
 #endif
