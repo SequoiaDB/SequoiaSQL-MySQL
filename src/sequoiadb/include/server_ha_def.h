@@ -82,6 +82,7 @@
 #define HA_CONFIG_TYPE_CONFIG "HA_CONFIG"
 #define HA_DEF_COUNT_OF_CONFIG 1
 
+#define HA_FIELD__ID "_id"
 #define HA_FIELD_SQL_ID "SQLID"
 #define HA_FIELD_DB "DB"
 #define HA_FIELD_TABLE "Table"
