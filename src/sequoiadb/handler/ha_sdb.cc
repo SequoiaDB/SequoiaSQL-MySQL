@@ -6948,14 +6948,23 @@ int ha_sdb::ensure_stats(THD *thd, int keynr) {
    *    statistics.
 
    * make sure share is not empty.
-   * (1) if handler::share is null_ptr, should search or build and insert in the
-   *     sdb_open_tables.
+   * (1) if handler::share is null_ptr or no statistics in handler::share,
+   *     should search or build and insert in the sdb_open_tables.
    * (2) if the sdb_share has been removed by other connections and cause this
    *     handler::share be expired in the life cycle of the currrent statement.
    *     We should keep the expired handler::share until the end of statement.
    *
    */
-  if (!share) {
+  if (ha_thd() && sdb_share_log_output(ha_thd()) && share &&
+      (~(ha_rows)0) == share->stat.total_records && share->expired) {
+    // Log this info to validate SEQUOIASQLMAINSTREAM-2009 resolved
+    SDB_LOG_INFO(
+        "The handler of %s was prevented from fetching statistics repeatly",
+        share->table_name);
+  }
+
+  if (!share ||
+      ((~(ha_rows)0) == share->stat.total_records && share->expired)) {
     bool is_share_created = false;
     get_sdb_share(m_path, table, share, is_share_created);
     if (!share) {
