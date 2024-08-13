@@ -633,6 +633,7 @@ error:
 
 void ha_oid_to_time_str(bson::OID &oid, char *str_buf, const uint buf_len) {
   time_t timestamp = oid.asTimeT();
-  struct tm *time = localtime(&timestamp);
-  strftime(str_buf, buf_len, "%Y-%m-%d-%H.%M.%S", time);
+  struct tm time;
+  localtime_r(&timestamp, &time);
+  strftime(str_buf, buf_len, "%Y-%m-%d-%H.%M.%S", &time);
 }
