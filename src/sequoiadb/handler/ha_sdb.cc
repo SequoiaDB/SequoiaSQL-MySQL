@@ -6955,14 +6955,6 @@ int ha_sdb::ensure_stats(THD *thd, int keynr) {
    *     We should keep the expired handler::share until the end of statement.
    *
    */
-  if (ha_thd() && sdb_share_log_output(ha_thd()) && share &&
-      (~(ha_rows)0) == share->stat.total_records && share->expired) {
-    // Log this info to validate SEQUOIASQLMAINSTREAM-2009 resolved
-    SDB_LOG_INFO(
-        "The handler of %s was prevented from fetching statistics repeatly",
-        share->table_name);
-  }
-
   if (!share ||
       ((~(ha_rows)0) == share->stat.total_records && share->expired)) {
     bool is_share_created = false;
