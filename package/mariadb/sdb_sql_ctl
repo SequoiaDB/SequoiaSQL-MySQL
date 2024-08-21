@@ -1012,6 +1012,7 @@ function clear_inst_configuration()
    #clear mysql configuration
    sed -i '/server_ha_inst_group_name\s*=/d' $SQLDATA/auto.cnf
    sed -i '/server_ha_inst_group_key\s*=/d' $SQLDATA/auto.cnf
+   rm -f $SQLDATA/myid
 }
 
 function join_inst_group()
