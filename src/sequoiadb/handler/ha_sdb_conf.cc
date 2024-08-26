@@ -558,7 +558,8 @@ static MYSQL_THDVAR_BOOL(
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(stats_persistence, sdb_stats_persistence,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
-                         "Persist statistics into SequoiaDB system table. "
+                         "SEQUOIASQLMAINSTREAM-1989 Persist statistics into "
+                         "SequoiaDB system table. "
                          "(Default: ON). If it is not in HA group, value "
                          "would be fixed to OFF."
                          /*持久化统计信息到 SequoiaDB 系统表中。*/,
