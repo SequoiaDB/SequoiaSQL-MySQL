@@ -635,7 +635,7 @@ static MYSQL_THDVAR_UINT(execution_mode, PLUGIN_VAR_NOCMDOPT,
 
 static MYSQL_THDVAR_BOOL(bka_remove_orderby,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
-                         "Remove index sort from BKA"
+                         "SEQUOIASQLMAINSTREAM-1478 Remove index sort from BKA"
                          "(Default: ON)"
                          /*执行 bka join 携带 index 排序*/,
                          NULL, NULL, SDB_DEFAULT_BKA_REMOVE_ORDERBY);
@@ -648,15 +648,16 @@ static MYSQL_THDVAR_BOOL(secure_log, PLUGIN_VAR_OPCMDARG,
 
 static MYSQL_THDVAR_BOOL(share_log_output,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
-                         "Whether to output share logs"
+                         "SEQUOIASQLMAINSTREAM-1974 Whether to output share logs"
                          "(Default: OFF)"
                          /*是否打印统计信息相关日志*/,
                          NULL, NULL, FALSE);
-// TODO: make it hidden
+
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(stats_persistence, sdb_stats_persistence,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
-                         "Persist statistics into SequoiaDB system table. "
+                         "SEQUOIASQLMAINSTREAM-1989 Persist statistics into "
+                         "SequoiaDB system table. "
                          "(Default: ON). If it is not in HA group, value "
                          "would be fixed to OFF."
                          /*持久化统计信息到 SequoiaDB 系统表中。*/,
