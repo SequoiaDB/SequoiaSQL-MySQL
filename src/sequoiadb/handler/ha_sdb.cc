@@ -1903,6 +1903,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_use_group = false;
   m_start_range = NULL;
   m_is_in_group_min_max = false;
+  m_is_first_ensure_stats = true;
   m_refresh_share_stats_phase = NOT_IN_REFRESH;
 }
 
@@ -2170,6 +2171,8 @@ int ha_sdb::reset() {
                         db_name, table_name));
     share = null_ptr;
   }
+  m_is_first_ensure_stats = true;
+
   // don't release bson element cache, so that we can reuse it
   m_bulk_insert_rows.clear();
   free_root(&blobroot, MYF(0));
@@ -9027,8 +9030,19 @@ int ha_sdb::ensure_stats(THD *thd, int keynr) {
         share->table_name);
   }
 
-  if (!share ||
-      ((~(ha_rows)0) == share->stat.total_records && share->expired)) {
+  // Only set handler::share to null_ptr at the beginning (the first
+  // ha_sdb::ensure_index_stat()) and the end (ha_sdb::reset()) for the
+  // principle of soft invalidation.
+  if (m_is_first_ensure_stats) {
+    m_is_first_ensure_stats = false;
+    if (share && share->expired) {
+      DBUG_PRINT("info", ("Release local statistics for current handler, %s.%s",
+                          db_name, table_name));
+      share = null_ptr;
+    }
+  }
+
+  if (!share) {
     bool is_share_created = false;
     get_sdb_share(m_path, table, share, is_share_created);
     if (!share) {

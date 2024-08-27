@@ -932,5 +932,6 @@ class ha_sdb : public handler {
   key_range *m_start_range;
 
   bool m_is_in_group_min_max;
+  bool m_is_first_ensure_stats;
 };
 #endif
