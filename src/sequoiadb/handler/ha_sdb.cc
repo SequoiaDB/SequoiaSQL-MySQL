@@ -7766,10 +7766,6 @@ int ha_sdb::ensure_index_stat(int keynr) {
        * new_share. (c) inherit the expired flag in hander::share.
        */
       new_share->stat = share->stat;
-      for (uint i = 0; i < share->idx_count; i++) {
-        new_share->idx_stat_arr[i] = share->idx_stat_arr[i];
-      }
-
       new_share->table_type = m_sdb_table_type;
       // point to the new Sdb_share
       new_share_ptr.reset(new_share, free_sdb_share);
@@ -7813,6 +7809,17 @@ int ha_sdb::ensure_index_stat(int keynr) {
                 share->table_name_length);
         // let the global and the local shared_ptr point to the new Sdb_share
         if (glob_ssp) {
+          for (uint i = 0; i < share->idx_count; i++) {
+            if ((int)i == keynr) {
+              continue;
+            }
+            // if current ha_sdb::share have index_stat
+            if (share->idx_stat_arr[i].get()) {
+              new_share_ptr->idx_stat_arr[i] = share->idx_stat_arr[i];
+            } else {
+              new_share_ptr->idx_stat_arr[i] = glob_ssp->get()->idx_stat_arr[i];
+            }
+          }
           // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
           // 'Sdb_share' in 'sdb_open_tables', because the global and the
           // local shared_ptr may not point to the same 'Sdb_share'
@@ -7842,6 +7849,11 @@ int ha_sdb::ensure_index_stat(int keynr) {
            *   time8: <con2> external_lock()->ensure_index_stat(-1) here will
            *                 failed to find in the sdb_open_tables.
            */
+          for (uint i = 0; i < share->idx_count; i++) {
+            if ((int)i == keynr)
+              continue;
+            new_share->idx_stat_arr[i] = share->idx_stat_arr[i];
+          }
           new_share_ptr->expired = true;
         }
         share = new_share_ptr;
