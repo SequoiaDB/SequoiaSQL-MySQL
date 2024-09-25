@@ -1338,12 +1338,14 @@ Use this query to flush new log
 Use this query to flush new log
 INSERT INTO t1 VALUES("2000-02-02", "abc", 200, 10) ON DUPLICATE KEY UPDATE col_int = (col_int + 1) * 2;
 [Note] Testcase: Operation log begin
+[Note] SequoiaDB: insert dup update pushdown: 0, modifier: [{}], table: autocommit_pushdown_sequoiadb.t1
 /* pushed down */
 SELECT "Use this query to flush new log" FROM t1 LIMIT 1;
 Use this query to flush new log
 Use this query to flush new log
 INSERT INTO t1 VALUES("2000-02-02", "abc", 200, 10) ON DUPLICATE KEY UPDATE col_int = 18;
 [Note] Testcase: Operation log begin
+[Note] SequoiaDB: insert dup update pushdown: 1, modifier: [{ "$Modify": { "OP": "update", "Update": { "$set": { "col_int": 18 } } } }], table: autocommit_pushdown_sequoiadb.t1
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
 SELECT "Use this query to flush new log" FROM t1 LIMIT 1;
 Use this query to flush new log
