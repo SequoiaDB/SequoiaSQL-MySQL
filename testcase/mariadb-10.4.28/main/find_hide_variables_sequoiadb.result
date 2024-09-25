@@ -7,6 +7,9 @@ SEQUOIASQLMAINSTREAM-1816
   --sequoiadb-diag-info-path 
 SEQUOIASQLMAINSTREAM-1470
 --
+  --sequoiadb-stats-persistence 
+SEQUOIASQLMAINSTREAM-1989
+--
   --sequoiadb-support-cond-const-bool 
 SEQUOIASQLMAINSTREAM-1744
 --
