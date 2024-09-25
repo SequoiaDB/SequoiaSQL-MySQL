@@ -4573,6 +4573,9 @@ int ha_sdb::direct_dup_update() {
       rc, "Failed to optimize dup update for table:%s.%s, exception:%s",
       db_name, table_name, e.what());
 done:
+  SDB_LOG_DEBUG("insert dup update pushdown: %d, modifier: [%s], table: %s.%s",
+                m_direct_dup_update, SDB_OBJ_TO_SECURE_STR(m_modify_obj),
+                db_name, table_name);
   if (!m_direct_dup_update) {
     m_use_bulk_insert = false;
   }
