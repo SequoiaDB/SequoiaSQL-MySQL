@@ -430,7 +430,7 @@ static int get_date_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
                             const char *op_str,
                             bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  struct tm tm_val;
+  struct tm tm_val, tmp_tm;
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   const uchar *old_ptr = field->ptr;
@@ -448,8 +448,18 @@ static int get_date_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   tm_val.tm_wday = 0;
   tm_val.tm_yday = 0;
   tm_val.tm_isdst = 0;
+  tmp_tm = tm_val;
   time_t time_tmp = mktime(&tm_val);
-  bson::Date_t dt((longlong)(time_tmp * 1000));
+  time_t true_time_val = time_tmp;
+  if (tm_val.tm_isdst != tmp_tm.tm_isdst) {  // maybe dst
+    tmp_tm.tm_isdst = tm_val.tm_isdst;
+    time_tmp = mktime(&tmp_tm);
+    if (tmp_tm.tm_isdst ==
+        tm_val.tm_isdst) {  // can not correct,use first val
+      true_time_val = time_tmp;
+    }
+  }
+  bson::Date_t dt((longlong)(true_time_val * 1000));
   try {
     obj_builder.appendDate(op_str, dt);
   }
