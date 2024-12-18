@@ -6,7 +6,7 @@ import shutil
 import argparse
 import subprocess
 
-MYSQL_DEFAULT_VERSION = '5.7.42'
+MYSQL_DEFAULT_VERSION = '5.7.44'
 MARIADB_DEFAULT_VERSION = '10.4.28'
 
 class OptionsMgr:
