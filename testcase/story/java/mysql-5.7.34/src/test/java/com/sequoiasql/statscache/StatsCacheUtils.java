@@ -141,10 +141,14 @@ public class StatsCacheUtils extends MysqlTestBase {
             BSONObject next = clSnapshot.getNext();
             List< BasicBSONObject > detailsInfo = ( List< BasicBSONObject > ) next
                     .get( "Details" );
-            List< BasicBSONObject > groupInfo = ( List< BasicBSONObject > ) detailsInfo
-                    .get( 0 ).get( "Group" );
-            long totalRead = ( long ) groupInfo.get( 0 ).get( "TotalRead" );
-            totalReads += totalRead;
+            for ( int i = 0; i < detailsInfo.size(); i++ ) {
+                List< BasicBSONObject > groupInfo = ( List< BasicBSONObject > ) detailsInfo
+                        .get( i ).get( "Group" );
+                for ( int j = 0; j < groupInfo.size(); j++ ) {
+                    long totalRead = ( long ) groupInfo.get( j ).get( "TotalRead" );
+                    totalReads += totalRead;
+                }
+            }
         }
         clSnapshot.close();
         return totalReads;
@@ -163,10 +167,14 @@ public class StatsCacheUtils extends MysqlTestBase {
             BSONObject next = clSnapshot.getNext();
             List< BasicBSONObject > detailsInfo = ( List< BasicBSONObject > ) next
                     .get( "Details" );
-            List< BasicBSONObject > groupInfo = ( List< BasicBSONObject > ) detailsInfo
-                    .get( 0 ).get( "Group" );
-            long attr = ( long ) groupInfo.get( 0 ).get( attribute );
-            totals += attr;
+            for ( int i = 0; i < detailsInfo.size(); i++ ) {
+                List< BasicBSONObject > groupInfo = ( List< BasicBSONObject > ) detailsInfo
+                        .get( i ).get( "Group" );
+                for ( int j = 0; j < groupInfo.size(); j++ ) {
+                    long attr = ( long ) groupInfo.get( j ).get( attribute );
+                    totals += attr;
+                }
+            }
         }
         clSnapshot.close();
         return totals;
@@ -185,10 +193,14 @@ public class StatsCacheUtils extends MysqlTestBase {
             BSONObject next = clSnapshot.getNext();
             List< BasicBSONObject > detailsInfo = ( List< BasicBSONObject > ) next
                     .get( "Details" );
-            List< BasicBSONObject > groupInfo = ( List< BasicBSONObject > ) detailsInfo
-                    .get( 0 ).get( "Group" );
-            long totalRead = ( long ) groupInfo.get( 0 ).get( "TotalRead" );
-            totalReads += totalRead;
+            for ( int i = 0; i < detailsInfo.size(); i++ ) {
+                List< BasicBSONObject > groupInfo = ( List< BasicBSONObject > ) detailsInfo
+                        .get( i ).get( "Group" );
+                for ( int j = 0; j < groupInfo.size(); j++ ) {
+                    long totalRead = ( long ) groupInfo.get( j ).get( "TotalRead" );
+                    totalReads += totalRead;
+                }
+            }
         }
         clSnapshot.close();
         return totalReads;
@@ -207,10 +219,14 @@ public class StatsCacheUtils extends MysqlTestBase {
             BSONObject next = clSnapshot.getNext();
             List< BasicBSONObject > detailsInfo = ( List< BasicBSONObject > ) next
                     .get( "Details" );
-            List< BasicBSONObject > groupInfo = ( List< BasicBSONObject > ) detailsInfo
-                    .get( 0 ).get( "Group" );
-            long attr = ( long ) groupInfo.get( 0 ).get( attribute );
-            totals += attr;
+            for ( int i = 0; i < detailsInfo.size(); i++ ) {
+                List< BasicBSONObject > groupInfo = ( List< BasicBSONObject > ) detailsInfo
+                        .get( i ).get( "Group" );
+                for ( int j = 0; j < groupInfo.size(); j++ ) {
+                    long attr = ( long ) groupInfo.get( j ).get( attribute );
+                    totals += attr;
+                }
+            }
         }
         clSnapshot.close();
         return totals;
