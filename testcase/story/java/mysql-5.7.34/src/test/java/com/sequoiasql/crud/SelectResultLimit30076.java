@@ -35,6 +35,9 @@ public class SelectResultLimit30076 extends MysqlTestBase {
             if ( CommLib.isStandAlone( sdb ) ) {
                 throw new SkipException( "is standalone skip testcase" );
             }
+            if ( CommLib.getDataGroupNames( sdb ).size() != 3 ) {
+                throw new SkipException( "testcase required 3 groups" );
+            }
             jdbc = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc.dropDatabase( dbName );

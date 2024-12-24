@@ -60,6 +60,7 @@ public class CreateTableLike28622 extends MysqlTestBase {
         String clName2 = "cl_28622_2";
         CollectionSpace cs = sdb.createCollectionSpace( csName );
         BasicBSONObject option = new BasicBSONObject();
+        ArrayList< String > groupNames = CommLib.getDataGroupNames( sdb );
         option.put( "AutoSplit", false );
         option.put( "ShardingKey", new BasicBSONObject( "id", 1 ) );
         option.put( "ShardingType", "range" );
@@ -68,7 +69,7 @@ public class CreateTableLike28622 extends MysqlTestBase {
         option.put( "ReplSize", 2 );
         option.put( "Compressed", true );
         option.put( "CompressionType", "lzw" );
-        option.put( "Group", "group1" );
+        option.put( "Group", groupNames.get(0) );
         option.put( "StrictDataMode", true );
         option.put( "AutoIncrement", new BasicBSONObject( "Field", "id" ) );
         DBCollection cl1 = cs.createCollection( clName1, option );

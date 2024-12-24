@@ -81,13 +81,14 @@ public class CommentMapping25547 extends MysqlTestBase {
         options1.put( "ShardingKey", new BasicBSONObject( "id", 1 ) );
         options1.put( "ShardingType", "range" );
         DBCollection maincl = cs1.createCollection( mclName, options1 );
+        ArrayList< String > groupNames = CommLib.getDataGroupNames( sdb );
 
         BasicBSONObject options2 = new BasicBSONObject();
         options1.put( "ShardingKey", new BasicBSONObject( "id", 1 ) );
         options1.put( "IsMainCL", false );
         options1.put( "ShardingType", "hash" );
         options1.put( "Partition", 4096 );
-        options1.put( "Group", "group1" );
+        options1.put( "Group", groupNames.get(0) );
         DBCollection hashcl1 = cs2.createCollection( hashclName1, options1 );
         cs2.createCollection( hashclName2, options1 );
 

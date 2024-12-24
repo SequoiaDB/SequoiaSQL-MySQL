@@ -36,6 +36,9 @@ public class CreateTableLike28617 extends MysqlTestBase {
             if ( CommLib.isStandAlone( sdb ) ) {
                 throw new SkipException( "is standalone skip testcase" );
             }
+            if ( CommLib.OneGroupMode( sdb ) ) {
+                throw new SkipException( "skip one group mode" );
+            }
             jdbc = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             if ( sdb.isCollectionSpaceExist( csName ) ) {
@@ -58,12 +61,13 @@ public class CreateTableLike28617 extends MysqlTestBase {
         String clName2 = "cl_28617_2";
         CollectionSpace cs = sdb.createCollectionSpace( csName );
         BasicBSONObject option = new BasicBSONObject();
+        ArrayList< String > groupNames = CommLib.getDataGroupNames( sdb );
         option.put( "AutoSplit", true );
         option.put( "AutoIndexId", true );
         option.put( "ReplSize", 2 );
         option.put( "Compressed", true );
         option.put( "CompressionType", "lzw" );
-        option.put( "Group", "group1" );
+        option.put( "Group", groupNames.get(0) );
         option.put( "StrictDataMode", true );
         option.put( "AutoIncrement", new BasicBSONObject( "Field", "id" ) );
         // 普通表显示指定AutoSplit:true，预期报错SDB_NO_SHARDINGKEY
@@ -80,7 +84,7 @@ public class CreateTableLike28617 extends MysqlTestBase {
         option.put( "AutoSplit", false );
         DBCollection cl1 = cs.createCollection( clName1, option );
         option.remove( "Group" );
-        option.put( "Group", "group2" );
+        option.put( "Group", groupNames.get(1) );
         DBCollection cl2 = cs.createCollection( clName2, option );
 
         // 对t1，t2表执行dml操作
