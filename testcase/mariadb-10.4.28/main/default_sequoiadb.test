@@ -1,7 +1,7 @@
 #Case 20326 #Case 22103
 
-create database test_default;
-use test_default;
+create database test_default_sequoiadb;
+use test_default_sequoiadb;
 
 # integer
 create table t1 ( id int default 0 ) ; 
@@ -286,4 +286,4 @@ INSERT INTO t2 VALUES ('2021-03-01', 2378, DEFAULT, DEFAULT);
 SELECT * FROM t2 ORDER BY a;
 drop table t1,t2,t3;
 
-drop database test_default;
+drop database test_default_sequoiadb;
