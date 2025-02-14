@@ -53,6 +53,4 @@ SELECT * FROM cte4 as r;
 DROP USER 'u1'@'localhost';
 DROP DATABASE db;
 
-USE test;
-
 --echo # End of 10.2 tests

@@ -44,5 +44,4 @@ disconnect u1;
 connection default;
 DROP USER 'u1'@'localhost';
 DROP DATABASE db;
-USE test;
 # End of 10.2 tests

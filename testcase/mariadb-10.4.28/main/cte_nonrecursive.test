@@ -1238,7 +1238,8 @@ drop view db1.v1;
 drop table db1.t1;
 drop database db1;
 
-use test;
+#use test;
+use test_cte_nonrecursive;
 --enable_view_protocol
 
 --echo #

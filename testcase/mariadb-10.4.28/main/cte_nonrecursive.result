@@ -1394,7 +1394,7 @@ a
 drop view db1.v1;
 drop table db1.t1;
 drop database db1;
-use test;
+use test_cte_nonrecursive;
 #
 # MDEV-24597: CTE with union used multiple times in query
 #
@@ -1712,7 +1712,7 @@ with cte_r as (
 select a from t1 union select a+1 as a from cte_r r where a < 10
 ) select * from cte_r
 ) select * from cte_e;
-ERROR 42S02: Table 'test.cte_r' doesn't exist
+ERROR 42S02: Table 'test_cte_nonrecursive.cte_r' doesn't exist
 drop table t1;
 #
 # MDEV-26025: query with two usage of a CTE executing via PS /SP
