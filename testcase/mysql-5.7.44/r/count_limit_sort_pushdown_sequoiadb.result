@@ -163,7 +163,7 @@ Warnings:
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$gt": 1 } } }], group[{ "$group": { "col1": { "$first": "$col1" }, "_id": { "col1": "$col1" }, "col2": { "$first": "$col2" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col1": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 explain  select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	NULL	idx_col3	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb`.`t1`.`col3` >= '20221115114210'); Using pushed ORDER BY; Storage engine handles access type
+1	SIMPLE	t1	NULL	range	idx_col3	idx_col3	6	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb`.`t1`.`col3` >= '20221115114210'); Using pushed sort (`count_limit_sort_pushdown_sequoiadb`.`t1`.`col4`)
 Warnings:
 Note	1003	/* select#1 */ select `count_limit_sort_pushdown_sequoiadb`.`t1`.`col1` AS `col1`,`count_limit_sort_pushdown_sequoiadb`.`t1`.`col2` AS `col2`,`count_limit_sort_pushdown_sequoiadb`.`t1`.`col3` AS `col3`,`count_limit_sort_pushdown_sequoiadb`.`t1`.`col4` AS `col4` from `count_limit_sort_pushdown_sequoiadb`.`t1` where (`count_limit_sort_pushdown_sequoiadb`.`t1`.`col3` >= '20221115114210') order by `count_limit_sort_pushdown_sequoiadb`.`t1`.`col4` limit 2,3
 select * from t1 where col3>="20221115114210" order by col4 limit 2,3;
@@ -172,7 +172,7 @@ col1	col2	col3	col4
 3	xyz	2022-11-15 11:45:10	xyz 
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "col3": { "$gte": "2022-11-15 11:42:10" } }], selector[{}], order_by[{ "col4": 1 }], hint[{ "": "idx_col3" }], limit[3], offset[2], table[count_limit_sort_pushdown_sequoiadb.t1]
 explain  select * from t1 where col3>="20221115114210" group by col3 limit 2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	NULL	idx_col3	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb`.`t1`.`col3` >= '20221115114210'); Using pushed GROUP BY; Storage engine handles access type

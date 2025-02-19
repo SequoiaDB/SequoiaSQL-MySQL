@@ -8097,11 +8097,8 @@ int ha_sdb::info(uint flag) {
         has_opt_sort_pushdown =
             (optimizer_flag(thd, OPTIMIZER_SWITCH_OPTIMIZER_SORT_PUSHDOWN) &&
              order && !group_list);
-        /*
-          If ORDER BY + LIMIT and no index sort prune, walk on the old way to
-          ensure performance.
-        */
-        if (!thd->variables.optimizer_index_sort_prune || use_limit) {
+
+        if (!thd->variables.optimizer_index_sort_prune) {
           has_opt_sort_pushdown = false;
         }
 

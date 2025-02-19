@@ -27,7 +27,7 @@ INSERT /*! IGNORE */ INTO t1 VALUES  (0, 'x', -1667563520, 'x', NULL, NULL, 151)
 SET SESSION optimizer_index_sort_prune=ON;
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7 OFFSET 0;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	22	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using temporary; Using filesort
+1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	4	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using temporary; Using filesort
 Warnings:
 Note	1003	/* select#1 */ select sql_buffer_result `partition_sequoiadb_29784`.`t1`.`col_int` AS `field1` from `partition_sequoiadb_29784`.`t1` where ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)) order by `field1` limit 0,7
 SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7 OFFSET 0;
@@ -43,7 +43,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	22	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using temporary; Using filesort
+1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	4	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using temporary; Using filesort
 Warnings:
 Note	1003	/* select#1 */ select sql_buffer_result `partition_sequoiadb_29784`.`t1`.`col_int` AS `field1` from `partition_sequoiadb_29784`.`t1` where ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)) order by `field1` limit 7
 SELECT SQL_BUFFER_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY /*RESULTSETS_HAS_SAME_ORDER*/field1 LIMIT 7;
@@ -59,7 +59,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_SMALL_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	22	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
+1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	4	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
 Warnings:
 Note	1003	/* select#1 */ select sql_small_result `partition_sequoiadb_29784`.`t1`.`col_int` AS `field1` from `partition_sequoiadb_29784`.`t1` where ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)) order by `field1` limit 7
 SELECT SQL_SMALL_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
@@ -75,7 +75,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_BIG_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	22	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
+1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	4	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
 Warnings:
 Note	1003	/* select#1 */ select sql_big_result `partition_sequoiadb_29784`.`t1`.`col_int` AS `field1` from `partition_sequoiadb_29784`.`t1` where ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)) order by `field1` limit 7
 SELECT SQL_BIG_RESULT `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
@@ -91,7 +91,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT HIGH_PRIORITY `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	22	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
+1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	4	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
 Warnings:
 Note	1003	/* select#1 */ select high_priority `partition_sequoiadb_29784`.`t1`.`col_int` AS `field1` from `partition_sequoiadb_29784`.`t1` where ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)) order by `field1` limit 7
 SELECT HIGH_PRIORITY `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
@@ -107,7 +107,7 @@ NULL
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	22	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
+1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	4	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
 Warnings:
 Warning	1681	'SQL_CACHE' is deprecated and will be removed in a future release.
 Note	1003	/* select#1 */ select sql_cache `partition_sequoiadb_29784`.`t1`.`col_int` AS `field1` from `partition_sequoiadb_29784`.`t1` where ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)) order by `field1` limit 7
@@ -126,7 +126,7 @@ Warning	1681	'SQL_CACHE' is deprecated and will be removed in a future release.
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "col_int_key": { "$et": 9 } }, { "col_int_key": { "$isnull": 1 } } ] }], selector[{ "_id": null, "col_int_key": null, "col_int": null }], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 9 }, { "1": 9 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "col_int_key" }], limit[-1], offset[0], table[partition_sequoiadb_29784.t1]
 EXPLAIN SELECT SQL_NO_CACHE `col_int` AS field1 FROM `t1` WHERE col_int_key = 9 OR col_int_key IS NULL ORDER BY field1 LIMIT 7;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	22	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
+1	SIMPLE	t1	p0,p1,p2,p3	ref_or_null	col_int_key	col_int_key	5	const	4	100.00	Using where with pushed condition ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)); Using filesort
 Warnings:
 Warning	1681	'SQL_NO_CACHE' is deprecated and will be removed in a future release.
 Note	1003	/* select#1 */ select sql_no_cache `partition_sequoiadb_29784`.`t1`.`col_int` AS `field1` from `partition_sequoiadb_29784`.`t1` where ((`partition_sequoiadb_29784`.`t1`.`col_int_key` = 9) or isnull(`partition_sequoiadb_29784`.`t1`.`col_int_key`)) order by `field1` limit 7

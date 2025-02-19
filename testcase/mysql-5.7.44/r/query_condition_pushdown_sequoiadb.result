@@ -10223,7 +10223,7 @@ id	a	c
 3	10	123
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[3], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[3], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 ORDER BY id LIMIT 2 OFFSET 4;
 id	a	c
 5	-9	001
@@ -10237,14 +10237,14 @@ id	a	c
 2	-1	bc
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lte": 3 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[2], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lte": 3 } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[2], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE id >= 5 AND a < 10 OR c = 'abc' ORDER BY id LIMIT 2 OFFSET 1;
 id	a	c
 7	0	abc
 8	5	jk
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "id": { "$gte": 5 } }, { "a": { "$lt": 10 } } ] }, { "c": { "$et": "abc" } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[2], offset[1], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "id": { "$gte": 5 } }, { "a": { "$lt": 10 } } ] }, { "c": { "$et": "abc" } } ] }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[2], offset[1], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 1;
 id	a	c
 2	-1	bc
@@ -10252,7 +10252,7 @@ id	a	c
 4	1	tf
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[3], offset[1], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[3], offset[1], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE c > 'a' ORDER BY a,c LIMIT 3 OFFSET 2;
 id	a	c
 11	1	bc
@@ -10260,7 +10260,7 @@ id	a	c
 4	1	tf
 [Note] Testcase: Operation log begin
 [Note] SequoiaDB: optimizer pushdown autocommit: 1
-[Note] SequoiaDB: Query message: condition[{ "c": { "$gt": "a" } }], selector[{}], order_by[{ "a": 1, "c": 1 }], hint[{ "": "" }], limit[3], offset[2], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "c": { "$gt": "a" } }], selector[{}], order_by[{ "a": 1, "c": 1 }], hint[{ "": "c" }], limit[3], offset[2], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE id > LENGTH(c) ORDER BY id LIMIT 3;
 id	a	c
 4	1	tf
