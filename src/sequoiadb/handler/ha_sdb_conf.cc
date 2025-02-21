@@ -54,7 +54,7 @@ static const uint SDB_DEFAULT_STATS_CACHE_LEVEL = SDB_STATS_LVL_MCV;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
 static const my_bool SDB_DEFAULT_STATS_PERSISTENCE = TRUE;
-static const my_bool SDB_DEFAULT_IMP_ORDER_BY_LIMIT = TRUE;
+static const my_bool SDB_DEFAULT_ORDERBY_LIMIT_OPT = TRUE;
 
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
 
@@ -75,7 +75,7 @@ int sdb_stats_mode = SDB_DEFAULT_STATS_MODE;
 int sdb_stats_sample_num = SDB_DEFAULT_STATS_SAMPLE_NUM;
 double sdb_stats_sample_percent = SDB_DEFAULT_STATS_SAMPLE_PERCENT;
 my_bool sdb_stats_persistence = SDB_DEFAULT_STATS_PERSISTENCE;
-my_bool sdb_imp_order_by_limit = SDB_DEFAULT_IMP_ORDER_BY_LIMIT;
+my_bool sdb_orderby_limit_optimization = SDB_DEFAULT_ORDERBY_LIMIT_OPT;
 
 // use to metadata mapping function
 my_bool sdb_enable_mapping = FALSE;
@@ -666,12 +666,12 @@ static MYSQL_SYSVAR_BOOL(stats_persistence, sdb_stats_persistence,
                          NULL, NULL, SDB_DEFAULT_STATS_PERSISTENCE);
 
 // SDB_DOC_OPT = IGNORE
-static MYSQL_SYSVAR_BOOL(imp_order_by_limit, sdb_imp_order_by_limit,
+static MYSQL_SYSVAR_BOOL(orderby_limit_optimization, sdb_orderby_limit_optimization,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_HIDDEN,
-                         "SEQUOIASQLMAINSTREAM-2025 improve the ORDER BY + "
-                         "LIMIT pushdown. (Default: ON). "
+                         "SEQUOIASQLMAINSTREAM-2025 enable the ORDER BY + "
+                         "LIMIT pushdown optimization . (Default: ON). "
                          /*优化 ORDER BY + LIMIT 场景的下压*/,
-                         NULL, NULL, SDB_DEFAULT_IMP_ORDER_BY_LIMIT);
+                         NULL, NULL, SDB_DEFAULT_ORDERBY_LIMIT_OPT);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
@@ -725,7 +725,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(secure_log),
     MYSQL_SYSVAR(share_log_output),
     MYSQL_SYSVAR(stats_persistence),
-    MYSQL_SYSVAR(imp_order_by_limit),
+    MYSQL_SYSVAR(orderby_limit_optimization),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {

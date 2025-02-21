@@ -8102,7 +8102,7 @@ int ha_sdb::info(uint flag) {
           has_opt_sort_pushdown = false;
         }
 
-        if (!sdb_imp_order_by_limit && use_limit) {
+        if (!sdb_orderby_limit_optimization && use_limit) {
           has_opt_sort_pushdown = false;
         }
 
