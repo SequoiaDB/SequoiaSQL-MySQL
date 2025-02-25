@@ -31,11 +31,11 @@ SEQUOIASQLMAINSTREAM-1470
   --sequoiadb-enable-null-reject-for-bka-join 
 SEQUOIASQLMAINSTREAM-1749
 --
-  --sequoiadb-imp-order-by-limit 
-SEQUOIASQLMAINSTREAM-2025
---
   --sequoiadb-lossy-end-range 
 SEQUOIASQLMAINSTREAM-1479
+--
+  --sequoiadb-orderby-limit-optimization 
+SEQUOIASQLMAINSTREAM-2025
 --
   --sequoiadb-share-log-output 
 SEQUOIASQLMAINSTREAM-1974
