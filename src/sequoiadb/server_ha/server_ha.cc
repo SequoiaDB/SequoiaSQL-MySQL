@@ -2274,6 +2274,14 @@ static int get_sql_objects_for_dcl(THD *thd, ha_sql_stmt_info *sql_info) {
   ha_table_list *ha_tbl_node = NULL, *ha_tbl_list_tail = NULL;
   TABLE_LIST *tables = sdb_lex_first_select(thd)->get_table_list();
 
+  // If GRANT / REVOKE the CREATE option, table maybe doesn't exist.
+  if ((SQLCOM_GRANT == sql_command ||
+       SQLCOM_REVOKE == sql_command) &&
+      (thd->lex->grant & CREATE_ACL) &&
+      tables && !check_if_table_exists(thd, tables)) {
+    tables = NULL;
+  }
+
   // handle SET PASSWORD = ...
   if (SQLCOM_SET_OPTION == sql_command &&
       dynamic_cast<set_var_password *>(thd->lex->var_list.head()) != NULL) {
