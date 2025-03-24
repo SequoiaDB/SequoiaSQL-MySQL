@@ -1351,7 +1351,8 @@ int ha_update_cached_record(const char *cached_record_key, int sql_id,
 // wait instance state to be updated to lastest state by replay thread
 static int wait_object_updated_to_lastest(
     const char *db_name, const char *table_name, const char *op_type,
-    Sdb_cl &obj_state_cl, ha_sql_stmt_info *sql_info, THD *thd) {
+    Sdb_cl &obj_state_cl, ha_sql_stmt_info *sql_info, THD *thd,
+    bool *object_exist = NULL) {
   DBUG_ENTER("wait_object_updated_to_lastest");
 
   int sql_id = HA_INVALID_SQL_ID, rc = 0, cata_version;
@@ -1362,6 +1363,9 @@ static int wait_object_updated_to_lastest(
   uint sleep_secs = 0;
 
   // get latest SQL id from 'HAObjectState'
+  if (object_exist) {
+    *object_exist = true;
+  }
   cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
                           << HA_FIELD_TYPE << op_type);
   rc = obj_state_cl.query(cond);
@@ -1375,6 +1379,9 @@ static int wait_object_updated_to_lastest(
     // objects exists before instance group function
     SDB_LOG_DEBUG("HA: Can't find object state in 'HAObjectState' for '%s:%s'",
                   db_name, table_name);
+    if (object_exist) {
+      *object_exist = false;
+    }
     rc = 0;
     goto done;
   }
@@ -1480,6 +1487,7 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
              sql_info->tables &&
              (0 == thd->lex->type || TYPE_ENUM_PROCEDURE == thd->lex->type ||
               TYPE_ENUM_FUNCTION == thd->lex->type)) {
+    bool db_exist = true;
     // lex->type == 0 means that granted object is table
     for (ha_table_list *ha_tables = sql_info->tables; ha_tables;
          ha_tables = ha_tables->next) {
@@ -1487,10 +1495,18 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
       table_name = HA_EMPTY_STRING;
       op_type = HA_OPERATION_TYPE_DB;
       rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
-                                          obj_state_cl, sql_info, thd);
+                                          obj_state_cl, sql_info, thd,
+                                          &db_exist);
       if (rc) {
         goto error;
       }
+    }
+    // if doesn't exist, use system db to avoid use unknown db
+    if ((thd->lex->grant & CREATE_ACL) && !db_exist) {
+        ha_table_list *ha_table = sql_info->tables;
+        ha_table->db_name = HA_MYSQL_DB;
+        ha_table->table_name = thd->lex->users_list.head()->user.str;
+        ha_table->next = NULL;
     }
   } else if (!is_db_meta_sql(thd) && sql_info->tables) {
     ha_table_list *ha_tables = sql_info->tables;
