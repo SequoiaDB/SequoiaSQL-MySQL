@@ -881,6 +881,7 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
         tables.
      10. contains window function.
      11. is const table.
+     12. ref plan changed by optimizer. see test_if_skip_sort_order.
   */
   const bool use_where_condition = sdb_where_condition(select_lex);
   const bool use_having_condition = sdb_having_condition(select_lex);
@@ -910,7 +911,7 @@ bool ha_sdb::can_push_down_limit(sdb_join_type type) {
       (m_use_group && !direct_sort) || use_distinct || calc_found_rows ||
       use_group_and_agg_func || use_filesort || use_index_merge_and ||
       is_recursive_table || is_correlated || use_window_func ||
-      is_const_table) {
+      is_const_table || m_ref_plan_changed) {
     rs = false;
     goto error;
   }
@@ -1905,6 +1906,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_is_in_group_min_max = false;
   m_is_first_ensure_stats = true;
   m_refresh_share_stats_phase = NOT_IN_REFRESH;
+  m_ref_plan_changed = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -2225,6 +2227,7 @@ int ha_sdb::reset() {
   m_is_in_group_min_max = false;
   share_newly_obtain = null_ptr;
   m_refresh_share_stats_phase = NOT_IN_REFRESH;
+  m_ref_plan_changed = false;
   DBUG_RETURN(0);
 }
 
@@ -9206,6 +9209,9 @@ int ha_sdb::extra(enum ha_extra_function operation) {
       }
       break;
     }
+    case HA_EXTRA_REF_PLAN_CHANGED:
+      m_ref_plan_changed = true;
+      break;
     // To make them effective until ::reset(), ignore this reset here.
     case HA_EXTRA_NO_IGNORE_DUP_KEY:
     case HA_EXTRA_WRITE_CANNOT_REPLACE:

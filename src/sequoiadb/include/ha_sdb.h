@@ -933,5 +933,6 @@ class ha_sdb : public handler {
 
   bool m_is_in_group_min_max;
   bool m_is_first_ensure_stats;
+  bool m_ref_plan_changed;
 };
 #endif
