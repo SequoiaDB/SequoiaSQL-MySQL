@@ -171,7 +171,7 @@ NULL	b
 [Note] SequoiaDB: Query message: condition[{ "col_int": { "$lt": 3 } }], selector[{}], order_by[{ "col_int": 1 }], hint[{ "": "" }], limit[1], offset[0], table[explain_direct_sort_29809.t1]
 EXPLAIN (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	p0,p1,p2,p3	index	NULL	col_varchar_16	19	NULL	3	80.00	Using where
+1	PRIMARY	t2	p0,p1,p2,p3	index	NULL	col_varchar_16	19	NULL	5	80.00	Using where
 2	UNION	t1	p0,p1,p2,p3	NULL	NULL	NULL	NULL	NULL	5	100.00	Using pushed ORDER BY; Storage engine handles access type
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
 Warnings:
@@ -192,7 +192,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 1	SIMPLE	t1	p0,p1,p2,p3	NULL	col_int	NULL	NULL	NULL	5	20.00	Using where with pushed condition (`explain_direct_sort_29809`.`t1`.`col_int` between 1 and 2); Using pushed ORDER BY; Storage engine handles access type
 EXPLAIN SELECT * FROM t1 ORDER BY col_int LIMIT 2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	p0,p1,p2,p3	index	NULL	col_int	5	NULL	2	100.00	NULL
+1	SIMPLE	t1	p0,p1,p2,p3	index	NULL	col_int	5	NULL	5	100.00	NULL
 Warnings:
 Note	1003	/* select#1 */ select `explain_direct_sort_29809`.`t1`.`col_int` AS `col_int`,`explain_direct_sort_29809`.`t1`.`col_varchar_16` AS `col_varchar_16`,`explain_direct_sort_29809`.`t1`.`col_date` AS `col_date`,`explain_direct_sort_29809`.`t1`.`col_date2` AS `col_date2` from `explain_direct_sort_29809`.`t1` order by `explain_direct_sort_29809`.`t1`.`col_int` limit 2
 EXPLAIN FORMAT = JSON SELECT * FROM t1 ORDER BY col_int LIMIT 2;
@@ -388,7 +388,7 @@ NULL	b
 [Note] SequoiaDB: Query message: condition[{ "col_int": { "$lt": 3 } }], selector[{}], order_by[{ "col_int": 1 }], hint[{ "": "" }], limit[1], offset[0], table[explain_direct_sort_29809.t1]
 EXPLAIN (SELECT * FROM t2 WHERE col_int ORDER BY col_varchar_16 LIMIT 3) UNION (SELECT * FROM t1 ORDER BY col_int DESC LIMIT 3);
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	p0,p1,p2,p3	index	NULL	col_varchar_16	19	NULL	3	80.00	Using where
+1	PRIMARY	t2	p0,p1,p2,p3	index	NULL	col_varchar_16	19	NULL	5	80.00	Using where
 2	UNION	t1	p0,p1,p2,p3	NULL	NULL	NULL	NULL	NULL	5	100.00	Using pushed ORDER BY; Storage engine handles access type
 NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
 Warnings:

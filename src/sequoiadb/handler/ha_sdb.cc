@@ -8699,6 +8699,7 @@ int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats,
   stats.last_flush_total_records = 0;
   stats.create_time = 0;
   stats.update_time = 0;
+  stats.shard_count = 0;
 
   try {
     while (!(rc = cursor.next(obj, false))) {
@@ -8767,6 +8768,7 @@ int ha_sdb::get_cl_stats_from_cursor(Stat_cursor &cursor, Sdb_statistics &stats,
       stats.update_time = (ulong)update_time;
       // SequoiaDB not supported, always 0
       stats.check_time = 0;
+      ++stats.shard_count;
     }
   }
   SDB_EXCEPTION_CATCHER(
@@ -8945,6 +8947,7 @@ int ha_sdb::replace_table_stats_from_diag_file(THD *thd) {
   share->stat.total_index_pages = tmp_stats.total_index_pages;
   share->stat.total_data_free_space = tmp_stats.total_data_free_space;
   share->stat.total_records = tmp_stats.total_records;
+  share->stat.shard_count = tmp_stats.shard_count;
 
   mysql_mutex_unlock(&sdb_mutex);
 
@@ -12507,6 +12510,14 @@ int ha_sdb::prepare_range_scan(const key_range *start_key,
   return 0;
 }
 #endif
+
+uint ha_sdb::get_shard_count() {
+  if (share) {
+    return share->stat.shard_count;
+  } else {
+    return 1;
+  }
+}
 
 static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
                                    MEM_ROOT *mem_root) {

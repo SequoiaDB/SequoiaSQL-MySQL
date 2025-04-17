@@ -759,6 +759,7 @@ class ha_sdb : public handler {
                                       bson::BSONObj &old_part_opt,
                                       bson::BSONObj &new_part_opt);
   /* end */
+  virtual uint get_shard_count();
 
   int drop_partition(THD *thd, char *db_name, char *part_name);
 

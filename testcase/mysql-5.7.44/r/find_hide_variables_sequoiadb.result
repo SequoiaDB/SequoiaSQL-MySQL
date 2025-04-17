@@ -1,3 +1,6 @@
+  --index-sort-cost-optimization 
+SEQUOIASQLMAINSTREAM-2032
+--
   --optimizer-index-sort-prune 
 SEQUOIASQLMAINSTREAM-1054
 --

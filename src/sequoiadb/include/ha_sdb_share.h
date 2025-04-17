@@ -39,6 +39,7 @@ struct Sdb_statistics {
   time_t create_time;
   unsigned long update_time;
   unsigned long check_time;
+  unsigned int shard_count;
 
   Sdb_statistics() { init(); }
 
@@ -54,6 +55,7 @@ struct Sdb_statistics {
     create_time = 0;
     update_time = 0;
     check_time = 0;
+    shard_count = 1;
   }
 
   void reset() { init(); }
