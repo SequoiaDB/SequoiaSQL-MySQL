@@ -3625,7 +3625,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered
 4	DERIVED	t2	NULL	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t2`.`col1` <= 6); Using index; Using join buffer (Block Nested Loop)
 5	UNION	t1	NULL	NULL	NULL	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1`.`col4` < 'zzz'); Using pushed GROUP BY; Using pushed ORDER BY; Storage engine handles access type
 NULL	UNION RESULT	<union4,5>	NULL	ALL	NULL	NULL	NULL	NULL	#	#	Using temporary
-2	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	ALL	idx_col1,idx_col2,idx_col12	NULL	NULL	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1_partition`.`col1` >= 2); Using temporary; Using filesort
+2	SUBQUERY	t1_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_col1,idx_col2,idx_col12	idx_col12	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t1_partition`.`col1` >= 2); Using index; Using temporary; Using filesort
 2	SUBQUERY	t2_partition	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_col1,idx_col12	idx_col1	5	NULL	#	#	Using where with pushed condition (`count_limit_sort_pushdown_sequoiadb_2`.`t2_partition`.`col1` <= 6); Using index; Using join buffer (Block Nested Loop)
 insert into insert_table5 select t2_partition.col1, (select t1_partition.col2 from t1_partition, t2_partition where t1_partition.col1>=2 and t2_partition.col1 <=6 group by t1_partition.col2 order by t1_partition.col2  limit 1) from t2_partition where t2_partition.col1 < (select col1 from v8 where col1>=5 group by col2 order by col2 limit 0,1) group by t2_partition.col2 order by t2_partition.col2 desc limit 1;
 [Note] Testcase: Operation log begin
@@ -3633,7 +3633,7 @@ insert into insert_table5 select t2_partition.col1, (select t1_partition.col2 fr
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t2]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col4": { "$lt": "zzz" } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" }, "col3": { "$first": "$col3" }, "col4": { "$first": "$col4" } } }], sort[{ "$sort": { "col3": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 3 }]
 [Note] SequoiaDB: Query message: match[{ "$match": { "col1": { "$lt": 5 } } }], group[{ "$group": { "col2": { "$first": "$col2" }, "_id": { "col2": "$col2" }, "col1": { "$first": "$col1" } } }], sort[{ "$sort": { "col2": -1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 1 }]
-[Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t1_partition]
+[Note] SequoiaDB: Query message: condition[{ "col1": { "$gte": 2 } }], selector[{}], order_by[{ "col1": 1, "col2": 1 }], hint[{ "": "idx_col12" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t1_partition]
 [Note] SequoiaDB: Query message: condition[{ "col1": { "$lte": 6 } }], selector[{ "_id": null, "col1": null }], order_by[{ "col1": 1 }], hint[{ "": "idx_col1" }], limit[-1], offset[0], table[count_limit_sort_pushdown_sequoiadb_2.t2_partition]
 select * from insert_table5;
 col1	col2
