@@ -1,0 +1,135 @@
+DROP DATABASE IF EXISTS order_by_limit_sequoiadb_34298;
+CREATE DATABASE order_by_limit_sequoiadb_34298;
+DROP DATABASE order_by_limit_sequoiadb_34298;
+CREATE DATABASE order_by_limit_sequoiadb_34298;
+USE order_by_limit_sequoiadb_34298;
+set sequoiadb_debug_log = on;
+set sequoiadb_secure_log = off;
+DROP TABLE IF EXISTS t1;
+create table t1( pk int, a int, b int, c int, primary key(pk), key( a ), key( b ), key( c ) );
+insert into t1 values(1, 1, 0, 1 ), (2, 2, 0, 2 ), (3, 3, 0, 3 ), (4, 4, 0, 4 ), (5, 5, 0, 5 ), (6, 6, 0, 6 ), (7, 7, 0, 7 ), (8, 8, 0, 8 ), (9, 9, 0, 9 ), (10, 10, 0, 10 ), (11, 10, 0, 11 ), (12, 10, 0, 12 ), (13, 10, 0, 13 ), (14, 10, 0, 14 ), (
+15, 10, 0, 15 ), ( 16, 10, 0, 16 ), ( 17, 10, 0, 17 ), ( 18, 10, 0, 18 ), ( 19, 10, 0, 19 ), ( 20, 10, 0, 20 );
+ANALYZE TABLE t1;
+Table	Op	Msg_type	Msg_text
+order_by_limit_sequoiadb_34298.t1	analyze	status	OK
+EXPLAIN SELECT * FROM t1 WHERE pk = 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	NULL
+EXPLAIN SELECT * FROM t1 WHERE pk = 1 ORDER BY c LIMIT 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	NULL
+SELECT * FROM t1 WHERE pk = 1;
+pk	a	b	c
+1	1	0	1
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+SELECT * FROM t1 WHERE pk = 1 ORDER BY c LIMIT 1;
+pk	a	b	c
+1	1	0	1
+[Note] SequoiaDB: Query message: condition[{ "pk": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+EXPLAIN SELECT * FROM t1 WHERE a = 10 AND b IS NOT NULL;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	ref	a,b	a	5	const	11	100.00	Using where with pushed condition (`order_by_limit_sequoiadb_34298`.`t1`.`b` is not null)
+EXPLAIN SELECT * FROM t1 WHERE a = 10 AND b IS NOT NULL ORDER BY c LIMIT 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index	a,b	c	5	NULL	1	55.00	Using where with pushed condition (`order_by_limit_sequoiadb_34298`.`t1`.`b` is not null)
+SELECT * FROM t1 WHERE a = 10 AND b IS NOT NULL;
+pk	a	b	c
+10	10	0	10
+11	10	0	11
+12	10	0	12
+13	10	0	13
+14	10	0	14
+15	10	0	15
+16	10	0	16
+17	10	0	17
+18	10	0	18
+19	10	0	19
+20	10	0	20
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$isnull": 0 } }, { "a": { "$et": 10 } } ] }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+SELECT * FROM t1 WHERE a = 10 AND b IS NOT NULL ORDER BY c LIMIT 1;
+pk	a	b	c
+10	10	0	10
+[Note] SequoiaDB: Query message: condition[{ "b": { "$isnull": 0 } }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+EXPLAIN SELECT * FROM t1 WHERE a = 1 OR a IS NULL AND b IS NOT NULL;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	ref_or_null	a,b	a	5	const	4	100.00	Using where with pushed condition ((`order_by_limit_sequoiadb_34298`.`t1`.`a` = 1) or (isnull(`order_by_limit_sequoiadb_34298`.`t1`.`a`) and (`order_by_limit_sequoiadb_34298`.`t1`.`b` is not null)))
+EXPLAIN SELECT * FROM t1 WHERE a = 1 OR a IS NULL AND b IS NOT NULL ORDER BY c LIMIT 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	ref_or_null	a,b	a	5	const	4	100.00	Using where with pushed condition ((`order_by_limit_sequoiadb_34298`.`t1`.`a` = 1) or (isnull(`order_by_limit_sequoiadb_34298`.`t1`.`a`) and (`order_by_limit_sequoiadb_34298`.`t1`.`b` is not null))); Using filesort
+SELECT * FROM t1 WHERE a = 1 OR a IS NULL AND b IS NOT NULL;
+pk	a	b	c
+1	1	0	1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$et": 1 } }, { "$and": [ { "a": { "$isnull": 1 } }, { "b": { "$isnull": 0 } } ] } ] }, { "a": { "$isnull": 1 } } ] }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+SELECT * FROM t1 WHERE a = 1 OR a IS NULL AND b IS NOT NULL ORDER BY c LIMIT 1;
+pk	a	b	c
+1	1	0	1
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "a": { "$et": 1 } }, { "$and": [ { "a": { "$isnull": 1 } }, { "b": { "$isnull": 0 } } ] } ] }], selector[{}], order_by[{}], hint[{ "$Range": { "IsAllEqual": false, "IndexValueIncluded": [ [ true, true ], [ true, true ] ], "PrefixNum": [ 1, 1 ], "IndexValue": [ [ { "1": 1 }, { "1": 1 } ], [ { "1": {"$minKey":1} }, { "1": null } ] ] }, "": "a" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+EXPLAIN SELECT * FROM t1 WHERE a = 1 OR b = 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index_merge	a,b	a,b	5,5	NULL	4	100.00	Using sdb_union(a,b); Using where with pushed condition ((`order_by_limit_sequoiadb_34298`.`t1`.`a` = 1) or (`order_by_limit_sequoiadb_34298`.`t1`.`b` = 1))
+EXPLAIN SELECT * FROM t1 WHERE a = 1 OR b = 1 ORDER BY c LIMIT 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index_merge	a,b	a,b	5,5	NULL	4	100.00	Using sdb_union(a,b); Using where with pushed condition ((`order_by_limit_sequoiadb_34298`.`t1`.`a` = 1) or (`order_by_limit_sequoiadb_34298`.`t1`.`b` = 1)); Using filesort
+SELECT * FROM t1 WHERE a = 1 OR b = 1;
+pk	a	b	c
+1	1	0	1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "b" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+SELECT * FROM t1 WHERE a = 1 OR b = 1 ORDER BY c LIMIT 1;
+pk	a	b	c
+1	1	0	1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{}], order_by[{}], hint[{ "": "b" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+EXPLAIN SELECT * FROM t1 WHERE a BETWEEN 1 AND 5;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	range	a	a	5	NULL	5	100.00	Using where with pushed condition (`order_by_limit_sequoiadb_34298`.`t1`.`a` between 1 and 5)
+EXPLAIN SELECT * FROM t1 WHERE a BETWEEN 1 AND 5 ORDER BY c LIMIT 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index	a	c	5	NULL	4	25.00	Using where with pushed condition (`order_by_limit_sequoiadb_34298`.`t1`.`a` between 1 and 5)
+SELECT * FROM t1 WHERE a BETWEEN 1 AND 5;
+pk	a	b	c
+1	1	0	1
+2	2	0	2
+3	3	0	3
+4	4	0	4
+5	5	0	5
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lte": 5 } } ] }], selector[{}], order_by[{}], hint[{ "": "a" }], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+SELECT * FROM t1 WHERE a BETWEEN 1 AND 5 ORDER BY c LIMIT 1;
+pk	a	b	c
+1	1	0	1
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 1 } }, { "a": { "$lte": 5 } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+EXPLAIN SELECT * FROM t1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	20	100.00	NULL
+EXPLAIN SELECT * FROM t1 ORDER BY c LIMIT 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index	NULL	c	5	NULL	1	100.00	NULL
+SELECT * FROM t1;
+pk	a	b	c
+1	1	0	1
+2	2	0	2
+3	3	0	3
+4	4	0	4
+5	5	0	5
+6	6	0	6
+7	7	0	7
+8	8	0	8
+9	9	0	9
+10	10	0	10
+11	10	0	11
+12	10	0	12
+13	10	0	13
+14	10	0	14
+15	10	0	15
+16	10	0	16
+17	10	0	17
+18	10	0	18
+19	10	0	19
+20	10	0	20
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+SELECT * FROM t1 ORDER BY c LIMIT 1;
+pk	a	b	c
+1	1	0	1
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[1], offset[0], table[order_by_limit_sequoiadb_34298.t1]
+DROP DATABASE order_by_limit_sequoiadb_34298;
