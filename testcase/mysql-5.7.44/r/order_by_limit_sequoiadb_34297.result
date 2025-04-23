@@ -1,0 +1,35 @@
+DROP DATABASE IF EXISTS order_by_limit_sequoiadb_34297;
+CREATE DATABASE order_by_limit_sequoiadb_34297;
+DROP DATABASE order_by_limit_sequoiadb_34297;
+CREATE DATABASE order_by_limit_sequoiadb_34297;
+USE order_by_limit_sequoiadb_34297;
+DROP TABLE IF EXISTS t1,t2;
+CREATE TABLE `tb1` (
+`idx_match_field` int(11) DEFAULT NULL,
+`other_match_field` int(11) DEFAULT NULL,
+`order_field` int(11) DEFAULT NULL,
+KEY `idx_match_field` (`idx_match_field`),
+KEY `order_field` (`order_field`)
+);
+CREATE TABLE `tb2` (
+`idx_match_field` int(11) DEFAULT NULL,
+`other_match_field` int(11) DEFAULT NULL,
+`order_field` int(11) DEFAULT NULL,
+KEY `idx_match_field` (`idx_match_field`),
+KEY `order_field` (`order_field`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='sequoiadb:{table_options: {ShardingKey: {order_field: 1 } }}';
+INSERT INTO tb1 VALUES( 1, 0, 1 ), ( 2, 0, 2 ), ( 3, 0, 3 ), ( 4, 0, 4 ), ( 5, 0, 5 ), ( 6, 0, 6 ), ( 7, 0, 7 ), ( 8, 0, 8 ), ( 9, 0, 9 ), ( 10, 0, 10 ), ( 10, 0, 11 ), ( 10, 0, 12 ), ( 10, 0, 13 ), ( 10, 0, 14 ), ( 10, 0, 15 ), ( 10, 0, 16 ), ( 10, 0, 17 ), ( 10, 0, 18 ), ( 10, 0, 19 ), ( 10, 0, 20 );
+INSERT INTO tb2 VALUES( 1, 0, 1 ), ( 2, 0, 2 ), ( 3, 0, 3 ), ( 4, 0, 4 ), ( 5, 0, 5 ), ( 6, 0, 6 ), ( 7, 0, 7 ), ( 8, 0, 8 ), ( 9, 0, 9 ), ( 10, 0, 10 ), ( 10, 0, 11 ), ( 10, 0, 12 ), ( 10, 0, 13 ), ( 10, 0, 14 ), ( 10, 0, 15 ), ( 10, 0, 16 ), ( 10, 0, 17 ), ( 10, 0, 18 ), ( 10, 0, 19 ), ( 10, 0, 20 );
+ANALYZE TABLE tb1;
+Table	Op	Msg_type	Msg_text
+order_by_limit_sequoiadb_34297.tb1	analyze	status	OK
+ANALYZE TABLE tb2;
+Table	Op	Msg_type	Msg_text
+order_by_limit_sequoiadb_34297.tb2	analyze	status	OK
+EXPLAIN SELECT * FROM tb1 WHERE idx_match_field = 10 AND other_match_field = 0 ORDER BY order_field LIMIT 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tb1	NULL	index	idx_match_field	order_field	5	NULL	1	5.50	Using where with pushed condition (`order_by_limit_sequoiadb_34297`.`tb1`.`other_match_field` = 0)
+EXPLAIN SELECT * FROM tb2 WHERE idx_match_field = 10 AND other_match_field = 0 ORDER BY order_field LIMIT 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	tb2	NULL	ref	idx_match_field	idx_match_field	5	const	11	10.00	Using where with pushed condition (`order_by_limit_sequoiadb_34297`.`tb2`.`other_match_field` = 0); Using pushed sort (`order_by_limit_sequoiadb_34297`.`tb2`.`order_field`)
+DROP DATABASE order_by_limit_sequoiadb_34297;
