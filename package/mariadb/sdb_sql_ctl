@@ -104,9 +104,18 @@ function check_svcname_available()
    local sql_log=$2
    local exp_available=$3
 
-   # ignore the TIME_WAIT port, which is usable.
-   netstat -npa | awk '{print $4,$6}' | grep -vwE "TIME_WAIT|FIN_WAIT2|FIN_WAIT1|CLOSE_WAIT" | awk -F : '{print $NF}' | grep -w $inst_port >> /dev/null
-   local rc=$?
+   netstat -n >> /dev/null 2>&1
+   local has_netstat=$?
+   local rc=0
+   if [ $has_netstat != 127 ]; then
+      # ignore the TIME_WAIT port, which is usable.
+      netstat -npa | awk '{print $4,$6}' | grep -vwE "TIME_WAIT|FIN_WAIT2|FIN_WAIT1|CLOSE_WAIT" | awk -F : '{print $NF}' | grep -w $inst_port >> /dev/null
+      rc=$?
+   else
+      ss -nltp | awk '{print $4}' | grep ":$inst_port\$" >> /dev/null
+      rc=$?
+   fi
+
    if [ $rc == 0 -a $exp_available == false  ]; then
       exec_cmd_with_print "echo \"ERROR: instance port $inst_port is already in use\"" "$sql_log"
       echo "ERROR: instance port $inst_port is already in use" >&2
@@ -565,13 +574,16 @@ function get_one_status()
       # get port
       netstat -n >> /dev/null 2>&1
       local has_netstat=$?
+      local port=""
       if [ $has_netstat != 127 ]; then
-         local port=`netstat -anp 2>/dev/null | awk '{print $4" "$6" "$7 }' | grep "LISTEN $pid/mysqld" | awk '{print $1}' | awk -F ":::" '{print $2}'`
+         port=`netstat -anp 2>/dev/null | awk '{print $4" "$6" "$7 }' | grep "LISTEN $pid/mysqld" | awk '{print $1}' | awk -F ":::" '{print $2}'`
       else
          ss >> /dev/null 2>&1
          local has_ss=$?
-         test $has_ss != 127 && \
-            local port=`ss -tlnp | grep "users:((\"mysqld\"" | grep -E "pid=$pid,|,$pid," | awk '{print $4}' | awk -F ":::" '{print $2}'`
+         if [ $has_ss != 127 ]; then
+            port=`ss -tlnp | grep "users:((\"mysqld\"" | grep -E "pid=$pid,|,$pid," | awk '{print $4}' | awk -F ":::" '{print $2}'`
+            test "$port" == "" && port=`ss -tlnp | grep "users:((\"mysqld\"" | grep -E "pid=$pid,|,$pid," | awk '{print $4}' | awk -F ":" '{print $NF}'`
+         fi
       fi
       test "$port" == "" && port="-"
 
