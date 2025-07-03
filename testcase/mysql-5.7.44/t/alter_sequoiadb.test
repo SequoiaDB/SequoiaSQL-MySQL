@@ -2012,6 +2012,14 @@ alter table t1 change population population int(11) null, ALGORITHM=COPY;
 show create table t1;
 drop table t1;
 
+#BUG SEQUOIASQLMAINSTREAM-2038
+CREATE TABLE `tb` ( `a` int(11) DEFAULT NULL) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--error 131
+alter table tb modify A int, algorithm = inplace;
+--error 131
+alter table tb modify A int;
+drop table tb;
+
 #BUG SEQUOIASQLMAINSTREAM-585
 #seqDB-21866
 --error 1210
