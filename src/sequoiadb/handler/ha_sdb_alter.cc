@@ -1727,8 +1727,8 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
           goto error;
         }
 
-        if (0 != my_strcasecmp(system_charset_info, sdb_field_name(old_field),
-                               sdb_field_name(new_field))) {
+        if (0 != strcmp(sdb_field_name(old_field),
+                        sdb_field_name(new_field))) {
           op_flag |= Col_alter_info::RENAME_FIELD_NAME;
           if (old_is_auto_inc && new_is_auto_inc) {
             op_flag |= Col_alter_info::DROP_AUTO_INC;

@@ -2029,7 +2029,7 @@ Warnings:
 Note	1003	/* select#1 */ select `index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`a` AS `a`,`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` AS `b`,`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`c` AS `c` from `index_statistics_mcv_sequoiadb_26693_26694`.`t3` where ((`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` >= 5) and (`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` <= 7))
 EXPLAIN SELECT * FROM t3 WHERE b>=5 AND b <=11;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t3	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	ALL	idx_b	NULL	NULL	NULL	200	46.00	Using where with pushed condition ((`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` >= 5) and (`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` <= 11))
+1	SIMPLE	t3	p0_p0sp0,p0_p0sp1,p1_p1sp0,p1_p1sp1,p2_p2sp0,p2_p2sp1	range	idx_b	idx_b	4	NULL	92	100.00	Using where with pushed condition ((`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` >= 5) and (`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` <= 11))
 Warnings:
 Note	1003	/* select#1 */ select `index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`a` AS `a`,`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` AS `b`,`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`c` AS `c` from `index_statistics_mcv_sequoiadb_26693_26694`.`t3` where ((`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` >= 5) and (`index_statistics_mcv_sequoiadb_26693_26694`.`t3`.`b` <= 11))
 EXPLAIN SELECT * FROM t3 WHERE b>=9 AND b <=11;

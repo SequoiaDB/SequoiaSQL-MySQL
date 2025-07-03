@@ -5087,6 +5087,12 @@ t1	CREATE TABLE `t1` (
   KEY `POPulation` (`population`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
+CREATE TABLE `tb` ( `a` int(11) DEFAULT NULL) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+alter table tb modify A int, algorithm = inplace;
+ERROR HY000: Cannot change column name case. Try 'a' instead of 'A'.
+alter table tb modify A int;
+ERROR HY000: Cannot change column name case. Try 'a' instead of 'A'.
+drop table tb;
 create table t1 ( a int ) comment = 'sequoiadb:{ table_options: { Compressed: false }, ShardingKey: { wk: 1 }, EnsureShardingIndex: false } }';
 ERROR HY000: Invalid comment option 'ShardingKey'.
 create table t1 ( a int ) comment = 'sequoiadb:{ table_options: { ReplSize: 2 }, shardType: \"range\" }';
