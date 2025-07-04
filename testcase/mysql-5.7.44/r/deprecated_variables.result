@@ -1,0 +1,2 @@
+set global log_builtin_as_identified_by_password = on;
+ERROR HY000: Option log_builtin_as_identified_by_password was deprecated
