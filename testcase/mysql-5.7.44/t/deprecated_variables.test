@@ -1,0 +1,2 @@
+--error 3110
+set global log_builtin_as_identified_by_password = on;
