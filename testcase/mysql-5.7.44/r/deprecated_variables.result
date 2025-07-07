@@ -1,2 +1,6 @@
 set global log_builtin_as_identified_by_password = on;
-ERROR HY000: Option log_builtin_as_identified_by_password was deprecated
+Warnings:
+Warning	3089	Option log_builtin_as_identified_by_password was deprecated
+select @@log_builtin_as_identified_by_password;
+@@log_builtin_as_identified_by_password
+0
