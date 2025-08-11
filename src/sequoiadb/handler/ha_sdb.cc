@@ -7435,19 +7435,6 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
   }
 
   thd_sdb = thd_get_thd_sdb(thd);
-  /* In the case of using SequoiaDB engine table for slow log or general log,
-   * should never start transaction for statement.
-   */
-  if (is_slow_log_table() || is_general_log_table()) {
-    if (!sdb_condition) {
-      rc = ensure_cond_ctx(ha_thd());
-      if (rc) {
-        goto error; /* purecov: inspected */
-      }
-    }
-    goto done;
-  }
-
   if (F_UNLCK != lock_type) {
     rc = start_statement(thd, thd_sdb->lock_count++);
     if (0 != rc) {
