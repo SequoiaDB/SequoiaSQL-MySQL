@@ -147,80 +147,6 @@ static void init_i_s_psi_keys(void) {}
 
 static HASH i_s_name_id_pair_hash;
 
-static int i_s_elem_to_string(bson::BSONElement &elem, std::string &str) {
-  int rc = 0;
-  try {
-    if (bson::String == elem.type()) {
-      str = elem.String();
-    } else {
-      str = elem.toString(false, true);
-    }
-  } catch (std::exception &e) {
-    rc = 1;
-    goto error;
-  }
-done:
-  return rc;
-error:
-  goto done;
-}
-
-static int i_s_store_elem_to_field(TABLE *table, bson::BSONElement &elem) {
-  int rc = 0;
-  Field *field = NULL;
-  const char *name = elem.fieldName();
-  i_s_name_id_pair *pair = NULL;
-
-  pair = (i_s_name_id_pair *)my_hash_search(&i_s_name_id_pair_hash,
-                                            (uchar *)name, (uint)strlen(name));
-  if (NULL == pair) {
-    // May it be field in newer version. Just ignore it.
-    rc = 0;
-    goto done;
-  }
-  field = table->field[pair->id];
-
-  if (!bitmap_is_set(field->table->read_set, field->field_index)) {
-    rc = 0;
-    goto done;
-  }
-
-  field->set_notnull();
-
-  switch (field->type()) {
-    case MYSQL_TYPE_VARCHAR: {
-      std::string str;
-      rc = i_s_elem_to_string(elem, str);
-      if (rc) {
-        goto error;
-      }
-      field->store(str.c_str(), str.length(), system_charset_info);
-      break;
-    }
-    case MYSQL_TYPE_LONG: {
-      field->store(elem.numberInt());
-      break;
-    }
-    case MYSQL_TYPE_TINY: {
-      field->store(elem.booleanSafe() ? 1 : 0);
-      break;
-    }
-    case MYSQL_TYPE_NULL: {
-      // This field is not used. Skip it.
-      break;
-    }
-    default: {
-      DBUG_ASSERT(0);
-      rc = 1;
-      goto error;
-    }
-  }
-done:
-  return rc;
-error:
-  goto done;
-}
-
 static int i_s_sess_attr_fill_table(THD *thd, TABLE_LIST *tables, Item *cond) {
   int rc = 0;
   Sdb_conn *conn = NULL;
@@ -247,7 +173,7 @@ static int i_s_sess_attr_fill_table(THD *thd, TABLE_LIST *tables, Item *cond) {
       bson::BSONObjIterator iter(obj);
       while (iter.more()) {
         bson::BSONElement ele = iter.next();
-        rc = i_s_store_elem_to_field(table, ele);
+        rc = i_s_store_elem_to_field(i_s_name_id_pair_hash, table, ele);
         if (rc != 0) {
           goto error;
         }

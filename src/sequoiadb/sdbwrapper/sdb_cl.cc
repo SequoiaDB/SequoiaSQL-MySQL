@@ -22,6 +22,7 @@
 
 #include <my_global.h>
 #include <my_base.h>
+#include <my_sys.h>
 #include "sdb_cl.h"
 #include "sdb_conn.h"
 #include "ha_sdb_errcode.h"
@@ -29,6 +30,74 @@
 #include "ha_sdb_util.h"
 
 using namespace sdbclient;
+
+static void sdb_mon_append_push_info(Sdb_op_monitor &mon,
+                                     const char *desc,
+                                     const bson::BSONObj &obj) {
+  if (0 == mon.append_pushdown_info(desc)) {
+    std::string str = obj.toString();
+    mon.append_pushdown_info(str.c_str(), str.length());
+    mon.append_pushdown_info(" ");
+  }
+}
+
+static void sdb_mon_append_push_info(Sdb_op_monitor &mon,
+                                     const char *desc,
+                                     longlong value) {
+  if (0 == mon.append_pushdown_info(desc)) {
+    mon.append_pushdown_info(value);
+    mon.append_pushdown_info(" ");
+  }
+}
+
+static void sdb_mon_append_push_flags(Sdb_op_monitor &mon,
+                                      const char *desc,
+                                      int flags) {
+  if (0 == mon.append_pushdown_info(desc)) {
+    char flags_str[12] = {0};
+    sprintf(flags_str, "0x%x", flags);
+    mon.append_pushdown_info(flags_str);
+    mon.append_pushdown_info(" ");
+  }
+}
+
+static void sdb_mon_append_query_push_info(Sdb_op_monitor &mon,
+                                           const char *api_name,
+                                           const char *cl_full_name,
+                                           const bson::BSONObj &condition,
+                                           const bson::BSONObj &selected,
+                                           const bson::BSONObj &order_by,
+                                           const bson::BSONObj &hint,
+                                           longlong num_to_skip,
+                                           longlong num_to_return,
+                                           int flags) {
+  mon.append_pushdown_info(api_name);
+  mon.append_pushdown_info(" ");
+  mon.append_pushdown_info(cl_full_name);
+  mon.append_pushdown_info(" ");
+  if (!condition.isEmpty()) {
+    sdb_mon_append_push_info(mon, "condition: ", condition);
+  }
+  if (!selected.isEmpty()) {
+    sdb_mon_append_push_info(mon, "selected: ", selected);
+  }
+  if (!order_by.isEmpty()) {
+    sdb_mon_append_push_info(mon, "order_by: ", order_by);
+  }
+  if (!hint.isEmpty()) {
+    sdb_mon_append_push_info(mon, "hint: ", hint);
+  }
+  if (num_to_skip != 0) {
+    sdb_mon_append_push_info(mon, "skip: ", num_to_skip);
+  }
+  if (num_to_return != -1) {
+    sdb_mon_append_push_info(mon, "limit: ", num_to_return);
+  }
+  if (flags != 0) {
+    sdb_mon_append_push_flags(mon, "flags: ", flags);
+  }
+  mon.append_pushdown_info("; ");
+}
 
 Sdb_cl::Sdb_cl() : m_conn(NULL), m_thread_id(0) {
   // Only init the first bit to save cpu.
@@ -92,9 +161,22 @@ error:
 int Sdb_cl::query(const bson::BSONObj &condition, const bson::BSONObj &selected,
                   const bson::BSONObj &order_by, const bson::BSONObj &hint,
                   longlong num_to_skip, longlong num_to_return, int flags) {
-  return retry(boost::bind(cl_query, &m_cl, &m_cursor, &condition, &selected,
-                           &order_by, &hint, num_to_skip, num_to_return,
-                           flags));
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.find_count;
+  ulonglong start_time = my_micro_time();
+
+  sdb_mon_append_query_push_info(mon, "query", m_cl.getFullName(), condition,
+                                 selected, order_by, hint, num_to_skip,
+                                 num_to_return, flags);
+
+  int rc = retry(boost::bind(cl_query, &m_cl, &m_cursor, &condition, &selected,
+                             &order_by, &hint, num_to_skip, num_to_return,
+                             flags));
+
+  ulonglong end_time = my_micro_time();
+  mon.find_time += (end_time - start_time);
+
+  return rc;
 }
 
 int cl_query_one(sdbclient::sdbCollection *cl, bson::BSONObj *obj,
@@ -127,8 +209,21 @@ int Sdb_cl::query_one(bson::BSONObj &obj, const bson::BSONObj &condition,
                       const bson::BSONObj &selected,
                       const bson::BSONObj &order_by, const bson::BSONObj &hint,
                       longlong num_to_skip, int flags) {
-  return retry(boost::bind(cl_query_one, &m_cl, &obj, &condition, &selected,
-                           &order_by, &hint, num_to_skip, flags));
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.find_count;
+  ulonglong start_time = my_micro_time();
+
+  sdb_mon_append_query_push_info(mon, "query_one", m_cl.getFullName(),
+                                 condition, selected, order_by, hint,
+                                 num_to_skip, 1, flags);
+
+  int rc = retry(boost::bind(cl_query_one, &m_cl, &obj, &condition, &selected,
+                             &order_by, &hint, num_to_skip, flags));
+
+  ulonglong end_time = my_micro_time();
+  mon.find_time += (end_time - start_time);
+
+  return rc;
 }
 
 int cl_query_and_remove(sdbclient::sdbCollection *cl,
@@ -156,9 +251,22 @@ int Sdb_cl::query_and_remove(const bson::BSONObj &condition,
                              const bson::BSONObj &order_by,
                              const bson::BSONObj &hint, longlong num_to_skip,
                              longlong num_to_return, int flags) {
-  return retry(boost::bind(cl_query_and_remove, &m_cl, &m_cursor, &condition,
-                           &selected, &order_by, &hint, num_to_skip,
-                           num_to_return, flags));
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.find_count;
+  ulonglong start_time = my_micro_time();
+
+  sdb_mon_append_query_push_info(mon, "query_and_remove", m_cl.getFullName(),
+                                 condition, selected, order_by, hint,
+                                 num_to_skip, num_to_return, flags);
+
+  int rc = retry(boost::bind(cl_query_and_remove, &m_cl, &m_cursor, &condition,
+                             &selected, &order_by, &hint, num_to_skip,
+                             num_to_return, flags));
+
+  ulonglong end_time = my_micro_time();
+  mon.find_time += (end_time - start_time);
+
+  return rc;
 }
 
 int cl_query_and_update(sdbclient::sdbCollection *cl,
@@ -192,6 +300,14 @@ int Sdb_cl::query_and_update(const bson::BSONObj &update,
                              bool return_new) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
+  ulonglong start_time = my_micro_time();
+  ulonglong end_time = 0;
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.find_count;
+
+  sdb_mon_append_query_push_info(mon, "query_and_update", m_cl.getFullName(),
+                                 condition, selected, order_by, hint,
+                                 num_to_skip, num_to_return, flags);
 retry:
   rc = cl_query_and_update(&m_cl, &m_cursor, &update, &condition, &selected,
                            &order_by, &hint, num_to_skip, num_to_return, flags,
@@ -200,6 +316,9 @@ retry:
     goto error;
   }
 done:
+  end_time = my_micro_time();
+  mon.find_time += (end_time - start_time);
+
   return rc;
 error:
   if (IS_SDB_NET_ERR(rc)) {
@@ -227,7 +346,28 @@ error:
 }
 
 int Sdb_cl::aggregate(std::vector<bson::BSONObj> &obj) {
-  return retry(boost::bind(cl_aggregate, &m_cl, &m_cursor, obj));
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.aggregate_count;
+  ulonglong start_time = my_micro_time();
+
+  mon.append_pushdown_info("aggregate ");
+  mon.append_pushdown_info(m_cl.getFullName());
+  mon.append_pushdown_info("[");
+  uint size = obj.size();
+  for (uint i = 0; i < size; ++i) {
+    if (i != 0) {
+      mon.append_pushdown_info(", ");
+    }
+    std::string s = obj[i].toString();
+    mon.append_pushdown_info(s.c_str(), s.length());
+  }
+  mon.append_pushdown_info("]; ");
+
+  int rc = retry(boost::bind(cl_aggregate, &m_cl, &m_cursor, obj));
+
+  ulonglong end_time = my_micro_time();
+  mon.aggregate_time += (end_time - start_time);
+  return rc;
 }
 
 int Sdb_cl::current(bson::BSONObj &obj, my_bool get_owned) {
@@ -283,15 +423,67 @@ error:
 
 int Sdb_cl::insert(const bson::BSONObj &obj, const bson::BSONObj &hint,
                    int flag, bson::BSONObj *result) {
-  return retry(boost::bind(cl_insert, &m_cl, &obj, hint, flag, result));
+  int rc = 0;
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ulonglong start_time = 0;
+  ulonglong end_time = 0;
+
+  if (!Sdb_op_monitor::is_slow_log_table(m_cl.getFullName())) {
+    ++mon.insert_count;
+    start_time = my_micro_time();
+
+    mon.append_pushdown_info("insert ");
+    mon.append_pushdown_info(m_cl.getFullName());
+    mon.append_pushdown_info(" obj num: 1 ");
+    if (!hint.isEmpty()) {
+      sdb_mon_append_push_info(mon, "hint: ", hint);
+    }
+    if (flag != 0) {
+      sdb_mon_append_push_flags(mon, "flags: ", flag);
+    }
+    mon.append_pushdown_info("; ");
+  }
+
+  rc = retry(boost::bind(cl_insert, &m_cl, &obj, hint, flag, result));
+
+  if (!Sdb_op_monitor::is_slow_log_table(m_cl.getFullName())) {
+    end_time = my_micro_time();
+    mon.insert_time += (end_time - start_time);
+  }
+  return rc;
 }
 
 int Sdb_cl::insert(std::vector<bson::BSONObj> &objs, const bson::BSONObj &hint,
                    int flag, bson::BSONObj *result) {
   int rc = SDB_ERR_OK;
+  ulonglong start_time = 0;
+  ulonglong end_time = 0;
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
 
   try {
+    if (!Sdb_op_monitor::is_slow_log_table(m_cl.getFullName())) {
+      ++mon.insert_count;
+      start_time = my_micro_time();
+
+      mon.append_pushdown_info("insert ");
+      mon.append_pushdown_info(m_cl.getFullName());
+      sdb_mon_append_push_info(mon, " obj num: ", objs.size());
+      if (!hint.isEmpty()) {
+        sdb_mon_append_push_info(mon, "hint: ", hint);
+      }
+      if (flag != 0) {
+        sdb_mon_append_push_flags(mon, "flags: ", flag);
+      }
+      mon.append_pushdown_info("; ");
+    }
+
     rc = m_cl.insert(objs, hint, flag, result);
+
+    if (!Sdb_op_monitor::is_slow_log_table(m_cl.getFullName())) {
+      end_time = my_micro_time();
+      mon.insert_time += (end_time - start_time);
+    }
+
     if (rc != SDB_ERR_OK) {
       goto error;
     }
@@ -307,9 +499,31 @@ error:
 
 int Sdb_cl::bulk_insert(int flag, std::vector<bson::BSONObj> &objs) {
   int rc = SDB_ERR_OK;
+  ulonglong start_time = 0;
+  ulonglong end_time = 0;
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
 
   try {
+    if (!Sdb_op_monitor::is_slow_log_table(m_cl.getFullName())) {
+      ++mon.insert_count;
+      start_time = my_micro_time();
+
+      mon.append_pushdown_info("insert ");
+      mon.append_pushdown_info(m_cl.getFullName());
+      sdb_mon_append_push_info(mon, " obj num: ", objs.size());
+      if (flag != 0) {
+        sdb_mon_append_push_flags(mon, "flags: ", flag);
+      }
+      mon.append_pushdown_info("; ");
+    }
+
     rc = m_cl.bulkInsert(flag, objs);
+
+    if (!Sdb_op_monitor::is_slow_log_table(m_cl.getFullName())) {
+      end_time = my_micro_time();
+      mon.insert_time += (end_time - start_time);
+    }
+
     if (rc != SDB_ERR_OK) {
       goto error;
     }
@@ -343,8 +557,37 @@ int Sdb_cl::upsert(const bson::BSONObj &rule, const bson::BSONObj &condition,
                    const bson::BSONObj &hint,
                    const bson::BSONObj &set_on_insert, int flag,
                    bson::BSONObj *result) {
-  return retry(boost::bind(cl_upsert, &m_cl, &rule, &condition, &hint,
-                           &set_on_insert, flag, result));
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.update_count;
+  ulonglong start_time = my_micro_time();
+
+  mon.append_pushdown_info("upsert ");
+  mon.append_pushdown_info(m_cl.getFullName());
+  mon.append_pushdown_info(" ");
+  if (!rule.isEmpty()) {
+    sdb_mon_append_push_info(mon, "rule: ", rule);
+  }
+  if (!condition.isEmpty()) {
+    sdb_mon_append_push_info(mon, "condition: ", condition);
+  }
+  if (!hint.isEmpty()) {
+    sdb_mon_append_push_info(mon, "hint: ", hint);
+  }
+  if (!set_on_insert.isEmpty()) {
+    sdb_mon_append_push_info(mon, "set_on_insert: ", set_on_insert);
+  }
+  if (flag != 0) {
+    sdb_mon_append_push_flags(mon, "flags: ", flag);
+  }
+  mon.append_pushdown_info("; ");
+
+  int rc = retry(boost::bind(cl_upsert, &m_cl, &rule, &condition, &hint,
+                             &set_on_insert, flag, result));
+
+  ulonglong end_time = my_micro_time();
+  mon.update_time += (end_time - start_time);
+
+  return rc;
 }
 
 int cl_update(sdbclient::sdbCollection *cl, const bson::BSONObj *rule,
@@ -364,8 +607,33 @@ error:
 
 int Sdb_cl::update(const bson::BSONObj &rule, const bson::BSONObj &condition,
                    const bson::BSONObj &hint, int flag, bson::BSONObj *result) {
-  return retry(
-      boost::bind(cl_update, &m_cl, &rule, &condition, &hint, flag, result));
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.update_count;
+  ulonglong start_time = my_micro_time();
+
+  mon.append_pushdown_info("update ");
+  mon.append_pushdown_info(m_cl.getFullName());
+  mon.append_pushdown_info(" ");
+  if (!rule.isEmpty()) {
+    sdb_mon_append_push_info(mon, "rule: ", rule);
+  }
+  if (!condition.isEmpty()) {
+    sdb_mon_append_push_info(mon, "condition: ", condition);
+  }
+  if (!hint.isEmpty()) {
+    sdb_mon_append_push_info(mon, "hint: ", hint);
+  }
+  if (flag != 0) {
+    sdb_mon_append_push_flags(mon, "flags: ", flag);
+  }
+  mon.append_pushdown_info("; ");
+
+  int rc = retry(boost::bind(cl_update, &m_cl, &rule, &condition, &hint, flag, result));
+
+  ulonglong end_time = my_micro_time();
+  mon.update_time += (end_time - start_time);
+
+  return rc;
 }
 
 int cl_del(sdbclient::sdbCollection *cl, const bson::BSONObj *condition,
@@ -384,7 +652,30 @@ error:
 
 int Sdb_cl::del(const bson::BSONObj &condition, const bson::BSONObj &hint,
                 int flag, bson::BSONObj *result) {
-  return retry(boost::bind(cl_del, &m_cl, &condition, &hint, flag, result));
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.delete_count;
+  ulonglong start_time = my_micro_time();
+
+  mon.append_pushdown_info("delete ");
+  mon.append_pushdown_info(m_cl.getFullName());
+  mon.append_pushdown_info(" ");
+  if (!condition.isEmpty()) {
+    sdb_mon_append_push_info(mon, "condition: ", condition);
+  }
+  if (!hint.isEmpty()) {
+    sdb_mon_append_push_info(mon, "hint: ", hint);
+  }
+  if (flag != 0) {
+    sdb_mon_append_push_flags(mon, "flags: ", flag);
+  }
+  mon.append_pushdown_info("; ");
+
+  int rc = retry(boost::bind(cl_del, &m_cl, &condition, &hint, flag, result));
+
+  ulonglong end_time = my_micro_time();
+  mon.delete_time += (end_time - start_time);
+
+  return rc;
 }
 
 int cl_create_index(sdbclient::sdbCollection *cl,
@@ -663,7 +954,27 @@ error:
 
 int Sdb_cl::get_count(longlong &count, const bson::BSONObj &condition,
                       const bson::BSONObj &hint) {
-  return retry(boost::bind(cl_get_count, &m_cl, &count, &condition, &hint));
+  Sdb_op_monitor &mon = *(m_conn->get_op_monitor());
+  ++mon.get_count_count;
+  ulonglong start_time = my_micro_time();
+
+  mon.append_pushdown_info("count ");
+  mon.append_pushdown_info(m_cl.getFullName());
+  mon.append_pushdown_info(" ");
+  if (!condition.isEmpty()) {
+    sdb_mon_append_push_info(mon, "condition: ", condition);
+  }
+  if (!hint.isEmpty()) {
+    sdb_mon_append_push_info(mon, "hint: ", hint);
+  }
+  mon.append_pushdown_info("; ");
+
+  int rc = retry(boost::bind(cl_get_count, &m_cl, &count, &condition, &hint));
+
+  ulonglong end_time = my_micro_time();
+  mon.get_count_time += (end_time - start_time);
+
+  return rc;
 }
 
 int cl_get_indexes(sdbclient::sdbCollection *cl,
@@ -825,7 +1136,12 @@ error:
 }
 
 int Sdb_cl::get_detail(sdbclient::sdbCursor &cursor) {
-  return retry(boost::bind(cl_get_detail, &m_cl, &cursor));
+  ++m_conn->get_op_monitor()->get_detail_count;
+  ulonglong start_time = my_micro_time();
+  int rc = retry(boost::bind(cl_get_detail, &m_cl, &cursor));
+  ulonglong end_time = my_micro_time();
+  m_conn->get_op_monitor()->get_detail_time += (end_time - start_time);
+  return rc;
 }
 
 int cl_get_index_stat(sdbclient::sdbCollection *cl, const char *index_name,
@@ -835,7 +1151,12 @@ int cl_get_index_stat(sdbclient::sdbCollection *cl, const char *index_name,
 
 int Sdb_cl::get_index_stat(const char *index_name, bson::BSONObj &obj,
                            bool detail) {
-  return retry(boost::bind(cl_get_index_stat, &m_cl, index_name, &obj, detail));
+  ++m_conn->get_op_monitor()->get_index_stat_count;
+  ulonglong start_time = my_micro_time();
+  int rc = retry(boost::bind(cl_get_index_stat, &m_cl, index_name, &obj, detail));
+  ulonglong end_time = my_micro_time();
+  m_conn->get_op_monitor()->get_index_stat_time += (end_time - start_time);
+  return rc;
 }
 
 void Sdb_cl::set_version(int version) {

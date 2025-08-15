@@ -23,12 +23,14 @@
 #include "server_ha.h"
 #include "server_ha_util.h"
 #include "server_ha_recover.h"
+#include "server_ha_slow_log.h"
 #include "ha_sdb_lock.h"
 #include "ha_sdb_errcode.h"
 #include "sdb_conn.h"
 #include "sdb_cl.h"
 
 #include <my_config.h>
+#include <my_sys.h>
 #include <assert.h>
 #include "dlfcn.h"
 #include "sql_db.h"
@@ -59,6 +61,7 @@ static my_thread_once_t ha_sql_stmt_info_key_once = MY_THREAD_ONCE_INIT;
 
 static ha_recover_replay_thread ha_thread;
 static ha_pending_log_replay_thread pending_log_replayer;
+static ha_slow_log_table_maintain_thread slow_log_thread;
 
 // original instance group name and key, instance group key will be modified
 // in 'server_ha_init', so it's invisible to mysql user
@@ -4384,6 +4387,19 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
   DBUG_ASSERT(NULL == sql_info->dml_tables);
   Sroutine_hash_entry *sroutine_to_open = thd->lex->sroutines_list.first;
   int sql_command = thd_sql_command(thd);
+  Sdb_conn *sdb_conn = NULL;
+  ulonglong start_time = 0;
+  ulonglong end_time = 0;
+
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (HA_ERR_OUT_OF_MEM == rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    snprintf(sql_info->err_message, HA_BUF_LEN,
+             "Failed to connect sequoiadb, error code %d", rc);
+    goto error;
+  }
 
   // wait objects updated to latest state in following situations:
   // 1. dml_retry_flag is set
@@ -4400,6 +4416,7 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
     SDB_LOG_DEBUG("HA: DML retry flag is set, retry current statement");
     SDB_LOG_DEBUG("HA: Retry DML query: %s, thread: %p",
                   SDB_STR_TO_SECURE_STR(query), thd);
+    ++sdb_conn->get_op_monitor()->ha_retry_times;
   } else if (NULL != sroutine_to_open) {
     const char *query = thd->in_sub_stmt ? "sub-query" : sdb_thd_query(thd);
     SDB_LOG_DEBUG(
@@ -4407,6 +4424,8 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
         "wait objects updated to latest state first",
         SDB_STR_TO_SECURE_STR(query));
   }
+
+  start_time = my_micro_time();
 
   rc = update_sql_stmt_info(sql_info, event.general_thread_id);
   if (rc) {
@@ -4449,6 +4468,10 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
       rc, "Failed to wait query objects updated to latest, exception:%s",
       e.what());
 done:
+  if (sdb_conn && start_time != 0) {
+    end_time = my_micro_time();
+    sdb_conn->get_op_monitor()->ha_sync_wait_time += (end_time - start_time);
+  }
   sql_info->dml_tables = NULL;
   return rc;
 error:
@@ -6481,6 +6504,28 @@ static int server_ha_init(void *p) {
       SDB_LOG_ERROR("HA: Out of memory while creating pending log replayer");
       DBUG_RETURN(SDB_HA_OOM);
     }
+
+    // 3. create slow log table maintain thread
+    slow_log_thread.stopped = true;
+
+    init_cond_with_clock_monotonic(HA_KEY_COND_SLOW_LOG_TABLE_MAINTAIN,
+                                   slow_log_thread.stopped_cond);
+    mysql_mutex_init(HA_KEY_MUTEX_SLOW_LOG_TABLE_MAINTAIN,
+                     &slow_log_thread.stopped_mutex, MY_MUTEX_INIT_FAST);
+    my_thread_attr_init(&slow_log_thread.thread_attr);
+    slow_log_thread.thd = NULL;
+    slow_log_thread.is_created = true;
+    slow_log_thread.sdb_group_name = ha_thread.sdb_group_name;
+    slow_log_thread.group_key = ha_thread.group_key;
+    if (mysql_thread_create(
+            HA_KEY_SLOW_LOG_TABLE_MAINTAIN_THREAD, &slow_log_thread.thread,
+            &slow_log_thread.thread_attr, ha_maintain_slow_log_table,
+            (void *)(&slow_log_thread))) {
+      SDB_LOG_ERROR("HA: Out of memory while creating slow log table "
+                    "maintain thread");
+      DBUG_RETURN(SDB_HA_OOM);
+    }
+
     ha_thread.is_open = true;
   }
 
@@ -6491,6 +6536,18 @@ static int server_ha_init(void *p) {
   }
   if (!ha_is_open()) {
     sdb_stats_persistence = FALSE;
+  }
+
+  if (opt_slow_log && (log_output_options & LOG_TABLE) &&
+      opt_sdb_slow_log && !ha_is_open()) {
+    SDB_LOG_WARNING("HA: Using sdb_slow_log requires joining instance group. "
+                    "Fix it to off");
+    opt_sdb_slow_log = FALSE;
+  }
+
+  if (ha_is_open()) {
+    Sdb_op_monitor::set_slow_log_table(ha_thread.sdb_group_name,
+                                       HA_SLOW_LOG_CL);
   }
   DBUG_RETURN(0);
 }
@@ -6509,7 +6566,9 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
 
   // wait for replay thread to end
   while (ha_thread.is_open &&
-         (!ha_thread.stopped || !pending_log_replayer.stopped)) {
+         (!ha_thread.stopped ||
+          !pending_log_replayer.stopped ||
+          !slow_log_thread.stopped)) {
     my_sleep(20000);
   }
 
@@ -6525,6 +6584,9 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
     mysql_cond_destroy(&pending_log_replayer.stopped_cond);
     mysql_mutex_destroy(&pending_log_replayer.stopped_mutex);
     my_thread_attr_destroy(&pending_log_replayer.thread_attr);
+    mysql_cond_destroy(&slow_log_thread.stopped_cond);
+    mysql_mutex_destroy(&slow_log_thread.stopped_mutex);
+    my_thread_attr_destroy(&slow_log_thread.thread_attr);
   }
 
   if (ha_thread.is_created) {
@@ -6533,6 +6595,10 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
 
   if (pending_log_replayer.is_created) {
     mysql_thread_join(&pending_log_replayer.thread, NULL);
+  }
+
+  if (slow_log_thread.is_created) {
+    mysql_thread_join(&slow_log_thread.thread, NULL);
   }
 
   DBUG_RETURN(0);

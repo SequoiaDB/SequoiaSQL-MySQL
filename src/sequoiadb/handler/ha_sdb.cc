@@ -190,6 +190,7 @@ static Sdb_share *build_new_sdb_share(const char *name, uint idx_count) {
   uint length = (uint)strlen(name);
   Sdb_share *tmp_share = NULL;
   Sdb_idx_stat_ptr *idx_stat_arr = NULL;
+  char name_buffer[SDB_CL_FULL_NAME_MAX_SIZE + 2] = {0};
   if (sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
                        &tmp_share, sizeof(*tmp_share), &tmp_name, length + 1,
                        &idx_stat_arr, sizeof(*idx_stat_arr) * idx_count,
@@ -208,6 +209,16 @@ static Sdb_share *build_new_sdb_share(const char *name, uint idx_count) {
     tmp_share->expired = false;
     for (uint i = 0; i < idx_count; ++i) {
       idx_stat_arr[i].reset();
+    }
+    if (ha_is_open()) {
+      // special mapping for system table mysql.sdb_slow_log
+      snprintf(name_buffer, sizeof(name_buffer), "./%s/%s",
+               MYSQL_SCHEMA_NAME.str, SDB_SLOW_LOG_NAME.str);
+      if (0 == strcmp(name_buffer, name)) {
+        snprintf(tmp_share->mapping_cs, SDB_CS_NAME_MAX_SIZE, "%s%s",
+                 HA_INST_GROUP_PREFIX, ha_get_inst_group());
+        strncpy(tmp_share->mapping_cl, HA_SLOW_LOG_CL, SDB_CL_NAME_MAX_SIZE);
+      }
     }
   }
   return tmp_share;
@@ -3396,6 +3407,14 @@ int ha_sdb::check_log_tables() {
   if (is_slow_log_table() || is_general_log_table()) {
     bool non_trans_table = false;
     Sdb_conn *connection = NULL;
+
+    if (0 == strcmp(db_name, MYSQL_SCHEMA_NAME.str) &&
+        0 == strcmp(table_name, SDB_SLOW_LOG_NAME.str)) {
+      // No need to check this table, because there is a background
+      // thread to maintain it.
+      goto done;
+    }
+
     rc = check_sdb_in_thd(ha_thd(), &connection, true);
     if (0 != rc) {
       goto error;
@@ -9330,7 +9349,8 @@ int ha_sdb::ensure_collection(THD *thd) {
   }
 
   // fetch SQL instance cached cata version, set cata version for collection
-  if (ha_is_open() && !sdb_is_tmp_table(NULL, table_name)) {
+  if (ha_is_open() && !sdb_is_tmp_table(NULL, table_name) &&
+      !is_slow_log_table() && !is_general_log_table()) {
     int inst_cata_version = ha_get_cata_version(db_name, table_name);
     int driver_cata_version = collection->get_version();
 
@@ -9452,6 +9472,10 @@ int ha_sdb::autocommit_statement(bool direct_op) {
     goto done;
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  if (is_slow_log_table() || is_general_log_table()) {
+    goto done;
+  }
 
   if (!conn->is_transaction_on()) {
     if (sdb_is_single_table(thd) && !table->triggers && thd->lex &&
@@ -9626,8 +9650,10 @@ bool ha_sdb::is_slow_log_table() {
     return false;
   }
 
-  if (strlen(table_name) != SLOW_LOG_NAME.length ||
-      0 != strcmp(table_name, SLOW_LOG_NAME.str)) {
+  if ((strlen(table_name) != SLOW_LOG_NAME.length ||
+       0 != strcmp(table_name, SLOW_LOG_NAME.str)) &&
+      (strlen(table_name) != SDB_SLOW_LOG_NAME.length ||
+       0 != strcmp(table_name, SDB_SLOW_LOG_NAME.str))) {
     return false;
   }
 
@@ -13070,6 +13096,18 @@ error:
   goto done;
 }
 
+void sdb_get_op_monitor(THD *thd, Sdb_op_monitor *op_monitor) {
+  if (thd && op_monitor) {
+    Sdb_conn *conn = NULL;
+    int rc = check_sdb_in_thd(thd, &conn, false);
+    if (0 == rc && conn) {
+      *op_monitor = *(conn->get_op_monitor());
+    } else {
+      op_monitor->reset();
+    }
+  }
+}
+
 bool sdb_flush_table(THD *thd, const char *db_name, const char *table_name) {
   DBUG_ENTER("sdb_flush_table");
   Mapping_context_impl ctx_impl;
@@ -13265,6 +13303,8 @@ static int sdb_init_func(void *p) {
   sdb_hton->show_status = sdb_show_status; /* Show status */
 #ifdef IS_MYSQL
   sdb_hton->kill_connection = sdb_kill_connection;
+  Sdb_op_monitor::init();
+  sdb_hton->get_op_monitor = sdb_get_op_monitor;
 #elif IS_MARIADB
   sdb_hton->kill_query = sdb_kill_query;
 
@@ -13393,5 +13433,5 @@ sdb_define_plugin(ha_sdb_storage,
                   sdb_sys_vars                 /* system variables */
 );
 
-sdb_declare_plugin(sequoiadb) ha_sdb_storage, i_s_sdb_session_attr
-    mysql_declare_plugin_end;
+sdb_declare_plugin(sequoiadb) ha_sdb_storage, i_s_sdb_session_attr,
+    i_s_sdb_instance_list mysql_declare_plugin_end;

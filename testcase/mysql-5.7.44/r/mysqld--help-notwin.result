@@ -498,6 +498,9 @@ The following options may be given as the first argument:
  at will.
  -W, --log-warnings[=#] 
  Log some not critical warnings to the log file
+ --long-query-include-lock-time 
+ Whether long_query_time include the lock time
+ (Defaults to on; use --skip-long-query-include-lock-time to disable.)
  --long-query-time=# Log all queries that have taken more than long_query_time
  seconds to execute to file. The argument will be treated
  as a decimal value with microsecond precision
@@ -1057,6 +1060,11 @@ The following options may be given as the first argument:
  returning a warning.
  --safe-user-create  Don't allow new user creation by the user who has no
  write privileges to the mysql.user table.
+ --sdb-slow-log      Enable SequoiaDB slow log table
+ (Defaults to on; use --skip-sdb-slow-log to disable.)
+ --sdb-slow-log-expire-days[=#] 
+ The number of days after which the the slow log will
+ expire
  --secure-auth       Disallow authentication for accounts that have old
  (pre-4.1) passwords. Deprecated. Always TRUE.
  (Defaults to on; use --skip-secure-auth to disable.)
@@ -1598,6 +1606,7 @@ log-tc-size #####
 log-throttle-queries-not-using-indexes 0
 log-timestamps UTC
 log-warnings 0
+long-query-include-lock-time TRUE
 long-query-time 10
 low-priority-updates FALSE
 lower-case-table-names 1
@@ -1755,6 +1764,8 @@ report-user (No default value)
 require-secure-transport FALSE
 rpl-stop-slave-timeout 31536000
 safe-user-create FALSE
+sdb-slow-log TRUE
+sdb-slow-log-expire-days 1
 secure-auth TRUE
 sequoiadb-alter-table-overhead-threshold 10000000
 sequoiadb-auto-partition TRUE

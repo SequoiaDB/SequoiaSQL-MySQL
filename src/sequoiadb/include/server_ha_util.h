@@ -80,4 +80,11 @@ int ha_get_index_stats_cl(Sdb_conn &sdb_conn, const char *group_name,
                           const char *data_group = NULL,
                           bool autoCreate = true);
 void ha_oid_to_time_str(bson::OID &oid, char *str_buf, const uint buf_len);
+
+int ha_decrypt_inst_group_password(const char *base64_cipher,
+                                   const char *sdb_md5_password,
+                                   const char *key, const char *iv,
+                                   char *passwd);
+
+int ha_get_local_ip_address(char *ip_addr, int len);
 #endif

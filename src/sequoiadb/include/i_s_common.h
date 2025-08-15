@@ -42,4 +42,12 @@ uchar *i_s_pair_get_key(i_s_name_id_pair *pair, size_t *length,
 
 extern struct st_sdb_plugin i_s_sdb_session_attr;
 
+extern struct st_sdb_plugin i_s_sdb_instance_list;
+
+int i_s_elem_to_string(bson::BSONElement &elem, std::string &str);
+
+int i_s_store_elem_to_field(HASH &name_id_pair_hash,
+                            TABLE *table,
+                            bson::BSONElement &elem);
+
 #endif

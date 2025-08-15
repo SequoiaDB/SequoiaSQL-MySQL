@@ -33,6 +33,8 @@
 #include "name_map.h"
 #include "sql_audit.h"
 #include "debug_sync.h"
+#include "sdb_mon.h"
+#include "server_ha_thd_common.h"
 
 // SQL statements
 #define HA_STMT_EXEC_ONLY_IN_MYSQL "SET sequoiadb_execute_only_in_mysql = 1"
@@ -49,7 +51,6 @@
 
 PSI_stage_info stage_checking_sql_log = {0, "Checking SQL log", 0};
 PSI_stage_info stage_checking_pending_log = {0, "Checking pending log", 0};
-PSI_stage_info stage_sleeping = {0, "Sleeping", 0};
 
 // instance group user name
 static char ha_inst_group_user[HA_MAX_MYSQL_USERNAME_LEN + 1] = {0};
@@ -65,49 +66,6 @@ static int ha_curr_instance_id = 0;
 
 const char *ha_inst_group_user_name() {
   return ha_inst_group_user;
-}
-
-static THD *create_ha_thd() {
-  THD *thd = NULL;
-  try {
-#ifdef IS_MYSQL
-    my_thread_init();
-    thd = new THD;
-    DBUG_ASSERT(NULL != thd);
-    thd->set_command(COM_DAEMON);
-    thd->system_thread = SYSTEM_THREAD_BACKGROUND;
-    thd->security_context()->set_host_or_ip_ptr(C_STRING_WITH_LEN(""));
-    NET *net = (NET *)thd->get_net();
-    if (NULL != net) {
-      net->reading_or_writing = 0;
-    }
-#else
-    my_thread_init();
-    thd = new THD(next_thread_id());
-    DBUG_ASSERT(NULL != thd);
-    thd->set_command(COM_DAEMON);
-    thd->system_thread = SYSTEM_THREAD_GENERIC;
-    thd->security_ctx->host_or_ip = "";
-#endif
-  } catch (std::bad_alloc &e) {
-    sql_print_error("HA: Out of memory in 'HA' thread");
-    goto error;
-  } catch (std::exception &e) {
-    sql_print_error("HA: Unexpected error: %s", e.what());
-    goto error;
-  }
-  // set thd context
-  thd->thread_stack = (char *)&thd;
-  if (0 != set_thd_context(thd)) {
-    delete thd;
-    thd = NULL;
-    my_error(ER_OUT_OF_RESOURCES, MYF(0));
-    goto error;
-  }
-done:
-  return thd;
-error:
-  goto done;
 }
 
 // read instance ID from local file
@@ -168,78 +126,6 @@ done:
   return rc;
 error:
   rc = SDB_HA_WRITE_INST_ID;
-  goto done;
-}
-
-// decrypt encrypted password from 'HAUser' table
-static int decrypt_inst_group_password(const char *base64_cipher,
-                                       const char *sdb_md5_password,
-                                       const char *key, const char *iv,
-                                       char *passwd) {
-  String src, dst, md5_key, md5_iv, md5_password, md5_hex_str;
-  int rc = 0;
-  bool oom = false;
-
-  // decode base64 cipher to src
-  int len = base64_needed_decoded_length(strlen(base64_cipher));
-  oom = src.alloc(len);
-  HA_RC_CHECK(oom, error,
-              "HA: Out of memory while decrypting instance group password");
-
-  len = base64_decode(base64_cipher, strlen(base64_cipher), src.c_ptr_quick(),
-                      0, 0);
-  HA_RC_CHECK(len < 0, error,
-              "HA: Failed to decode 'CipherPassword' in base64 format, "
-              "please use 'IV' and instance group key to check "
-              "if 'CipherPassword' in base64 format is correct");
-  src.length(len);
-
-  // calculcate MD5 for instance group key and 'IV', prepare for decryption
-  oom = md5_key.alloc(HA_MD5_BYTE_LEN);
-  oom |= md5_iv.alloc(HA_MD5_BYTE_LEN);
-  HA_RC_CHECK(oom, error,
-              "HA: Out of memory while decrypting instance group password");
-
-  md5_key.length(HA_MD5_BYTE_LEN);
-  md5_iv.length(HA_MD5_BYTE_LEN);
-#ifdef IS_MYSQL
-  compute_md5_hash(md5_key.c_ptr_quick(), key, strlen(key));
-  compute_md5_hash(md5_iv.c_ptr_quick(), iv, strlen(iv));
-#else
-  compute_md5_hash((uchar *)md5_key.c_ptr_quick(), key, strlen(key));
-  compute_md5_hash((uchar *)md5_iv.c_ptr_quick(), iv, strlen(iv));
-#endif
-
-  rc = sdb_aes_decrypt(MY_AES_CBC, (uchar *)md5_key.c_ptr_quick(),
-                       HA_MD5_BYTE_LEN, src, dst, (uchar *)md5_iv.c_ptr_quick(),
-                       HA_MD5_BYTE_LEN);
-  HA_RC_CHECK(rc, error, "HA: Decrypt aes cipher error: %d", rc);
-
-  // check if password is correct
-  oom = md5_password.alloc(HA_MD5_BYTE_LEN);
-  oom |= md5_hex_str.alloc(HA_MD5_HEX_STR_LEN);
-  HA_RC_CHECK(oom, error,
-              "HA: Out of memory while decrypting instance group password");
-
-  strcpy(passwd, dst.c_ptr_safe());
-  md5_password.length(HA_MD5_BYTE_LEN);
-  md5_hex_str.length(HA_MD5_HEX_STR_LEN);
-#ifdef IS_MYSQL
-  compute_md5_hash(md5_password.c_ptr_quick(), dst.c_ptr_quick(), dst.length());
-#else
-  compute_md5_hash((uchar *)md5_password.c_ptr_quick(), dst.c_ptr_quick(),
-                   dst.length());
-#endif
-  array_to_hex(md5_hex_str.c_ptr_safe(), (uchar *)md5_password.c_ptr_safe(),
-               HA_MD5_BYTE_LEN);
-  rc = strcasecmp(sdb_md5_password, md5_hex_str.c_ptr_safe());
-  HA_RC_CHECK(rc, error,
-              "HA: Instance group password verification failed, "
-              "please check if instance group key is correct.");
-done:
-  return rc;
-error:
-  rc = oom ? SDB_HA_OOM : SDB_HA_DECRYPT_PASSWORD;
   goto done;
 }
 
@@ -438,9 +324,9 @@ static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
   DBUG_ASSERT(strlen(iv) && strlen(cipher_password));
   DBUG_ASSERT(strlen(auth_str) && strlen(md5_password));
 
-  rc = decrypt_inst_group_password(cipher_password, md5_password,
-                                   ha_thread->group_key, iv,
-                                   ha_inst_group_passwd);
+  rc = ha_decrypt_inst_group_password(cipher_password, md5_password,
+                                      ha_thread->group_key, iv,
+                                      ha_inst_group_passwd);
   HA_RC_CHECK(rc, error, "HA: Failed to decrypt instance group user password");
 
   // check if instance group user is available
@@ -491,100 +377,6 @@ static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
 done:
   return rc;
 error:
-  goto done;
-}
-
-// if 'bind_address' current instance is set and it's not '*'', set
-// ip_addr to my_bind_addr_str, or get one of ip address(not include
-// loopback address) from system
-static int get_local_ip_address(char *ip_addr, int len) {
-  int rc = 0;
-  if (my_bind_addr_str && strcmp(my_bind_addr_str, "*") != 0) {
-    strncpy(ip_addr, my_bind_addr_str, len);
-    ip_addr[len - 1] = '\0';
-  } else {
-    struct ifaddrs *if_addr_struct = NULL, *ifa = NULL;
-    void *addr_ptr = NULL;
-    char addr_buf[INET_ADDRSTRLEN] = {0};
-    char *first_available_ip = NULL;
-    bool matched = FALSE;
-
-    // get host IP address by hostname, from '/etc/hosts'
-    struct hostent *hosts = gethostbyname(glob_hostname);
-
-    // get host IP address by 'getifaddrs', on error, -1 is returned
-    rc = getifaddrs(&if_addr_struct);
-    HA_RC_CHECK(rc, error,
-                "HA: System call 'getifaddrs()' error: %s, errno: %d",
-                strerror(errno), errno);
-
-    for (ifa = if_addr_struct; ifa != NULL && !matched; ifa = ifa->ifa_next) {
-      // support IPV4 for now
-      if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET) {
-        continue;
-      }
-      addr_ptr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
-      DBUG_ASSERT(NULL != addr_ptr);
-      const char *ip = inet_ntop(AF_INET, addr_ptr, addr_buf, INET_ADDRSTRLEN);
-      if (NULL == ip) {
-        sql_print_error("HA: System call 'inet_ntop' error: %s, errno: %d",
-                        strerror(errno), errno);
-        continue;
-      } else if (strcmp(ip, HA_LOOPBACK_ADDRESS) == 0) {
-        sql_print_information("HA: Skip loopback address");
-        continue;
-      }
-
-      // handle available IP address now
-      // check if current IP address is in hosts file
-      for (int i = 0; hosts && hosts->h_addr_list[i]; i++) {
-        if (hosts->h_addrtype != AF_INET) {
-          continue;
-        }
-
-        const char *hosts_ip =
-            inet_ntoa(*((struct in_addr *)hosts->h_addr_list[i]));
-        if (NULL == hosts_ip) {
-          sql_print_error("HA: System call 'inet_ntoa' error: %s, errno: %d",
-                          strerror(errno), errno);
-          continue;
-        }
-
-        if (strcmp(hosts_ip, ip) == 0) {
-          strncpy(ip_addr, hosts_ip, len);
-          ip_addr[len - 1] = '\0';
-          matched = TRUE;
-          break;
-        }
-      }
-
-      if (NULL == hosts) {
-        strncpy(ip_addr, ip, len);
-        ip_addr[len - 1] = '\0';
-        break;
-      }
-
-      // set 'ip_addr' in case it is not set
-      if (NULL == first_available_ip && !matched) {
-        first_available_ip = strncpy(ip_addr, ip, len);
-        ip_addr[len - 1] = '\0';
-      }
-    }
-
-    // no matched IP address in 'hosts' and network interface address
-    if (!matched) {
-      sql_print_warning(
-          "HA: No matched IP addresses in 'hosts' file and network interface "
-          "address, 'hosts' file may not be configured correctly");
-    }
-
-    rc = strlen(ip_addr) ? 0 : SDB_HA_GET_LOCAL_IP;
-    freeifaddrs(if_addr_struct);
-  }
-done:
-  return rc;
-error:
-  rc = SDB_HA_GET_LOCAL_IP;
   goto done;
 }
 
@@ -956,7 +748,7 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
   HA_RC_CHECK(rc, error, "HA: Unable to get global registry table '%s'",
               HA_REGISTRY_CL);
 
-  rc = get_local_ip_address(ha_local_host_ip, HA_MAX_IP_LEN + 1);
+  rc = ha_get_local_ip_address(ha_local_host_ip, HA_MAX_IP_LEN + 1);
   HA_RC_CHECK(rc, error, "HA: Failed to get local IP address");
 
   cond = BSON(HA_FIELD_INSTANCE_ID << instance_id);
@@ -1020,6 +812,7 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
   }
   DBUG_ASSERT(instance_id > 0);
   ha_thread->instance_id = ha_curr_instance_id = instance_id;
+  Sdb_op_monitor::set_instance_id(instance_id);
   sql_print_information("HA: Register instance ID complete, instance ID: %d",
                         instance_id);
 done:
@@ -1501,22 +1294,6 @@ error:
   goto done;
 }
 
-// before create instance group user, mysql service must been started
-static bool wait_for_mysqld_service() {
-  bool mysqld_failed = false;
-  mysql_mutex_lock(&LOCK_server_started);
-  // end 'HA' thread as soon as possible if found mysqld failed to start
-  while (!mysqld_server_started && !mysqld_failed) {
-    timespec abstime;
-    sdb_set_timespec(abstime, 1);
-    mysql_cond_timedwait(&COND_server_started, &LOCK_server_started, &abstime);
-    mysqld_failed |= abort_loop;
-    mysqld_failed |= ha_is_aborting();
-  }
-  mysql_mutex_unlock(&LOCK_server_started);
-  return mysqld_failed;
-}
-
 static inline int retry_alter_sequence_stmt(THD *thd, const char *query,
                                             const char *table_name) {
   int rc = 0;
@@ -1977,27 +1754,6 @@ error:
   goto done;
 }
 
-// necessary work for ending HA thread
-void ha_thread_end(THD *thd) {
-#ifdef IS_MYSQL
-  if (thd) {
-    Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
-    thd->release_resources();
-    thd_manager->remove_thd(thd);
-    delete thd;
-  }
-  my_thread_end();
-  my_thread_exit(0);
-#else
-  if (thd) {
-    thd->add_status_to_global();
-    server_threads.erase(thd);
-    delete thd;
-  }
-  my_thread_end();
-#endif
-}
-
 // load 'HAInstanceObjectState' table's records into cached instance
 // object state(ha_thread.inst_state_caches) for current instance
 int load_inst_obj_state_into_cache(ha_recover_replay_thread *ha_thread,
@@ -2060,27 +1816,6 @@ error:
   goto done;
 }
 
-// call kill_mysql notifies main thread to abort current instance
-void ha_kill_mysqld(THD *thd) {
-#ifndef NO_EMBEDDED_ACCESS_CHECKS
-  if (ha_is_aborting()) {
-    return;
-  }
-#ifdef IS_MARIADB
-  if (thd) {
-    kill_mysql(thd);
-  } else {
-    exit(0);
-  }
-#else
-  extern my_thread_handle signal_thread_id;
-  if (0 != signal_thread_id.thread) {
-    kill_mysql();
-  }
-#endif
-#endif
-}
-
 // wake up blocked threads in 'persist_sql_stmt'
 void wake_up_sql_persistence_threads(ha_recover_replay_thread *ha_thread) {
   mysql_mutex_lock(&ha_thread->recover_finished_mutex);
@@ -2090,20 +1825,6 @@ void wake_up_sql_persistence_threads(ha_recover_replay_thread *ha_thread) {
   }
   mysql_cond_broadcast(&ha_thread->recover_finished_cond);
   mysql_mutex_unlock(&ha_thread->recover_finished_mutex);
-}
-
-// set current mutex and cond for current thd, the main thread will send
-// stop signal after getting 'shutdown' command
-void watch_kill_signal(THD *thd, mysql_cond_t *cond, mysql_mutex_t *mutex) {
-#ifdef IS_MYSQL
-  // refer to "close_connections and Set_kill_conn()" function
-  thd->current_mutex = mutex;
-  thd->current_cond = cond;
-#else
-  // refer to "kill_thread_phase_1 and kill_thread" function
-  thd->mysys_var->current_mutex = mutex;
-  thd->mysys_var->current_cond = cond;
-#endif
 }
 
 // HA thread entry
@@ -2124,7 +1845,7 @@ void *ha_recover_and_replay(void *arg) {
   bool stopped_mutex_locked = false;
 
   // wait for mysqld service
-  bool mysqld_failed = wait_for_mysqld_service();
+  bool mysqld_failed = ha_wait_for_mysqld_service();
   if (mysqld_failed) {
     sql_print_error(
         "HA: The mysqld process was detected to be terminating, "
@@ -2133,7 +1854,7 @@ void *ha_recover_and_replay(void *arg) {
   }
 
   // init thd for 'HA' thread
-  ha_thread->thd = create_ha_thd();
+  ha_thread->thd = ha_create_thd();
   if (NULL == ha_thread->thd) {
     sql_print_error("HA: Out of memory in 'HA' thread");
     goto error;
@@ -2141,8 +1862,8 @@ void *ha_recover_and_replay(void *arg) {
 
   // watch main thread 'term' signal, current thread can be stopped immediately
   // by handle this signal
-  watch_kill_signal(ha_thread->thd, &ha_thread->replay_stopped_cond,
-                    &ha_thread->replay_stopped_mutex);
+  ha_watch_kill_signal(ha_thread->thd, &ha_thread->replay_stopped_cond,
+                       &ha_thread->replay_stopped_mutex);
 
   sql_print_information("HA: Start 'HA' thread");
   mysql_mutex_lock(&ha_thread->replay_stopped_mutex);
@@ -2255,16 +1976,6 @@ error:
 #endif
 }
 
-static void audit_disconnect(THD *thd) {
-#ifdef IS_MARIADB
-  mysql_audit_notify_connection_disconnect(thd, 0);
-#else
-#ifndef EMBEDDED_LIBRARY
-  mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_CONNECTION_DISCONNECT), 0);
-#endif
-#endif
-}
-
 static int replay_pending_log(THD *thd, const char *db, const char *query,
                               const char *session_attrs, int client_charset_num,
                               const char *op_type) {
@@ -2371,19 +2082,19 @@ void *ha_replay_pending_logs(void *arg) {
   mysql_cond_t *current_cond = NULL;
   mysql_mutex_t *current_mutex = NULL;
 
-  THD *thd = create_ha_thd();
+  THD *thd = ha_create_thd();
   if (NULL == thd) {
     SDB_LOG_ERROR("HA: Out of memory in 'pending log replay' thread");
     ha_kill_mysqld(thd);
     goto done;
   }
 
-  watch_kill_signal(thd, &replayer->stopped_cond, &replayer->stopped_mutex);
+  ha_watch_kill_signal(thd, &replayer->stopped_cond, &replayer->stopped_mutex);
   current_mutex = &replayer->stopped_mutex;
   current_cond = &replayer->stopped_cond;
 
   replayer->thd = thd;
-  mysqld_failed = wait_for_mysqld_service();
+  mysqld_failed = ha_wait_for_mysqld_service();
   if (mysqld_failed) {
     SDB_LOG_ERROR(
         "HA: The mysqld process was detected to be terminating, stop 'pending "
@@ -2535,7 +2246,7 @@ void *ha_replay_pending_logs(void *arg) {
   }
 done:
   if (thd) {
-    audit_disconnect(thd);
+    ha_audit_disconnect(thd);
   }
   if (stopped_mutex_locked) {
     mysql_mutex_unlock(current_mutex);
@@ -2544,3 +2255,4 @@ done:
   ha_thread_end(thd);
   return NULL;
 }
+

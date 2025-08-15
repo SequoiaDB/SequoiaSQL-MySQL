@@ -33,6 +33,8 @@
 #include "server_ha_util.h"
 #include "ha_sdb_errcode.h"
 #include "ha_sdb_log.h"
+#include "base64.h"
+#define MY_AES_CBC my_aes_128_cbc
 
 // get Sdb_conn error string
 const char *ha_error_string(Sdb_conn &sdb_conn, int rc, char err_buf[]) {
@@ -670,3 +672,170 @@ void ha_oid_to_time_str(bson::OID &oid, char *str_buf, const uint buf_len) {
   localtime_r(&timestamp, &time);
   strftime(str_buf, buf_len, "%Y-%m-%d-%H.%M.%S", &time);
 }
+
+// decrypt encrypted password from 'HAUser' table
+int ha_decrypt_inst_group_password(const char *base64_cipher,
+                                   const char *sdb_md5_password,
+                                   const char *key, const char *iv,
+                                   char *passwd) {
+  String src, dst, md5_key, md5_iv, md5_password, md5_hex_str;
+  int rc = 0;
+  bool oom = false;
+
+  // decode base64 cipher to src
+  int len = base64_needed_decoded_length(strlen(base64_cipher));
+  oom = src.alloc(len);
+  HA_RC_CHECK(oom, error,
+              "HA: Out of memory while decrypting instance group password");
+
+  len = base64_decode(base64_cipher, strlen(base64_cipher), src.c_ptr_quick(),
+                      0, 0);
+  HA_RC_CHECK(len < 0, error,
+              "HA: Failed to decode 'CipherPassword' in base64 format, "
+              "please use 'IV' and instance group key to check "
+              "if 'CipherPassword' in base64 format is correct");
+  src.length(len);
+
+  // calculcate MD5 for instance group key and 'IV', prepare for decryption
+  oom = md5_key.alloc(HA_MD5_BYTE_LEN);
+  oom |= md5_iv.alloc(HA_MD5_BYTE_LEN);
+  HA_RC_CHECK(oom, error,
+              "HA: Out of memory while decrypting instance group password");
+
+  md5_key.length(HA_MD5_BYTE_LEN);
+  md5_iv.length(HA_MD5_BYTE_LEN);
+#ifdef IS_MYSQL
+  compute_md5_hash(md5_key.c_ptr_quick(), key, strlen(key));
+  compute_md5_hash(md5_iv.c_ptr_quick(), iv, strlen(iv));
+#else
+  compute_md5_hash((uchar *)md5_key.c_ptr_quick(), key, strlen(key));
+  compute_md5_hash((uchar *)md5_iv.c_ptr_quick(), iv, strlen(iv));
+#endif
+
+  rc = sdb_aes_decrypt(MY_AES_CBC, (uchar *)md5_key.c_ptr_quick(),
+                       HA_MD5_BYTE_LEN, src, dst, (uchar *)md5_iv.c_ptr_quick(),
+                       HA_MD5_BYTE_LEN);
+  HA_RC_CHECK(rc, error, "HA: Decrypt aes cipher error: %d", rc);
+
+  // check if password is correct
+  oom = md5_password.alloc(HA_MD5_BYTE_LEN);
+  oom |= md5_hex_str.alloc(HA_MD5_HEX_STR_LEN);
+  HA_RC_CHECK(oom, error,
+              "HA: Out of memory while decrypting instance group password");
+
+  strcpy(passwd, dst.c_ptr_safe());
+  md5_password.length(HA_MD5_BYTE_LEN);
+  md5_hex_str.length(HA_MD5_HEX_STR_LEN);
+#ifdef IS_MYSQL
+  compute_md5_hash(md5_password.c_ptr_quick(), dst.c_ptr_quick(), dst.length());
+#else
+  compute_md5_hash((uchar *)md5_password.c_ptr_quick(), dst.c_ptr_quick(),
+                   dst.length());
+#endif
+  array_to_hex(md5_hex_str.c_ptr_safe(), (uchar *)md5_password.c_ptr_safe(),
+               HA_MD5_BYTE_LEN);
+  rc = strcasecmp(sdb_md5_password, md5_hex_str.c_ptr_safe());
+  HA_RC_CHECK(rc, error,
+              "HA: Instance group password verification failed, "
+              "please check if instance group key is correct.");
+done:
+  return rc;
+error:
+  rc = oom ? SDB_HA_OOM : SDB_HA_DECRYPT_PASSWORD;
+  goto done;
+}
+
+// if 'bind_address' current instance is set and it's not '*'', set
+// ip_addr to my_bind_addr_str, or get one of ip address(not include
+// loopback address) from system
+int ha_get_local_ip_address(char *ip_addr, int len) {
+  int rc = 0;
+  if (my_bind_addr_str && strcmp(my_bind_addr_str, "*") != 0) {
+    strncpy(ip_addr, my_bind_addr_str, len);
+    ip_addr[len - 1] = '\0';
+  } else {
+    struct ifaddrs *if_addr_struct = NULL, *ifa = NULL;
+    void *addr_ptr = NULL;
+    char addr_buf[INET_ADDRSTRLEN] = {0};
+    char *first_available_ip = NULL;
+    bool matched = FALSE;
+
+    // get host IP address by hostname, from '/etc/hosts'
+    struct hostent *hosts = gethostbyname(glob_hostname);
+
+    // get host IP address by 'getifaddrs', on error, -1 is returned
+    rc = getifaddrs(&if_addr_struct);
+    HA_RC_CHECK(rc, error,
+                "HA: System call 'getifaddrs()' error: %s, errno: %d",
+                strerror(errno), errno);
+
+    for (ifa = if_addr_struct; ifa != NULL && !matched; ifa = ifa->ifa_next) {
+      // support IPV4 for now
+      if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET) {
+        continue;
+      }
+      addr_ptr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+      DBUG_ASSERT(NULL != addr_ptr);
+      const char *ip = inet_ntop(AF_INET, addr_ptr, addr_buf, INET_ADDRSTRLEN);
+      if (NULL == ip) {
+        sql_print_error("HA: System call 'inet_ntop' error: %s, errno: %d",
+                        strerror(errno), errno);
+        continue;
+      } else if (strcmp(ip, HA_LOOPBACK_ADDRESS) == 0) {
+        sql_print_information("HA: Skip loopback address");
+        continue;
+      }
+
+      // handle available IP address now
+      // check if current IP address is in hosts file
+      for (int i = 0; hosts && hosts->h_addr_list[i]; i++) {
+        if (hosts->h_addrtype != AF_INET) {
+          continue;
+        }
+
+        const char *hosts_ip =
+            inet_ntoa(*((struct in_addr *)hosts->h_addr_list[i]));
+        if (NULL == hosts_ip) {
+          sql_print_error("HA: System call 'inet_ntoa' error: %s, errno: %d",
+                          strerror(errno), errno);
+          continue;
+        }
+
+        if (strcmp(hosts_ip, ip) == 0) {
+          strncpy(ip_addr, hosts_ip, len);
+          ip_addr[len - 1] = '\0';
+          matched = TRUE;
+          break;
+        }
+      }
+
+      if (NULL == hosts) {
+        strncpy(ip_addr, ip, len);
+        ip_addr[len - 1] = '\0';
+        break;
+      }
+
+      // set 'ip_addr' in case it is not set
+      if (NULL == first_available_ip && !matched) {
+        first_available_ip = strncpy(ip_addr, ip, len);
+        ip_addr[len - 1] = '\0';
+      }
+    }
+
+    // no matched IP address in 'hosts' and network interface address
+    if (!matched) {
+      sql_print_warning(
+          "HA: No matched IP addresses in 'hosts' file and network interface "
+          "address, 'hosts' file may not be configured correctly");
+    }
+
+    rc = strlen(ip_addr) ? 0 : SDB_HA_GET_LOCAL_IP;
+    freeifaddrs(if_addr_struct);
+  }
+done:
+  return rc;
+error:
+  rc = SDB_HA_GET_LOCAL_IP;
+  goto done;
+}
+

@@ -20,6 +20,7 @@
 #define MYSQL_SERVER
 #endif
 
+#include <my_sys.h>
 #include "sdb_conn.h"
 #include <sql_class.h>
 #include <client.hpp>
@@ -235,8 +236,11 @@ int Sdb_conn::do_connect(bool use_orig_conn) {
   String password;
   bson::BSONObj error_obj;
   Sdb_session_attrs *session_attrs = NULL;
+  ulonglong start_time = 0;
 
   if (!(is_valid() && is_authenticated())) {
+    start_time = my_micro_time();
+
     m_transaction_on = false;
     m_is_authenticated = false;
 
@@ -273,6 +277,9 @@ int Sdb_conn::do_connect(bool use_orig_conn) {
                  "Failed to connect to sequoiadb, rc=%d", rc);
       }
       goto error;
+    }
+    if (!m_is_server_ha_conn) {
+      m_connection->enableClientQueryID();
     }
     is_connected = true;
     if (m_enable_raw_conn) {
@@ -311,6 +318,11 @@ int Sdb_conn::do_connect(bool use_orig_conn) {
   }
 
 done:
+  if (start_time != 0) {
+    ulonglong end_time = my_micro_time();
+    get_op_monitor()->connect_time += (end_time - start_time);
+    ++get_op_monitor()->connect_count;
+  }
   return rc;
 error:
   if (is_connected) {
@@ -371,6 +383,9 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
   Sdb_session_attrs *session_attrs = NULL;
   int major = 0, minor = 0, fix = 0;
   bool use_transaction = false;
+  ulonglong start_time = 0;
+  ulonglong end_time = 0;
+
   set_rollback_on_timeout(false);
   /*
     Use transactions in the case of:
@@ -453,7 +468,11 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
           goto error;
         }
       }
+      start_time = my_micro_time();
+      ++get_op_monitor()->begin_trans_count;
       rc = m_connection->transactionBegin();
+      end_time = my_micro_time();
+      get_op_monitor()->begin_trans_time += (end_time - start_time);
       if (SDB_ERR_OK == rc) {
         m_transaction_on = true;
       } else {
@@ -536,6 +555,9 @@ int Sdb_conn::get_cl(const char *db_name, const char *table_name, Sdb_cl &cl,
   cl.close();
   const char *cs_name = db_name;
   const char *cl_name = table_name;
+  ulonglong start_time = 0;
+  ulonglong end_time = 0;
+  char cl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = { 0 };
 
   cl.m_conn = this;
   cl.m_thread_id = this->thread_id();
@@ -551,8 +573,19 @@ int Sdb_conn::get_cl(const char *db_name, const char *table_name, Sdb_cl &cl,
     cs_name = mapping_ctx->get_mapping_cs();
     cl_name = mapping_ctx->get_mapping_cl();
   }
+  sprintf(cl_full_name, "%s.%s", cs_name, cl_name);
   try {
+    if (check_exist &&
+        !Sdb_op_monitor::is_slow_log_table(cl_full_name)) {
+      ++get_op_monitor()->get_cl_count;
+      start_time = my_micro_time();
+    }
     rc = m_connection->getCollectionSpace(cs_name, cs, check_exist);
+    if (check_exist &&
+        !Sdb_op_monitor::is_slow_log_table(cl_full_name)) {
+      end_time = my_micro_time();
+      ++get_op_monitor()->get_cl_time += (end_time - start_time);
+    }
     if (rc != SDB_ERR_OK) {
       goto error;
     }
@@ -1215,7 +1248,11 @@ int conn_exec(sdbclient::sdb *connection, const char *sql,
 }
 
 int Sdb_conn::execute(const char *sql) {
+  ulonglong start_time = my_micro_time();
+  ++get_op_monitor()->exec_inner_sql_count;
   int rc = retry(boost::bind(conn_exec, m_connection, sql, &m_cursor));
+  ulonglong end_time = my_micro_time();
+  get_op_monitor()->exec_inner_sql_time += (end_time - start_time);
   return rc;
 }
 
@@ -1236,36 +1273,27 @@ int Sdb_conn::list(int list_type, const bson::BSONObj &condition,
                            errmsg));
 }
 
-int conn_snapshot(sdbclient::sdb *connection, bson::BSONObj *obj, int snap_type,
-                  const bson::BSONObj *condition, const bson::BSONObj *selected,
-                  const bson::BSONObj *order_by, const bson::BSONObj *hint,
-                  longlong num_to_skip, char *errmsg) {
+struct Sdb_snap_options {
+  bson::BSONObj condition;
+  bson::BSONObj selected;
+  bson::BSONObj order_by;
+  bson::BSONObj hint;
+  longlong num_to_skip;
+  longlong num_to_return;
+};
+
+int conn_snapshot(sdbclient::sdb *connection, sdbclient::sdbCursor *cursor,
+                  int snap_type, Sdb_snap_options *options, char *errmsg) {
   int rc = SDB_ERR_OK;
-  sdbclient::sdbCursor cursor;
   if (!connection) {
     rc = SDB_NOT_CONNECTED;
     goto error;
   }
 
-  rc = connection->getSnapshot(cursor, snap_type, *condition, *selected,
-                               *order_by, *hint, num_to_skip, 1);
+  rc = connection->getSnapshot(*cursor, snap_type, options->condition,
+      options->selected, options->order_by, options->hint, options->num_to_skip,
+      options->num_to_return);
   if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-  try {
-    rc = cursor.next(*obj);
-    if (rc != SDB_ERR_OK) {
-      goto error;
-    }
-  } catch (std::bad_alloc &e) {
-    rc = SDB_ERR_OOM;
-    snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Failed to get snapshot, exception:%s",
-             e.what());
-    goto error;
-  } catch (std::exception &e) {
-    snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Failed to get snapshot, exception:%s",
-             e.what());
-    rc = SDB_ERR_BUILD_BSON;
     goto error;
   }
 done:
@@ -1309,11 +1337,46 @@ error:
 int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type,
                        const bson::BSONObj &condition,
                        const bson::BSONObj &selected,
-                       const bson::BSONObj &order_by, const bson::BSONObj &hint,
+                       const bson::BSONObj &order_by,
+                       const bson::BSONObj &hint,
                        longlong num_to_skip) {
-  return retry(boost::bind(conn_snapshot, m_connection, &obj, snap_type,
-                           &condition, &selected, &order_by, &hint, num_to_skip,
-                           errmsg));
+  sdbclient::sdbCursor cursor;
+  Sdb_snap_options options;
+  int rc = 0;
+
+  options.condition = condition;
+  options.selected = selected;
+  options.order_by = order_by;
+  options.hint = hint;
+  options.num_to_skip = num_to_skip;
+  options.num_to_return = 1;
+
+  rc = retry(boost::bind(conn_snapshot, m_connection, &cursor, snap_type,
+                         &options, errmsg));
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+  try {
+    rc = cursor.next(obj);
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
+  } catch (std::bad_alloc &e) {
+    rc = SDB_ERR_OOM;
+    snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Failed to get snapshot, exception:%s",
+             e.what());
+    goto error;
+  } catch (std::exception &e) {
+    snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Failed to get snapshot, exception:%s",
+             e.what());
+    rc = SDB_ERR_BUILD_BSON;
+    goto error;
+  }
+done:
+  cursor.close();
+  return rc;
+error:
+  goto done;
 }
 
 int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
@@ -1566,6 +1629,16 @@ done:
   return rc;
 error:
   goto done;
+}
+
+Sdb_op_monitor* Sdb_conn::get_op_monitor() {
+  THD *thd = current_thd;
+  // If called by `SHOW PROCESSLIST`, which is from other thread,
+  // don't reset the monitor.
+  if (thd && thd->thread_id() == m_thread_id) {
+    reset_op_monitor_if_new_query(thd->query_id);
+  }
+  return &m_op_monitor;
 }
 
 sdbclient::sdbConnectionPool Sdb_pool_conn::conn_pool;

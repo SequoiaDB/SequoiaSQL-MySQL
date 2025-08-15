@@ -245,6 +245,21 @@ typedef struct st_pending_log_replay_thread {
   bool is_created;
 } ha_pending_log_replay_thread;
 
+typedef struct st_slow_log_table_maintain_thread {
+  mysql_cond_t stopped_cond;
+  mysql_mutex_t stopped_mutex;
+
+  const char *sdb_group_name;
+  const char *group_key;
+
+  my_thread_handle thread;
+  my_thread_attr_t thread_attr;
+  bool stopped;
+  THD *thd;
+
+  bool is_created;
+} ha_slow_log_table_maintain_thread;
+
 uint ha_sql_log_check_interval();
 uint ha_pending_log_check_interval();
 bool ha_is_open();

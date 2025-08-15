@@ -29,6 +29,7 @@
 #include "ha_sdb_errcode.h"
 #include "name_map.h"
 #include "mysql/psi/mysql_file.h"
+#include <sdb_mon.h>
 
 #if defined IS_MYSQL
 #include <my_thread_local.h>
@@ -436,12 +437,24 @@ class Sdb_conn {
 
   int next(bson::BSONObj &obj, my_bool get_owned) {
     int rc = SDB_ERR_OK;
-    rc = m_cursor.next(obj, get_owned);
-    if (rc != SDB_ERR_OK) {
-      if (SDB_DMS_EOC == rc) {
-        rc = HA_ERR_END_OF_FILE;
+    try {
+      rc = m_cursor.next(obj, get_owned);
+      if (rc != SDB_ERR_OK) {
+        if (SDB_DMS_EOC == rc) {
+          rc = HA_ERR_END_OF_FILE;
+        }
+        m_cursor.close();
+        goto error;
       }
-      m_cursor.close();
+    } catch (std::bad_alloc &e) {
+      rc = SDB_ERR_OOM;
+      snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Failed to get next, exception:%s",
+               e.what());
+      goto error;
+    } catch (std::exception &e) {
+      snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Failed to get next, exception:%s",
+               e.what());
+      rc = SDB_ERR_BUILD_BSON;
       goto error;
     }
   done:
@@ -482,6 +495,24 @@ class Sdb_conn {
 
   void enable_raw_connect(bool raw_connect) { m_enable_raw_conn = raw_connect; }
 
+  void reset_op_monitor_if_new_query(int64 qid) {
+    static const uint QUERY_ID_STR_MAX_LEN = 28;
+    if (m_connection && qid != m_last_query_id) {
+      m_connection->incQueryID();
+      m_last_query_id = qid;
+      m_op_monitor.reset();
+      char query_id_array[QUERY_ID_STR_MAX_LEN] = {0};
+      int len = get_query_id_str(query_id_array, sizeof(query_id_array));
+      m_op_monitor.set_query_id(query_id_array, len);
+    }
+  }
+
+  int get_query_id_str(char *str, uint strlen) {
+    return m_connection->getQueryIDStr(str, strlen);
+  }
+
+  Sdb_op_monitor* get_op_monitor();
+
  protected:
   int retry(boost::function<int()> func);
 
@@ -516,6 +547,8 @@ class Sdb_conn {
   Sdb_session_attrs session_attrs;
   bool m_print_screen;
   bool m_enable_raw_conn;
+  int64 m_last_query_id;
+  Sdb_op_monitor m_op_monitor;
 };
 
 class Sdb_pool_conn : public Sdb_conn {
