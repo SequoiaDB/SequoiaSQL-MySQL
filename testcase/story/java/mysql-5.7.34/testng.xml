@@ -47,6 +47,7 @@
             <package name="com.sequoiasql.sequoiadb"/>
             <package name="com.sequoiasql.statscache"/>
             <package name="com.sequoiasql.statsflush"/>
+            <package name="com.sequoiasql.slowlog"/>
         </packages>
     </test>
 
