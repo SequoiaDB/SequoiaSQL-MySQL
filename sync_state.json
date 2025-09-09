@@ -1,0 +1,39 @@
+{
+  "synced_branches": {
+    "v3.4.3": "v3.4.3", 
+    "5.0.1": "5.0.1", 
+    "v3.6-cgb-rc4": "v3.6-cgb-rc4", 
+    "v3.4.8.x": "v3.4.8.x", 
+    "v3.4.3.x": "v3.4.3.x", 
+    "v3.4.6": "v3.4.6", 
+    "sequoiadb_enable_mapping": "sequoiadb_enable_mapping", 
+    "cbg-test": "cbg-test", 
+    "v3.4": "v3.4", 
+    "arm_test": "arm_test", 
+    "master": "master", 
+    "v3.6-cgb-itr6": "v3.6-cgb-itr6", 
+    "v3.4.4.x": "v3.4.4.x", 
+    "3.2.3": "3.2.3", 
+    "3.0.1.special": "3.0.1.special", 
+    "v3.6": "v3.6"
+  }, 
+  "last_commits": {
+    "v3.4.3": "9874b27e4a9677001c41ee8ab93394b751045a3f", 
+    "5.0.1": "a222a3c94f27a8ac3302c03d776b964722cab9be", 
+    "v3.6-cgb-rc4": "6d484d6b72ff32e3c50acccee217261c044ba858", 
+    "v3.4.8.x": "93c3650b397b8d11745a3e60e7e66b718c490f53", 
+    "v3.4.3.x": "b21fec4a0b202813efe5f8c7afc88c62b9256ae3", 
+    "v3.4.6": "041e65054d1300d51c1b79178f18da2ee09df710", 
+    "sequoiadb_enable_mapping": "c567f769d1c0ae139be30549c276c1abfb451b69", 
+    "cbg-test": "86648b22f72e5fd479e930622f421a234e3602bc", 
+    "v3.4": "286a93265c33ae20ebb103f83e1e8413f9412dd8", 
+    "arm_test": "5ab88793f73fea6ccf116c7baf78f39546a1924f", 
+    "master": "92bdfa57c426cfe4d4dfef530945ea46ffa37438", 
+    "v3.6-cgb-itr6": "dcff3a38f839aeb2ae950fd24002502128be11f1", 
+    "v3.4.4.x": "c56d786d050b96b114c6e841383f12e464adf35d", 
+    "3.2.3": "e569e539fc81a38e128bc1a9f926a4a6fbd0b3e2", 
+    "3.0.1.special": "37d31d25b36688dec93ee58ae6f45236dc3c1d6e", 
+    "v3.6": "ef413f0df472fb3153a0e042c65790fa0094d894"
+  }, 
+  "last_sync": "2025-09-09T16:59:25.471868"
+}
