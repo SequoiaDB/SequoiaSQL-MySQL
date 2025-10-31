@@ -6538,10 +6538,7 @@ static int server_ha_init(void *p) {
     sdb_stats_persistence = FALSE;
   }
 
-  if (opt_slow_log && (log_output_options & LOG_TABLE) &&
-      opt_sdb_slow_log && !ha_is_open()) {
-    SDB_LOG_WARNING("HA: Using sdb_slow_log requires joining instance group. "
-                    "Fix it to off");
+  if (opt_sdb_slow_log && !ha_is_open()) {
     opt_sdb_slow_log = FALSE;
   }
 
