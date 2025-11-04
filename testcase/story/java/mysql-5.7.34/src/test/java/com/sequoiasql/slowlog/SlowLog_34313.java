@@ -34,6 +34,7 @@ public class SlowLog_34313 extends MysqlTestBase {
     private String clFullName = dbName + "." + tbName;
     private JdbcInterface jdbc1 = null;
     private JdbcInterface jdbc2 = null;
+    private Sequoiadb sdb = null;
 
     private BSONObject snapResult = null;
     private List< String > stdResult = null;
@@ -47,11 +48,16 @@ public class SlowLog_34313 extends MysqlTestBase {
     @BeforeClass
     public void setUp() throws Exception {
         try {
+            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
+            sdb.updateConfig( new BasicBSONObject( "mongroupmask", "all:detail" ) );
+            sdb.updateConfig( new BasicBSONObject( "monslowquerythreshold", 1000 ) );
+
             jdbc1 = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc2 = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-            jdbc1.update( "SET GLOBAL long_query_time = 1;" );
+            jdbc1.update( "SET long_query_time = 1;" );
+            jdbc2.update( "SET long_query_time = 1;" );
             jdbc1.update( "SET GLOBAL slow_query_log = ON;" );
             jdbc1.update( "SET GLOBAL log_output = 'TABLE';" );
             jdbc1.update( "SET GLOBAL sdb_slow_log = ON;" );
@@ -74,6 +80,9 @@ public class SlowLog_34313 extends MysqlTestBase {
             }
             if ( jdbc2 != null ) {
                 jdbc2.close();
+            }
+            if ( sdb != null ) {
+                sdb.close();
             }
             throw e;
         }
@@ -351,6 +360,18 @@ public class SlowLog_34313 extends MysqlTestBase {
                 jdbc1.close();
             }
         }
+        if ( sdb != null ) {
+            try {
+                sdb.deleteConfig(
+                        new BasicBSONObject( "mongroupmask", 1 ),
+                        new BasicBSONObject() );
+                sdb.deleteConfig(
+                        new BasicBSONObject( "monslowquerythreshold", 1 ),
+                        new BasicBSONObject() );
+            } finally {
+                sdb.close();
+            }
+        }
     }
 
     private class QueryThread extends ResultStore {
@@ -363,12 +384,6 @@ public class SlowLog_34313 extends MysqlTestBase {
     }
 
     private class CheckThread extends ResultStore {
-        private Sequoiadb sdb = null;
-
-        public CheckThread() {
-            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        }
-
         @ExecuteOrder(step = 1)
         private void exec() throws Exception {
             try {
@@ -412,10 +427,6 @@ public class SlowLog_34313 extends MysqlTestBase {
                 }
                 System.out.println(e.getStackTrace());
                 throw e;
-            } finally {
-                if (sdb != null) {
-                    sdb.close();
-                }
             }
         }
     }

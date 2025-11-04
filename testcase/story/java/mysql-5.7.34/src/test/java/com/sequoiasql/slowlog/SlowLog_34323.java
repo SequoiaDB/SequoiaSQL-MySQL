@@ -42,7 +42,7 @@ public class SlowLog_34323 extends MysqlTestBase {
         try {
             jdbc = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-            jdbc.update( "SET GLOBAL long_query_time = 1;" );
+            jdbc.update( "SET long_query_time = 1;" );
             jdbc.update( "SET GLOBAL slow_query_log = ON;" );
             jdbc.update( "SET GLOBAL log_output = 'TABLE';" );
             jdbc.update( "SET GLOBAL sdb_slow_log = ON;" );

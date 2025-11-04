@@ -50,7 +50,8 @@ public class SlowLog_34318 extends MysqlTestBase {
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc2 = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-            jdbc1.update( "SET GLOBAL long_query_time = 1;" );
+            jdbc1.update( "SET long_query_time = 1;" );
+            jdbc2.update( "SET long_query_time = 1;" );
             jdbc1.update( "SET GLOBAL slow_query_log = ON;" );
             jdbc1.update( "SET GLOBAL log_output = 'TABLE';" );
             jdbc1.update( "SET GLOBAL sdb_slow_log = ON;" );
@@ -182,13 +183,14 @@ public class SlowLog_34318 extends MysqlTestBase {
         Assert.assertEquals(infoFields[SlowLogUtils.PFS_IDX_HA_SYNC_WAIT_TIME], "0");
         String pushdown_info = infoFields[SlowLogUtils.PFS_IDX_PUSHDOWN_INFO];
         pushdown_info = pushdown_info.replaceAll("\"ClientPort\": \\d+, \"ClientQID\": \\d+", "");
+        pushdown_info = pushdown_info.replaceAll("HAInstanceGroup_\\w+\\b", "HAInstanceGroup");
         Assert.assertEquals(pushdown_info,
-                "query HAInstanceGroup_ha_group.HATableStatistics condition: " +
+                "query HAInstanceGroup.HATableStatistics condition: " +
                 "{ \"Name\": \"db_34318.tb_34318\" } flags: 0x200 ; " +
-                "insert HAInstanceGroup_ha_group.HATableStatistics obj num: 1 flags: 0x4 ; " +
-                "query_one HAInstanceGroup_ha_group.HAIndexStatistics condition: " +
+                "insert HAInstanceGroup.HATableStatistics obj num: 1 flags: 0x4 ; " +
+                "query_one HAInstanceGroup.HAIndexStatistics condition: " +
                 "{ \"Collection\": \"db_34318.tb_34318\", \"Index\": \"k1\" } limit: 1 flags: 0x200 ; " +
-                "insert HAInstanceGroup_ha_group.HAIndexStatistics obj num: 1 flags: 0x4 ; " +
+                "insert HAInstanceGroup.HAIndexStatistics obj num: 1 flags: 0x4 ; " +
                 "query db_34318.tb_34318 condition: { \"id\": { \"$et\": 0 } } order_by: { \"id\": 1 } " +
                 "hint: { \"\": \"k1\", \"$ClientInfo\": {  } } flags: 0x200 ; ");
 
@@ -269,13 +271,14 @@ public class SlowLog_34318 extends MysqlTestBase {
         Assert.assertEquals(showFields[SlowLogUtils.PFS_IDX_HA_SYNC_WAIT_TIME], "0");
         pushdown_info = showFields[SlowLogUtils.PFS_IDX_PUSHDOWN_INFO];
         pushdown_info = pushdown_info.replaceAll("\"ClientPort\": \\d+, \"ClientQID\": \\d+", "");
+        pushdown_info = pushdown_info.replaceAll("HAInstanceGroup_\\w+\\b", "HAInstanceGroup");
         Assert.assertEquals(pushdown_info,
-                "query HAInstanceGroup_ha_group.HATableStatistics condition: " +
+                "query HAInstanceGroup.HATableStatistics condition: " +
                 "{ \"Name\": \"db_34318.tb_34318\" } flags: 0x200 ; " +
-                "insert HAInstanceGroup_ha_group.HATableStatistics obj num: 1 flags: 0x4 ; " +
-                "query_one HAInstanceGroup_ha_group.HAIndexStatistics condition: " +
+                "insert HAInstanceGroup.HATableStatistics obj num: 1 flags: 0x4 ; " +
+                "query_one HAInstanceGroup.HAIndexStatistics condition: " +
                 "{ \"Collection\": \"db_34318.tb_34318\", \"Index\": \"k1\" } limit: 1 flags: 0x200 ; " +
-                "insert HAInstanceGroup_ha_group.HAIndexStatistics obj num: 1 flags: 0x4 ; " +
+                "insert HAInstanceGroup.HAIndexStatistics obj num: 1 flags: 0x4 ; " +
                 "query db_34318.tb_34318 condition: { \"id\": { \"$et\": 0 } } order_by: { \"id\": 1 } " +
                 "hint: { \"\": \"k1\", \"$ClientInfo\": {  } } flags: 0x200 ; ");
 
@@ -377,13 +380,14 @@ public class SlowLog_34318 extends MysqlTestBase {
         Assert.assertEquals(slowFields[SlowLogUtils.LOG_IDX_HA_SYNC_WAIT_TIME], "0");
         pushdown_info = slowFields[SlowLogUtils.LOG_IDX_PUSHDOWN_INFO];
         pushdown_info = pushdown_info.replaceAll("\"ClientPort\": \\d+, \"ClientQID\": \\d+", "");
+        pushdown_info = pushdown_info.replaceAll("HAInstanceGroup_\\w+\\b", "HAInstanceGroup");
         Assert.assertEquals(pushdown_info,
-                "query HAInstanceGroup_ha_group.HATableStatistics condition: " +
+                "query HAInstanceGroup.HATableStatistics condition: " +
                 "{ \"Name\": \"db_34318.tb_34318\" } flags: 0x200 ; " +
-                "insert HAInstanceGroup_ha_group.HATableStatistics obj num: 1 flags: 0x4 ; " +
-                "query_one HAInstanceGroup_ha_group.HAIndexStatistics condition: " +
+                "insert HAInstanceGroup.HATableStatistics obj num: 1 flags: 0x4 ; " +
+                "query_one HAInstanceGroup.HAIndexStatistics condition: " +
                 "{ \"Collection\": \"db_34318.tb_34318\", \"Index\": \"k1\" } limit: 1 flags: 0x200 ; " +
-                "insert HAInstanceGroup_ha_group.HAIndexStatistics obj num: 1 flags: 0x4 ; " +
+                "insert HAInstanceGroup.HAIndexStatistics obj num: 1 flags: 0x4 ; " +
                 "query db_34318.tb_34318 condition: { \"id\": { \"$et\": 0 } } order_by: { \"id\": 1 } " +
                 "hint: { \"\": \"k1\", \"$ClientInfo\": {  } } flags: 0x200 ; ");
 
@@ -419,12 +423,6 @@ public class SlowLog_34318 extends MysqlTestBase {
     }
 
     private class CheckThread extends ResultStore {
-        private Sequoiadb sdb = null;
-
-        public CheckThread() {
-            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        }
-
         @ExecuteOrder(step = 1)
         private void exec() throws Exception {
             try {
@@ -457,10 +455,6 @@ public class SlowLog_34318 extends MysqlTestBase {
                 }
                 System.out.println(e.getStackTrace());
                 throw e;
-            } finally {
-                if (sdb != null) {
-                    sdb.close();
-                }
             }
         }
     }

@@ -45,7 +45,8 @@ public class SlowLog_34322 extends MysqlTestBase {
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbc2 = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-            jdbc1.update( "SET GLOBAL long_query_time = 1;" );
+            jdbc1.update( "SET long_query_time = 1;" );
+            jdbc2.update( "SET long_query_time = 1;" );
             jdbc1.update( "SET GLOBAL slow_query_log = ON;" );
             jdbc1.update( "SET GLOBAL log_output = 'TABLE';" );
             jdbc1.update( "SET GLOBAL sdb_slow_log = ON;" );
@@ -152,12 +153,6 @@ public class SlowLog_34322 extends MysqlTestBase {
     }
 
     private class CheckThread extends ResultStore {
-        private Sequoiadb sdb = null;
-
-        public CheckThread() {
-            sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        }
-
         @ExecuteOrder(step = 1)
         private void exec() throws Exception {
             try {
@@ -185,10 +180,6 @@ public class SlowLog_34322 extends MysqlTestBase {
                 }
                 System.out.println(e.getStackTrace());
                 throw e;
-            } finally {
-                if (sdb != null) {
-                    sdb.close();
-                }
             }
         }
     }

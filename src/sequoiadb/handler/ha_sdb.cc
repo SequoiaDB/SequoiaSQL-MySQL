@@ -9325,8 +9325,8 @@ int ha_sdb::ensure_collection(THD *thd) {
     /* no need to check collection exists or not during
        select * from temp_table_xx when sql push down to sdb.*/
     if (ha_thd()->variables.sdb_sql_pushdown &&
+        THD::PREPARE_STEP == thd->sdb_sql_exec_step &&
         ha_thd()->sdb_sql_push_down_query_string.length) {
-      DBUG_ASSERT(THD::PREPARE_STEP == ha_thd()->sdb_sql_exec_step);
       is_sql_pushdown = true;
       do_check_exist = false;
     }
