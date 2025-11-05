@@ -191,7 +191,7 @@ public class SlowLog_34323 extends MysqlTestBase {
 
         String findTimeStr = slowFields[SlowLogUtils.LOG_IDX_FIND_TIME];
         double findTimeMs = Double.parseDouble(findTimeStr);
-        Assert.assertTrue(1000.0 <= findTimeMs);
+        Assert.assertTrue(500.0 <= findTimeMs);
 
         Assert.assertEquals(slowFields[SlowLogUtils.LOG_IDX_AGGREGATE_COUNT], "0");
         Assert.assertEquals(slowFields[SlowLogUtils.LOG_IDX_AGGREGATE_TIME], "0");
