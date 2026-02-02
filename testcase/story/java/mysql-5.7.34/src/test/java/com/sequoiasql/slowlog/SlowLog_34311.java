@@ -387,7 +387,8 @@ public class SlowLog_34311 extends MysqlTestBase {
                         new BasicBSONObject("Name", clFullName),
                         new BasicBSONObject(),
                         new BasicBSONObject(),
-                        new BasicBSONObject(),
+                        new BasicBSONObject("$Options",
+                                new BasicBSONObject("viewHistory", false)),
                         0,
                         -1);
                 snapResult = cursor.getNext();
