@@ -304,14 +304,14 @@ int Sdb_conn::do_connect(bool use_orig_conn) {
       try {
         if (0 == get_last_error(error_obj)) {
           err_detail = error_obj.getStringField(SDB_FIELD_DETAIL);
-          if (0 == strlen(errmsg)) {
+          if (0 == strlen(errmsg) || 0 == strlen(err_detail)) {
             err_detail = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
           }
         }
       } catch (std::exception &e) {
         // Use default error message.
       }
-      snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s", err_detail);
+      snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s, rc=%d", err_detail, rc);
       goto error;
     }
     m_is_authenticated = true;
