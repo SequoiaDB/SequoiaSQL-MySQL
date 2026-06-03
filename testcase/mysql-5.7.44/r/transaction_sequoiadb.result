@@ -1572,3 +1572,38 @@ rollback;
 set session transaction_isolation='REPEATABLE-READ';
 rollback;
 drop table t1;
+set session optimizer_switch="batched_key_access=on";
+set session sequoiadb_use_transaction=on;
+drop table if exists t1;
+drop table if exists t2;
+CREATE TABLE `t1` (
+`a1` varchar(20) COLLATE utf8mb4_bin NOT NULL,
+`a2` varchar(4) COLLATE utf8mb4_bin DEFAULT NULL,
+`a3` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+PRIMARY KEY (`a1`),
+KEY `idx_a2` (`a2`),
+KEY `idx_a2_a3` (`a2`,`a3`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE `t2` (
+`b1` varchar(20) COLLATE utf8mb4_bin NOT NULL,
+`b2` varchar(10) COLLATE utf8mb4_bin DEFAULT NULL,
+PRIMARY KEY (`b1`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+insert into t1 values("a1","3","333"),("a2","3","33"),("a3","3","3");
+insert into t2 values("b1","333"),("b2","33"),("b3","3");
+begin;
+update t1 set a2='2' where a2='3';
+explain select * from t2 STRAIGHT_JOIN t1 on t1.a3=t2.b2 where a2='2';
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where with pushed condition (`test_parallel_1`.`t2`.`b2` is not null)
+1	SIMPLE	t1	NULL	ref	idx_a2,idx_a2_a3	idx_a2_a3	1042	const,test_parallel_1.t2.b2	2	100.00	Using index condition; Using join buffer (Batched Key Access)
+Warnings:
+Note	1003	/* select#1 */ select `test_parallel_1`.`t2`.`b1` AS `b1`,`test_parallel_1`.`t2`.`b2` AS `b2`,`test_parallel_1`.`t1`.`a1` AS `a1`,`test_parallel_1`.`t1`.`a2` AS `a2`,`test_parallel_1`.`t1`.`a3` AS `a3` from `test_parallel_1`.`t2` straight_join `test_parallel_1`.`t1` where ((`test_parallel_1`.`t1`.`a2` = '2') and (`test_parallel_1`.`t1`.`a3` = `test_parallel_1`.`t2`.`b2`))
+select * from t2 STRAIGHT_JOIN t1 on t1.a3=t2.b2 where a2='2';
+b1	b2	a1	a2	a3
+b1	333	a1	2	333
+b2	33	a2	2	33
+b3	3	a3	2	3
+rollback;
+drop table t1;
+drop table t2;

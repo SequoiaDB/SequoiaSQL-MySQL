@@ -1050,3 +1050,43 @@ drop table t1;
 disconnect con1;
 disconnect con2;
 
+#seqDB-34414
+connect (con1, localhost, root);
+connection con1;
+set session optimizer_switch="batched_key_access=on";
+set session sequoiadb_use_transaction=on;
+
+--disable_warnings
+drop table if exists t1;
+drop table if exists t2;
+--enable_warnings
+
+CREATE TABLE `t1` (
+  `a1` varchar(20) COLLATE utf8mb4_bin NOT NULL,
+  `a2` varchar(4) COLLATE utf8mb4_bin DEFAULT NULL,
+  `a3` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`a1`),
+  KEY `idx_a2` (`a2`),
+  KEY `idx_a2_a3` (`a2`,`a3`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE `t2` (
+  `b1` varchar(20) COLLATE utf8mb4_bin NOT NULL,
+  `b2` varchar(10) COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`b1`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+insert into t1 values("a1","3","333"),("a2","3","33"),("a3","3","3");
+insert into t2 values("b1","333"),("b2","33"),("b3","3");
+
+begin;
+update t1 set a2='2' where a2='3';
+explain select * from t2 STRAIGHT_JOIN t1 on t1.a3=t2.b2 where a2='2';
+--sorted_result
+select * from t2 STRAIGHT_JOIN t1 on t1.a3=t2.b2 where a2='2';
+rollback;
+
+drop table t1;
+drop table t2;
+
+disconnect con1;
