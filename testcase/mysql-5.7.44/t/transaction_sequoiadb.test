@@ -1057,9 +1057,11 @@ set session optimizer_switch="batched_key_access=on";
 set session sequoiadb_use_transaction=on;
 
 --disable_warnings
-drop table if exists t1;
-drop table if exists t2;
+drop database if exists seqDB_34414;
 --enable_warnings
+
+create database seqDB_34414;
+use seqDB_34414;
 
 CREATE TABLE `t1` (
   `a1` varchar(20) COLLATE utf8mb4_bin NOT NULL,
@@ -1086,7 +1088,6 @@ explain select * from t2 STRAIGHT_JOIN t1 on t1.a3=t2.b2 where a2='2';
 select * from t2 STRAIGHT_JOIN t1 on t1.a3=t2.b2 where a2='2';
 rollback;
 
-drop table t1;
-drop table t2;
+drop database seqDB_34414;
 
 disconnect con1;
